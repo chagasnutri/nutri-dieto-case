@@ -142,8 +142,35 @@ class DietoSyncEngine {
       // Se não houver backend ativo (ex: aberto direto via file://), opera em modo offline/local
       this.setStatus("offline");
       console.log("Servidor central offline ou inacessível no momento. Utilizando cache local:", error.message);
+      this.notifyDataListenersFromStorage();
     } finally {
       this.isSyncing = false;
+    }
+  }
+
+  // Notifica os ouvintes a partir dos dados persistidos no cache local (localStorage)
+  notifyDataListenersFromStorage() {
+    try {
+      const casesStr = localStorage.getItem(STORAGE_KEY_CASES);
+      const discStr = localStorage.getItem(STORAGE_KEY_DISCIPLINAS);
+      const cases = casesStr ? JSON.parse(casesStr) : [];
+      const disciplinas = discStr ? JSON.parse(discStr) : [];
+      const serverTimestamp = localStorage.getItem("dietocase_last_sync_ts") || new Date().toISOString();
+
+      this.dataListeners.forEach(cb => {
+        try {
+          cb({
+            disciplinas: disciplinas,
+            cases: cases,
+            isInitial: false,
+            updatedAt: serverTimestamp
+          });
+        } catch (e) {
+          console.error("Erro no callback de dados locais sincronizados:", e);
+        }
+      });
+    } catch (e) {
+      console.error("Erro ao ler dados locais para sincronização:", e);
     }
   }
 

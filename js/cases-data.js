@@ -8,6 +8,8 @@ const DEFAULT_CASES = [
     title: "Caso 1: Paciente Adulto com DM2, HAS e Obesidade Grau I",
     category: "Ambulatorial / Doenças Crônicas Não Transmissíveis",
     description: "Atendimento ambulatorial de paciente de 54 anos com queixas de descontrole glicêmico e pressórico após mudança recente de rotina e ganho de peso.",
+    neeKcal: 1850,
+    vetRecordatorioHabitual: 2750,
     isLocked: false,
     patient: {
       name: "Carlos Alberto da Silva",
@@ -121,6 +123,8 @@ const DEFAULT_CASES = [
     title: "Caso 2: Paciente Idosa Hospitalizada com Desnutrição e DRC Conservadora (Estágio 4)",
     category: "Hospitalar / Geriatria / Nefrologia",
     description: "Paciente de 76 anos internada com fraqueza intensa, uremia sintomática, náuseas matinais e perda ponderal grave de 14.4% nos últimos 3 meses.",
+    neeKcal: 1500,
+    vetRecordatorioHabitual: 920,
     isLocked: false,
     patient: {
       name: "Lourdes Maria de Oliveira",
@@ -232,6 +236,8 @@ const DEFAULT_CASES = [
     title: "Caso 3: Paciente Pós-Gastrectomia Subtotal com Síndrome de Dumping",
     category: "Cirúrgico / Trato Gastrointestinal",
     description: "Paciente de 42 anos no 45º dia de pós-operatório de gastrectomia com queixas intensas de tontura, sudorese, taquicardia e diarreia explosiva pós-prandial.",
+    neeKcal: 2150,
+    vetRecordatorioHabitual: 1380,
     isLocked: false,
     patient: {
       name: "Roberto Silveira Santos",
@@ -470,9 +476,39 @@ function normalizeEquipeMultiprofissional(rawEquipe) {
   return list;
 }
 
+// Base de Dados Oficial TACO (Tabela Brasileira de Composição de Alimentos - UNICAMP, 4ª edição)
+// Valores rigorosamente conferidos por 100g de alimento
+const TACO_FOODS_DATABASE = [
+  { id: "taco-1", nome: "Arroz, tipo 1, cozido", porcao: "100g (aprox. 4 colheres de sopa)", kcal: 128, cho: 28.1, ptn: 2.5, lip: 0.2, fibra: 1.6, categoria: "Cereais" },
+  { id: "taco-2", nome: "Arroz, integral, cozido", porcao: "100g (aprox. 4 colheres de sopa)", kcal: 124, cho: 25.8, ptn: 2.6, lip: 1.0, fibra: 2.7, categoria: "Cereais" },
+  { id: "taco-3", nome: "Feijão, carioca, cozido", porcao: "100g (aprox. 1 concha média)", kcal: 76, cho: 13.6, ptn: 4.8, lip: 0.5, fibra: 8.5, categoria: "Leguminosas" },
+  { id: "taco-4", nome: "Feijão, preto, cozido", porcao: "100g (aprox. 1 concha média)", kcal: 77, cho: 14.0, ptn: 4.5, lip: 0.5, fibra: 8.4, categoria: "Leguminosas" },
+  { id: "taco-5", nome: "Frango, peito, sem pele, grelhado", porcao: "100g (1 filé médio)", kcal: 159, cho: 0.0, ptn: 32.0, lip: 2.5, fibra: 0.0, categoria: "Carnes e Ovos" },
+  { id: "taco-6", nome: "Carne bovina, patinho, sem gordura, grelhado", porcao: "100g (1 bife médio)", kcal: 219, cho: 0.0, ptn: 35.9, lip: 7.3, fibra: 0.0, categoria: "Carnes e Ovos" },
+  { id: "taco-7", nome: "Ovo, de galinha, inteiro, cozido", porcao: "50g (1 unidade média)", kcal: 73, cho: 0.3, ptn: 6.5, lip: 4.8, fibra: 0.0, categoria: "Carnes e Ovos" },
+  { id: "taco-8", nome: "Peixe, filé de tilápia, grelhado", porcao: "100g (1 filé médio)", kcal: 128, cho: 0.0, ptn: 26.2, lip: 2.7, fibra: 0.0, categoria: "Carnes e Ovos" },
+  { id: "taco-9", nome: "Pão, de trigo, francês", porcao: "50g (1 unidade)", kcal: 150, cho: 29.3, ptn: 4.0, lip: 1.6, fibra: 1.2, categoria: "Panificação" },
+  { id: "taco-10", nome: "Pão, de forma, integral", porcao: "50g (2 fatias)", kcal: 127, cho: 25.0, ptn: 4.7, lip: 1.8, fibra: 3.5, categoria: "Panificação" },
+  { id: "taco-11", nome: "Leite de vaca, pasteurizado, integral", porcao: "200mL (1 copo)", kcal: 122, cho: 9.0, ptn: 6.4, lip: 7.0, fibra: 0.0, categoria: "Laticínios" },
+  { id: "taco-12", nome: "Leite de vaca, desnatado", porcao: "200mL (1 copo)", kcal: 70, cho: 9.4, ptn: 6.6, lip: 0.6, fibra: 0.0, categoria: "Laticínios" },
+  { id: "taco-13", nome: "Queijo, minas frescal", porcao: "30g (1 fatia média)", kcal: 79, cho: 1.0, ptn: 5.2, lip: 6.1, fibra: 0.0, categoria: "Laticínios" },
+  { id: "taco-14", nome: "Iogurte, natural, desnatado", porcao: "170g (1 pote)", kcal: 87, cho: 11.2, ptn: 6.8, lip: 0.5, fibra: 0.0, categoria: "Laticínios" },
+  { id: "taco-15", nome: "Banana, prata, crua", porcao: "100g (1 unidade média)", kcal: 98, cho: 26.0, ptn: 1.3, lip: 0.1, fibra: 2.0, categoria: "Frutas" },
+  { id: "taco-16", nome: "Maçã, fuji, com casca, crua", porcao: "100g (1 unidade pequena)", kcal: 56, cho: 15.2, ptn: 0.3, lip: 0.2, fibra: 1.3, categoria: "Frutas" },
+  { id: "taco-17", nome: "Laranja, pera, crua", porcao: "100g (1 unidade média)", kcal: 37, cho: 8.9, ptn: 1.0, lip: 0.1, fibra: 1.8, categoria: "Frutas" },
+  { id: "taco-18", nome: "Aveia, em flocos", porcao: "30g (2 colheres de sopa)", kcal: 118, cho: 20.0, ptn: 4.2, lip: 2.2, fibra: 2.7, categoria: "Cereais" },
+  { id: "taco-19", nome: "Azeite, de oliva, extravirgem", porcao: "13mL (1 colher de sopa)", kcal: 108, cho: 0.0, ptn: 0.0, lip: 12.0, fibra: 0.0, categoria: "Óleos e Gorduras" },
+  { id: "taco-20", nome: "Batata, inglesa, cozida", porcao: "100g (1 unidade média)", kcal: 52, cho: 11.9, ptn: 1.2, lip: 0.1, fibra: 1.3, categoria: "Tubérculos" },
+  { id: "taco-21", nome: "Mandioca, cozida", porcao: "100g (1 pedaço médio)", kcal: 125, cho: 30.1, ptn: 0.6, lip: 0.3, fibra: 1.6, categoria: "Tubérculos" },
+  { id: "taco-22", nome: "Cenoura, crua", porcao: "100g (1 xícara ralada)", kcal: 34, cho: 7.7, ptn: 1.3, lip: 0.2, fibra: 3.2, categoria: "Hortaliças" },
+  { id: "taco-23", nome: "Alface, americana, crua", porcao: "100g (1 prato raso)", kcal: 9, cho: 1.7, ptn: 0.9, lip: 0.1, fibra: 1.0, categoria: "Hortaliças" },
+  { id: "taco-24", nome: "Tomate, com semente, cru", porcao: "100g (4 fatias médias)", kcal: 15, cho: 3.1, ptn: 1.1, lip: 0.2, fibra: 1.2, categoria: "Hortaliças" }
+];
+
 // Disponibiliza no escopo global
 if (typeof window !== "undefined") {
   window.PROFESSIONAL_PRESETS = PROFESSIONAL_PRESETS;
   window.normalizeEquipeMultiprofissional = normalizeEquipeMultiprofissional;
+  window.TACO_FOODS_DATABASE = TACO_FOODS_DATABASE;
 }
 

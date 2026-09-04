@@ -969,17 +969,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontAlturaJoelho")) {
       document.getElementById("prontAlturaJoelho").value = p.antropometria.alturaJoelho || "";
     }
+    if (document.getElementById("prontCircBraco")) {
+      document.getElementById("prontCircBraco").value = p.antropometria.circBraco || "";
+    }
     if (document.getElementById("prontCircCintura")) {
       document.getElementById("prontCircCintura").value = p.antropometria.circCintura || "";
     }
     if (document.getElementById("prontCircQuadril")) {
       document.getElementById("prontCircQuadril").value = p.antropometria.circQuadril || "";
     }
-    if (document.getElementById("prontCircBraco")) {
-      document.getElementById("prontCircBraco").value = p.antropometria.circBraco || "";
-    }
     if (document.getElementById("prontCircPanturrilha")) {
       document.getElementById("prontCircPanturrilha").value = p.antropometria.circPanturrilha || "";
+    }
+    if (document.getElementById("prontCircPunho")) {
+      document.getElementById("prontCircPunho").value = p.antropometria.circPunho || "";
     }
     if (document.getElementById("prontDobraTricipital")) {
       document.getElementById("prontDobraTricipital").value = p.antropometria.dobraTricipital || "";
@@ -987,11 +990,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontDobraSubescapular")) {
       document.getElementById("prontDobraSubescapular").value = p.antropometria.dobraSubescapular || "";
     }
+    if (document.getElementById("prontDobraBicipital")) {
+      document.getElementById("prontDobraBicipital").value = p.antropometria.dobraBicipital || "";
+    }
     if (document.getElementById("prontDobraSuprailiaca")) {
       document.getElementById("prontDobraSuprailiaca").value = p.antropometria.dobraSuprailiaca || "";
     }
     if (document.getElementById("prontDobraAbdominal")) {
       document.getElementById("prontDobraAbdominal").value = p.antropometria.dobraAbdominal || "";
+    }
+    if (document.getElementById("prontDobraCoxa")) {
+      document.getElementById("prontDobraCoxa").value = p.antropometria.dobraCoxa || "";
     }
     if (document.getElementById("prontDemaisAvaliacoes")) {
       document.getElementById("prontDemaisAvaliacoes").value = p.antropometria.demaisAvaliacoes || "";
@@ -1009,8 +1018,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontTGIEdemas").value = p.exameFisico.condicoesTGIeEdemas || "";
 
     // Consumo Alimentar
+    if (document.getElementById("prontVetRecordatorio")) {
+      document.getElementById("prontVetRecordatorio").value = p.consumoAlimentar.vetRecordatorio || "";
+    }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
+    updateVetAdequacyCalculations();
 
     // Diagnóstico PES
     document.getElementById("prontPesProblema").value = p.diagnosticoPES.problema || "";
@@ -1061,17 +1074,21 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.pesoHabitual = document.getElementById("prontPesoHabitual").value.trim();
     p.antropometria.estatura = document.getElementById("prontEstatura").value.trim();
     p.antropometria.alturaJoelho = document.getElementById("prontAlturaJoelho") ? document.getElementById("prontAlturaJoelho").value.trim() : "";
+    p.antropometria.circBraco = document.getElementById("prontCircBraco") ? document.getElementById("prontCircBraco").value.trim() : "";
     p.antropometria.circCintura = document.getElementById("prontCircCintura") ? document.getElementById("prontCircCintura").value.trim() : "";
     p.antropometria.circQuadril = document.getElementById("prontCircQuadril") ? document.getElementById("prontCircQuadril").value.trim() : "";
-    p.antropometria.circBraco = document.getElementById("prontCircBraco") ? document.getElementById("prontCircBraco").value.trim() : "";
     p.antropometria.circPanturrilha = document.getElementById("prontCircPanturrilha") ? document.getElementById("prontCircPanturrilha").value.trim() : "";
+    p.antropometria.circPunho = document.getElementById("prontCircPunho") ? document.getElementById("prontCircPunho").value.trim() : "";
     p.antropometria.dobraTricipital = document.getElementById("prontDobraTricipital") ? document.getElementById("prontDobraTricipital").value.trim() : "";
     p.antropometria.dobraSubescapular = document.getElementById("prontDobraSubescapular") ? document.getElementById("prontDobraSubescapular").value.trim() : "";
+    p.antropometria.dobraBicipital = document.getElementById("prontDobraBicipital") ? document.getElementById("prontDobraBicipital").value.trim() : "";
     p.antropometria.dobraSuprailiaca = document.getElementById("prontDobraSuprailiaca") ? document.getElementById("prontDobraSuprailiaca").value.trim() : "";
     p.antropometria.dobraAbdominal = document.getElementById("prontDobraAbdominal") ? document.getElementById("prontDobraAbdominal").value.trim() : "";
+    p.antropometria.dobraCoxa = document.getElementById("prontDobraCoxa") ? document.getElementById("prontDobraCoxa").value.trim() : "";
     p.antropometria.demaisAvaliacoes = document.getElementById("prontDemaisAvaliacoes") ? document.getElementById("prontDemaisAvaliacoes").value.trim() : "";
     p.antropometria.imc = document.getElementById("calculatedImcDisplay").textContent.trim();
     p.antropometria.classificacaoImc = document.getElementById("calculatedImcClassDisplay").textContent.trim();
+    p.antropometria.diagnosticoNutricionalExtenso = document.getElementById("calculatedImcExtensoDisplay") ? document.getElementById("calculatedImcExtensoDisplay").textContent.trim() : "";
     p.antropometria.percentualPerda = document.getElementById("calculatedLossDisplay").textContent.trim();
     p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias").value.trim();
 
@@ -1085,6 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas").value.trim();
 
     // Consumo Alimentar
+    p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio") ? document.getElementById("prontVetRecordatorio").value.trim() : "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo").value.trim();
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias").value.trim();
 
@@ -1128,55 +1146,236 @@ document.addEventListener("DOMContentLoaded", () => {
     return p;
   }
 
-  // Estima estatura pela fórmula de Chumlea (usada para idosos e acamados)
+  // Estima estatura pela fórmula de Chumlea (1985)
   function estimateChumleaStature(aj, age, gender) {
-    if (!aj || isNaN(aj) || aj <= 0) return null;
-    const ajNum = parseFloat(aj);
-    const ageNum = parseInt(age) || 40;
-    const isFemale = (gender || "").toLowerCase().includes("fem");
-    let cm = 0;
-    if (isFemale) {
-      cm = 84.88 - (0.24 * ageNum) + (1.83 * ajNum);
-    } else {
-      cm = 64.19 - (0.04 * ageNum) + (2.02 * ajNum);
-    }
-    const m = (cm / 100).toFixed(2);
-    return { cm: cm.toFixed(1), m: m };
+    return prontuarioManager.estimateChumleaStature(aj, age, gender);
   }
 
-  // Atualiza cálculos antropométricos em tempo real
+  // Atualiza cálculos antropométricos em tempo real (Chumlea, IMC dinâmico e Diagnóstico por Extenso)
   function updateAnthropometricCalculations() {
     const pesoAtual = document.getElementById("prontPesoAtual")?.value || "";
     const pesoHabitual = document.getElementById("prontPesoHabitual")?.value || "";
     const estatura = document.getElementById("prontEstatura")?.value || "";
     const aj = document.getElementById("prontAlturaJoelho")?.value || "";
+    const cb = document.getElementById("prontCircBraco")?.value || "";
+    const cp = document.getElementById("prontCircPanturrilha")?.value || "";
+    const dcse = document.getElementById("prontDobraSubescapular")?.value || "";
+
     const idade = appState.currentCase?.patient?.age || 40;
     const genero = appState.currentCase?.patient?.gender || "Feminino";
 
-    const imcResult = prontuarioManager.calculateIMC(pesoAtual, estatura, idade);
-    const imcDisp = document.getElementById("calculatedImcDisplay");
-    const imcClassDisp = document.getElementById("calculatedImcClassDisplay");
-    if (imcDisp) imcDisp.textContent = imcResult.imc || "--";
-    if (imcClassDisp) imcClassDisp.textContent = imcResult.classificacao || "Aguardando peso e altura";
+    // 1. Estatura Efetiva: se tem estatura direta informada, usa direta; senão estima por Chumlea (1985)
+    let estVal = null;
+    let estOrigem = "Aguardando estatura ou AJ";
+    let estM = null;
 
-    const lossResult = prontuarioManager.calculateWeightLoss(pesoHabitual, pesoAtual);
-    const lossDisp = document.getElementById("calculatedLossDisplay");
-    const lossClassDisp = document.getElementById("calculatedLossClassDisplay");
-    if (lossDisp) lossDisp.textContent = lossResult.percentual ? `${lossResult.percentual}%` : "--";
-    if (lossClassDisp) lossClassDisp.textContent = lossResult.interpretacao || "-";
+    if (estatura && !isNaN(parseFloat(estatura.replace(",", ".")))) {
+      let h = parseFloat(estatura.replace(",", "."));
+      if (h > 100) h = h / 100;
+      estVal = h.toFixed(2);
+      estOrigem = "Estatura Real (Aferida)";
+      estM = h;
+    } else if (aj) {
+      const chumEst = prontuarioManager.estimateChumleaStature(aj, idade, genero);
+      if (chumEst) {
+        estVal = chumEst.m;
+        estOrigem = `Chumlea 1985 (AJ: ${aj} cm, Idade: ${idade}a)`;
+        estM = chumEst.rawM;
+      }
+    }
 
-    // Helper de estimativa por Chumlea
+    // 2. Peso Efetivo: se tem peso direto informado, usa direto; senão estima por Chumlea (CB + AJ)
+    let pesoVal = null;
+    let pesoOrigem = "Aguardando peso ou CB + AJ";
+    let pesoKg = null;
+
+    if (pesoAtual && !isNaN(parseFloat(pesoAtual.replace(",", ".")))) {
+      let w = parseFloat(pesoAtual.replace(",", "."));
+      pesoVal = w.toFixed(1);
+      pesoOrigem = "Peso Real (Aferido)";
+      pesoKg = w;
+    } else if (cb && aj) {
+      const chumPeso = prontuarioManager.estimateChumleaWeight(cb, aj, genero, cp, dcse);
+      if (chumPeso) {
+        pesoVal = chumPeso.kg;
+        pesoOrigem = `${chumPeso.metodo} (CB: ${cb} cm, AJ: ${aj} cm)`;
+        pesoKg = chumPeso.rawKg;
+      }
+    }
+
+    // Atualiza displays de Estatura e Peso Efetivos
+    const dispEst = document.getElementById("dispEstaturaEfetiva");
+    const dispEstOrigem = document.getElementById("dispEstaturaOrigem");
+    if (dispEst) dispEst.textContent = estVal ? `${estVal} m` : "--";
+    if (dispEstOrigem) dispEstOrigem.textContent = estOrigem;
+
+    const dispPeso = document.getElementById("dispPesoEfetivo");
+    const dispPesoOrigem = document.getElementById("dispPesoOrigem");
+    if (dispPeso) dispPeso.textContent = pesoVal ? `${pesoVal} kg` : "--";
+    if (dispPesoOrigem) dispPesoOrigem.textContent = pesoOrigem;
+
+    // Helper de sugestão no campo de AJ
     const chumleaHelper = document.getElementById("ajChumleaHelper");
     const chumleaVal = document.getElementById("ajChumleaValue");
     if (chumleaHelper && chumleaVal) {
-      const chum = estimateChumleaStature(aj, idade, genero);
-      if (chum) {
-        chumleaVal.textContent = `${chum.m} m (${chum.cm} cm)`;
+      const chumEst = prontuarioManager.estimateChumleaStature(aj, idade, genero);
+      if (chumEst) {
+        chumleaVal.textContent = `${chumEst.m} m (${chumEst.cm} cm)`;
         chumleaHelper.classList.remove("hidden");
       } else {
         chumleaHelper.classList.add("hidden");
       }
     }
+
+    // 3. Cálculo do IMC com Peso e Estatura (reais ou estimados)
+    const imcResult = prontuarioManager.calculateIMC(pesoKg, estM, idade);
+    const imcDisp = document.getElementById("calculatedImcDisplay");
+    const imcClassDisp = document.getElementById("calculatedImcClassDisplay");
+    const imcExtensoDisp = document.getElementById("calculatedImcExtensoDisplay");
+    const criterioTag = document.getElementById("calculatedCriterioTag");
+
+    if (imcDisp) imcDisp.textContent = imcResult.imc || "--";
+    if (imcClassDisp) {
+      imcClassDisp.textContent = imcResult.classificacao || "Aguardando peso e altura";
+      if (imcResult.statusColor === "emerald") {
+        imcClassDisp.className = "font-bold text-emerald-700 text-xs ml-2";
+      } else if (imcResult.statusColor === "amber") {
+        imcClassDisp.className = "font-bold text-amber-700 text-xs ml-2";
+      } else if (imcResult.statusColor === "rose") {
+        imcClassDisp.className = "font-bold text-rose-700 text-xs ml-2";
+      } else {
+        imcClassDisp.className = "font-bold text-slate-500 text-xs ml-2";
+      }
+    }
+    if (imcExtensoDisp) {
+      imcExtensoDisp.textContent = imcResult.diagnosticoExtenso;
+      if (imcResult.statusColor === "emerald") {
+        imcExtensoDisp.className = "font-bold text-xs text-emerald-900 leading-snug mt-0.5";
+      } else if (imcResult.statusColor === "amber") {
+        imcExtensoDisp.className = "font-bold text-xs text-amber-900 leading-snug mt-0.5";
+      } else if (imcResult.statusColor === "rose") {
+        imcExtensoDisp.className = "font-bold text-xs text-rose-900 leading-snug mt-0.5";
+      } else {
+        imcExtensoDisp.className = "font-bold text-xs text-slate-700 leading-snug mt-0.5";
+      }
+    }
+    if (criterioTag) {
+      criterioTag.textContent = imcResult.criterio || (idade >= 60 ? "Lipschitz (1994)" : "OMS");
+    }
+
+    // 4. Perda Ponderal (compara habitual com real ou estimado)
+    const lossResult = prontuarioManager.calculateWeightLoss(pesoHabitual, pesoKg);
+    const lossDisp = document.getElementById("calculatedLossDisplay");
+    const lossClassDisp = document.getElementById("calculatedLossClassDisplay");
+    if (lossDisp) lossDisp.textContent = lossResult.percentual ? `${lossResult.percentual}%` : "--";
+    if (lossClassDisp) lossClassDisp.textContent = lossResult.interpretacao || "-";
+
+    // Grava no prontuário atual se existir
+    if (appState.currentProntuario?.antropometria) {
+      const a = appState.currentProntuario.antropometria;
+      a.pesoEfetivo = pesoVal || "";
+      a.estaturaEfetiva = estVal || "";
+      a.origemDadosAntro = `Peso: ${pesoOrigem} | Estatura: ${estOrigem}`;
+      a.imc = imcResult.imc || "";
+      a.classificacaoImc = imcResult.classificacao || "";
+      a.diagnosticoNutricionalExtenso = imcResult.diagnosticoExtenso || "";
+      a.criterioClassificacao = imcResult.criterio || "";
+    }
+  }
+
+  // Atualiza avaliação quantitativa do consumo alimentar e adequação energética do VET
+  function updateVetAdequacyCalculations() {
+    const vetInput = document.getElementById("prontVetRecordatorio")?.value || "";
+    const neeCaso = appState.currentCase?.neeKcal || 2000;
+
+    const res = prontuarioManager.calculateVetAdequacy(vetInput, neeCaso);
+
+    const dispVet = document.getElementById("dispVetRecordatorioVal");
+    const dispNee = document.getElementById("dispNeeCasoVal");
+    const dispPct = document.getElementById("dispAdequacaoVetPct");
+    const dispClass = document.getElementById("dispAdequacaoVetClass");
+    const dispInterp = document.getElementById("dispAdequacaoVetInterpretacao");
+
+    if (dispVet) dispVet.textContent = vetInput ? vetInput : "--";
+    if (dispNee) dispNee.textContent = neeCaso ? neeCaso : "--";
+    if (dispPct) dispPct.textContent = res.percentual ? res.percentual : "--";
+    if (dispClass) {
+      dispClass.textContent = res.classificacao;
+      if (res.statusColor === "emerald") {
+        dispClass.className = "text-[10px] font-bold text-emerald-700 block mt-0.5";
+      } else if (res.statusColor === "amber") {
+        dispClass.className = "text-[10px] font-bold text-amber-700 block mt-0.5";
+      } else if (res.statusColor === "rose") {
+        dispClass.className = "text-[10px] font-bold text-rose-700 block mt-0.5";
+      } else {
+        dispClass.className = "text-[10px] font-bold text-slate-500 block mt-0.5";
+      }
+    }
+    if (dispInterp) dispInterp.textContent = res.interpretacao;
+
+    if (appState.currentProntuario?.consumoAlimentar) {
+      const c = appState.currentProntuario.consumoAlimentar;
+      c.vetRecordatorio = vetInput;
+      c.neeCaso = neeCaso;
+      c.adequacaoVetPct = res.percentual || "";
+      c.adequacaoVetClassificacao = res.classificacao || "";
+    }
+  }
+
+  // Inicializa o buscador de alimentos da Tabela Oficial TACO
+  function setupTacoSearch() {
+    const input = document.getElementById("tacoSearchInput");
+    const container = document.getElementById("tacoSearchResults");
+    if (!input || !container) return;
+
+    function renderTacoList(filter = "") {
+      const list = window.TACO_FOODS_DATABASE || [];
+      const term = filter.toLowerCase().trim();
+      const filtered = list.filter(f => !term || f.nome.toLowerCase().includes(term) || f.categoria.toLowerCase().includes(term));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-2 text-xs">Nenhum alimento encontrado na base oficial TACO para "${filter}".</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="py-1.5 px-2 flex items-center justify-between hover:bg-emerald-50/60 rounded transition">
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <strong class="text-slate-800 text-xs">${escapeHtml(item.nome)}</strong>
+              <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.categoria)}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+              Porção: <span class="text-slate-700 font-medium">${escapeHtml(item.porcao)}</span> • 
+              <strong class="text-emerald-800">${item.kcal} kcal</strong> • 
+              CHO: ${item.cho}g • PTN: ${item.ptn}g • LIP: ${item.lip}g • Fibras: ${item.fibra || 0}g
+            </div>
+          </div>
+          <button type="button" class="btn-copy-taco text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded transition ml-2 whitespace-nowrap shadow-2xs" data-food="${escapeHtml(item.nome + ' (' + item.porcao + ': ' + item.kcal + ' kcal, CHO ' + item.cho + 'g, PTN ' + item.ptn + 'g, LIP ' + item.lip + 'g)')}">
+            + Inserir no R24h
+          </button>
+        </div>
+      `).join("");
+
+      container.querySelectorAll(".btn-copy-taco").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const foodText = btn.getAttribute("data-food");
+          const resumoTextarea = document.getElementById("prontInqueritoResumo");
+          if (resumoTextarea) {
+            const current = resumoTextarea.value.trim();
+            resumoTextarea.value = current ? `${current}\n- ${foodText}` : `- ${foodText}`;
+            showToast("Item da TACO inserido no Recordatório!");
+            triggerProntuarioAutoSave();
+          }
+        });
+      });
+    }
+
+    input.addEventListener("input", () => {
+      renderTacoList(input.value);
+    });
+
+    renderTacoList("");
   }
 
   // Lê dados atuais digitados na tabela de cardápio do DOM
@@ -1457,13 +1656,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Input listeners para cálculos antropométricos
-    ["prontPesoAtual", "prontPesoHabitual", "prontEstatura", "prontAlturaJoelho"].forEach(id => {
+    // Input listeners para cálculos antropométricos (Chumlea, IMC e Diagnóstico)
+    [
+      "prontPesoAtual", "prontPesoHabitual", "prontEstatura", "prontAlturaJoelho",
+      "prontCircBraco", "prontCircCintura", "prontCircQuadril", "prontCircPanturrilha", "prontCircPunho",
+      "prontDobraTricipital", "prontDobraSubescapular", "prontDobraBicipital", "prontDobraSuprailiaca", "prontDobraAbdominal", "prontDobraCoxa"
+    ].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener("input", updateAnthropometricCalculations);
       }
     });
+
+    // Input listener para VET do Recordatório e Adequação com a NEE
+    const vetRecInput = document.getElementById("prontVetRecordatorio");
+    if (vetRecInput) {
+      vetRecInput.addEventListener("input", updateVetAdequacyCalculations);
+    }
+
+    // Inicializa a ferramenta de busca oficial TACO
+    setupTacoSearch();
 
     // Botão de aplicar estatura estimada de Chumlea
     const btnApplyChumlea = document.getElementById("btnApplyChumlea");
@@ -1490,26 +1702,41 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSintetizar) {
       btnSintetizar.addEventListener("click", () => {
         const parts = [];
+        const peso = document.getElementById("dispPesoEfetivo")?.textContent.trim();
+        const est = document.getElementById("dispEstaturaEfetiva")?.textContent.trim();
+        const imc = document.getElementById("calculatedImcDisplay")?.textContent.trim();
+        const diag = document.getElementById("calculatedImcExtensoDisplay")?.textContent.trim();
+
         const cc = document.getElementById("prontCircCintura")?.value.trim();
         const cq = document.getElementById("prontCircQuadril")?.value.trim();
         const cb = document.getElementById("prontCircBraco")?.value.trim();
         const cp = document.getElementById("prontCircPanturrilha")?.value.trim();
+        const punho = document.getElementById("prontCircPunho")?.value.trim();
         const dct = document.getElementById("prontDobraTricipital")?.value.trim();
         const dcse = document.getElementById("prontDobraSubescapular")?.value.trim();
+        const dcb = document.getElementById("prontDobraBicipital")?.value.trim();
         const dcsi = document.getElementById("prontDobraSuprailiaca")?.value.trim();
         const dca = document.getElementById("prontDobraAbdominal")?.value.trim();
+        const dcc = document.getElementById("prontDobraCoxa")?.value.trim();
         const aj = document.getElementById("prontAlturaJoelho")?.value.trim();
         const demais = document.getElementById("prontDemaisAvaliacoes")?.value.trim();
 
+        if (peso && peso !== "--") parts.push(`Peso: ${peso}`);
+        if (est && est !== "--") parts.push(`Estatura: ${est}`);
+        if (imc && imc !== "--") parts.push(`IMC: ${imc} kg/m²`);
+        if (diag && !diag.includes("Aguardando")) parts.push(`Diagnóstico: ${diag}`);
         if (aj) parts.push(`Altura do Joelho (AJ): ${aj} cm`);
+        if (cb) parts.push(`CB: ${cb} cm`);
         if (cc) parts.push(`Circunf. Cintura: ${cc} cm`);
         if (cq) parts.push(`Circunf. Quadril: ${cq} cm`);
-        if (cb) parts.push(`CB: ${cb} cm`);
         if (cp) parts.push(`CP: ${cp} cm`);
+        if (punho) parts.push(`Punho: ${punho} cm`);
         if (dct) parts.push(`Dobra Tricipital (DCT): ${dct} mm`);
         if (dcse) parts.push(`Dobra Subescapular: ${dcse} mm`);
+        if (dcb) parts.push(`Dobra Bicipital: ${dcb} mm`);
         if (dcsi) parts.push(`Dobra Supra-ilíaca: ${dcsi} mm`);
         if (dca) parts.push(`Dobra Abdominal: ${dca} mm`);
+        if (dcc) parts.push(`Dobra da Coxa: ${dcc} mm`);
         if (demais) parts.push(demais);
 
         const summaryBox = document.getElementById("prontCircunferencias");

@@ -63,31 +63,69 @@ class DietoterapiaDocxReport {
     doc.addParagraph(anamnese.habitosEstiloVida ? `Hábitos de Vida: ${anamnese.habitosEstiloVida}` : "Hábitos de Vida: Não preenchido.");
 
     doc.addHeading("1.3. Avaliação Antropométrica e Estado Nutricional", 2);
-    const antroTableRows = [
-      ["Peso Atual", `${antro.pesoAtual || '--'} kg`, "-"],
-      ["Peso Habitual", `${antro.pesoHabitual || '--'} kg`, "-"],
-      ["Estatura", `${antro.estatura || '--'} m`, "-"],
-      ["Altura do Joelho (AJ)", antro.alturaJoelho ? `${antro.alturaJoelho} cm` : "--", "Estimativa de estatura (Chumlea)"],
-      ["Índice de Massa Corporal (IMC)", `${antro.imc || '--'} kg/m²`, antro.classificacaoImc || "Não classificado"],
-      ["Percentual de Perda Ponderal", `${antro.percentualPerda || '--'} %`, antro.percentualPerda ? `${antro.percentualPerda}% de alteração` : "-"]
-    ];
+    const antroTableRows = [];
 
-    if (antro.circCintura || antro.circQuadril || antro.circBraco || antro.circPanturrilha) {
+    // Peso real ou estimado
+    if (antro.pesoAtual) {
+      antroTableRows.push(["Peso Atual (Aferido)", `${antro.pesoAtual} kg`, "-"]);
+    } else if (antro.pesoEstimadoChumlea) {
+      antroTableRows.push(["Peso Estimado (Chumlea 1985)", `${antro.pesoEstimadoChumlea} kg`, "Estimado por CB e AJ (sem peso aferido)"]);
+    } else {
+      antroTableRows.push(["Peso Atual", "--", "Não aferido"]);
+    }
+
+    // Estatura real ou estimada
+    if (antro.estatura) {
+      antroTableRows.push(["Estatura (Aferida)", `${antro.estatura} m`, "-"]);
+    } else if (antro.estaturaEstimadaChumlea) {
+      antroTableRows.push(["Estatura Estimada (Chumlea 1985)", `${antro.estaturaEstimadaChumlea} m`, "Estimada por AJ e Idade (sem estatura aferida)"]);
+    } else {
+      antroTableRows.push(["Estatura", "--", "Não aferida"]);
+    }
+
+    antroTableRows.push(["Peso Habitual", `${antro.pesoHabitual || '--'} kg`, "-"]);
+
+    // Parâmetros para Chumlea
+    if (antro.alturaJoelho || antro.circBraco) {
+      if (antro.alturaJoelho) {
+        antroTableRows.push(["Altura do Joelho (AJ)", `${antro.alturaJoelho} cm`, "Parâmetro para equações de Chumlea"]);
+      }
+      if (antro.circBraco) {
+        antroTableRows.push(["Circunferência do Braço (CB)", `${antro.circBraco} cm`, "Obrigatória para estimativa de peso indireto"]);
+      }
+    }
+
+    // IMC e Classificação
+    antroTableRows.push([
+      "Índice de Massa Corporal (IMC)",
+      `${antro.imc || '--'} kg/m²`,
+      antro.classificacaoImc ? `${antro.classificacaoImc} (${antro.criterioClassificacao || 'Critério Clínico'})` : "Não classificado"
+    ]);
+
+    if (antro.percentualPerda) {
+      antroTableRows.push(["Percentual de Perda Ponderal", `${antro.percentualPerda} %`, `${antro.percentualPerda}% de alteração`]);
+    }
+
+    // Circunferências
+    if (antro.circCintura || antro.circQuadril || antro.circPanturrilha || antro.circPunho) {
       const circs = [];
       if (antro.circCintura) circs.push(`Cintura: ${antro.circCintura} cm`);
       if (antro.circQuadril) circs.push(`Quadril: ${antro.circQuadril} cm`);
-      if (antro.circBraco) circs.push(`Braço (CB): ${antro.circBraco} cm`);
       if (antro.circPanturrilha) circs.push(`Panturrilha (CP): ${antro.circPanturrilha} cm`);
-      antroTableRows.push(["Circunferências Corporais", circs.join(" | "), "Adiposidade e reserva muscular"]);
+      if (antro.circPunho) circs.push(`Punho: ${antro.circPunho} cm`);
+      antroTableRows.push(["Demais Circunferências Corporais", circs.join(" | "), "Adiposidade e reserva muscular"]);
     }
 
-    if (antro.dobraTricipital || antro.dobraSubescapular || antro.dobraSuprailiaca || antro.dobraAbdominal) {
+    // Dobras cutâneas
+    if (antro.dobraTricipital || antro.dobraSubescapular || antro.dobraBicipital || antro.dobraSuprailiaca || antro.dobraAbdominal || antro.dobraCoxa) {
       const dobras = [];
       if (antro.dobraTricipital) dobras.push(`DCT: ${antro.dobraTricipital} mm`);
-      if (antro.dobraSubescapular) dobras.push(`Subescapular: ${antro.dobraSubescapular} mm`);
-      if (antro.dobraSuprailiaca) dobras.push(`Supra-ilíaca: ${antro.dobraSuprailiaca} mm`);
+      if (antro.dobraSubescapular) dobras.push(`DCSE: ${antro.dobraSubescapular} mm`);
+      if (antro.dobraBicipital) dobras.push(`DCB: ${antro.dobraBicipital} mm`);
+      if (antro.dobraSuprailiaca) dobras.push(`DCSI: ${antro.dobraSuprailiaca} mm`);
       if (antro.dobraAbdominal) dobras.push(`Abdominal: ${antro.dobraAbdominal} mm`);
-      antroTableRows.push(["Dobras Cutâneas", dobras.join(" | "), "Compartimento subcutâneo"]);
+      if (antro.dobraCoxa) dobras.push(`Coxa: ${antro.dobraCoxa} mm`);
+      antroTableRows.push(["Dobras Cutâneas", dobras.join(" | "), "Compartimento adiposo subcutâneo"]);
     }
 
     if (antro.demaisAvaliacoes) {
@@ -104,6 +142,15 @@ class DietoterapiaDocxReport {
       [3000, 2800, 3200]
     );
 
+    if (antro.diagnosticoNutricionalExtenso) {
+      doc.addCallout(
+        "DIAGNÓSTICO NUTRICIONAL POR EXTENSO (ESTADO PONDERAL):",
+        `${antro.diagnosticoNutricionalExtenso} (Critério: ${antro.criterioClassificacao || 'OMS / Lipschitz'})`,
+        "2563eb",
+        "eff6ff"
+      );
+    }
+
     doc.addHeading("1.4. Avaliação Bioquímica Relevante", 2);
     doc.addParagraph(bio.examesRelevantes ? `Exames laboratoriais apurados: ${bio.examesRelevantes}` : "Exames apurados: Nenhum exame relatado.");
     doc.addParagraph(bio.interpretacaoNutricional ? `Interpretação nutricional dos exames: ${bio.interpretacaoNutricional}` : "Interpretação nutricional: Não informada.");
@@ -116,6 +163,28 @@ class DietoterapiaDocxReport {
     doc.addHeading("1.6. Consumo Alimentar e Inquérito Nutricional", 2);
     doc.addParagraph(ca.inqueritoResumo ? `Resumo do Recordatório Alimentar: ${ca.inqueritoResumo}` : "Recordatório: Não preenchido.");
     doc.addParagraph(ca.aguaPreferenciasAversoes ? `Ingestão hídrica, preferências e aversões: ${ca.aguaPreferenciasAversoes}` : "Preferências e aversões: Não informado.");
+
+    if (ca.vetRecordatorio || ca.neeCaso || ca.adequacaoVetPct) {
+      doc.addHeading("1.6.1. Avaliação Quantitativa do Recordatório de 24h e Adequação do VET", 3);
+      doc.addTable(
+        ["Parâmetro de Avaliação Quantitativa", "Valor Obtido", "Interpretação / Referência Oficial"],
+        [
+          ["VET Consumido (Recordatório 24h)", `${ca.vetRecordatorio || '--'} kcal/dia`, "Calculado a partir do R24h"],
+          ["Necessidade Energética Estimada (NEE)", `${ca.neeCaso || '--'} kcal/dia`, "Meta calórica do caso clínico"],
+          [
+            "% de Adequação do VET",
+            `${ca.adequacaoVetPct ? ca.adequacaoVetPct + '%' : '--'}`,
+            ca.adequacaoVetClassificacao ? `${ca.adequacaoVetClassificacao}` : "Adequação do aporte calórico"
+          ],
+          [
+            "Base de Dados de Composição Oficial",
+            ca.baseAlimentosReferencia || "TACO (UNICAMP, 4ª edição)",
+            "Tabela Brasileira de Composição de Alimentos e livros oficiais"
+          ]
+        ],
+        [3200, 2600, 3200]
+      );
+    }
 
     // 4. SEÇÃO II: RESOLUÇÃO DIETOTERÁPICA DO CASO
     doc.addHeading("2. RESOLUÇÃO DIETOTERÁPICA E CONDUTA NUTRICIONAL", 1);

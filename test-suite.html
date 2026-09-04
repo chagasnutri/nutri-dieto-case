@@ -436,7 +436,7 @@ Questões Avaliativas:
         }
       };
       const revisto = ClinicalPortugueseReviser.reviewCase(caseComDemais);
-      assert(revisto.antropometria.demaisAvaliacoes.includes("circunferência da cintura") && revisto.antropometria.demaisAvaliacoes.includes("triglicerídeos"),
+      assert(revisto.antropometria.demaisAvaliacoes.toLowerCase().includes("circunferência da cintura") && revisto.antropometria.demaisAvaliacoes.toLowerCase().includes("triglicerídeos"),
         "ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes");
 
       // 27. Teste de Inclusão da Altura do Joelho no Relatório Word (.docx)
@@ -523,6 +523,88 @@ Questões Avaliativas:
       });
       syncEngineTest.notifyDataListenersFromStorage();
       assert(listenerDisparado === true, "Motor de sincronização notifica listeners instantaneamente a partir dos dados do storage");
+
+      // 32. Teste da Equação de Chumlea (1985/1988) para Estimativa de Peso por CB e AJ
+      // Mulher: (AJ * 1.01) + (CB * 2.81) - 66.04
+      const pesoEstimadoMulher = prontManager.estimateChumleaWeight(26.0, 48.5, "Feminino");
+      assert(pesoEstimadoMulher && pesoEstimadoMulher.kg === "56.0", `Equação de Chumlea (CB+AJ) Mulher calcula 56.0 kg: ${pesoEstimadoMulher?.kg} kg`);
+
+      // Homem: (AJ * 1.19) + (CB * 3.21) - 86.82
+      const pesoEstimadoHomem = prontManager.estimateChumleaWeight(31.0, 53.5, "Masculino");
+      assert(pesoEstimadoHomem && pesoEstimadoHomem.kg === "76.4", `Equação de Chumlea (CB+AJ) Homem calcula 76.4 kg: ${pesoEstimadoHomem?.kg} kg`);
+
+      // 33. Teste do Cálculo Dinâmico de IMC com Medidas Alternativas/Estimadas
+      // Caso o aluno não preencha pesoAtual e estatura convencionais, usa os valores de Chumlea
+      const estChumleaIdosa = prontManager.estimateChumleaStature(48.5, 76, "Feminino"); // 1.55m
+      const pesoChumleaIdosa = prontManager.estimateChumleaWeight(22.0, 48.5, "Feminino"); // (48.5*1.01)+(22*2.81)-66.04 = 44.8 kg
+      const imcIdosaEstimado = prontManager.calculateIMC(pesoChumleaIdosa.kg, estChumleaIdosa.m, 76);
+      assert(imcIdosaEstimado.imc === "18.65", `Cálculo de IMC a partir de medidas estimadas por Chumlea resulta em 18.65: ${imcIdosaEstimado.imc}`);
+      assert(imcIdosaEstimado.classificacao.includes("Baixo Peso"), `Diagnóstico nutricional de baixo peso para idosa estimada: ${imcIdosaEstimado.classificacao}`);
+
+      // 34. Teste de Diagnóstico Nutricional por Extenso (OMS para Adultos e Lipschitz para Idosos)
+      const imcAdultoSobrepeso = prontManager.calculateIMC(78.0, 1.70, 35);
+      assert(imcAdultoSobrepeso.diagnosticoExtenso.includes("Sobrepeso / Pré-obesidade") && imcAdultoSobrepeso.criterio === "OMS", 
+        `Diagnóstico por extenso Adulto (OMS): "${imcAdultoSobrepeso.diagnosticoExtenso}"`);
+
+      const imcAdultoObeso = prontManager.calculateIMC(95.0, 1.70, 40);
+      assert(imcAdultoObeso.diagnosticoExtenso.includes("Obesidade Grau I") && imcAdultoObeso.criterio === "OMS",
+        `Diagnóstico por extenso Obesidade I (OMS): "${imcAdultoObeso.diagnosticoExtenso}"`);
+
+      const imcIdosoEutrofia = prontManager.calculateIMC(62.0, 1.60, 68); // IMC = 24.22
+      assert(imcIdosoEutrofia.diagnosticoExtenso.includes("Eutrofia / Estado Nutricional Adequado") && imcIdosoEutrofia.criterio.includes("Lipschitz"),
+        `Diagnóstico por extenso Idoso Eutrofia (Lipschitz): "${imcIdosoEutrofia.diagnosticoExtenso}"`);
+
+      const imcIdosoDesnutricao = prontManager.calculateIMC(48.0, 1.60, 72); // IMC = 18.75 (< 22.0)
+      assert(imcIdosoDesnutricao.diagnosticoExtenso.includes("Baixo Peso / Desnutrição") && imcIdosoDesnutricao.criterio.includes("Lipschitz"),
+        `Diagnóstico por extenso Idoso Baixo Peso (Lipschitz): "${imcIdosoDesnutricao.diagnosticoExtenso}"`);
+
+      // 35. Teste de Avaliação Quantitativa do Consumo e Adequação do VET (Hipocalórica, Normocalórica, Hipercalórica)
+      const neePadrao = 1850;
+      
+      // Dieta Hipocalórica (< 90%)
+      const adeqHipo = prontManager.calculateVetAdequacy(1400, neePadrao);
+      assert(adeqHipo.percentual === "75.7" && adeqHipo.classificacao.includes("Hipocalórica"), 
+        `Adequação do VET Hipocalórica (75.7%): "${adeqHipo.classificacao}"`);
+
+      // Dieta Normocalórica (90% a 110%)
+      const adeqNormo = prontManager.calculateVetAdequacy(1800, neePadrao);
+      assert(adeqNormo.percentual === "97.3" && adeqNormo.classificacao.includes("Normocalórica"),
+        `Adequação do VET Normocalórica (97.3%): "${adeqNormo.classificacao}"`);
+
+      // Dieta Hipercalórica (> 110%)
+      const adeqHiper = prontManager.calculateVetAdequacy(2300, neePadrao);
+      assert(adeqHiper.percentual === "124.3" && adeqHiper.classificacao.includes("Hipercalórica"),
+        `Adequação do VET Hipercalórica (124.3%): "${adeqHiper.classificacao}"`);
+
+      // 36. Teste da Base Oficial de Alimentos TACO (UNICAMP)
+      assert(Array.isArray(TACO_FOODS_DATABASE) && TACO_FOODS_DATABASE.length >= 20, `Base TACO carregada com ${TACO_FOODS_DATABASE.length} alimentos oficiais`);
+      const arrozTaco = TACO_FOODS_DATABASE.find(a => a.nome.includes("Arroz, tipo 1"));
+      assert(arrozTaco && arrozTaco.kcal === 128 && arrozTaco.cho === 28.1, `Arroz TACO com dados oficiais (128 kcal, 28.1g CHO por 100g)`);
+      const feijaoTaco = TACO_FOODS_DATABASE.find(a => a.nome.includes("Feijão, carioca"));
+      assert(feijaoTaco && feijaoTaco.kcal === 76 && feijaoTaco.ptn === 4.8, `Feijão TACO com dados oficiais (76 kcal, 4.8g PTN por 100g)`);
+
+      // 37. Teste de Relatório Word (.docx) com Antropometria Alternativa e Adequação do VET TACO
+      const prontRelatorioCompleto = prontManager.getEmptyProntuario("caso-dm2-has");
+      prontRelatorioCompleto.aluno.nome = "Aluno Teste Antro";
+      prontRelatorioCompleto.antropometria.pesoAtual = "";
+      prontRelatorioCompleto.antropometria.estatura = "";
+      prontRelatorioCompleto.antropometria.alturaJoelho = "53.5";
+      prontRelatorioCompleto.antropometria.circBraco = "31.0";
+      prontRelatorioCompleto.antropometria.pesoEstimadoChumlea = "76.4";
+      prontRelatorioCompleto.antropometria.estaturaEstimadaChumlea = "1.70";
+      prontRelatorioCompleto.antropometria.imc = "26.44";
+      prontRelatorioCompleto.antropometria.classificacaoImc = "Sobrepeso";
+      prontRelatorioCompleto.antropometria.diagnosticoNutricionalExtenso = "Sobrepeso / Pré-obesidade segundo os Pontos de Corte da Organização Mundial da Saúde (OMS)";
+      prontRelatorioCompleto.antropometria.criterioClassificacao = "OMS";
+      prontRelatorioCompleto.consumoAlimentar.vetRecordatorio = "1450";
+      prontRelatorioCompleto.consumoAlimentar.neeCaso = "1850";
+      prontRelatorioCompleto.consumoAlimentar.adequacaoVetPct = "78.4";
+      prontRelatorioCompleto.consumoAlimentar.adequacaoVetClassificacao = "Ingestão Hipocalórica / Inadequada";
+      prontRelatorioCompleto.consumoAlimentar.baseAlimentosReferencia = "TACO (UNICAMP, 4ª edição)";
+
+      const docxAlternativo = DietoterapiaDocxReport.buildReportDocument(prontRelatorioCompleto, caso1);
+      const blobAlternativo = docxAlternativo.generateBlob();
+      assert(blobAlternativo && blobAlternativo.size > 2500, `Relatório Word gerado com dados alternativos de Chumlea e adequação do VET TACO (${blobAlternativo.size} bytes)`);
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

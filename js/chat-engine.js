@@ -432,18 +432,6 @@ class ClinicalChatEngine {
       return `O peso habitual de referência documentado na anamnese é de ${a.pesoHabitual} kg.`;
     }
 
-    if (q.includes("altura") || q.includes("estatura") || q.includes("quanto mede") || q.includes("qual seu tamanho")) {
-      if (role === "paciente") return `Eu tenho ${a.estatura} m de altura, doutor(a).`;
-      if (role === "acompanhante") return `A altura dele(a) é de ${a.estatura} m.`;
-      return `A estatura registrada no estadiômetro é de ${a.estatura} m.`;
-    }
-
-    if (q.includes("perdeu peso") || q.includes("emagreceu") || q.includes("engordou") || q.includes("ganhou peso") || q.includes("perda ponderal") || q.includes("perda de peso") || q.includes("variacao de peso")) {
-      if (role === "paciente") return `Olha doutor(a), sobre a variação do meu peso: ${this.cleanFirstPerson(a.historicoPerdaPonderal || '')}`;
-      if (role === "acompanhante") return `Doutor(a), sobre a mudança de peso dele(a): ${this.cleanThirdPerson(a.historicoPerdaPonderal || '')}`;
-      return `Na evolução ponderal documentada no prontuário: ${a.historicoPerdaPonderal || 'Sem variação ponderal significativa registrada.'}`;
-    }
-
     if (q.includes("altura do joelho") || q.includes("joelho") || q.includes(" aj ") || q.startsWith("aj ") || q === "aj" || q.includes("comprimento do joelho")) {
       const ajVal = a.alturaJoelho || null;
       if (ajVal) {
@@ -455,6 +443,18 @@ class ClinicalChatEngine {
         if (role === "acompanhante") return `Não mediram o joelho dele(a), apenas a altura normal no estadiômetro (${a.estatura} m).`;
         return `A Altura do Joelho (AJ) não foi aferida neste caso clínico (estatura direta disponível: ${a.estatura} m).`;
       }
+    }
+
+    if (q.includes("altura") || q.includes("estatura") || q.includes("quanto mede") || q.includes("qual seu tamanho")) {
+      if (role === "paciente") return `Eu tenho ${a.estatura} m de altura, doutor(a).`;
+      if (role === "acompanhante") return `A altura dele(a) é de ${a.estatura} m.`;
+      return `A estatura registrada no estadiômetro é de ${a.estatura} m.`;
+    }
+
+    if (q.includes("perdeu peso") || q.includes("emagreceu") || q.includes("engordou") || q.includes("ganhou peso") || q.includes("perda ponderal") || q.includes("perda de peso") || q.includes("variacao de peso")) {
+      if (role === "paciente") return `Olha doutor(a), sobre a variação do meu peso: ${this.cleanFirstPerson(a.historicoPerdaPonderal || '')}`;
+      if (role === "acompanhante") return `Doutor(a), sobre a mudança de peso dele(a): ${this.cleanThirdPerson(a.historicoPerdaPonderal || '')}`;
+      return `Na evolução ponderal documentada no prontuário: ${a.historicoPerdaPonderal || 'Sem variação ponderal significativa registrada.'}`;
     }
 
     if (q.includes("cintura") || q.includes("circunferencia") || q.includes("braco") || q.includes("dobra") || q.includes("panturrilha") || q.includes("quadril") || q.includes("demais avaliacoes") || q.includes("subescapular") || q.includes("suprailiaca") || q.includes("abdominal")) {
