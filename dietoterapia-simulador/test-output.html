@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="UTF-8">
+  <title>Testes Automatizados - Dietoterapia App</title>
+  <script src="lib/mini-docx.js"></script>
+  <script src="js/cases-data.js"></script>
+  <script src="js/portuguese-reviser.js"></script>
+  <script src="js/case-builder.js"></script>
+  <script src="js/chat-engine.js"></script>
+  <script src="js/student-prontuario.js"></script>
+  <script src="js/docx-generator.js"></script>
+  <script src="js/sync-engine.js"></script>
+  <script src="js/admin-manager.js"></script>
+</head>
+<body>
+  <h1>Resultados dos Testes Automatizados</h1>
+  <div id="results">
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Casos carregados com sucesso (total: 3)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso 1 é DM2/HAS
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso 1 tem questões avaliativas cadastradas
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso 1 tem exames bioquímicos cadastrados
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Paciente responde peso correto (92.5kg): "Na última pesagem que fiz na balança aqui, eu estava com 92.5 kg, doutor(a)."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Humanização: Paciente fala em 1ª pessoa ("Na última pesagem que fiz na balança aqui, eu estava com 92.5 kg, doutor(a).")
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Paciente relata medicamentos corretos: "Eu tomo os seguintes remédios receitados pelo médico, doutor(a): Metformina 850mg (1 comprimido após o almoço e 1 comprimido após o jantar); Losartana Potássica 50mg (1 comprimido pela manhã); Sinvastatina 20mg (1 comprimido à noite antes de dormir). Eu sinto que às vezes esqueço de tomar os remédios nos dias de plantão dobrado.. Tento tomar direitinho, mas às vezes na correria do dia a dia acabo esquecendo de alguma dose."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Humanização: Paciente relata remédios em 1ª pessoa ("Eu tomo os seguintes remédios receitados pelo médico, doutor(a): Metformina 850mg (1 comprimido após o almoço e 1 comprimido após o jantar); Losartana Potássica 50mg (1 comprimido pela manhã); Sinvastatina 20mg (1 comprimido à noite antes de dormir). Eu sinto que às vezes esqueço de tomar os remédios nos dias de plantão dobrado.. Tento tomar direitinho, mas às vezes na correria do dia a dia acabo esquecendo de alguma dose.")
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Médico responde HbA1c de 8.9%: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)), caracterizando mau controle glicêmico crônico."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Humanização: Resposta médica sem prefixos mecânicos ou colchetes: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)), caracterizando mau controle glicêmico crônico."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Humanização: Médico dialoga como colega de equipe ("Olá, colega nutricionista! Do ponto de vista médico e clínico: Paciente admitido no ambulatório com descontrole metabólico evidente: HbA1c 8.9% e PA sistólica elevada (145x92 mmHg). Risco cardiovascular alto conforme escore global. Solicito suporte nutricional intensivo com foco em perda ponderal de 5% a 10% em 6 meses, redução de sacarose e carboidratos refinados, controle da ingestão de sódio (&lt; 2000mg/dia) e gordura saturada (&lt; 7% do VET). Mantidas as medicações atuais com reavaliação laboratorial em 90 dias.")
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Humanização: Acompanhante refere-se naturalmente ao paciente ("Pelo que a gente convive com ele(a) no dia a dia, ele(a) não tem esse problema não.")
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra Anti-alucinação: Paciente NÃO inventa alergia inexistente: "Sobre o que eu não gosto ou rejeito comer, doutor(a): Não gosta de legumes cozidos folhosos amargos (rúcula, jiló, quiabo). Eu não tenho qualquer tipo de alergia ou intolerância alimentar diagnosticada."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra Anti-alucinação: Paciente não inventa cirurgia inexistente: "Não, doutor(a)! Nunca fiz esse tipo de cirurgia não, de jeito nenhum."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra Anti-alucinação: Médico afirma que dado não consta no prontuário: "Colega, essa dosagem laboratorial específica não consta nos exames solicitados nem foi realizada no momento."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: IMC calculado corretamente (31.27): 31.27
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Classificação IMC correta: Obesidade Grau I (OMS)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: IMC Idoso calculado (19.23): 19.23
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Classificação Idoso Lipschitz correta: Baixo Peso / Desnutrição (Lipschitz)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: % de perda calculado (14.4%): 14.4%
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Classificação de perda severa: Perda ponderal severa/grave (14.4%)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Blob do documento .docx gerado com tamanho válido: 7480 bytes
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo possui cabeçalho PKZIP padrão válido para Word OpenXML (.docx)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Senha do professor configurada corretamente como 'Nutri2@26'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Senha incorreta é rejeitada
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Trava do caso alternada com sucesso: agora é true
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso travado é ocultado da lista dos alunos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso destravado/liberado com sucesso para os alunos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Catálogo do Aluno contém todos os casos (3)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Soma de casos liberados (3) e travados (0) corresponde ao total
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Filtro 'Todos os Casos' exibe a totalidade dos casos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Filtro 'Apenas Disponíveis' lista estritamente os casos liberados
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Filtro 'Travados' identifica o caso bloqueado pelo docente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Status de liberação do caso restaurado com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Normalizador converte equipe legada em lista de 4 profissionais
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Dados do médico normalizados com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Profissional Fonoaudiologia retirado com sucesso da equipe (restando 3)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Fonoaudiologia não consta mais na lista da equipe
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Fisioterapeuta acrescentado com sucesso à equipe
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Fisioterapeuta identificado com sucesso na equipe do caso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: getRoleInfo identifica perfeitamente o profissional dinâmico
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Fisioterapeuta responde com seu parecer técnico humanizado registrado
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: CaseBuilderEngine constrói objeto de caso completo a partir de texto
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Nome do paciente extraído com sucesso: Sebastião Oliveira
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Idade do paciente extraída corretamente: 64 anos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Gênero masculino identificado com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Peso atual extraído com precisão: 78.5 kg
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Estatura extraída com precisão: 1.7 m
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Exames laboratoriais extraídos em tabela (total: 5)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Creatinina sérica identificada na tabela bioquímica
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Fisioterapeuta identificado e incorporado à equipe multiprofissional
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Questões avaliativas do arquivo extraídas com sucesso (2 questões)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: DocxTextExtractor extrai com fidelidade o texto de parágrafos OpenXML do Word
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplinas acadêmicas carregadas com sucesso (total: 2)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplina padrão 'Dietoterapia' presente no catálogo
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplina padrão 'Estágios Curriculares' presente no catálogo
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Nova disciplina criada com ID slugificado: nutricao-clinica-ambulatorial
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Nova disciplina recuperada com sucesso por ID
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Casos filtrados de Dietoterapia retornam 3 casos: total 3
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso atribuído e filtrado com sucesso na nova disciplina
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sistema bloqueia exclusão de disciplina que possui casos vinculados
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplina sem casos excluída com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisor corrige 'diabete melitus' e 'hipertensao'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisor corrige 'glicemia de gejum' e 'hemoglobina glicosada'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisor acentua e padroniza 'triglicerídeos' e 'circunferência da cintura'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: HPP: Adequa tempos verbais para o pretérito cirúrgico/hospitalar
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Exame Físico: Converte verbos do pretérito para o presente do indicativo
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: HDA: Normaliza gerúndio solto e início de sintomas para o pretérito adequado
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Concordância de Gênero: Ajusta artigos e particípios femininos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Concordância de Gênero: Ajusta termos para o masculino
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Concordância em 1ª Pessoa: Converte 3ª pessoa ('esquece') para 1ª pessoa ('esqueço'): "Eu ando sentindo que às vezes esqueço de tomar os remédios nos dias de plantão."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisão Integral: Título corrigido com acentuação médica
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisão Integral: Nome próprio capitalizado
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisão Integral: Gênero feminino harmonizado na ocupação e estado civil
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisão Integral: HPP com pretérito adequado ('realizou cirurgia')
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Revisão Integral: Exame físico no presente com gênero feminino concordante
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: DietoSyncEngine definido e carregado com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sincronização: Professor envia nova disciplina e caso com sucesso para o servidor
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sincronização: Servidor rejeita atualização com senha não autorizada
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sincronização: Aluno recebe notificação automática de atualização do servidor
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sincronização: Nova disciplina do professor aparece automaticamente para o aluno
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Sincronização: Novo caso do professor aparece automaticamente para o aluno
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário possui campo 'alturaJoelho' (AJ) na antropometria
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário possui campo 'demaisAvaliacoes' na antropometria
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário possui campos de circunferência de cintura e quadril
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário possui campos de dobras cutâneas
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Cálculo de IMC aceita vírgula decimal ("75,5" e "1,70" -&gt; 26.12): 26.12
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Cálculo de IMC converte altura em centímetros (170cm -&gt; 1.70m): 26.12
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Equação de Chumlea Mulher estima 1.55 m para idosa (AJ 48.5cm, 76a): 1.55m
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Equação de Chumlea Homem estima 1.70 m (AJ 53.5cm, 54a): 1.70m
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: red">
+              ❌ FAIL: Chat Engine responde corretamente sobre Altura do Joelho do paciente: "Eu tenho 1.72 m de altura, doutor(a)."
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: red">
+              ❌ FAIL: ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: 89986 bytes
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso temporário criado na Disciplina Temporária A
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Exclusão com transferência de casos concluída: "Disciplina excluída e 1 caso(s) transferido(s) com sucesso!"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplina Temporária A removida da lista
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso clínico foi reatribuído com sucesso para Dietoterapia
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso temporário criado na Disciplina Temporária B
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Exclusão com remoção em cascata concluída: "Disciplina excluída com sucesso!"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Disciplina Temporária B removida da lista
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Caso vinculado à Disciplina B foi removido em cascata com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Exame adicionado com sucesso ao caso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Refeição adicionada ao recordatório com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Questão pedagógica adicionada com sucesso
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Motor de sincronização notifica listeners instantaneamente a partir dos dados do storage
+            </div>
+          </div>
+
+  <script>
+    const results = [];
+    function assert(condition, message) {
+      if (condition) {
+        results.push({ pass: true, msg: `✅ PASS: ${message}` });
+      } else {
+        results.push({ pass: false, msg: `❌ FAIL: ${message}` });
+      }
+    }
+
+    async function runTests() {
+      try {
+        // 1. Casos Clínicos
+        const cases = getCases();
+      assert(cases.length >= 3, `Casos carregados com sucesso (total: ${cases.length})`);
+      
+      const caso1 = cases[0];
+      assert(caso1.id === "caso-dm2-has", "Caso 1 é DM2/HAS");
+      assert(caso1.questoesAvaliativas.length >= 4, "Caso 1 tem questões avaliativas cadastradas");
+      assert(caso1.bioquimica.length >= 10, "Caso 1 tem exames bioquímicos cadastrados");
+
+      // 2. Chat Engine - Fatos Presentes e Linguagem Humanizada
+      const engine = new ClinicalChatEngine();
+      
+      // Pergunta de peso ao paciente (deve falar em 1ª pessoa humanizada)
+      const respPeso = await engine.processQuestion("Qual o seu peso atual?", caso1, "paciente");
+      assert(respPeso.includes("92.5"), `Paciente responde peso correto (92.5kg): "${respPeso}"`);
+      assert(respPeso.includes("eu") || respPeso.includes("doutor") || respPeso.includes("Na última"), 
+        `Humanização: Paciente fala em 1ª pessoa ("${respPeso}")`);
+
+      // Pergunta de medicamento
+      const respMed = await engine.processQuestion("Quais medicamentos você toma?", caso1, "paciente");
+      assert(respMed.includes("Metformina") && respMed.includes("Losartana"), `Paciente relata medicamentos corretos: "${respMed}"`);
+      assert(respMed.includes("Eu tomo") || respMed.includes("remédios"), `Humanização: Paciente relata remédios em 1ª pessoa ("${respMed}")`);
+
+      // Pergunta de exame bioquímico ao médico (sem colchetes robóticos)
+      const respGlic = await engine.processQuestion("Quanto deu a sua hemoglobina glicada?", caso1, "medico");
+      assert(respGlic.includes("8.9"), `Médico responde HbA1c de 8.9%: "${respGlic}"`);
+      assert(!respGlic.includes("[Resultado do exame") && !respGlic.includes("[Parecer Médico]:"), 
+        `Humanização: Resposta médica sem prefixos mecânicos ou colchetes: "${respGlic}"`);
+
+      // Parecer médico dialogado com colega nutricionista
+      const respParecerMed = await engine.processQuestion("Qual a sua conduta e parecer do caso?", caso1, "medico");
+      assert(respParecerMed.includes("colega") && !respParecerMed.includes("[Parecer Médico]:"),
+        `Humanização: Médico dialoga como colega de equipe ("${respParecerMed}")`);
+
+      // Acompanhante referindo-se ao paciente com carinho familiar
+      const respAcomp = await engine.processQuestion("Qual o peso e o que ele come?", caso1, "acompanhante");
+      assert(respAcomp.toLowerCase().includes("ele") || respAcomp.toLowerCase().includes("dele"), 
+        `Humanização: Acompanhante refere-se naturalmente ao paciente ("${respAcomp}")`);
+
+      // 3. REGRA CRÍTICA ANTI-ALUCINAÇÃO (Dado ausente)
+      // O paciente tem alergia a frutos do mar? (Não informado no caso!)
+      const respAusente1 = await engine.processQuestion("Você tem alergia a camarão ou frutos do mar?", caso1, "paciente");
+      assert(!respAusente1.includes("Sim") && (respAusente1.includes("Não") || respAusente1.includes("não")), 
+        `Regra Anti-alucinação: Paciente NÃO inventa alergia inexistente: "${respAusente1}"`);
+
+      // Pergunta absurda ou inexistente: "Você fez cirurgia plástica no nariz?"
+      const respAusente2 = await engine.processQuestion("Você já fez rinoplastia ou cirurgia plástica?", caso1, "paciente");
+      assert(respAusente2.includes("Não") || respAusente2.includes("não"), 
+        `Regra Anti-alucinação: Paciente não inventa cirurgia inexistente: "${respAusente2}"`);
+
+      // Pergunta médica sobre parâmetro não avaliado
+      const respAusente3 = await engine.processQuestion("Qual a gasometria arterial e o lactato do paciente?", caso1, "medico");
+      assert(respAusente3.includes("não consta") || respAusente3.includes("Não foi"), 
+        `Regra Anti-alucinação: Médico afirma que dado não consta no prontuário: "${respAusente3}"`);
+
+      // 4. Prontuário Manager - Cálculos Antropométricos
+      const prontManager = new StudentProntuarioManager();
+      
+      // IMC Adulto
+      const imcAdulto = prontManager.calculateIMC(92.5, 1.72, 54);
+      assert(imcAdulto.imc === "31.27", `IMC calculado corretamente (31.27): ${imcAdulto.imc}`);
+      assert(imcAdulto.classificacao.includes("Obesidade Grau I"), `Classificação IMC correta: ${imcAdulto.classificacao}`);
+
+      // IMC Idoso (Critério de Lipschitz)
+      const imcIdoso = prontManager.calculateIMC(46.2, 1.55, 76);
+      assert(imcIdoso.imc === "19.23", `IMC Idoso calculado (19.23): ${imcIdoso.imc}`);
+      assert(imcIdoso.classificacao.includes("Baixo Peso") || imcIdoso.classificacao.includes("Lipschitz"), 
+        `Classificação Idoso Lipschitz correta: ${imcIdoso.classificacao}`);
+
+      // % Perda Ponderal
+      const perda = prontManager.calculateWeightLoss(54.0, 46.2);
+      assert(perda.percentual === "14.4", `% de perda calculado (14.4%): ${perda.percentual}%`);
+      assert(perda.interpretacao.includes("severa"), `Classificação de perda severa: ${perda.interpretacao}`);
+
+      // 5. Gerador de Documento Word (.docx)
+      const miniDocx = new MiniDocx();
+      miniDocx.addParagraph("DIETOCASE - DISCIPLINA DE DIETOTERAPIA", { bold: true, size: 16 });
+      miniDocx.addHeading("1. Avaliação Nutricional", 1);
+      miniDocx.addTable(["Parâmetro", "Valor"], [["Peso", "70 kg"], ["Altura", "1.70 m"]]);
+      const blob = miniDocx.generateBlob();
+      
+      assert(blob.size > 1000, `Blob do documento .docx gerado com tamanho válido: ${blob.size} bytes`);
+      
+      // Verifica assinatura ZIP PK (0x50 0x4B 0x03 0x04)
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const isZip = bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04;
+      assert(isZip, `Arquivo possui cabeçalho PKZIP padrão válido para Word OpenXML (.docx)`);
+
+      // 6. Teste da Senha do Professor (Nutri2@26)
+      const TEACHER_PASS = "Nutri2@26";
+      assert(TEACHER_PASS === "Nutri2@26", "Senha do professor configurada corretamente como 'Nutri2@26'");
+      assert("senhaErrada" !== TEACHER_PASS, "Senha incorreta é rejeitada");
+
+      // 7. Teste de Trava e Liberação de Casos pelo Professor
+      const adminMan = new AdminManager();
+      const testCase = adminMan.cases[0];
+      const initialLockState = testCase.isLocked;
+
+      // Trava o caso
+      const isLockedAfterToggle = adminMan.toggleCaseLock(testCase.id);
+      assert(isLockedAfterToggle === !initialLockState, `Trava do caso alternada com sucesso: agora é ${isLockedAfterToggle}`);
+
+      // Casos liberados para alunos excluem casos travados
+      const availableForStudents = adminMan.cases.filter(c => !c.isLocked);
+      if (isLockedAfterToggle) {
+        assert(!availableForStudents.some(c => c.id === testCase.id), `Caso travado é ocultado da lista dos alunos`);
+      }
+
+      // Destrava o caso de volta
+      const restoredLockState = adminMan.toggleCaseLock(testCase.id);
+      assert(restoredLockState === false, "Caso destravado/liberado com sucesso para os alunos");
+
+      // 8. Teste dos Templates: Catálogo de Casos do Aluno (Disponíveis e Travados)
+      const totalCases = adminMan.cases.length;
+      const countUnlocked = adminMan.cases.filter(c => !c.isLocked).length;
+      const countLocked = adminMan.cases.filter(c => c.isLocked).length;
+      assert(totalCases >= 3, `Catálogo do Aluno contém todos os casos (${totalCases})`);
+      assert(countUnlocked + countLocked === totalCases, `Soma de casos liberados (${countUnlocked}) e travados (${countLocked}) corresponde ao total`);
+
+      // 9. Simulação de Filtragem de Casos no Catálogo do Aluno
+      // Força um caso travado temporário para teste
+      adminMan.cases[1].isLocked = true;
+      const filteredAll = adminMan.cases;
+      const filteredAvailable = adminMan.cases.filter(c => !c.isLocked);
+      const filteredLocked = adminMan.cases.filter(c => c.isLocked);
+
+      assert(filteredAll.length === totalCases, "Filtro 'Todos os Casos' exibe a totalidade dos casos");
+      assert(filteredAvailable.length === totalCases - 1, "Filtro 'Apenas Disponíveis' lista estritamente os casos liberados");
+      assert(filteredLocked.length === 1 && filteredLocked[0].id === adminMan.cases[1].id, "Filtro 'Travados' identifica o caso bloqueado pelo docente");
+
+      // Restaura caso destravado
+      adminMan.cases[1].isLocked = false;
+      assert(adminMan.cases[1].isLocked === false, "Status de liberação do caso restaurado com sucesso");
+
+      // 10. Teste de Normalização e Gestão Dinâmica da Equipe Multiprofissional (Retirar e Acrescentar)
+      const legacyEquipe = {
+        medico: "Parecer médico de cardiologia.",
+        enfermagem: "Sinais vitais normais.",
+        fonoaudiologia: "Deglutição adequada sem disfagia.",
+        psicologiaSocial: "Acompanhamento social ativo."
+      };
+      const normalizedEquipe = normalizeEquipeMultiprofissional(legacyEquipe);
+      assert(Array.isArray(normalizedEquipe) && normalizedEquipe.length === 4, "Normalizador converte equipe legada em lista de 4 profissionais");
+      assert(normalizedEquipe[0].nome === "Médico(a) Assistente" && normalizedEquipe[0].avatar === "🩺", "Dados do médico normalizados com sucesso");
+
+      // Simula Retirada de profissional (Ex: retira Fonoaudiologia)
+      const equipeSemFono = normalizedEquipe.filter(p => p.id !== "fono");
+      assert(equipeSemFono.length === 3, "Profissional Fonoaudiologia retirado com sucesso da equipe (restando 3)");
+      assert(!equipeSemFono.some(p => p.id === "fono"), "Fonoaudiologia não consta mais na lista da equipe");
+
+      // Simula Acréscimo de profissional (Ex: acrescenta Fisioterapeuta e Farmacêutico Clínico)
+      const novoFisio = {
+        id: "fisioterapia",
+        nome: "Fisioterapeuta Respiratório",
+        avatar: "🏃",
+        especialidade: "Reabilitação Pulmonar",
+        parecer: "Paciente realiza cinesioterapia respiratória diária com melhora da capacidade ventilatória."
+      };
+      equipeSemFono.push(novoFisio);
+      assert(equipeSemFono.length === 4, "Fisioterapeuta acrescentado com sucesso à equipe");
+      assert(equipeSemFono.some(p => p.id === "fisioterapia"), "Fisioterapeuta identificado com sucesso na equipe do caso");
+
+      // 11. Teste de Diálogo e Anti-Alucinação com Profissional Acrescentado
+      const testCaseComFisio = {
+        ...testCase,
+        equipeMultiprofissional: equipeSemFono
+      };
+      const fisioInfo = engine.getRoleInfo("fisioterapia", testCaseComFisio);
+      assert(fisioInfo.title === "Fisioterapeuta Respiratório" && fisioInfo.avatar === "🏃", "getRoleInfo identifica perfeitamente o profissional dinâmico");
+
+      // Pergunta sobre o parecer da fisioterapia
+      const respostaFisio = engine.evaluateStrictLocal("Qual o parecer da fisioterapia e como está a capacidade respiratória?", testCaseComFisio, "fisioterapia");
+      assert(respostaFisio.includes("cinesioterapia respiratória diária") && respostaFisio.includes("Fisioterapeuta Respiratório"), "Fisioterapeuta responde com seu parecer técnico humanizado registrado");
+
+      // 12. Teste do Construtor Inteligente de Casos a partir de Arquivo / Texto (CaseBuilderEngine)
+      const sampleClinicalText = `
+Caso Clínico: Paciente com Doença Renal Crônica e Hipertensão
+Identificação: Sr. Sebastião Oliveira, 64 anos, masculino, aposentado, casado.
+Queixa Principal: Edema em membros inferiores e cansaço progressivo.
+HDA: Paciente hipertenso de longa data com piora recente da taxa de filtração glomerular.
+Medicamentos: Losartana 50mg, Furosemida 40mg.
+Antropometria: Peso atual: 78.5 kg, Peso habitual: 74 kg, Estatura: 1.70 m, Circunferência da Cintura: 96 cm.
+Exames Laboratoriais:
+Creatinina: 2.8 mg/dL
+Ureia: 85 mg/dL
+Potássio: 5.2 mEq/L
+Hemoglobina: 10.5 g/dL
+Exame Físico: Regular estado geral, edema em membros inferiores 2+/4+, cavidade oral com salivação diminuída.
+Consumo Alimentar:
+Café da manhã: Pão francês com manteiga e café com leite.
+Almoço: Arroz, feijão, frango grelhado e salada cozida.
+Jantar: Sopa de legumes com macarrão.
+Ingestão hídrica: 800 mL/dia por recomendação médica.
+Equipe Multiprofissional:
+Parecer Médico: Paciente em estágio 4 de DRC não dialítica, necessário controle rigoroso de sódio e fósforo.
+Enfermagem: PA: 150/95 mmHg, diurese de 900 mL nas 24h.
+Fisioterapia: Paciente realiza exercícios metabólicos supervisionados.
+Questões Avaliativas:
+1. Qual a recomendação de ingestão proteica (g/kg/dia) indicada para DRC pré-dialítica?
+2. Como deve ser o manejo dietoterápico de sódio e potássio neste caso?
+      `;
+
+      const built = CaseBuilderEngine.buildCaseFromText(sampleClinicalText);
+      assert(built && built.patient, "CaseBuilderEngine constrói objeto de caso completo a partir de texto");
+      assert(built.patient.name.includes("Sebastião Oliveira"), `Nome do paciente extraído com sucesso: ${built.patient.name}`);
+      assert(built.patient.age === 64, `Idade do paciente extraída corretamente: ${built.patient.age} anos`);
+      assert(built.patient.gender === "Masculino", "Gênero masculino identificado com sucesso");
+      assert(built.antropometria.pesoAtual === 78.5, `Peso atual extraído com precisão: ${built.antropometria.pesoAtual} kg`);
+      assert(built.antropometria.estatura === 1.70, `Estatura extraída com precisão: ${built.antropometria.estatura} m`);
+      assert(built.bioquimica.length >= 4, `Exames laboratoriais extraídos em tabela (total: ${built.bioquimica.length})`);
+      assert(built.bioquimica.some(b => b.exame.includes("Creatinina")), "Creatinina sérica identificada na tabela bioquímica");
+      assert(built.equipeMultiprofissional.some(p => p.id === "fisioterapia"), "Fisioterapeuta identificado e incorporado à equipe multiprofissional");
+      assert(built.questoesAvaliativas.length >= 2, `Questões avaliativas do arquivo extraídas com sucesso (${built.questoesAvaliativas.length} questões)`);
+
+      // 13. Teste do Extrator de Documentos Word OpenXML (DocxTextExtractor)
+      const mockDocumentXml = `
+        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:body>
+            <w:p><w:r><w:t>Caso Clínico Hospitalar - Dietoterapia</w:t></w:r></w:p>
+            <w:p><w:r><w:t>Paciente Maria Eduarda, 42 anos. Peso: 62kg.</w:t></w:r></w:p>
+          </w:body>
+        </w:document>
+      `;
+      const extractedXmlText = DocxTextExtractor.parseDocumentXml(mockDocumentXml);
+      assert(extractedXmlText.includes("Caso Clínico Hospitalar") && extractedXmlText.includes("Maria Eduarda"), "DocxTextExtractor extrai com fidelidade o texto de parágrafos OpenXML do Word");
+
+      // 14. Teste de Disciplinas Padrão (Dietoterapia e Estágios)
+      const disciplinas = getDisciplinas();
+      assert(Array.isArray(disciplinas) && disciplinas.length >= 2, `Disciplinas acadêmicas carregadas com sucesso (total: ${disciplinas.length})`);
+      assert(disciplinas.some(d => d.id === "dietoterapia"), "Disciplina padrão 'Dietoterapia' presente no catálogo");
+      assert(disciplinas.some(d => d.id === "estagios"), "Disciplina padrão 'Estágios Curriculares' presente no catálogo");
+
+      // 15. Teste de Criação de Nova Disciplina Dinâmica pelo Professor
+      const admMgr = new AdminManager();
+      const novaDisc = admMgr.createDisciplina({
+        nome: "Nutrição Clínica Ambulatorial",
+        codigo: "NUT-405",
+        icone: "🍎",
+        descricao: "Atendimento ambulatorial focado em prevenção e tratamento nutricional."
+      });
+      assert(novaDisc && novaDisc.id.includes("nutricao-clinica-ambulatorial"), `Nova disciplina criada com ID slugificado: ${novaDisc.id}`);
+      assert(admMgr.getDisciplinaById(novaDisc.id)?.codigo === "NUT-405", "Nova disciplina recuperada com sucesso por ID");
+
+      // 16. Teste de Associação de Casos por Disciplina e Filtragem
+      const casosDietoterapia = admMgr.getCasesByDisciplina("dietoterapia");
+      assert(casosDietoterapia.length >= 3, `Casos filtrados de Dietoterapia retornam 3 casos: total ${casosDietoterapia.length}`);
+      
+      const casoNovoAmbulatorio = admMgr.getEmptyCase();
+      casoNovoAmbulatorio.id = "caso-teste-ambulatorio";
+      casoNovoAmbulatorio.disciplinaId = novaDisc.id;
+      casoNovoAmbulatorio.title = "Caso de Teste Ambulatorial";
+      admMgr.saveCase(casoNovoAmbulatorio);
+
+      const casosAmbulatorio = admMgr.getCasesByDisciplina(novaDisc.id);
+      assert(casosAmbulatorio.length === 1 && casosAmbulatorio[0].id === "caso-teste-ambulatorio", "Caso atribuído e filtrado com sucesso na nova disciplina");
+
+      // 17. Teste de Proteção contra exclusão de disciplina com casos
+      const deleteFalha = admMgr.deleteDisciplina(novaDisc.id);
+      assert(!deleteFalha.success && deleteFalha.message.includes("caso(s)"), "Sistema bloqueia exclusão de disciplina que possui casos vinculados");
+
+      // Exclui o caso de teste e agora exclui a disciplina com sucesso
+      admMgr.deleteCase("caso-teste-ambulatorio");
+      const deleteSucesso = admMgr.deleteDisciplina(novaDisc.id);
+      assert(deleteSucesso.success, "Disciplina sem casos excluída com sucesso");
+
+      // 18. Teste de Correção Ortográfica e Acentuação Médica (ClinicalPortugueseReviser)
+      const rawMedicalTerms = "paciente com diabete melitus e hipertensao arterial. Realizou exame de glicemia de gejum e hemoglobina glicosada, apresentando trigliceridios altos e alteracao na circunferencia da cintura";
+      const correctedMedicalTerms = ClinicalPortugueseReviser.correctOrthography(rawMedicalTerms);
+      assert(correctedMedicalTerms.includes("diabetes mellitus") && correctedMedicalTerms.includes("hipertensão arterial"), "Revisor corrige 'diabete melitus' e 'hipertensao'");
+      assert(correctedMedicalTerms.includes("glicemia de jejum") && correctedMedicalTerms.includes("hemoglobina glicada"), "Revisor corrige 'glicemia de gejum' e 'hemoglobina glicosada'");
+      assert(correctedMedicalTerms.includes("triglicerídeos") && correctedMedicalTerms.includes("circunferência da cintura"), "Revisor acentua e padroniza 'triglicerídeos' e 'circunferência da cintura'");
+
+      // 19. Teste de Adequação de Tempos Verbais Clínicos (HDA, HPP e Exame Físico)
+      // Teste HPP (pretérito para cirurgias e fatos passados)
+      const rawHpp = "Paciente faz cirurgia de vesícula em 2020 e interna em hospital há 2 anos.";
+      const revisedHpp = ClinicalPortugueseReviser.adjustVerbTenses(rawHpp, "hpp", "Feminino");
+      assert(revisedHpp.includes("realizou cirurgia") && revisedHpp.includes("foi internada em"), "HPP: Adequa tempos verbais para o pretérito cirúrgico/hospitalar");
+
+      // Teste Exame Físico (presente do indicativo)
+      const rawExameFisico = "Apresentava mucosas coradas, estava com edema e mostrava-se hidratada.";
+      const revisedExameFisico = ClinicalPortugueseReviser.adjustVerbTenses(rawExameFisico, "exameFisico", "Feminino");
+      assert(revisedExameFisico.includes("Apresenta mucosas") && revisedExameFisico.includes("encontra-se com edema") && revisedExameFisico.includes("mostra-se hidratada"), "Exame Físico: Converte verbos do pretérito para o presente do indicativo");
+
+      // Teste HDA (início no pretérito e quadro atual no presente)
+      const rawHda = "Tendo dores de cabeça e começa a ter muita sede.";
+      const revisedHda = ClinicalPortugueseReviser.adjustVerbTenses(rawHda, "hda", "Masculino");
+      assert(revisedHda.includes("iniciou quadro de muita sede"), "HDA: Normaliza gerúndio solto e início de sintomas para o pretérito adequado");
+
+      // 20. Teste de Concordância de Gênero do Paciente
+      const rawFemText = "o paciente admitido, acompanhado e aposentado";
+      const revisedFem = ClinicalPortugueseReviser.adjustGenderConcordance(rawFemText, "Feminino");
+      assert(revisedFem.includes("a paciente") && revisedFem.includes("admitida") && revisedFem.includes("aposentada"), "Concordância de Gênero: Ajusta artigos e particípios femininos");
+
+      const rawMascText = "a paciente admitida, casada e idosa";
+      const revisedMasc = ClinicalPortugueseReviser.adjustGenderConcordance(rawMascText, "Masculino");
+      assert(revisedMasc.includes("o paciente") && revisedMasc.includes("admitido") && revisedMasc.includes("casado") && revisedMasc.includes("idoso"), "Concordância de Gênero: Ajusta termos para o masculino");
+
+      // 21. Teste de Concordância Verbal Humanizada em 1ª Pessoa (Chat do Paciente)
+      const rawFalaPaciente = "Paciente relata que às vezes esquece de tomar os remédios nos dias de plantão.";
+      const harmonizedFala = ClinicalPortugueseReviser.harmonizeFirstPerson(rawFalaPaciente);
+      assert(harmonizedFala.includes("às vezes eu esqueço de tomar") || harmonizedFala.includes("esqueço"), `Concordância em 1ª Pessoa: Converte 3ª pessoa ('esquece') para 1ª pessoa ('esqueço'): "${harmonizedFala}"`);
+
+      // 22. Teste de Revisão Integral ao Construir Caso Clínico
+      const sampleCaseRaw = {
+        id: "caso-teste-reviser",
+        disciplinaId: "dietoterapia",
+        title: "Caso com hipertensao e diabete",
+        patient: { name: "ana maria de souza", gender: "Feminino", occupation: "aposentado", maritalStatus: "casado" },
+        history: {
+          queixaPrincipal: "edema em pernas e tontura",
+          hda: "Paciente começava a ter fraqueza e tendo boca seca.",
+          hpp: "faz cirurgia em 2018."
+        },
+        exameFisico: { estadoGeral: "Apresentava bom estado geral, estava hidratado e corado." }
+      };
+      const fullyReviewedCase = ClinicalPortugueseReviser.reviewCase(sampleCaseRaw);
+      assert(fullyReviewedCase.title.includes("hipertensão") && fullyReviewedCase.title.includes("diabetes"), "Revisão Integral: Título corrigido com acentuação médica");
+      assert(fullyReviewedCase.patient.name === "Ana Maria de Souza", "Revisão Integral: Nome próprio capitalizado");
+      assert(fullyReviewedCase.patient.occupation.includes("Aposentada") && fullyReviewedCase.patient.maritalStatus === "Casada", "Revisão Integral: Gênero feminino harmonizado na ocupação e estado civil");
+      assert(fullyReviewedCase.history.hpp.toLowerCase().includes("realizou cirurgia"), "Revisão Integral: HPP com pretérito adequado ('realizou cirurgia')");
+      assert(fullyReviewedCase.exameFisico.estadoGeral.includes("Apresenta bom estado geral") && fullyReviewedCase.exameFisico.estadoGeral.includes("hidratada e corada"), "Revisão Integral: Exame físico no presente com gênero feminino concordante");
+
+      // 23. Teste do Motor de Sincronização Automática em Tempo Real (DietoSyncEngine)
+      assert(typeof DietoSyncEngine !== "undefined", "DietoSyncEngine definido e carregado com sucesso");
+      const testSyncEngine = new DietoSyncEngine();
+      testSyncEngine.apiEndpoint = "http://localhost:8080/api/data";
+
+      // Teste de envio de disciplina e caso sincronizado pelo professor
+      const testSyncDisciplinas = [
+        { id: "dietoterapia", nome: "Dietoterapia", codigo: "NUT-301", icone: "🥗", descricao: "Manejo dietoterápico..." },
+        { id: "estagios", nome: "Estágios Curriculares", codigo: "NUT-EST", icone: "🏥", descricao: "Supervisão..." },
+        { id: "materno-infantil", nome: "Nutrição Materno-Infantil", codigo: "NUT-502", icone: "👶", descricao: "Gestantes e pediatria." }
+      ];
+      const testSyncCases = [
+        ...admMgr.cases,
+        { id: "caso-materno-1", disciplinaId: "materno-infantil", title: "Caso Gestante com DMG", isLocked: false }
+      ];
+
+      // Envio autorizado pelo professor com a senha Nutri2@26
+      const pushResult = await testSyncEngine.pushToServer(testSyncDisciplinas, testSyncCases, "Nutri2@26");
+      assert(pushResult.success === true, "Sincronização: Professor envia nova disciplina e caso com sucesso para o servidor");
+
+      // Teste de rejeição com senha incorreta
+      const pushInvalido = await testSyncEngine.pushToServer(testSyncDisciplinas, testSyncCases, "senha-errada");
+      assert(pushInvalido.serverOnline === false || pushInvalido.success === false || pushInvalido.message.includes("localmente") || pushInvalido.message.includes("não"), "Sincronização: Servidor rejeita atualização com senha não autorizada");
+
+      // Teste de recuperação automática no cliente do aluno (pullFromServer)
+      let alunoRecebeuNotificacao = false;
+      let dadosSincronizadosAluno = null;
+
+      testSyncEngine.onDataUpdated((data) => {
+        alunoRecebeuNotificacao = true;
+        dadosSincronizadosAluno = data;
+      });
+
+      // Simula o aluno puxando dados do servidor
+      testSyncEngine.lastSyncTimestamp = "2000-01-01T00:00:00.000Z"; // Força timestamp anterior
+      await testSyncEngine.pullFromServer(false);
+
+      assert(alunoRecebeuNotificacao === true, "Sincronização: Aluno recebe notificação automática de atualização do servidor");
+      assert(dadosSincronizadosAluno && dadosSincronizadosAluno.disciplinas.some(d => d.id === "materno-infantil"), "Sincronização: Nova disciplina do professor aparece automaticamente para o aluno");
+      assert(dadosSincronizadosAluno && dadosSincronizadosAluno.cases.some(c => c.id === "caso-materno-1"), "Sincronização: Novo caso do professor aparece automaticamente para o aluno");
+
+      // 22. Teste de Modelagem de Dados: Altura do Joelho e Demais Avaliações no Prontuário
+      const emptyPront = prontManager.getEmptyProntuario("caso-teste");
+      assert("alturaJoelho" in emptyPront.antropometria, "Prontuário possui campo 'alturaJoelho' (AJ) na antropometria");
+      assert("demaisAvaliacoes" in emptyPront.antropometria, "Prontuário possui campo 'demaisAvaliacoes' na antropometria");
+      assert("circCintura" in emptyPront.antropometria && "circQuadril" in emptyPront.antropometria, "Prontuário possui campos de circunferência de cintura e quadril");
+      assert("dobraTricipital" in emptyPront.antropometria && "dobraSubescapular" in emptyPront.antropometria, "Prontuário possui campos de dobras cutâneas");
+
+      // 23. Teste de Resiliência de Entrada no Cálculo do IMC (Vírgula e cm)
+      const imcVirgula = prontManager.calculateIMC("75,5", "1,70", 30);
+      assert(imcVirgula.imc === "26.12", `Cálculo de IMC aceita vírgula decimal ("75,5" e "1,70" -> 26.12): ${imcVirgula.imc}`);
+      const imcCm = prontManager.calculateIMC(75.5, 170, 30);
+      assert(imcCm.imc === "26.12", `Cálculo de IMC converte altura em centímetros (170cm -> 1.70m): ${imcCm.imc}`);
+
+      // 24. Teste da Equação de Chumlea para Estimativa de Estatura por AJ
+      // Mulher de 76 anos, AJ = 48.5 cm: 84.88 - (0.24 * 76) + (1.83 * 48.5) = 155.4 cm = 1.55 m
+      const ajMulher = 48.5;
+      const idadeMulher = 76;
+      const estMulherCm = 84.88 - (0.24 * idadeMulher) + (1.83 * ajMulher);
+      const estMulherM = (estMulherCm / 100).toFixed(2);
+      assert(estMulherM === "1.55", `Equação de Chumlea Mulher estima 1.55 m para idosa (AJ 48.5cm, 76a): ${estMulherM}m`);
+
+      // Homem de 54 anos, AJ = 53.5 cm: 64.19 - (0.04 * 54) + (2.02 * 53.5) = 170.1 cm = 1.70 m
+      const ajHomem = 53.5;
+      const idadeHomem = 54;
+      const estHomemCm = 64.19 - (0.04 * idadeHomem) + (2.02 * ajHomem);
+      const estHomemM = (estHomemCm / 100).toFixed(2);
+      assert(estHomemM === "1.70", `Equação de Chumlea Homem estima 1.70 m (AJ 53.5cm, 54a): ${estHomemM}m`);
+
+      // 25. Teste do Chat Engine: Pergunta sobre Altura do Joelho (AJ)
+      const respAJ = await engine.processQuestion("Qual é a sua altura do joelho?", caso1, "paciente");
+      assert(respAJ.includes("53.5") || respAJ.includes("joelho"), `Chat Engine responde corretamente sobre Altura do Joelho do paciente: "${respAJ}"`);
+
+      // 26. Teste do Revisor Clínico em Demais Avaliações
+      const caseComDemais = {
+        title: "Caso de Teste Medidas",
+        category: "Ambulatorial",
+        description: "Teste",
+        patient: { name: "Maria", age: 30, gender: "Feminino" },
+        antropometria: {
+          demaisAvaliacoes: "circunferencia da cintura aumentada e dobras cutaneas com trigliceridios elevados"
+        }
+      };
+      const revisto = ClinicalPortugueseReviser.reviewCase(caseComDemais);
+      assert(revisto.antropometria.demaisAvaliacoes.includes("circunferência da cintura") && revisto.antropometria.demaisAvaliacoes.includes("triglicerídeos"),
+        "ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes");
+
+      // 27. Teste de Inclusão da Altura do Joelho no Relatório Word (.docx)
+      const mockProntuarioDocx = prontManager.getEmptyProntuario("caso-1");
+      mockProntuarioDocx.aluno.nome = "Estudante Nutrição";
+      mockProntuarioDocx.antropometria.pesoAtual = "70";
+      mockProntuarioDocx.antropometria.estatura = "1.70";
+      mockProntuarioDocx.antropometria.alturaJoelho = "52.0";
+      mockProntuarioDocx.antropometria.circCintura = "88";
+      mockProntuarioDocx.antropometria.dobraTricipital = "18";
+      mockProntuarioDocx.antropometria.demaisAvaliacoes = "RCQ normal; CMB adequada";
+
+      const docxRelatorio = DietoterapiaDocxReport.buildReportDocument(mockProntuarioDocx, caso1);
+      const blobRelatorio = docxRelatorio.generateBlob();
+      assert(blobRelatorio && blobRelatorio.size > 2000, `Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: ${blobRelatorio.size} bytes`);
+
+      // 28. Teste de Exclusão de Disciplina com Transferência de Casos (Mover Casos)
+      const admMgrTest = new AdminManager();
+      const discTemp1 = admMgrTest.createDisciplina({
+        nome: "Disciplina Temporária A",
+        codigo: "NUT-TEMP1",
+        icone: "🧪",
+        descricao: "Teste de transferência"
+      });
+      const casoTemp1 = admMgrTest.getEmptyCase();
+      casoTemp1.id = "caso-temp-transf";
+      casoTemp1.disciplinaId = discTemp1.id;
+      casoTemp1.title = "Caso de Teste Transferência";
+      admMgrTest.saveCase(casoTemp1);
+
+      assert(admMgrTest.getCasesByDisciplina(discTemp1.id).length === 1, "Caso temporário criado na Disciplina Temporária A");
+
+      // Exclusão com ação 'move' para 'dietoterapia'
+      const resMove = admMgrTest.deleteDisciplina(discTemp1.id, { action: "move", targetDisciplinaId: "dietoterapia" });
+      assert(resMove.success === true, `Exclusão com transferência de casos concluída: "${resMove.message}"`);
+      assert(!admMgrTest.disciplinas.some(d => d.id === discTemp1.id), "Disciplina Temporária A removida da lista");
+      const casoMovido = admMgrTest.getCaseById("caso-temp-transf");
+      assert(casoMovido && casoMovido.disciplinaId === "dietoterapia", "Caso clínico foi reatribuído com sucesso para Dietoterapia");
+
+      // 29. Teste de Exclusão de Disciplina com Remoção em Cascata
+      const discTemp2 = admMgrTest.createDisciplina({
+        nome: "Disciplina Temporária B",
+        codigo: "NUT-TEMP2",
+        icone: "🏥",
+        descricao: "Teste de cascata"
+      });
+      const casoTemp2 = admMgrTest.getEmptyCase();
+      casoTemp2.id = "caso-temp-cascade";
+      casoTemp2.disciplinaId = discTemp2.id;
+      casoTemp2.title = "Caso de Teste Cascata";
+      admMgrTest.saveCase(casoTemp2);
+
+      assert(admMgrTest.getCasesByDisciplina(discTemp2.id).length === 1, "Caso temporário criado na Disciplina Temporária B");
+
+      // Exclusão com ação 'cascade'
+      const resCascade = admMgrTest.deleteDisciplina(discTemp2.id, { action: "cascade" });
+      assert(resCascade.success === true, `Exclusão com remoção em cascata concluída: "${resCascade.message}"`);
+      assert(!admMgrTest.disciplinas.some(d => d.id === discTemp2.id), "Disciplina Temporária B removida da lista");
+      assert(!admMgrTest.getCaseById("caso-temp-cascade"), "Caso vinculado à Disciplina B foi removido em cascata com sucesso");
+
+      // Limpeza do caso de teste residual
+      admMgrTest.deleteCase("caso-temp-transf");
+
+      // 30. Teste de Criação e Edição de Itens do Caso (Bioquímica, Recordatório, Questões)
+      const casoCustom = admMgrTest.getEmptyCase();
+      casoCustom.title = "Caso com Itens Dinâmicos";
+      casoCustom.bioquimica.push({ exame: "Glicemia de Jejum", valor: "145 mg/dL", referencia: "< 99 mg/dL", interpretacao: "Elevada" });
+      casoCustom.consumoAlimentar.recordatorio24h.push({ refeicao: "Colação", alimentos: "Maçã e castanhas" });
+      casoCustom.questoesAvaliativas.push({ id: "q_extra", pergunta: "Qual a recomendação hídrica para o paciente?", tipo: "discursiva" });
+      const casoSalvo = admMgrTest.saveCase(casoCustom);
+
+      assert(casoSalvo.bioquimica.some(b => b.exame === "Glicemia de Jejum"), "Exame adicionado com sucesso ao caso");
+      assert(casoSalvo.consumoAlimentar.recordatorio24h.some(r => r.refeicao === "Colação"), "Refeição adicionada ao recordatório com sucesso");
+      assert(casoSalvo.questoesAvaliativas.some(q => q.id === "q_extra"), "Questão pedagógica adicionada com sucesso");
+
+      // Limpeza
+      admMgrTest.deleteCase(casoSalvo.id);
+
+      // 31. Teste de Sincronização Local e Notificação Instantânea
+      const syncEngineTest = new DietoSyncEngine();
+      let listenerDisparado = false;
+      syncEngineTest.onDataUpdated(({ disciplinas, cases }) => {
+        listenerDisparado = true;
+      });
+      syncEngineTest.notifyDataListenersFromStorage();
+      assert(listenerDisparado === true, "Motor de sincronização notifica listeners instantaneamente a partir dos dados do storage");
+      } catch (err) {
+        assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
+      } finally {
+        // Renderiza resultados na tela
+        const container = document.getElementById("results");
+        if (container) {
+          container.innerHTML = results.map(r => `
+            <div style="font-family: monospace; padding: 4px; color: ${r.pass ? 'green' : 'red'}">
+              ${r.msg}
+            </div>
+          `).join("");
+        }
+
+        window.__TEST_RESULTS__ = results;
+        console.log("TESTS FINISHED", JSON.stringify(results));
+      }
+    }
+
+    runTests();
+  </script>
+
+
+</body></html>

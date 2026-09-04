@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="lib/mini-docx.js"></script>
+  <script src="js/cases-data.js"></script>
+  <script src="js/student-prontuario.js"></script>
+  <script src="js/docx-generator.js"></script>
+</head>
+<body>
+  <script>
+    async function runExportTest() {
+      const cases = getCases();
+      const caso = cases[0];
+      const prontManager = new StudentProntuarioManager();
+      const draft = prontManager.getEmptyProntuario(caso.id);
+
+      // Preenche dados de teste completos do aluno
+      draft.aluno.nome = "Mariana Alves de Castro";
+      draft.aluno.matriculaTurma = "NUT-2026/1 - Matrícula 20260488";
+      draft.aluno.data = "2026-09-02";
+
+      draft.anamnese.queixaPrincipal = "Glicose e pressão descontroladas há meses.";
+      draft.anamnese.historiaClinica = "Paciente de 54 anos com DM2 e HAS, refere polidipsia e noctúria, ganho ponderal de 8kg em 2 anos.";
+      draft.anamnese.antecedentesMedicamentos = "Metformina 850mg (2x/dia), Losartana 50mg (1x/dia), Sinvastatina 20mg (1x/dia).";
+      draft.anamnese.habitosEstiloVida = "Sedentário, motorista de ônibus urbano, cerveja nos fins de semana.";
+
+      draft.antropometria.pesoAtual = "92.5";
+      draft.antropometria.pesoHabitual = "84.5";
+      draft.antropometria.estatura = "1.72";
+      draft.antropometria.imc = "31.27";
+      draft.antropometria.classificacaoImc = "Obesidade Grau I (OMS)";
+      draft.antropometria.percentualPerda = "0.0";
+      draft.antropometria.circunferenciasDobras = "CC: 104 cm (risco cardiovascular muito aumentado); CB: 35 cm; DCT: 24 mm.";
+
+      draft.bioquimica.examesRelevantes = "Glicemia de jejum: 188 mg/dL; HbA1c: 8.9%; Colesterol: 235 mg/dL; HDL: 38 mg/dL; LDL: 145 mg/dL; Triglicérides: 260 mg/dL.";
+      draft.bioquimica.interpretacaoNutricional = "Descontrole glicêmico grave crônico, resistência à insulina e dislipidemia mista aterogênica.";
+
+      draft.exameFisico.sinaisClinicos = "Presença de acantose nigricans cervical importante.";
+      draft.exameFisico.massaMuscularAdiposa = "Adiposidade central/visceral proeminente.";
+      draft.exameFisico.condicoesTGIeEdemas = "Sem queixas de mastigação ou deglutição, sem edemas.";
+
+      draft.consumoAlimentar.inqueritoResumo = "Refeições volumosas ricas em carboidratos refinados (pão branco, refrigerante açucarado, marmita volumosa e salgados fritos).";
+      draft.consumoAlimentar.aguaPreferenciasAversoes = "Consumo hídrico baixo (~700 mL de água pura), aversão a hortaliças amargas.";
+
+      draft.diagnosticoPES.problema = "Ingestão excessiva de carboidratos simples e gorduras saturadas";
+      draft.diagnosticoPES.etiologia = "Escolhas alimentares inadequadas associadas à rotina de motorista de ônibus e falta de planejamento";
+      draft.diagnosticoPES.sinaisSintomas = "HbA1c de 8.9%, glicemia de jejum de 188 mg/dL, triglicérides de 260 mg/dL e IMC de 31.27 kg/m²";
+      draft.diagnosticoPES.textoCompletoPES = "Ingestão excessiva de carboidratos simples e gorduras saturadas (P) relacionada a escolhas alimentares inadequadas associadas à rotina ocupacional (E), evidenciada por HbA1c de 8.9%, glicemia de 188 mg/dL e IMC de 31.27 kg/m² caracterizando Obesidade Grau I (S).";
+
+      draft.prescricaoDietoterapica.vetKcal = "1850 kcal/dia";
+      draft.prescricaoDietoterapica.regraBolsoKcalKg = "24 kcal/kg peso ajustado (déficit de 500 kcal)";
+      draft.prescricaoDietoterapica.carboidratosG = "220 g";
+      draft.prescricaoDietoterapica.carboidratosPct = "48 %";
+      draft.prescricaoDietoterapica.proteinasG = "78 g";
+      draft.prescricaoDietoterapica.proteinasGKg = "1.0 g/kg peso ajustado";
+      draft.prescricaoDietoterapica.proteinasPct = "17 %";
+      draft.prescricaoDietoterapica.lipidiosG = "70 g";
+      draft.prescricaoDietoterapica.lipidiosPct = "35 %";
+      draft.prescricaoDietoterapica.consistencia = "Normal / Livre";
+      draft.prescricaoDietoterapica.fracionamento = "5 a 6 refeições/dia";
+      draft.prescricaoDietoterapica.fibrasMicronutrientes = "Fibras > 30g/dia; Sódio < 2000mg/dia; Sacarose < 5% do VET.";
+      draft.prescricaoDietoterapica.justificativaFisiopatologica = "O VET hipocalórico moderado visa redução ponderal de 5% a 10% para melhorar a sensibilidade à insulina. A redução de carboidratos de alto índice glicêmico e aumento de fibras solúveis lentificam a absorção de glicose e diminuem a síntese hepática de triglicerídeos.";
+
+      draft.planejamentoAlimentar = [
+        { refeicao: "Desjejum (Café da Manhã)", horario: "05:30", alimentos: "1 pão francês integral com queijo branco magro (1 fatia média) + 1 caneca de café com leite desnatado com adoçante estévia", substituicoes: "2 torradas integrais com ovo mexido sem óleo" },
+        { refeicao: "Colação (Lanche no Ônibus)", horario: "09:00", alimentos: "1 maçã ou pera com casca + 1 punhado pequeno (20g) de castanhas de caju", substituicoes: "1 barra de cereais sem açúcar com sementes" },
+        { refeicao: "Almoço", horario: "12:30", alimentos: "3 colheres de sopa de arroz integral, 1 concha de feijão, 1 filé de peito de frango grelhado (120g), 1 prato de sobremesa de salada de alface, tomate e cenoura ralada temperada com 1 colher de sobremesa de azeite extravirgem", substituicoes: "Peixe grelhado ou carne bovina magra cozida" },
+        { refeicao: "Lanche da Tarde", horario: "16:30", alimentos: "1 iogurte natural desnatado com 1 colher de sopa de farelo de aveia", substituicoes: "Sanduíche natural em pão 100% integral com pasta de atum e cenoura" },
+        { refeicao: "Jantar", horario: "20:00", alimentos: "Repete estrutura do almoço com redução do carboidrato (2 colheres de arroz integral, legumes cozidos no vapor - abobrinha, chuchu, brócolis e filé magro)", substituicoes: "Omelete de 2 ovos com legumes e salada verde" },
+        { refeicao: "Ceia", horario: "22:30", alimentos: "1 xícara de chá de camomila sem açúcar + 2 castanhas-do-pará", substituicoes: "1 fatia fina de melão ou melancia" }
+      ];
+
+      draft.orientacoesNutricionais = "1. Evitar açúcares de adição e bebidas açucaradas (refrigerantes e sucos de pacote).\n2. Levar garrafa térmica de água para manter hidratação contínua (meta: 2.5 litros de água pura/dia).\n3. Planejar marmita térmica para os dias de escala de trabalho.\n4. Ler os rótulos de alimentos industrializados para checar teores de sódio e açúcares ocultos.";
+
+      draft.respostasQuestoes = {
+        "q1": "Diagnóstico Nutricional PES: Ingestão excessiva de carboidratos simples e gorduras saturadas relacionada a escolhas alimentares inadequadas decorrentes de rotina ocupacional desregrada, evidenciada por HbA1c de 8.9%, glicemia de jejum de 188 mg/dL, dislipidemia e IMC de 31.27 kg/m² caracterizando Obesidade Grau I.",
+        "q2": "VET calculado em 1850 kcal/dia utilizando regra de bolso de 24 kcal/kg de peso ajustado (78.3 kg). A meta inicial é a perda ponderal de 5% a 7% do peso em 3 a 6 meses para reversão do quadro de resistência à insulina e melhora dos níveis pressóricos.",
+        "q3": "Macronutrientes: 48% de Carboidratos (220g) priorizando baixo índice glicêmico e fibras solúveis (> 30g/dia); 17% de Proteínas (78g - 1.0 g/kg peso ajustado) de alto valor biológico; 35% de Lipídios (70g) com foco em mono e poli-insaturados (azeite, castanhas), limitando gordura saturada a < 7% do VET e trans zero.",
+        "q4": "Estratégias práticas: fracionamento de lanches portáteis que não estragam fácil no calor (frutas com casca, oleaginosas, sanduíche natural em bolsa térmica), substituição total de refrigerantes por água gelada e infusões de chá, e organização de marmitas aos domingos para congelamento semanal."
+      };
+
+      // Gera o documento
+      const doc = new MiniDocx();
+
+      doc.addParagraph("DISCIPLINA DE DIETOTERAPIA - CURSO DE NUTRIÇÃO", {
+        bold: true, size: 16, color: "166534", align: "center", spaceBefore: 100, spaceAfter: 60
+      });
+
+      doc.addParagraph("RELATÓRIO CLÍNICO-NUTRICIONAL E CONDUTA DIETOTERÁPICA", {
+        bold: true, size: 13, color: "334155", align: "center", spaceBefore: 40, spaceAfter: 180
+      });
+
+      doc.addTable(
+        ["DADOS DA AVALIAÇÃO PRÁTICA", "INFORMAÇÕES"],
+        [
+          ["Estudante de Nutrição:", draft.aluno.nome],
+          ["Matrícula / Turma:", draft.aluno.matriculaTurma],
+          ["Data do Atendimento:", draft.aluno.data],
+          ["Caso Clínico Selecionado:", caso.title],
+          ["Paciente Simulado:", `${caso.patient.name}, ${caso.patient.age} anos, ${caso.patient.gender}`]
+        ],
+        [3500, 5500]
+      );
+
+      doc.addHeading("1. PRONTUÁRIO CLÍNICO-NUTRICIONAL (ANAMNESE)", 1);
+      doc.addHeading("1.1. Queixa Principal e História da Doença Atual (HDA)", 2);
+      doc.addParagraph(`Queixa Principal: ${draft.anamnese.queixaPrincipal}`);
+      doc.addParagraph(`História da Doença Atual: ${draft.anamnese.historiaClinica}`);
+
+      doc.addHeading("1.2. Avaliação Antropométrica e Estado Nutricional", 2);
+      doc.addTable(
+        ["Parâmetro Antropométrico", "Valor Coletado", "Classificação / Interpretação"],
+        [
+          ["Peso Atual", `${draft.antropometria.pesoAtual} kg`, "-"],
+          ["Peso Habitual", `${draft.antropometria.pesoHabitual} kg`, "-"],
+          ["Estatura", `${draft.antropometria.estatura} m`, "-"],
+          ["Índice de Massa Corporal (IMC)", `${draft.antropometria.imc} kg/m²`, draft.antropometria.classificacaoImc],
+          ["Percentual de Perda Ponderal", `${draft.antropometria.percentualPerda} %`, "Ganho ponderal de 8kg"],
+          ["Circunferências e Dobras Cutâneas", draft.antropometria.circunferenciasDobras, "-"]
+        ],
+        [3000, 2500, 3500]
+      );
+
+      doc.addHeading("2. RESOLUÇÃO DIETOTERÁPICA E CONDUTA NUTRICIONAL", 1);
+      doc.addHeading("2.1. Diagnóstico em Nutrição (Metodologia PES)", 2);
+      doc.addCallout("DIAGNÓSTICO EM NUTRIÇÃO (PES):", draft.diagnosticoPES.textoCompletoPES, "15803d", "f0fdf4");
+
+      doc.addHeading("2.2. Determinação das Necessidades Energéticas e Macronutrientes", 2);
+      doc.addTable(
+        ["Parâmetro Prescrito", "Valor Numérico", "Unidade / Percentual"],
+        [
+          ["Valor Energético Total (VET)", draft.prescricaoDietoterapica.vetKcal, "kcal/dia"],
+          ["Regra de bolso", draft.prescricaoDietoterapica.regraBolsoKcalKg, "kcal/kg de peso"],
+          ["Carboidratos", `${draft.prescricaoDietoterapica.carboidratosG}`, `${draft.prescricaoDietoterapica.carboidratosPct}`],
+          ["Proteínas", `${draft.prescricaoDietoterapica.proteinasG} (${draft.prescricaoDietoterapica.proteinasGKg})`, `${draft.prescricaoDietoterapica.proteinasPct}`],
+          ["Lipídios", `${draft.prescricaoDietoterapica.lipidiosG}`, `${draft.prescricaoDietoterapica.lipidiosPct}`],
+          ["Consistência da Dieta", draft.prescricaoDietoterapica.consistencia, "-"],
+          ["Fracionamento", draft.prescricaoDietoterapica.fracionamento, "-"]
+        ],
+        [3500, 2500, 3000]
+      );
+
+      doc.addHeading("3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)", 1);
+      const rows = draft.planejamentoAlimentar.map(r => [
+        `${r.refeicao} (${r.horario})`, r.alimentos, r.substituicoes
+      ]);
+      doc.addTable(["Refeição e Horário", "Alimentos e Medidas Caseiras", "Opções de Substituição"], rows, [2500, 4500, 2000]);
+
+      doc.addHeading("4. RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO CLÍNICO", 1);
+      caso.questoesAvaliativas.forEach((q, idx) => {
+        doc.addHeading(`Questão ${idx + 1}: ${q.pergunta}`, 2);
+        doc.addCallout("Resposta do Estudante:", draft.respostasQuestoes[q.id], "0284c7", "f0f9ff");
+      });
+
+      const blob = doc.generateBlob();
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      
+      // Converte bytes para Base64 para salvar via script
+      let binary = "";
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const b64 = btoa(binary);
+
+      const div = document.createElement("div");
+      div.id = "base64output";
+      div.textContent = b64;
+      document.body.appendChild(div);
+      console.log("BASE64 GENERATED LENGTH:", b64.length);
+    }
+
+    runExportTest();
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="dietoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <rect width="512" height="512" rx="112" fill="url(#dietoGrad)"/>
+  <circle cx="256" cy="256" r="190" fill="white" opacity="0.08"/>
+  
+  <g filter="url(#shadow)">
+    <path d="M 128 260 C 128 368, 384 368, 384 260 Z" fill="#ffffff" />
+    <path d="M 216 350 L 296 350 L 312 376 L 200 376 Z" fill="#e2e8f0" rx="4" />
+    <path d="M 256 160 C 230 190, 210 240, 240 260 C 270 240, 290 190, 256 160 Z" fill="#34d399"/>
+    <path d="M 200 190 C 180 220, 180 250, 220 260 C 230 230, 220 200, 200 190 Z" fill="#10b981"/>
+    <path d="M 312 190 C 332 220, 332 250, 292 260 C 282 230, 292 200, 312 190 Z" fill="#059669"/>
+    <rect x="244" y="278" width="24" height="48" rx="6" fill="#059669"/>
+    <rect x="232" y="290" width="48" height="24" rx="6" fill="#059669"/>
+  </g>
+  
+  <circle cx="180" cy="245" r="22" fill="#f87171"/>
+  <circle cx="332" cy="245" r="20" fill="#fbbf24"/>
+</svg>
