@@ -152,6 +152,56 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         const tabBtn = document.querySelector(`.student-tab-btn[data-tab="${requestedTab}"]`);
         if (tabBtn) tabBtn.click();
+        if (urlParams.get("demo") === "cardapio") {
+          const meal = appState.currentProntuario?.planejamentoAlimentar?.[0];
+          if (meal) {
+            meal.itens = [
+              {
+                id: "demo-1",
+                tacoId: "taco-13",
+                alimentoNome: "Pão, de trigo, francês",
+                medidaCaseira: "1 unidade média bem quentinha",
+                gramatura: 50,
+                kcal: 150.0,
+                cho: 29.3,
+                ptn: 4.0,
+                lip: 1.6,
+                fibra: 1.2
+              },
+              {
+                id: "demo-2",
+                tacoId: "taco-19",
+                alimentoNome: "Queijo, minas frescal",
+                medidaCaseira: "1 fatia média",
+                gramatura: 30,
+                kcal: 79.2,
+                cho: 1.0,
+                ptn: 5.2,
+                lip: 6.1,
+                fibra: 0.0
+              },
+              {
+                id: "demo-3",
+                tacoId: "taco-17",
+                alimentoNome: "Leite de vaca, pasteurizado, integral",
+                medidaCaseira: "1 caneca com café (150mL)",
+                gramatura: 150,
+                kcal: 91.5,
+                cho: 6.8,
+                ptn: 4.8,
+                lip: 5.3,
+                fibra: 0.0
+              }
+            ];
+            renderCardapioTable();
+          }
+        }
+        if (urlParams.get("scroll") === "totals") {
+          setTimeout(() => {
+            const panel = document.getElementById("cardapioTotalsPanel");
+            if (panel) panel.scrollIntoView({ behavior: "instant", block: "center" });
+          }, 300);
+        }
       }, 150);
     }
 
@@ -969,17 +1019,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontAlturaJoelho")) {
       document.getElementById("prontAlturaJoelho").value = p.antropometria.alturaJoelho || "";
     }
+    if (document.getElementById("prontCircBraco")) {
+      document.getElementById("prontCircBraco").value = p.antropometria.circBraco || "";
+    }
     if (document.getElementById("prontCircCintura")) {
       document.getElementById("prontCircCintura").value = p.antropometria.circCintura || "";
     }
     if (document.getElementById("prontCircQuadril")) {
       document.getElementById("prontCircQuadril").value = p.antropometria.circQuadril || "";
     }
-    if (document.getElementById("prontCircBraco")) {
-      document.getElementById("prontCircBraco").value = p.antropometria.circBraco || "";
-    }
     if (document.getElementById("prontCircPanturrilha")) {
       document.getElementById("prontCircPanturrilha").value = p.antropometria.circPanturrilha || "";
+    }
+    if (document.getElementById("prontCircPunho")) {
+      document.getElementById("prontCircPunho").value = p.antropometria.circPunho || "";
     }
     if (document.getElementById("prontDobraTricipital")) {
       document.getElementById("prontDobraTricipital").value = p.antropometria.dobraTricipital || "";
@@ -987,11 +1040,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontDobraSubescapular")) {
       document.getElementById("prontDobraSubescapular").value = p.antropometria.dobraSubescapular || "";
     }
+    if (document.getElementById("prontDobraBicipital")) {
+      document.getElementById("prontDobraBicipital").value = p.antropometria.dobraBicipital || "";
+    }
     if (document.getElementById("prontDobraSuprailiaca")) {
       document.getElementById("prontDobraSuprailiaca").value = p.antropometria.dobraSuprailiaca || "";
     }
     if (document.getElementById("prontDobraAbdominal")) {
       document.getElementById("prontDobraAbdominal").value = p.antropometria.dobraAbdominal || "";
+    }
+    if (document.getElementById("prontDobraCoxa")) {
+      document.getElementById("prontDobraCoxa").value = p.antropometria.dobraCoxa || "";
     }
     if (document.getElementById("prontDemaisAvaliacoes")) {
       document.getElementById("prontDemaisAvaliacoes").value = p.antropometria.demaisAvaliacoes || "";
@@ -1009,8 +1068,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontTGIEdemas").value = p.exameFisico.condicoesTGIeEdemas || "";
 
     // Consumo Alimentar
+    if (document.getElementById("prontVetRecordatorio")) {
+      document.getElementById("prontVetRecordatorio").value = p.consumoAlimentar.vetRecordatorio || "";
+    }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
+    updateVetAdequacyCalculations();
 
     // Diagnóstico PES
     document.getElementById("prontPesProblema").value = p.diagnosticoPES.problema || "";
@@ -1061,17 +1124,21 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.pesoHabitual = document.getElementById("prontPesoHabitual").value.trim();
     p.antropometria.estatura = document.getElementById("prontEstatura").value.trim();
     p.antropometria.alturaJoelho = document.getElementById("prontAlturaJoelho") ? document.getElementById("prontAlturaJoelho").value.trim() : "";
+    p.antropometria.circBraco = document.getElementById("prontCircBraco") ? document.getElementById("prontCircBraco").value.trim() : "";
     p.antropometria.circCintura = document.getElementById("prontCircCintura") ? document.getElementById("prontCircCintura").value.trim() : "";
     p.antropometria.circQuadril = document.getElementById("prontCircQuadril") ? document.getElementById("prontCircQuadril").value.trim() : "";
-    p.antropometria.circBraco = document.getElementById("prontCircBraco") ? document.getElementById("prontCircBraco").value.trim() : "";
     p.antropometria.circPanturrilha = document.getElementById("prontCircPanturrilha") ? document.getElementById("prontCircPanturrilha").value.trim() : "";
+    p.antropometria.circPunho = document.getElementById("prontCircPunho") ? document.getElementById("prontCircPunho").value.trim() : "";
     p.antropometria.dobraTricipital = document.getElementById("prontDobraTricipital") ? document.getElementById("prontDobraTricipital").value.trim() : "";
     p.antropometria.dobraSubescapular = document.getElementById("prontDobraSubescapular") ? document.getElementById("prontDobraSubescapular").value.trim() : "";
+    p.antropometria.dobraBicipital = document.getElementById("prontDobraBicipital") ? document.getElementById("prontDobraBicipital").value.trim() : "";
     p.antropometria.dobraSuprailiaca = document.getElementById("prontDobraSuprailiaca") ? document.getElementById("prontDobraSuprailiaca").value.trim() : "";
     p.antropometria.dobraAbdominal = document.getElementById("prontDobraAbdominal") ? document.getElementById("prontDobraAbdominal").value.trim() : "";
+    p.antropometria.dobraCoxa = document.getElementById("prontDobraCoxa") ? document.getElementById("prontDobraCoxa").value.trim() : "";
     p.antropometria.demaisAvaliacoes = document.getElementById("prontDemaisAvaliacoes") ? document.getElementById("prontDemaisAvaliacoes").value.trim() : "";
     p.antropometria.imc = document.getElementById("calculatedImcDisplay").textContent.trim();
     p.antropometria.classificacaoImc = document.getElementById("calculatedImcClassDisplay").textContent.trim();
+    p.antropometria.diagnosticoNutricionalExtenso = document.getElementById("calculatedImcExtensoDisplay") ? document.getElementById("calculatedImcExtensoDisplay").textContent.trim() : "";
     p.antropometria.percentualPerda = document.getElementById("calculatedLossDisplay").textContent.trim();
     p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias").value.trim();
 
@@ -1085,6 +1152,7 @@ document.addEventListener("DOMContentLoaded", () => {
     p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas").value.trim();
 
     // Consumo Alimentar
+    p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio") ? document.getElementById("prontVetRecordatorio").value.trim() : "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo").value.trim();
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias").value.trim();
 
@@ -1128,138 +1196,746 @@ document.addEventListener("DOMContentLoaded", () => {
     return p;
   }
 
-  // Estima estatura pela fórmula de Chumlea (usada para idosos e acamados)
+  // Estima estatura pela fórmula de Chumlea (1985)
   function estimateChumleaStature(aj, age, gender) {
-    if (!aj || isNaN(aj) || aj <= 0) return null;
-    const ajNum = parseFloat(aj);
-    const ageNum = parseInt(age) || 40;
-    const isFemale = (gender || "").toLowerCase().includes("fem");
-    let cm = 0;
-    if (isFemale) {
-      cm = 84.88 - (0.24 * ageNum) + (1.83 * ajNum);
-    } else {
-      cm = 64.19 - (0.04 * ageNum) + (2.02 * ajNum);
-    }
-    const m = (cm / 100).toFixed(2);
-    return { cm: cm.toFixed(1), m: m };
+    return prontuarioManager.estimateChumleaStature(aj, age, gender);
   }
 
-  // Atualiza cálculos antropométricos em tempo real
+  // Atualiza cálculos antropométricos em tempo real (Chumlea, IMC dinâmico e Diagnóstico por Extenso)
   function updateAnthropometricCalculations() {
     const pesoAtual = document.getElementById("prontPesoAtual")?.value || "";
     const pesoHabitual = document.getElementById("prontPesoHabitual")?.value || "";
     const estatura = document.getElementById("prontEstatura")?.value || "";
     const aj = document.getElementById("prontAlturaJoelho")?.value || "";
+    const cb = document.getElementById("prontCircBraco")?.value || "";
+    const cp = document.getElementById("prontCircPanturrilha")?.value || "";
+    const dcse = document.getElementById("prontDobraSubescapular")?.value || "";
+
     const idade = appState.currentCase?.patient?.age || 40;
     const genero = appState.currentCase?.patient?.gender || "Feminino";
 
-    const imcResult = prontuarioManager.calculateIMC(pesoAtual, estatura, idade);
-    const imcDisp = document.getElementById("calculatedImcDisplay");
-    const imcClassDisp = document.getElementById("calculatedImcClassDisplay");
-    if (imcDisp) imcDisp.textContent = imcResult.imc || "--";
-    if (imcClassDisp) imcClassDisp.textContent = imcResult.classificacao || "Aguardando peso e altura";
+    // 1. Estatura Efetiva: se tem estatura direta informada, usa direta; senão estima por Chumlea (1985)
+    let estVal = null;
+    let estOrigem = "Aguardando estatura ou AJ";
+    let estM = null;
 
-    const lossResult = prontuarioManager.calculateWeightLoss(pesoHabitual, pesoAtual);
-    const lossDisp = document.getElementById("calculatedLossDisplay");
-    const lossClassDisp = document.getElementById("calculatedLossClassDisplay");
-    if (lossDisp) lossDisp.textContent = lossResult.percentual ? `${lossResult.percentual}%` : "--";
-    if (lossClassDisp) lossClassDisp.textContent = lossResult.interpretacao || "-";
+    if (estatura && !isNaN(parseFloat(estatura.replace(",", ".")))) {
+      let h = parseFloat(estatura.replace(",", "."));
+      if (h > 100) h = h / 100;
+      estVal = h.toFixed(2);
+      estOrigem = "Estatura Real (Aferida)";
+      estM = h;
+    } else if (aj) {
+      const chumEst = prontuarioManager.estimateChumleaStature(aj, idade, genero);
+      if (chumEst) {
+        estVal = chumEst.m;
+        estOrigem = `Chumlea 1985 (AJ: ${aj} cm, Idade: ${idade}a)`;
+        estM = chumEst.rawM;
+      }
+    }
 
-    // Helper de estimativa por Chumlea
+    // 2. Peso Efetivo: se tem peso direto informado, usa direto; senão estima por Chumlea (CB + AJ)
+    let pesoVal = null;
+    let pesoOrigem = "Aguardando peso ou CB + AJ";
+    let pesoKg = null;
+
+    if (pesoAtual && !isNaN(parseFloat(pesoAtual.replace(",", ".")))) {
+      let w = parseFloat(pesoAtual.replace(",", "."));
+      pesoVal = w.toFixed(1);
+      pesoOrigem = "Peso Real (Aferido)";
+      pesoKg = w;
+    } else if (cb && aj) {
+      const chumPeso = prontuarioManager.estimateChumleaWeight(cb, aj, genero, cp, dcse);
+      if (chumPeso) {
+        pesoVal = chumPeso.kg;
+        pesoOrigem = `${chumPeso.metodo} (CB: ${cb} cm, AJ: ${aj} cm)`;
+        pesoKg = chumPeso.rawKg;
+      }
+    }
+
+    // Atualiza displays de Estatura e Peso Efetivos
+    const dispEst = document.getElementById("dispEstaturaEfetiva");
+    const dispEstOrigem = document.getElementById("dispEstaturaOrigem");
+    if (dispEst) dispEst.textContent = estVal ? `${estVal} m` : "--";
+    if (dispEstOrigem) dispEstOrigem.textContent = estOrigem;
+
+    const dispPeso = document.getElementById("dispPesoEfetivo");
+    const dispPesoOrigem = document.getElementById("dispPesoOrigem");
+    if (dispPeso) dispPeso.textContent = pesoVal ? `${pesoVal} kg` : "--";
+    if (dispPesoOrigem) dispPesoOrigem.textContent = pesoOrigem;
+
+    // Helper de sugestão no campo de AJ
     const chumleaHelper = document.getElementById("ajChumleaHelper");
     const chumleaVal = document.getElementById("ajChumleaValue");
     if (chumleaHelper && chumleaVal) {
-      const chum = estimateChumleaStature(aj, idade, genero);
-      if (chum) {
-        chumleaVal.textContent = `${chum.m} m (${chum.cm} cm)`;
+      const chumEst = prontuarioManager.estimateChumleaStature(aj, idade, genero);
+      if (chumEst) {
+        chumleaVal.textContent = `${chumEst.m} m (${chumEst.cm} cm)`;
         chumleaHelper.classList.remove("hidden");
       } else {
         chumleaHelper.classList.add("hidden");
       }
     }
+
+    // 3. Cálculo do IMC com Peso e Estatura (reais ou estimados)
+    const imcResult = prontuarioManager.calculateIMC(pesoKg, estM, idade);
+    const imcDisp = document.getElementById("calculatedImcDisplay");
+    const imcClassDisp = document.getElementById("calculatedImcClassDisplay");
+    const imcExtensoDisp = document.getElementById("calculatedImcExtensoDisplay");
+    const criterioTag = document.getElementById("calculatedCriterioTag");
+
+    if (imcDisp) imcDisp.textContent = imcResult.imc || "--";
+    if (imcClassDisp) {
+      imcClassDisp.textContent = imcResult.classificacao || "Aguardando peso e altura";
+      if (imcResult.statusColor === "emerald") {
+        imcClassDisp.className = "font-bold text-emerald-700 text-xs ml-2";
+      } else if (imcResult.statusColor === "amber") {
+        imcClassDisp.className = "font-bold text-amber-700 text-xs ml-2";
+      } else if (imcResult.statusColor === "rose") {
+        imcClassDisp.className = "font-bold text-rose-700 text-xs ml-2";
+      } else {
+        imcClassDisp.className = "font-bold text-slate-500 text-xs ml-2";
+      }
+    }
+    if (imcExtensoDisp) {
+      imcExtensoDisp.textContent = imcResult.diagnosticoExtenso;
+      if (imcResult.statusColor === "emerald") {
+        imcExtensoDisp.className = "font-bold text-xs text-emerald-900 leading-snug mt-0.5";
+      } else if (imcResult.statusColor === "amber") {
+        imcExtensoDisp.className = "font-bold text-xs text-amber-900 leading-snug mt-0.5";
+      } else if (imcResult.statusColor === "rose") {
+        imcExtensoDisp.className = "font-bold text-xs text-rose-900 leading-snug mt-0.5";
+      } else {
+        imcExtensoDisp.className = "font-bold text-xs text-slate-700 leading-snug mt-0.5";
+      }
+    }
+    if (criterioTag) {
+      criterioTag.textContent = imcResult.criterio || (idade >= 60 ? "Lipschitz (1994)" : "OMS");
+    }
+
+    // 4. Perda Ponderal (compara habitual com real ou estimado)
+    const lossResult = prontuarioManager.calculateWeightLoss(pesoHabitual, pesoKg);
+    const lossDisp = document.getElementById("calculatedLossDisplay");
+    const lossClassDisp = document.getElementById("calculatedLossClassDisplay");
+    if (lossDisp) lossDisp.textContent = lossResult.percentual ? `${lossResult.percentual}%` : "--";
+    if (lossClassDisp) lossClassDisp.textContent = lossResult.interpretacao || "-";
+
+    // Grava no prontuário atual se existir
+    if (appState.currentProntuario?.antropometria) {
+      const a = appState.currentProntuario.antropometria;
+      a.pesoEfetivo = pesoVal || "";
+      a.estaturaEfetiva = estVal || "";
+      a.origemDadosAntro = `Peso: ${pesoOrigem} | Estatura: ${estOrigem}`;
+      a.imc = imcResult.imc || "";
+      a.classificacaoImc = imcResult.classificacao || "";
+      a.diagnosticoNutricionalExtenso = imcResult.diagnosticoExtenso || "";
+      a.criterioClassificacao = imcResult.criterio || "";
+    }
   }
 
-  // Lê dados atuais digitados na tabela de cardápio do DOM
-  function readCardapioFromDOM() {
-    const cardapioRows = document.querySelectorAll("#cardapioTableBody tr");
-    const list = [];
-    cardapioRows.forEach(row => {
-      const refInput = row.querySelector(".cardapio-ref");
-      const timeInput = row.querySelector(".cardapio-time");
-      const foodsInput = row.querySelector(".cardapio-foods");
-      const subsInput = row.querySelector(".cardapio-subs");
-      if (refInput) {
-        list.push({
-          refeicao: refInput.value.trim(),
-          horario: timeInput ? timeInput.value.trim() : "08:00",
-          alimentos: foodsInput ? foodsInput.value.trim() : "",
-          substituicoes: subsInput ? subsInput.value.trim() : ""
-        });
+  // Atualiza avaliação quantitativa do consumo alimentar e adequação energética do VET
+  function updateVetAdequacyCalculations() {
+    const vetInput = document.getElementById("prontVetRecordatorio")?.value || "";
+    const neeCaso = appState.currentCase?.neeKcal || 2000;
+
+    const res = prontuarioManager.calculateVetAdequacy(vetInput, neeCaso);
+
+    const dispVet = document.getElementById("dispVetRecordatorioVal");
+    const dispNee = document.getElementById("dispNeeCasoVal");
+    const dispPct = document.getElementById("dispAdequacaoVetPct");
+    const dispClass = document.getElementById("dispAdequacaoVetClass");
+    const dispInterp = document.getElementById("dispAdequacaoVetInterpretacao");
+
+    if (dispVet) dispVet.textContent = vetInput ? vetInput : "--";
+    if (dispNee) dispNee.textContent = neeCaso ? neeCaso : "--";
+    if (dispPct) dispPct.textContent = res.percentual ? res.percentual : "--";
+    if (dispClass) {
+      dispClass.textContent = res.classificacao;
+      if (res.statusColor === "emerald") {
+        dispClass.className = "text-[10px] font-bold text-emerald-700 block mt-0.5";
+      } else if (res.statusColor === "amber") {
+        dispClass.className = "text-[10px] font-bold text-amber-700 block mt-0.5";
+      } else if (res.statusColor === "rose") {
+        dispClass.className = "text-[10px] font-bold text-rose-700 block mt-0.5";
+      } else {
+        dispClass.className = "text-[10px] font-bold text-slate-500 block mt-0.5";
       }
+    }
+    if (dispInterp) dispInterp.textContent = res.interpretacao;
+
+    if (appState.currentProntuario?.consumoAlimentar) {
+      const c = appState.currentProntuario.consumoAlimentar;
+      c.vetRecordatorio = vetInput;
+      c.neeCaso = neeCaso;
+      c.adequacaoVetPct = res.percentual || "";
+      c.adequacaoVetClassificacao = res.classificacao || "";
+    }
+  }
+
+  // Inicializa o buscador de alimentos da Tabela Oficial TACO
+  function setupTacoSearch() {
+    const input = document.getElementById("tacoSearchInput");
+    const container = document.getElementById("tacoSearchResults");
+    if (!input || !container) return;
+
+    function renderTacoList(filter = "") {
+      const list = window.TACO_FOODS_DATABASE || [];
+      const term = filter.toLowerCase().trim();
+      const filtered = list.filter(f => !term || f.nome.toLowerCase().includes(term) || f.categoria.toLowerCase().includes(term));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-2 text-xs">Nenhum alimento encontrado na base oficial TACO para "${filter}".</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="py-1.5 px-2 flex items-center justify-between hover:bg-emerald-50/60 rounded transition">
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <strong class="text-slate-800 text-xs">${escapeHtml(item.nome)}</strong>
+              <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.categoria)}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+              Porção: <span class="text-slate-700 font-medium">${escapeHtml(item.porcao)}</span> • 
+              <strong class="text-emerald-800">${item.kcal} kcal</strong> • 
+              CHO: ${item.cho}g • PTN: ${item.ptn}g • LIP: ${item.lip}g • Fibras: ${item.fibra || 0}g
+            </div>
+          </div>
+          <button type="button" class="btn-copy-taco text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded transition ml-2 whitespace-nowrap shadow-2xs" data-food="${escapeHtml(item.nome + ' (' + item.porcao + ': ' + item.kcal + ' kcal, CHO ' + item.cho + 'g, PTN ' + item.ptn + 'g, LIP ' + item.lip + 'g)')}">
+            + Inserir no R24h
+          </button>
+        </div>
+      `).join("");
+
+      container.querySelectorAll(".btn-copy-taco").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const foodText = btn.getAttribute("data-food");
+          const resumoTextarea = document.getElementById("prontInqueritoResumo");
+          if (resumoTextarea) {
+            const current = resumoTextarea.value.trim();
+            resumoTextarea.value = current ? `${current}\n- ${foodText}` : `- ${foodText}`;
+            showToast("Item da TACO inserido no Recordatório!");
+            triggerProntuarioAutoSave();
+          }
+        });
+      });
+    }
+
+    input.addEventListener("input", () => {
+      renderTacoList(input.value);
     });
+
+    renderTacoList("");
+  }
+
+  // Obtém a lista oficial de alimentos TACO isolada
+  function getTacoFoodsList() {
+    if (typeof TACO_DATABASE !== "undefined" && Array.isArray(TACO_DATABASE)) {
+      return TACO_DATABASE;
+    }
+    if (typeof window !== "undefined" && Array.isArray(window.TACO_DATABASE)) {
+      return window.TACO_DATABASE;
+    }
+    return [];
+  }
+
+  // Atualiza em tempo real o painel consolidado do cardápio vs metas prescritas
+  function updateCardapioTotalsDisplay() {
+    const list = appState.currentProntuario?.planejamentoAlimentar || [];
+    const pesoPaciente = document.getElementById("dispPesoEfetivo")?.textContent?.replace("kg", "").trim() 
+      || document.getElementById("prontPesoAtual")?.value?.trim() 
+      || appState.currentCase?.patient?.weight || null;
+
+    const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
+    const prescVetMatch = prescVetRaw.match(/[\d.,]+/);
+    const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
+
+    const totals = prontuarioManager.calculateCardapioTotals(list, pesoPaciente, prescVet);
+    if (appState.currentProntuario) {
+      appState.currentProntuario.totaisCardapio = totals;
+    }
+
+    const dispVet = document.getElementById("dispCardapioVetTotal");
+    const dispMeta = document.getElementById("dispCardapioMetaVet");
+    const dispAdeq = document.getElementById("dispCardapioVetAdeq");
+    const dispBadge = document.getElementById("dispCardapioVetStatusBadge");
+    const dispChoG = document.getElementById("dispCardapioChoTotalG");
+    const dispChoPct = document.getElementById("dispCardapioChoTotalPct");
+    const dispMetaCho = document.getElementById("dispCardapioMetaCho");
+    const dispPtnG = document.getElementById("dispCardapioPtnTotalG");
+    const dispPtnPct = document.getElementById("dispCardapioPtnTotalPct");
+    const dispPtnGKg = document.getElementById("dispCardapioPtnGKg");
+    const dispMetaPtn = document.getElementById("dispCardapioMetaPtn");
+    const dispLipG = document.getElementById("dispCardapioLipTotalG");
+    const dispLipPct = document.getElementById("dispCardapioLipTotalPct");
+    const dispMetaLip = document.getElementById("dispCardapioMetaLip");
+    const dispFibra = document.getElementById("dispCardapioFibraTotal");
+    const dispBalancoMsg = document.getElementById("dispCardapioBalancoMsg");
+
+    if (dispVet) dispVet.textContent = totals.vetTotalKcal || 0;
+    if (dispMeta) dispMeta.textContent = prescVet ? `${prescVet}` : "--";
+    if (dispAdeq) dispAdeq.textContent = totals.adequacaoVetPct > 0 ? `${totals.adequacaoVetPct}%` : "--%";
+
+    if (dispBadge) {
+      if (!prescVet || totals.vetTotalKcal === 0) {
+        dispBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300";
+        dispBadge.textContent = totals.vetTotalKcal > 0 ? "Defina a meta de VET" : "Aguardando Itens";
+      } else if (totals.adequacaoVetPct < 90) {
+        dispBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-slate-900";
+        dispBadge.textContent = `Hipocalórico (${totals.adequacaoVetPct}%)`;
+      } else if (totals.adequacaoVetPct <= 110) {
+        dispBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white";
+        dispBadge.textContent = `Adequado / Eucalórico (${totals.adequacaoVetPct}%)`;
+      } else {
+        dispBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white";
+        dispBadge.textContent = `Hipercalórico (${totals.adequacaoVetPct}%)`;
+      }
+    }
+
+    if (dispChoG) dispChoG.textContent = totals.carboidratosG || 0;
+    if (dispChoPct) dispChoPct.textContent = totals.carboidratosPct || 0;
+    if (dispMetaCho) {
+      const choMeta = document.getElementById("prontChoG")?.value || "";
+      dispMetaCho.textContent = choMeta ? `${choMeta}` : "--";
+    }
+
+    if (dispPtnG) dispPtnG.textContent = totals.proteinasG || 0;
+    if (dispPtnPct) dispPtnPct.textContent = totals.proteinasPct || 0;
+    if (dispPtnGKg) dispPtnGKg.textContent = totals.proteinasGKg ? `${totals.proteinasGKg} g/kg` : "0 g/kg";
+    if (dispMetaPtn) {
+      const ptnMeta = document.getElementById("prontPtnG")?.value || "";
+      dispMetaPtn.textContent = ptnMeta ? `${ptnMeta}` : "--";
+    }
+
+    if (dispLipG) dispLipG.textContent = totals.lipidiosG || 0;
+    if (dispLipPct) dispLipPct.textContent = totals.lipidiosPct || 0;
+    if (dispMetaLip) {
+      const lipMeta = document.getElementById("prontLipG")?.value || "";
+      dispMetaLip.textContent = lipMeta ? `${lipMeta}` : "--";
+    }
+
+    if (dispFibra) dispFibra.textContent = (totals.fibrasG || 0).toFixed(1);
+    if (dispBalancoMsg) {
+      if (totals.vetTotalKcal === 0) {
+        dispBalancoMsg.textContent = "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
+      } else if (prescVet) {
+        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta de ${prescVet} kcal).`;
+      } else {
+        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal. Defina o VET na aba Prescrição para o cálculo de adequação.`;
+      }
+    }
+  }
+
+  // Lê os dados digitados na interface do cardápio do DOM
+  function readCardapioFromDOM() {
+    const mealsContainer = document.getElementById("cardapioMealsContainer");
+    const list = [];
+
+    if (mealsContainer && mealsContainer.querySelectorAll(".cardapio-meal-card").length > 0) {
+      const mealCards = mealsContainer.querySelectorAll(".cardapio-meal-card");
+      mealCards.forEach((card, mealIdx) => {
+        const refName = card.querySelector(".cardapio-ref-name")?.value.trim() || `Refeição ${mealIdx + 1}`;
+        const refTime = card.querySelector(".cardapio-ref-time")?.value.trim() || "08:00";
+        const refSubs = card.querySelector(".cardapio-ref-subs")?.value.trim() || "";
+
+        const itens = [];
+        const itemRows = card.querySelectorAll(".cardapio-item-row");
+        itemRows.forEach(row => {
+          const tacoSelect = row.querySelector(".cardapio-item-food");
+          const tacoId = tacoSelect ? tacoSelect.value : "";
+          const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId);
+          const alimentoNome = food ? food.nome : "";
+
+          const medidaInput = row.querySelector(".cardapio-item-medida");
+          const medidaCaseira = medidaInput ? medidaInput.value.trim() : ""; // Texto livre não interfere em cálculos
+
+          const gramasInput = row.querySelector(".cardapio-item-gramas");
+          const gramasVal = gramasInput ? gramasInput.value.trim() : "";
+          const gramatura = parseFloat(gramasVal.replace(",", ".")) || 0;
+
+          // Regra de três da TACO
+          const nutri = prontuarioManager.calculateItemNutrition(food, gramatura);
+
+          itens.push({
+            id: row.dataset.itemId || `it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            tacoId: tacoId,
+            alimentoNome: alimentoNome,
+            medidaCaseira: medidaCaseira,
+            gramatura: gramatura,
+            kcal: nutri.kcal,
+            cho: nutri.cho,
+            ptn: nutri.ptn,
+            lip: nutri.lip,
+            fibra: nutri.fibra
+          });
+        });
+
+        const mealObj = {
+          id: card.dataset.mealId || `ref-${mealIdx + 1}`,
+          refeicao: refName,
+          horario: refTime,
+          itens: itens,
+          substituicoes: refSubs
+        };
+
+        mealObj.subtotal = prontuarioManager.calculateMealSubtotal(mealObj);
+        mealObj.alimentos = prontuarioManager.formatMealFoodsSummary(mealObj);
+
+        list.push(mealObj);
+      });
+    } else {
+      // Fallback para tabela legada caso o container não exista
+      const legacyRows = document.querySelectorAll("#cardapioTableBody tr");
+      legacyRows.forEach(row => {
+        const refInput = row.querySelector(".cardapio-ref");
+        const timeInput = row.querySelector(".cardapio-time");
+        const foodsInput = row.querySelector(".cardapio-foods");
+        const subsInput = row.querySelector(".cardapio-subs");
+        if (refInput) {
+          list.push({
+            refeicao: refInput.value.trim(),
+            horario: timeInput ? timeInput.value.trim() : "08:00",
+            itens: [],
+            alimentos: foodsInput ? foodsInput.value.trim() : "",
+            substituicoes: subsInput ? subsInput.value.trim() : "",
+            subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 }
+          });
+        }
+      });
+    }
+
     if (appState.currentProntuario) {
       appState.currentProntuario.planejamentoAlimentar = list;
     }
+
+    // Sincroniza tabela legada oculta para eventuais testes automáticos legados
+    const legacyTbody = document.getElementById("cardapioTableBody");
+    if (legacyTbody) {
+      legacyTbody.innerHTML = list.map((item, idx) => `
+        <tr class="border-b border-slate-100">
+          <td><input type="text" class="cardapio-ref" value="${escapeHtml(item.refeicao || '')}"></td>
+          <td><input type="time" class="cardapio-time" value="${escapeHtml(item.horario || '08:00')}"></td>
+          <td><textarea class="cardapio-foods">${escapeHtml(item.alimentos || '')}</textarea></td>
+          <td><textarea class="cardapio-subs">${escapeHtml(item.substituicoes || '')}</textarea></td>
+          <td><button type="button" class="remove-meal-btn" data-idx="${idx}">✕</button></td>
+        </tr>
+      `).join("");
+    }
+
+    updateCardapioTotalsDisplay();
     return list;
   }
 
-  // Renderiza tabela dinâmica de cardápio
-  function renderCardapioTable() {
-    const tbody = document.getElementById("cardapioTableBody");
-    tbody.innerHTML = "";
-    const list = appState.currentProntuario?.planejamentoAlimentar || [];
+  // Gera as opções do dropdown de alimentos TACO agrupados por categoria
+  function buildTacoSelectOptions(selectedTacoId = "") {
+    const foods = getTacoFoodsList();
+    const categories = {};
 
-    list.forEach((item, idx) => {
-      const tr = document.createElement("tr");
-      tr.className = "border-b border-slate-100 hover:bg-slate-50";
-      tr.innerHTML = `
-        <td class="p-2">
-          <input type="text" class="cardapio-ref w-full border border-slate-300 rounded px-2 py-1 text-xs font-medium" value="${escapeHtml(item.refeicao || '')}">
-        </td>
-        <td class="p-2 w-24">
-          <input type="time" class="cardapio-time w-full border border-slate-300 rounded px-2 py-1 text-xs" value="${escapeHtml(item.horario || '08:00')}">
-        </td>
-        <td class="p-2">
-          <textarea class="cardapio-foods w-full border border-slate-300 rounded px-2 py-1 text-xs" rows="2" placeholder="Alimentos, porções e medidas caseiras">${escapeHtml(item.alimentos || '')}</textarea>
-        </td>
-        <td class="p-2">
-          <textarea class="cardapio-subs w-full border border-slate-300 rounded px-2 py-1 text-xs" rows="2" placeholder="Substituições">${escapeHtml(item.substituicoes || '')}</textarea>
-        </td>
-        <td class="p-2 text-center">
-          <button type="button" class="text-rose-500 hover:text-rose-700 font-bold p-1 text-sm remove-meal-btn" data-idx="${idx}" title="Remover refeição">✕</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
+    foods.forEach(f => {
+      const cat = f.categoria || "Outros";
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(f);
     });
 
-    // Listener para remoção de linhas do cardápio preservando o que já foi digitado
-    tbody.querySelectorAll(".remove-meal-btn").forEach(btn => {
+    let html = `<option value="">-- Selecione o alimento da TACO --</option>`;
+    Object.keys(categories).sort().forEach(cat => {
+      html += `<optgroup label="${escapeHtml(cat)}">`;
+      categories[cat].forEach(f => {
+        const isSel = f.id === selectedTacoId ? "selected" : "";
+        html += `<option value="${f.id}" ${isSel}>${escapeHtml(f.nome)}</option>`;
+      });
+      html += `</optgroup>`;
+    });
+
+    return html;
+  }
+
+  // Renderiza a estrutura completa do cardápio com suporte a TACO, regra de três e medida caseira
+  function renderCardapioTable() {
+    const container = document.getElementById("cardapioMealsContainer");
+    if (!container) return;
+
+    if (!appState.currentProntuario.planejamentoAlimentar || appState.currentProntuario.planejamentoAlimentar.length === 0) {
+      appState.currentProntuario.planejamentoAlimentar = [
+        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
+        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
+        { id: "ref-3", refeicao: "Almoço", horario: "12:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
+        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
+        { id: "ref-5", refeicao: "Jantar", horario: "19:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
+        { id: "ref-6", refeicao: "Ceia", horario: "22:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } }
+      ];
+    }
+
+    const list = appState.currentProntuario.planejamentoAlimentar;
+    container.innerHTML = "";
+
+    list.forEach((meal, mealIdx) => {
+      meal.itens = meal.itens || [];
+      const subtotal = prontuarioManager.calculateMealSubtotal(meal);
+      meal.subtotal = subtotal;
+
+      const card = document.createElement("div");
+      card.className = "cardapio-meal-card bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs space-y-3 transition";
+      card.dataset.mealId = meal.id || `ref-${mealIdx + 1}`;
+      card.dataset.mealIdx = mealIdx;
+
+      // Cabeçalho da refeição
+      let headerHtml = `
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+          <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+            <span class="text-base">🥣</span>
+            <input type="text" class="cardapio-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-transparent hover:border-slate-300 focus:border-emerald-600 rounded px-1.5 py-0.5 bg-transparent flex-1" value="${escapeHtml(meal.refeicao || `Refeição ${mealIdx + 1}`)}">
+            <input type="time" class="cardapio-ref-time text-xs border border-slate-300 rounded px-2 py-0.5 w-24 bg-white" value="${escapeHtml(meal.horario || '08:00')}">
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="meal-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+              ${subtotal.kcal} kcal | CHO: ${subtotal.cho}g | PTN: ${subtotal.ptn}g | LIP: ${subtotal.lip}g
+            </span>
+            <button type="button" class="remove-meal-btn text-slate-400 hover:text-rose-600 p-1 text-sm rounded transition cursor-pointer" data-meal-idx="${mealIdx}" title="Excluir esta refeição">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Tabela de itens da refeição
+      let itemsTableHtml = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO)</th>
+                <th class="py-1.5 px-2 min-w-[170px]">Medida Caseira (Texto Livre)</th>
+                <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
+                <th class="py-1.5 px-2 text-right w-16 text-emerald-800">Kcal</th>
+                <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
+                <th class="py-1.5 px-2 text-right w-16 text-sky-800">PTN</th>
+                <th class="py-1.5 px-2 text-right w-16 text-rose-800">LIP</th>
+                <th class="py-1.5 px-1 text-center w-8">Ação</th>
+              </tr>
+            </thead>
+            <tbody class="cardapio-items-tbody divide-y divide-slate-100">
+      `;
+
+      if (meal.itens.length === 0) {
+        itemsTableHtml += `
+          <tr class="empty-items-row">
+            <td colspan="8" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+              Nenhum alimento cadastrado nesta refeição. Clique no botão verde abaixo para adicionar alimentos da TACO.
+            </td>
+          </tr>
+        `;
+      } else {
+        meal.itens.forEach((it, itIdx) => {
+          itemsTableHtml += `
+            <tr class="cardapio-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `it-${itIdx}`}" data-item-idx="${itIdx}">
+              <td class="py-1.5 px-2">
+                <select class="cardapio-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600">
+                  ${buildTacoSelectOptions(it.tacoId)}
+                </select>
+              </td>
+              <td class="py-1.5 px-2">
+                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: 1 colher de sopa, 2 fatias..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira: texto descritivo livre, não interfere nos cálculos">
+              </td>
+              <td class="py-1.5 px-2 text-right">
+                <input type="number" min="0" step="5" class="cardapio-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-emerald-600" placeholder="g" value="${it.gramatura || ''}">
+              </td>
+              <td class="py-1.5 px-2 text-right font-bold text-emerald-800 cardapio-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-ptn">${it.ptn !== undefined ? it.ptn : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-lip">${it.lip !== undefined ? it.lip : 0}</td>
+              <td class="py-1.5 px-1 text-center">
+                <button type="button" class="remove-item-btn text-rose-400 hover:text-rose-700 font-bold px-1 text-xs cursor-pointer" data-meal-idx="${mealIdx}" data-item-idx="${itIdx}" title="Remover alimento">
+                  ✕
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      itemsTableHtml += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Rodapé da refeição (botão adicionar alimento e campo de substituições)
+      let footerHtml = `
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
+          <button type="button" class="add-food-item-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
+            <span>➕</span>
+            <span>Adicionar Alimento (TACO)</span>
+          </button>
+          
+          <div class="flex-1 min-w-[260px]">
+            <input type="text" class="cardapio-ref-subs w-full border border-slate-200 rounded px-2.5 py-1 text-xs bg-slate-50 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600" placeholder="Opções de substituição para esta refeição..." value="${escapeHtml(meal.substituicoes || '')}">
+          </div>
+        </div>
+      `;
+
+      card.innerHTML = headerHtml + itemsTableHtml + footerHtml;
+      container.appendChild(card);
+    });
+
+    // Anexa os event listeners dinâmicos a todos os elementos renderizados
+    attachCardapioEventListeners();
+
+    // Sincroniza a tabela legada e atualiza o painel consolidado
+    readCardapioFromDOM();
+  }
+
+  // Anexa event listeners com suporte a cálculos por Regra de Três em tempo real
+  function attachCardapioEventListeners() {
+    const container = document.getElementById("cardapioMealsContainer");
+    if (!container) return;
+
+    // 1. Mudança no alimento selecionado da TACO
+    container.querySelectorAll(".cardapio-item-food").forEach(select => {
+      select.addEventListener("change", (e) => {
+        const row = e.target.closest(".cardapio-item-row");
+        if (!row) return;
+        const foodId = e.target.value;
+        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
+        
+        const gramasInput = row.querySelector(".cardapio-item-gramas");
+        const medidaInput = row.querySelector(".cardapio-item-medida");
+
+        // Se o aluno ainda não digitou medida caseira e a TACO possui porção sugerida, sugere
+        if (food && food.porcaoSugerida && (!medidaInput.value || !medidaInput.value.trim())) {
+          medidaInput.placeholder = `Sugestão: ${food.porcaoSugerida}`;
+        }
+
+        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+        row.querySelector(".cardapio-item-kcal").textContent = nutri.kcal;
+        row.querySelector(".cardapio-item-cho").textContent = nutri.cho;
+        row.querySelector(".cardapio-item-ptn").textContent = nutri.ptn;
+        row.querySelector(".cardapio-item-lip").textContent = nutri.lip;
+
+        readCardapioFromDOM();
+      });
+    });
+
+    // 2. Digitação na Gramatura (g) -> Dispara Regra de Três da TACO instantaneamente
+    container.querySelectorAll(".cardapio-item-gramas").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const row = e.target.closest(".cardapio-item-row");
+        if (!row) return;
+
+        const foodSelect = row.querySelector(".cardapio-item-food");
+        const foodId = foodSelect ? foodSelect.value : "";
+        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
+
+        const gramas = parseFloat(e.target.value.replace(",", ".")) || 0;
+        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+        row.querySelector(".cardapio-item-kcal").textContent = nutri.kcal;
+        row.querySelector(".cardapio-item-cho").textContent = nutri.cho;
+        row.querySelector(".cardapio-item-ptn").textContent = nutri.ptn;
+        row.querySelector(".cardapio-item-lip").textContent = nutri.lip;
+
+        // Atualiza os subtotais da refeição e consolidação global
+        readCardapioFromDOM();
+      });
+    });
+
+    // 3. Medida Caseira Livre -> Atualiza texto sem acionar cálculos matemáticos
+    container.querySelectorAll(".cardapio-item-medida").forEach(input => {
+      input.addEventListener("input", () => {
+        readCardapioFromDOM();
+      });
+    });
+
+    // 4. Edição de nomes, horários e substituições
+    container.querySelectorAll(".cardapio-ref-name, .cardapio-ref-time, .cardapio-ref-subs").forEach(input => {
+      input.addEventListener("input", () => {
+        readCardapioFromDOM();
+      });
+    });
+
+    // 5. Botão de Adicionar Alimento da TACO à refeição
+    container.querySelectorAll(".add-food-item-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         readCardapioFromDOM();
-        const targetBtn = e.currentTarget || e.target.closest(".remove-meal-btn");
-        const index = parseInt(targetBtn?.dataset?.idx);
-        if (!isNaN(index) && appState.currentProntuario?.planejamentoAlimentar) {
-          appState.currentProntuario.planejamentoAlimentar.splice(index, 1);
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        if (!isNaN(mealIdx) && appState.currentProntuario?.planejamentoAlimentar?.[mealIdx]) {
+          const meal = appState.currentProntuario.planejamentoAlimentar[mealIdx];
+          meal.itens = meal.itens || [];
+          meal.itens.push({
+            id: `it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            tacoId: "",
+            alimentoNome: "",
+            medidaCaseira: "",
+            gramatura: "",
+            kcal: 0,
+            cho: 0,
+            ptn: 0,
+            lip: 0,
+            fibra: 0
+          });
+          renderCardapioTable();
+        }
+      });
+    });
+
+    // 6. Botão de Remover Alimento da refeição
+    container.querySelectorAll(".remove-item-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readCardapioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        const itemIdx = parseInt(e.currentTarget.dataset.itemIdx);
+        if (!isNaN(mealIdx) && !isNaN(itemIdx) && appState.currentProntuario?.planejamentoAlimentar?.[mealIdx]?.itens) {
+          appState.currentProntuario.planejamentoAlimentar[mealIdx].itens.splice(itemIdx, 1);
+          renderCardapioTable();
+        }
+      });
+    });
+
+    // 7. Botão de Remover Refeição completa
+    container.querySelectorAll(".remove-meal-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readCardapioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        if (!isNaN(mealIdx) && appState.currentProntuario?.planejamentoAlimentar) {
+          appState.currentProntuario.planejamentoAlimentar.splice(mealIdx, 1);
           renderCardapioTable();
         }
       });
     });
   }
 
-  // Adicionar refeição ao cardápio preservando o que já foi digitado
-  document.getElementById("addCardapioMealBtn").addEventListener("click", () => {
-    readCardapioFromDOM();
-    if (!appState.currentProntuario.planejamentoAlimentar) {
-      appState.currentProntuario.planejamentoAlimentar = [];
-    }
-    const nextNum = appState.currentProntuario.planejamentoAlimentar.length + 1;
-    appState.currentProntuario.planejamentoAlimentar.push({
-      refeicao: `Refeição ${nextNum}`,
-      horario: "12:00",
-      alimentos: "",
-      substituicoes: ""
+  // Adicionar nova refeição ao cardápio
+  const addMealBtn = document.getElementById("addCardapioMealBtn");
+  if (addMealBtn) {
+    addMealBtn.addEventListener("click", () => {
+      readCardapioFromDOM();
+      if (!appState.currentProntuario.planejamentoAlimentar) {
+        appState.currentProntuario.planejamentoAlimentar = [];
+      }
+      const nextNum = appState.currentProntuario.planejamentoAlimentar.length + 1;
+      appState.currentProntuario.planejamentoAlimentar.push({
+        id: `ref-${Date.now()}`,
+        refeicao: `Refeição ${nextNum}`,
+        horario: "15:00",
+        itens: [],
+        alimentos: "",
+        substituicoes: "",
+        subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 }
+      });
+      renderCardapioTable();
     });
-    renderCardapioTable();
+  }
+
+  // Listener nos inputs de prescrição para manter o balanço do cardápio atualizado
+  ["prontVetKcal", "prontChoG", "prontPtnG", "prontLipG"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", () => {
+        updateCardapioTotalsDisplay();
+      });
+    }
   });
 
   // Renderiza exames laboratoriais na barra lateral do aluno
@@ -1457,13 +2133,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Input listeners para cálculos antropométricos
-    ["prontPesoAtual", "prontPesoHabitual", "prontEstatura", "prontAlturaJoelho"].forEach(id => {
+    // Input listeners para cálculos antropométricos (Chumlea, IMC e Diagnóstico)
+    [
+      "prontPesoAtual", "prontPesoHabitual", "prontEstatura", "prontAlturaJoelho",
+      "prontCircBraco", "prontCircCintura", "prontCircQuadril", "prontCircPanturrilha", "prontCircPunho",
+      "prontDobraTricipital", "prontDobraSubescapular", "prontDobraBicipital", "prontDobraSuprailiaca", "prontDobraAbdominal", "prontDobraCoxa"
+    ].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener("input", updateAnthropometricCalculations);
       }
     });
+
+    // Input listener para VET do Recordatório e Adequação com a NEE
+    const vetRecInput = document.getElementById("prontVetRecordatorio");
+    if (vetRecInput) {
+      vetRecInput.addEventListener("input", updateVetAdequacyCalculations);
+    }
+
+    // Inicializa a ferramenta de busca oficial TACO
+    setupTacoSearch();
 
     // Botão de aplicar estatura estimada de Chumlea
     const btnApplyChumlea = document.getElementById("btnApplyChumlea");
@@ -1490,26 +2179,41 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSintetizar) {
       btnSintetizar.addEventListener("click", () => {
         const parts = [];
+        const peso = document.getElementById("dispPesoEfetivo")?.textContent.trim();
+        const est = document.getElementById("dispEstaturaEfetiva")?.textContent.trim();
+        const imc = document.getElementById("calculatedImcDisplay")?.textContent.trim();
+        const diag = document.getElementById("calculatedImcExtensoDisplay")?.textContent.trim();
+
         const cc = document.getElementById("prontCircCintura")?.value.trim();
         const cq = document.getElementById("prontCircQuadril")?.value.trim();
         const cb = document.getElementById("prontCircBraco")?.value.trim();
         const cp = document.getElementById("prontCircPanturrilha")?.value.trim();
+        const punho = document.getElementById("prontCircPunho")?.value.trim();
         const dct = document.getElementById("prontDobraTricipital")?.value.trim();
         const dcse = document.getElementById("prontDobraSubescapular")?.value.trim();
+        const dcb = document.getElementById("prontDobraBicipital")?.value.trim();
         const dcsi = document.getElementById("prontDobraSuprailiaca")?.value.trim();
         const dca = document.getElementById("prontDobraAbdominal")?.value.trim();
+        const dcc = document.getElementById("prontDobraCoxa")?.value.trim();
         const aj = document.getElementById("prontAlturaJoelho")?.value.trim();
         const demais = document.getElementById("prontDemaisAvaliacoes")?.value.trim();
 
+        if (peso && peso !== "--") parts.push(`Peso: ${peso}`);
+        if (est && est !== "--") parts.push(`Estatura: ${est}`);
+        if (imc && imc !== "--") parts.push(`IMC: ${imc} kg/m²`);
+        if (diag && !diag.includes("Aguardando")) parts.push(`Diagnóstico: ${diag}`);
         if (aj) parts.push(`Altura do Joelho (AJ): ${aj} cm`);
+        if (cb) parts.push(`CB: ${cb} cm`);
         if (cc) parts.push(`Circunf. Cintura: ${cc} cm`);
         if (cq) parts.push(`Circunf. Quadril: ${cq} cm`);
-        if (cb) parts.push(`CB: ${cb} cm`);
         if (cp) parts.push(`CP: ${cp} cm`);
+        if (punho) parts.push(`Punho: ${punho} cm`);
         if (dct) parts.push(`Dobra Tricipital (DCT): ${dct} mm`);
         if (dcse) parts.push(`Dobra Subescapular: ${dcse} mm`);
+        if (dcb) parts.push(`Dobra Bicipital: ${dcb} mm`);
         if (dcsi) parts.push(`Dobra Supra-ilíaca: ${dcsi} mm`);
         if (dca) parts.push(`Dobra Abdominal: ${dca} mm`);
+        if (dcc) parts.push(`Dobra da Coxa: ${dcc} mm`);
         if (demais) parts.push(demais);
 
         const summaryBox = document.getElementById("prontCircunferencias");

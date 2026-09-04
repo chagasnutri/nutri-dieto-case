@@ -1,15 +1,17 @@
-﻿// DietoCase Service Worker - Offline & PWA Support
-const CACHE_NAME = 'dietocase-cache-v1';
+// DietoCase Service Worker - Offline & PWA Support
+const CACHE_NAME = 'dietocase-cache-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './css/styles.css',
   './js/cases-data.js',
-  './js/admin-manager.js',
+  './js/portuguese-reviser.js',
   './js/case-builder.js',
   './js/chat-engine.js',
   './js/student-prontuario.js',
   './js/docx-generator.js',
+  './js/sync-engine.js',
+  './js/admin-manager.js',
   './js/app.js',
   './lib/mini-docx.js',
   './manifest.json',

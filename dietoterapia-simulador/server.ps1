@@ -1,5 +1,5 @@
 $port = 8080
-$basePath = "C:\Users\Chagas\.gemini\antigravity\scratch\dietoterapia-simulador"
+$basePath = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $dbFile = Join-Path $basePath "data\dietocase-db.json"
 $logFile = Join-Path $basePath "server.log"
 

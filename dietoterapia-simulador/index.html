@@ -408,105 +408,182 @@
 
             <!-- ABA 2: ANTROPOMETRIA -->
             <div id="tab-content-antropometria" class="student-tab-content hidden space-y-3">
-              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Avaliação Antropométrica e Estado Nutricional</h4>
+              <div class="flex items-center justify-between border-b pb-1">
+                <h4 class="font-bold text-slate-800 text-sm">Avaliação Antropométrica e Estado Nutricional</h4>
+                <span class="text-[11px] text-slate-500">Manejo Convencional ou Alternativo (Chumlea)</span>
+              </div>
               
-              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div>
-                  <label class="block font-semibold text-slate-700 mb-1">Peso Atual (kg):</label>
-                  <input type="text" inputmode="decimal" id="prontPesoAtual" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 75.5">
+              <!-- SEÇÃO 1: ANTROPOMETRIA CONVENCIONAL (NÃO OBRIGATÓRIA) -->
+              <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700 flex items-center">
+                    <span class="mr-1.5">⚖️</span> Antropometria Direta / Convencional (Opcional)
+                  </span>
+                  <span class="text-[10px] text-slate-400 italic">Dispensável se usar estimativas indiretas</span>
                 </div>
-                <div>
-                  <label class="block font-semibold text-slate-700 mb-1">Peso Habitual (kg):</label>
-                  <input type="text" inputmode="decimal" id="prontPesoHabitual" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 80.0">
-                </div>
-                <div>
-                  <label class="block font-semibold text-slate-700 mb-1">Estatura (m):</label>
-                  <input type="text" inputmode="decimal" id="prontEstatura" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 1.70">
-                </div>
-                <div>
-                  <label class="block font-semibold text-emerald-800 mb-1">Altura do Joelho - AJ (cm):</label>
-                  <input type="text" inputmode="decimal" id="prontAlturaJoelho" class="w-full border border-emerald-300 bg-emerald-50/30 rounded p-2" placeholder="Ex: 51.5">
-                  <div id="ajChumleaHelper" class="hidden mt-1 text-[11px] text-emerald-800 bg-emerald-100/70 border border-emerald-200 rounded px-2 py-1 flex items-center justify-between">
-                    <span>📐 Estatura est. por Chumlea: <strong id="ajChumleaValue">--</strong></span>
-                    <button type="button" id="btnApplyChumlea" class="underline font-bold text-emerald-900 hover:text-emerald-950 ml-2">Usar estatura</button>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block font-semibold text-slate-700 text-xs mb-1">
+                      Peso Atual (kg): <span class="text-[10px] text-slate-400 font-normal">(Opcional)</span>
+                    </label>
+                    <input type="text" inputmode="decimal" id="prontPesoAtual" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" placeholder="Ex: 75.5">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-700 text-xs mb-1">
+                      Peso Habitual (kg): <span class="text-[10px] text-slate-400 font-normal">(Para perda ponderal)</span>
+                    </label>
+                    <input type="text" inputmode="decimal" id="prontPesoHabitual" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" placeholder="Ex: 80.0">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-700 text-xs mb-1">
+                      Estatura (m): <span class="text-[10px] text-slate-400 font-normal">(Opcional se usar AJ)</span>
+                    </label>
+                    <input type="text" inputmode="decimal" id="prontEstatura" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" placeholder="Ex: 1.70">
                   </div>
                 </div>
               </div>
 
-              <!-- CARD DE CÁLCULO AUTOMÁTICO EM TEMPO REAL -->
-              <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <span class="text-slate-500 font-semibold uppercase text-[10px] block">Índice de Massa Corporal (IMC Calculado):</span>
-                  <div class="flex items-baseline space-x-2 mt-0.5">
-                    <span id="calculatedImcDisplay" class="text-xl font-extrabold text-emerald-800">--</span>
-                    <span class="text-xs text-emerald-700">kg/m²</span>
+              <!-- SEÇÃO 2: ANTROPOMETRIA ALTERNATIVA / PREGAS E CIRCUNFERÊNCIAS -->
+              <div class="bg-indigo-50/40 border border-indigo-200 rounded-xl p-3.5 space-y-3">
+                <div class="flex items-center justify-between border-b border-indigo-100 pb-2">
+                  <div>
+                    <h5 class="font-bold text-indigo-950 text-xs flex items-center">
+                      <span class="mr-1.5 text-sm">📏</span> Antropometria Alternativa / Pregas e Circunferências
+                    </h5>
+                    <p class="text-[11px] text-indigo-800 mt-0.5">
+                      Para pacientes acamados, impossibilitados de subir na balança ou com restrição postural. <strong>Apenas a Circunferência do Braço (CB) é obrigatória</strong> para estimar o peso.
+                    </p>
                   </div>
-                  <span id="calculatedImcClassDisplay" class="font-semibold text-emerald-900 block mt-0.5">Aguardando dados</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 font-semibold uppercase text-[10px] block">Variação / Perda Ponderal:</span>
-                  <div class="flex items-baseline space-x-2 mt-0.5">
-                    <span id="calculatedLossDisplay" class="text-xl font-extrabold text-emerald-800">--</span>
-                  </div>
-                  <span id="calculatedLossClassDisplay" class="font-semibold text-emerald-900 block mt-0.5">-</span>
-                </div>
-              </div>
-
-              <!-- DEMAIS AVALIAÇÕES: CIRCUNFERÊNCIAS E DOBRAS CUTÂNEAS -->
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5">
-                <div class="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
-                  <h5 class="font-bold text-slate-800 text-xs flex items-center">
-                    <span class="mr-1.5 text-sm">📏</span> Demais Avaliações: Circunferências e Dobras Cutâneas
-                  </h5>
-                  <button type="button" id="btnSintetizarMedidas" class="text-emerald-700 hover:text-emerald-800 text-[11px] font-semibold flex items-center space-x-1">
+                  <button type="button" id="btnSintetizarMedidas" class="text-indigo-700 hover:text-indigo-900 bg-white border border-indigo-200 shadow-xs px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center space-x-1 transition">
                     <span>✨</span><span>Sintetizar Medidas</span>
                   </button>
                 </div>
-                
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+                <!-- LINHA PRINCIPAL: MEDIDAS-CHAVE PARA CHUMLEA -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3 rounded-lg border border-indigo-100 shadow-xs">
                   <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Cintura (cm):</label>
-                    <input type="text" inputmode="decimal" id="prontCircCintura" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 104">
+                    <label class="block font-bold text-indigo-950 text-xs mb-1 flex items-center justify-between">
+                      <span>Circunf. do Braço - CB (cm):</span>
+                      <span class="bg-rose-100 text-rose-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-rose-200">* Obrigatória</span>
+                    </label>
+                    <input type="text" inputmode="decimal" id="prontCircBraco" class="w-full border-2 border-indigo-400 bg-indigo-50/20 rounded p-2 text-xs font-bold text-indigo-950 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" placeholder="Ex: 35.0 (Necessária para estimar peso)">
+                    <span class="text-[10px] text-indigo-700 block mt-0.5">Utilizada com a AJ para estimar o peso corporal por Chumlea.</span>
                   </div>
+
                   <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Quadril (cm):</label>
-                    <input type="text" inputmode="decimal" id="prontCircQuadril" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 108">
+                    <label class="block font-bold text-emerald-950 text-xs mb-1 flex items-center justify-between">
+                      <span>Altura do Joelho - AJ (cm):</span>
+                      <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-bold border border-emerald-200">Chumlea (1985)</span>
+                    </label>
+                    <input type="text" inputmode="decimal" id="prontAlturaJoelho" class="w-full border-2 border-emerald-400 bg-emerald-50/20 rounded p-2 text-xs font-bold text-emerald-950 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600" placeholder="Ex: 51.5 (Aferida no leito a 90°)">
+                    <div id="ajChumleaHelper" class="hidden mt-1 text-[11px] text-emerald-800 bg-emerald-100/70 border border-emerald-200 rounded px-2 py-1 flex items-center justify-between">
+                      <span>📐 Estatura est. Chumlea: <strong id="ajChumleaValue">--</strong></span>
+                      <button type="button" id="btnApplyChumlea" class="underline font-bold text-emerald-900 hover:text-emerald-950 ml-2">Usar estatura</button>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Braço - CB (cm):</label>
-                    <input type="text" inputmode="decimal" id="prontCircBraco" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 35">
-                  </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Panturrilha - CP (cm):</label>
-                    <input type="text" inputmode="decimal" id="prontCircPanturrilha" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 31">
-                  </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Tricipital - DCT (mm):</label>
-                    <input type="text" inputmode="decimal" id="prontDobraTricipital" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 24">
-                  </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Subescapular (mm):</label>
-                    <input type="text" inputmode="decimal" id="prontDobraSubescapular" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 26">
-                  </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Supra-ilíaca (mm):</label>
-                    <input type="text" inputmode="decimal" id="prontDobraSuprailiaca" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 28">
-                  </div>
-                  <div>
-                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Abdominal / Outras (mm):</label>
-                    <input type="text" inputmode="decimal" id="prontDobraAbdominal" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 30">
+                </div>
+
+                <!-- DEMAIS CIRCUNFERÊNCIAS E DOBRAS CUTÂNEAS -->
+                <div class="space-y-1.5">
+                  <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide block">Circunferências Adicionais e Dobras Cutâneas (Opcionais conforme o caso):</span>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Cintura (cm):</label>
+                      <input type="text" inputmode="decimal" id="prontCircCintura" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 104">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Quadril (cm):</label>
+                      <input type="text" inputmode="decimal" id="prontCircQuadril" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 108">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Panturrilha - CP (cm):</label>
+                      <input type="text" inputmode="decimal" id="prontCircPanturrilha" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 31 (Refina peso)">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Pulso / Punho (cm):</label>
+                      <input type="text" inputmode="decimal" id="prontCircPunho" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 16.5 (Estrutura óssea)">
+                    </div>
+
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Tricipital - DCT (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraTricipital" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 24">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Subescapular - DCSE (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraSubescapular" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 26 (Refina peso)">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Bicipital - DCB (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraBicipital" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 12">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Supra-ilíaca (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraSuprailiaca" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 28">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Abdominal (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraAbdominal" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 32">
+                    </div>
+                    <div>
+                      <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra da Coxa (mm):</label>
+                      <input type="text" inputmode="decimal" id="prontDobraCoxa" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: 22">
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <label class="block font-medium text-slate-700 text-[11px] mb-0.5">Demais Avaliações, Relações e Observações Antropométricas:</label>
-                  <textarea id="prontDemaisAvaliacoes" class="w-full border border-slate-300 rounded p-2 text-xs" rows="2" placeholder="Digite outras medidas (ex: RCQ, punho, CMB, AMB) ou observações detalhadas sobre a composição corporal..."></textarea>
+                  <textarea id="prontDemaisAvaliacoes" class="w-full border border-slate-300 rounded p-2 text-xs bg-white" rows="2" placeholder="Digite outras medidas (ex: RCQ, compleição, CMB, AMB) ou observações detalhadas sobre a composição corporal e presença de edema..."></textarea>
+                </div>
+              </div>
+
+              <!-- CARD DE CÁLCULO AUTOMÁTICO EM TEMPO REAL (CHUMLEA, IMC E DIAGNÓSTICO POR EXTENSO) -->
+              <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 text-xs space-y-3 shadow-xs">
+                <!-- LINHA 1: VALORES EFETIVOS ADOTADOS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] bg-white/80 p-2 rounded-lg border border-emerald-100">
+                  <div>
+                    <span class="text-slate-500 font-semibold block">Estatura Adotada:</span>
+                    <strong id="dispEstaturaEfetiva" class="text-emerald-900 text-xs">--</strong>
+                    <span id="dispEstaturaOrigem" class="text-[10px] text-slate-500 block">Aguardando</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 font-semibold block">Peso Adotado:</span>
+                    <strong id="dispPesoEfetivo" class="text-emerald-900 text-xs">--</strong>
+                    <span id="dispPesoOrigem" class="text-[10px] text-slate-500 block">Aguardando</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 font-semibold block">Variação Ponderal:</span>
+                    <strong id="calculatedLossDisplay" class="text-emerald-900 text-xs">--</strong>
+                    <span id="calculatedLossClassDisplay" class="text-[10px] text-slate-500 block">-</span>
+                  </div>
+                </div>
+
+                <!-- LINHA 2: IMC E DIAGNÓSTICO NUTRICIONAL POR EXTENSO -->
+                <div class="bg-white rounded-lg p-3 border border-emerald-200 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-bold uppercase text-[10px]">Índice de Massa Corporal (IMC) e Classificação:</span>
+                    <span id="calculatedCriterioTag" class="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">OMS / Lipschitz</span>
+                  </div>
+                  
+                  <div class="flex items-baseline space-x-2">
+                    <span id="calculatedImcDisplay" class="text-2xl font-black text-emerald-800 tracking-tight">--</span>
+                    <span class="text-xs font-bold text-emerald-700">kg/m²</span>
+                    <span id="calculatedImcClassDisplay" class="font-bold text-emerald-900 text-xs ml-2">Aguardando dados</span>
+                  </div>
+
+                  <!-- DIAGNÓSTICO NUTRICIONAL POR EXTENSO -->
+                  <div class="pt-1 border-t border-slate-100">
+                    <span class="text-[10px] font-semibold text-slate-500 block">Diagnóstico Nutricional por Extenso:</span>
+                    <p id="calculatedImcExtensoDisplay" class="font-bold text-xs text-slate-800 leading-snug mt-0.5">
+                      Aguardando preenchimento do peso e da estatura (reais ou estimados por Chumlea).
+                    </p>
+                  </div>
                 </div>
               </div>
 
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Resumo Síntese das Medidas Antropométricas:</label>
-                <textarea id="prontCircunferencias" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Resumo integrado das circunferências, dobras e composição corporal para o prontuário..."></textarea>
+                <textarea id="prontCircunferencias" class="w-full border border-slate-300 rounded p-2 text-xs" rows="2" placeholder="Resumo integrado das circunferências, dobras, peso/estatura (reais ou Chumlea) e composição corporal para o prontuário..."></textarea>
               </div>
             </div>
 
@@ -541,15 +618,114 @@
             </div>
 
             <!-- ABA 5: CONSUMO ALIMENTAR -->
-            <div id="tab-content-consumo" class="student-tab-content hidden space-y-3">
-              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Consumo Alimentar e Inquérito Dietético</h4>
+            <div id="tab-content-consumo" class="student-tab-content hidden space-y-3.5">
+              <div class="flex items-center justify-between border-b pb-1">
+                <h4 class="font-bold text-slate-800 text-sm">Consumo Alimentar e Inquérito Dietético</h4>
+                <span class="text-[11px] text-emerald-800 font-semibold flex items-center">
+                  <span class="mr-1">🥦</span> Base TACO Integrada
+                </span>
+              </div>
+
+              <!-- SEÇÃO DE AVALIAÇÃO QUANTITATIVA DO CONSUMO (RECORDATÓRIO 24H E NEE) -->
+              <div class="bg-indigo-50/40 border border-indigo-200 rounded-xl p-3.5 space-y-3 shadow-xs">
+                <div class="flex items-center justify-between border-b border-indigo-100 pb-2">
+                  <div>
+                    <h5 class="font-bold text-indigo-950 text-xs flex items-center">
+                      <span class="mr-1.5 text-sm">⚡</span> Avaliação Quantitativa do Consumo Alimentar (Recordatório de 24h)
+                    </h5>
+                    <p class="text-[11px] text-indigo-800 mt-0.5">
+                      Insira o Valor Energético Total apurado no inquérito para calcular a porcentagem de adequação energética frente às necessidades do paciente.
+                    </p>
+                  </div>
+                  <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">Quantitativo</span>
+                </div>
+
+                <!-- CAMPO DE DESTAQUE: VET DO RECORDATÓRIO DE 24H -->
+                <div>
+                  <label class="block font-bold text-slate-800 text-xs mb-1 flex items-center justify-between">
+                    <span>VET (Valor Energético Total) encontrado no Recordatório de 24h:</span>
+                    <span class="text-indigo-700 font-semibold text-[11px]">Unidade: kcal/dia</span>
+                  </label>
+                  <div class="relative">
+                    <input type="text" inputmode="decimal" id="prontVetRecordatorio" class="w-full border-2 border-indigo-400 bg-white rounded-lg p-2.5 text-sm font-extrabold text-indigo-950 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 placeholder:font-normal placeholder:text-slate-400" placeholder="Digite o VET calculado do R24h (ex: 2750 ou 920)">
+                    <span class="absolute right-3 top-2.5 text-xs font-bold text-indigo-600">kcal/dia</span>
+                  </div>
+                </div>
+
+                <!-- CARDS COMPARATIVOS LADO A LADO COM A NEE E ADEQUAÇÃO -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <!-- CARD 1: VET CONSUMIDO -->
+                  <div class="bg-white border border-indigo-100 rounded-lg p-2.5 text-xs">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase block">🍽️ VET Consumido (R24h):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <span id="dispVetRecordatorioVal" class="text-xl font-black text-indigo-900">--</span>
+                      <span class="text-[11px] text-indigo-600 font-medium">kcal/dia</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Ingestão referida</span>
+                  </div>
+
+                  <!-- CARD 2: NEE DO CASO CLÍNICO -->
+                  <div class="bg-white border border-indigo-100 rounded-lg p-2.5 text-xs">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase block">🎯 Necessidade Estimada (NEE):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <span id="dispNeeCasoVal" class="text-xl font-black text-slate-900">--</span>
+                      <span class="text-[11px] text-slate-500 font-medium">kcal/dia</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Meta calculada do caso</span>
+                  </div>
+
+                  <!-- CARD 3: % DE ADEQUAÇÃO DO VET -->
+                  <div class="bg-white border border-indigo-100 rounded-lg p-2.5 text-xs">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase block">📊 % de Adequação do VET:</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <span id="dispAdequacaoVetPct" class="text-xl font-black text-emerald-700">--</span>
+                      <span class="text-[11px] text-emerald-700 font-bold">%</span>
+                    </div>
+                    <span id="dispAdequacaoVetClass" class="text-[10px] font-bold text-slate-600 block mt-0.5">Aguardando VET</span>
+                  </div>
+                </div>
+
+                <!-- BOX DETALHADA COM INTERPRETAÇÃO CLÍNICA DA ADEQUAÇÃO -->
+                <div id="dispAdequacaoVetBox" class="bg-white/90 border border-indigo-100 rounded-lg p-2.5 text-xs text-slate-700">
+                  <span class="font-semibold text-[11px] text-indigo-900 block">Diagnóstico da Adequação Energética:</span>
+                  <p id="dispAdequacaoVetInterpretacao" class="text-[11px] text-slate-600 mt-0.5">
+                    Preencha o VET apurado no recordatório de 24h para avaliar se o consumo habitual do paciente está hipocalórico, adequado ou hipercalórico em relação à sua NEE.
+                  </p>
+                </div>
+
+                <!-- SEÇÃO VISUAL OFICIAL TACO E CONSULTA RÁPIDA DE ALIMENTOS -->
+                <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="text-base">🥦</span>
+                      <div>
+                        <strong class="text-xs text-emerald-950 block">Base Oficial: Tabela TACO (UNICAMP, 4ª edição) & Livros Oficiais</strong>
+                        <span class="text-[10px] text-emerald-800">Valores de composição nutricional validados por 100g e porção usual</span>
+                      </div>
+                    </div>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded font-bold">100% Oficial</span>
+                  </div>
+
+                  <!-- BARRA DE BUSCA RÁPIDA DE ALIMENTOS TACO -->
+                  <div class="relative">
+                    <input type="text" id="tacoSearchInput" placeholder="🔍 Digite para consultar na TACO (ex: arroz, feijão, frango, carne, leite, banana, pão...)" class="w-full border border-emerald-300 rounded-lg p-2 text-xs pl-3 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-white placeholder:text-slate-400">
+                  </div>
+
+                  <!-- CONTAINER DOS RESULTADOS DA BUSCA TACO -->
+                  <div id="tacoSearchResults" class="max-h-48 overflow-y-auto space-y-1.5 text-xs bg-white rounded-lg border border-emerald-200 p-2 divide-y divide-slate-100">
+                    <!-- Itens renderizados via JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- SEÇÃO QUALITATIVA DO CONSUMO -->
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Resumo do Recordatório Alimentar / Padrão Habitual:</label>
-                <textarea id="prontInqueritoResumo" class="w-full border border-slate-300 rounded p-2" rows="4" placeholder="Descreva os horários, refeições habituais, grupos alimentares mais consumidos e erros identificados..."></textarea>
+                <textarea id="prontInqueritoResumo" class="w-full border border-slate-300 rounded p-2 text-xs" rows="4" placeholder="Descreva os horários, refeições habituais, grupos alimentares mais consumidos e erros identificados..."></textarea>
               </div>
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Ingestão Hídrica, Preferências, Aversões e Alergias Alimentares:</label>
-                <textarea id="prontAguaPreferencias" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Volume diário de líquidos, preferências, rejeições alimentares e preparo das refeições..."></textarea>
+                <textarea id="prontAguaPreferencias" class="w-full border border-slate-300 rounded p-2 text-xs" rows="2" placeholder="Volume diário de líquidos, preferências, rejeições alimentares e preparo das refeições..."></textarea>
               </div>
             </div>
 
@@ -653,34 +829,135 @@
             </div>
 
             <!-- ABA 8: CARDÁPIO E PLANEJAMENTO ALIMENTAR -->
-            <div id="tab-content-cardapio" class="student-tab-content hidden space-y-3">
-              <div class="flex items-center justify-between border-b pb-1">
-                <h4 class="font-bold text-slate-800 text-sm">Planejamento Alimentar Quali-Quantitativo</h4>
-                <button type="button" id="addCardapioMealBtn" class="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded text-xs font-semibold">
-                  + Adicionar Refeição
+            <div id="tab-content-cardapio" class="student-tab-content hidden space-y-4">
+              <!-- CABEÇALHO DA ABA E BOTÃO DE ADICIONAR REFEIÇÃO -->
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>🍽️</span>
+                    <span>Planejamento Alimentar Quali-Quantitativo (Cardápio)</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500">Estruture o cardápio do paciente selecionando os alimentos da TACO e definindo medidas caseiras e gramaturas.</p>
+                </div>
+                <button type="button" id="addCardapioMealBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
+                  <span>➕</span>
+                  <span>Adicionar Refeição</span>
                 </button>
               </div>
 
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border border-slate-200 rounded">
-                  <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase font-bold">
-                    <tr>
-                      <th class="p-2">Refeição</th>
-                      <th class="p-2 w-24">Horário</th>
-                      <th class="p-2">Alimentos & Medidas Caseiras</th>
-                      <th class="p-2">Substituições</th>
-                      <th class="p-2 text-center w-10">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody id="cardapioTableBody">
-                    <!-- Renderizado dinamicamente -->
-                  </tbody>
-                </table>
+              <!-- CARD INFORMATIVO OFICIAL: BASE TACO + REGRA DE TRÊS + MEDIDA CASEIRA LIVRE -->
+              <div class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">🥦</span>
+                    <strong class="text-emerald-950 font-bold text-xs">Base Oficial: Tabela TACO (UNICAMP) & Livros Oficiais</strong>
+                  </div>
+                  <span class="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">Base: 100g de Alimento</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] text-emerald-900 pt-1">
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">1. Base em 100g:</strong>
+                    <span>Nutrientes oficiais cadastrados estritamente para porção de 100g.</span>
+                  </div>
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">2. Regra de Três Automática:</strong>
+                    <span>Ao digitar a <strong>Gramatura (g)</strong>, o sistema calcula Kcal, CHO, PTN e LIP em tempo real.</span>
+                  </div>
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">3. Medida Caseira em Texto Livre:</strong>
+                    <span>Digite livremente (ex: <em>"1 escumadeira cheia"</em>, <em>"2 fatias médias"</em>). Não interfere em cálculos matemáticos.</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="pt-2">
+              <!-- CONTAINER DINÂMICO DE REFEIÇÕES DO CARDÁPIO -->
+              <div id="cardapioMealsContainer" class="space-y-4">
+                <!-- Cards de cada refeição (Desjejum, Almoço, etc.) e tabelas de alimentos renderizados dinamicamente via JS -->
+              </div>
+
+              <!-- TABELA LEGADA OCULTA (Preservada para compatibilidade retroativa com seletores) -->
+              <table class="hidden">
+                <tbody id="cardapioTableBody"></tbody>
+              </table>
+
+              <!-- PAINEL CONSOLIDADO DE TOTAIS DO CARDÁPIO VS META PRESCRITA -->
+              <div id="cardapioTotalsPanel" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 space-y-3 shadow-md">
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-700/80 pb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">📊</span>
+                    <h5 class="font-bold text-xs uppercase tracking-wider text-emerald-400">Consolidação Nutricional do Cardápio vs Metas Prescritas</h5>
+                  </div>
+                  <span id="dispCardapioVetStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                    Aguardando Itens
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <!-- Card VET -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">VET do Cardápio:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioVetTotal" class="text-lg font-black text-emerald-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">kcal</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispCardapioMetaVet">--</strong> kcal</span>
+                      <span class="text-emerald-400 font-bold" id="dispCardapioVetAdeq">--%</span>
+                    </div>
+                  </div>
+
+                  <!-- Card Carboidratos -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Carboidratos:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioChoTotalG" class="text-lg font-black text-amber-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-amber-300 font-bold">(<span id="dispCardapioChoTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispCardapioMetaCho">--</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Card Proteínas -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Proteínas:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-sky-300 font-bold">(<span id="dispCardapioPtnTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispCardapioMetaPtn">--</strong></span>
+                      <span class="text-sky-300 font-semibold" id="dispCardapioPtnGKg">0 g/kg</span>
+                    </div>
+                  </div>
+
+                  <!-- Card Lipídios -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Lipídios:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioLipTotalG" class="text-lg font-black text-rose-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-rose-300 font-bold">(<span id="dispCardapioLipTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispCardapioMetaLip">--</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LINHA INFORMATIVA DE FIBRAS E BALANÇO -->
+                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
+                  <span>🌾 Fibras Alimentares Totais apuradas no Cardápio: <strong id="dispCardapioFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
+                  <span id="dispCardapioBalancoMsg" class="text-slate-400 italic">Preencha os alimentos para confrontar com a prescrição</span>
+                </div>
+              </div>
+
+              <!-- ORIENTAÇÕES E RECOMENDAÇÕES NUTRICIONAIS -->
+              <div class="pt-1">
                 <label class="block font-semibold text-slate-700 mb-1">Orientações e Recomendações Dietoterápicas ao Paciente:</label>
-                <textarea id="prontOrientacoesGerais" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Recomendações práticas para o paciente: modo de preparo, rotina de hidratação, substituições salutares, sinais de alerta..."></textarea>
+                <textarea id="prontOrientacoesGerais" class="w-full border border-slate-300 rounded p-2 text-xs" rows="3" placeholder="Recomendações práticas para o paciente: modo de preparo, rotina de hidratação, substituições salutares, sinais de alerta..."></textarea>
               </div>
             </div>
 
@@ -1690,6 +1967,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="lib/mini-docx.js"></script>
+  <script src="js/tacoData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>

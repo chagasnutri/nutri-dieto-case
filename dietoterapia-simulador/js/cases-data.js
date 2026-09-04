@@ -8,6 +8,8 @@ const DEFAULT_CASES = [
     title: "Caso 1: Paciente Adulto com DM2, HAS e Obesidade Grau I",
     category: "Ambulatorial / Doenças Crônicas Não Transmissíveis",
     description: "Atendimento ambulatorial de paciente de 54 anos com queixas de descontrole glicêmico e pressórico após mudança recente de rotina e ganho de peso.",
+    neeKcal: 1850,
+    vetRecordatorioHabitual: 2750,
     isLocked: false,
     patient: {
       name: "Carlos Alberto da Silva",
@@ -121,6 +123,8 @@ const DEFAULT_CASES = [
     title: "Caso 2: Paciente Idosa Hospitalizada com Desnutrição e DRC Conservadora (Estágio 4)",
     category: "Hospitalar / Geriatria / Nefrologia",
     description: "Paciente de 76 anos internada com fraqueza intensa, uremia sintomática, náuseas matinais e perda ponderal grave de 14.4% nos últimos 3 meses.",
+    neeKcal: 1500,
+    vetRecordatorioHabitual: 920,
     isLocked: false,
     patient: {
       name: "Lourdes Maria de Oliveira",
@@ -232,6 +236,8 @@ const DEFAULT_CASES = [
     title: "Caso 3: Paciente Pós-Gastrectomia Subtotal com Síndrome de Dumping",
     category: "Cirúrgico / Trato Gastrointestinal",
     description: "Paciente de 42 anos no 45º dia de pós-operatório de gastrectomia com queixas intensas de tontura, sudorese, taquicardia e diarreia explosiva pós-prandial.",
+    neeKcal: 2150,
+    vetRecordatorioHabitual: 1380,
     isLocked: false,
     patient: {
       name: "Roberto Silveira Santos",
@@ -470,9 +476,16 @@ function normalizeEquipeMultiprofissional(rawEquipe) {
   return list;
 }
 
+// Base de Dados Oficial TACO (Tabela Brasileira de Composição de Alimentos - UNICAMP, 4ª edição)
+// Carregada a partir do módulo isolado js/tacoData.js
+const TACO_FOODS_DATABASE = (typeof TACO_DATABASE !== "undefined")
+  ? TACO_DATABASE
+  : (typeof window !== "undefined" && window.TACO_DATABASE ? window.TACO_DATABASE : []);
+
 // Disponibiliza no escopo global
 if (typeof window !== "undefined") {
   window.PROFESSIONAL_PRESETS = PROFESSIONAL_PRESETS;
   window.normalizeEquipeMultiprofissional = normalizeEquipeMultiprofissional;
+  window.TACO_FOODS_DATABASE = TACO_FOODS_DATABASE;
 }
 

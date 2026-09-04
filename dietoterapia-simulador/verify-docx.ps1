@@ -1,8 +1,9 @@
 # Script de verificação do DOCX gerado
 $edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-$testUrl = "file:///C:/Users/Chagas/.gemini/antigravity/scratch/dietoterapia-simulador/test-export.html"
-$outputHtml = "C:\Users\Chagas\.gemini\antigravity\scratch\dietoterapia-simulador\export-output.html"
-$docxPath = "C:\Users\Chagas\.gemini\antigravity\scratch\dietoterapia-simulador\Relatorio_Dietoterapia_Teste.docx"
+$baseDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+$testUrl = [System.Uri](Join-Path $baseDir "test-export.html").AbsoluteUri
+$outputHtml = Join-Path $baseDir "export-output.html"
+$docxPath = Join-Path $baseDir "Relatorio_Dietoterapia_Teste.docx"
 
 Write-Host "Iniciando Edge headless para exportar DOCX..."
 Start-Process -FilePath $edgePath -ArgumentList "--headless=new", "--disable-gpu", "--virtual-time-budget=2000", "--dump-dom", $testUrl -RedirectStandardOutput $outputHtml -Wait

@@ -77,29 +77,50 @@ dietoterapia-simulador/
 ├── js/
 │   ├── app.js                  # Controlador principal, autenticação docente (Nutri2@26) e bloqueios
 │   ├── cases-data.js           # Banco de casos com controle de isLocked e localStorage
-│   ├── admin-manager.js        # Gestão e alternância de trava/liberação dos casos
+│   ├── portuguese-reviser.js   # Validador e revisor ortográfico/gramatical
+│   ├── case-builder.js         # Montador dinâmico de novos casos
+│   ├── sync-engine.js          # Sincronização em tempo real (P2P + Server)
+│   ├── admin-manager.js        # Gestão de disciplinas, casos e alternância de trava
 │   ├── chat-engine.js          # Motor de diálogo com proteção estrita anti-alucinação
 │   ├── student-prontuario.js   # Lógica do prontuário, cálculos e persistência de rascunhos
 │   └── docx-generator.js       # Montador do relatório em Word (.docx) DietoCase
 ├── lib/
 │   └── mini-docx.js            # Gerador binário puro OpenXML ZIP (.docx) para navegador
+├── manifest.json               # Configuração PWA (Instalação no Celular/Desktop)
+├── sw.js                       # Service Worker para funcionamento 100% offline
 └── README.md                   # Esta documentação
 ```
 
 ---
 
-## 🚀 Como Executar o DietoCase
+## 🚀 Como Executar o DietoCase Localmente
 
-O aplicativo é 100% independente e roda em qualquer navegador moderno (**Google Chrome, Microsoft Edge, Mozilla Firefox**) sem necessidade de instalar dependências, Node.js ou servidores de banco de dados.
+O aplicativo é 100% independente e roda em qualquer navegador moderno (**Google Chrome, Microsoft Edge, Mozilla Firefox, Safari**) sem necessidade de instalar dependências complexas ou bancos de dados externos.
 
 ### Abertura Direta
-Basta dar um duplo-clique no arquivo `index.html` ou abri-lo pelo navegador:
-`C:\Users\Chagas\.gemini\antigravity\scratch\dietoterapia-simulador\index.html`
+Basta dar um duplo-clique no arquivo `index.html` ou abri-lo pelo seu navegador favorito.
+
+### 🌐 Como Hospedar no GitHub Pages (Acesso Gratuito para Alunos e Professores)
+1. Crie um repositório no GitHub (ex: `dietocase`).
+2. No seu terminal, envie os arquivos:
+   ```bash
+   git init -b main
+   git add .
+   git commit -m "feat: Versao inicial DietoCase"
+   git remote add origin https://github.com/SEU-USUARIO/dietocase.git
+   git push -u origin main
+   ```
+3. No GitHub, acesse **Settings** > **Pages**:
+   - Em **Source**, selecione **Deploy from a branch**.
+   - Em **Branch**, selecione `main` e pasta `/ (root)`.
+   - Clique em **Save**.
+4. Em instantes, o link público estará pronto (ex: `https://seu-usuario.github.io/dietocase/`).
 
 ### 🔑 Instruções para o Professor
 1. Clique no botão **"⚙️ Painel do Professor"** no canto superior direito da tela.
 2. Na janela de segurança, digite a senha: `Nutri2@26` e clique em **Entrar**.
-3. Na lista de casos clínicos:
+3. Na lista de disciplinas e casos clínicos:
+   - Cadastre, edite ou exclua disciplinas e casos em tempo real.
    - Clique em **"🔒 Travar"** para ocultar um caso dos alunos.
    - Clique em **"🔓 Liberar"** para disponibilizá-lo na lista de casos da turma.
 4. Para sair com segurança e proteger a área docente contra os alunos, clique no botão **"🔒 Bloquear Painel / Sair"**.

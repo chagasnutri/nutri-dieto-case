@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <title>Testes Automatizados - Dietoterapia App</title>
   <script src="lib/mini-docx.js"></script>
+  <script src="js/tacoData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>
@@ -60,7 +61,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Humanização: Acompanhante refere-se naturalmente ao paciente ("Pelo que a gente convive com ele(a) no dia a dia, ele(a) não tem esse problema não.")
+              ✅ PASS: Humanização: Acompanhante refere-se naturalmente ao paciente ("Doutor(a), disso eu realmente não sei te dizer. Ele(a) nunca comentou nada parecido em casa.")
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -375,16 +376,16 @@
               ✅ PASS: Equação de Chumlea Homem estima 1.70 m (AJ 53.5cm, 54a): 1.70m
             </div>
           
-            <div style="font-family: monospace; padding: 4px; color: red">
-              ❌ FAIL: Chat Engine responde corretamente sobre Altura do Joelho do paciente: "Eu tenho 1.72 m de altura, doutor(a)."
-            </div>
-          
-            <div style="font-family: monospace; padding: 4px; color: red">
-              ❌ FAIL: ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Chat Engine responde corretamente sobre Altura do Joelho do paciente: "Mediram a altura do meu joelho com o paquímetro no leito e deu 53.5 cm, doutor(a)."
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: 89986 bytes
+              ✅ PASS: ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: 87800 bytes
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -433,6 +434,162 @@
           
             <div style="font-family: monospace; padding: 4px; color: green">
               ✅ PASS: Motor de sincronização notifica listeners instantaneamente a partir dos dados do storage
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Equação de Chumlea (CB+AJ) Mulher calcula 56.0 kg: 56.0 kg
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Equação de Chumlea (CB+AJ) Homem calcula 76.4 kg: 76.4 kg
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Cálculo de IMC a partir de medidas estimadas por Chumlea resulta em 18.65: 18.65
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Diagnóstico nutricional de baixo peso para idosa estimada: Baixo Peso / Desnutrição (Lipschitz)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Diagnóstico por extenso Adulto (OMS): "Sobrepeso / Pré-obesidade segundo os Pontos de Corte da Organização Mundial da Saúde (OMS)"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Diagnóstico por extenso Obesidade I (OMS): "Obesidade Grau I segundo os Pontos de Corte da Organização Mundial da Saúde (OMS)"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Diagnóstico por extenso Idoso Eutrofia (Lipschitz): "Eutrofia / Estado Nutricional Adequado segundo o Critério de Lipschitz (1994) para Idosos"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Diagnóstico por extenso Idoso Baixo Peso (Lipschitz): "Baixo Peso / Desnutrição segundo o Critério de Lipschitz (1994) para Idosos"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Adequação do VET Hipocalórica (75.7%): "Ingestão Hipocalórica / Inadequada"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Adequação do VET Normocalórica (97.3%): "Ingestão Normocalórica / Adequada"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Adequação do VET Hipercalórica (124.3%): "Ingestão Hipercalórica / Inadequada"
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Base TACO carregada com 36 alimentos oficiais
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arroz TACO com dados oficiais (128 kcal, 28.1g CHO por 100g)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Feijão TACO com dados oficiais (76 kcal, 4.8g PTN por 100g)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Word gerado com dados alternativos de Chumlea e adequação do VET TACO (97631 bytes)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo isolado TACO: TACO_DATABASE existe como array global
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo isolado TACO: contém 36 alimentos cadastrados
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo isolado TACO: getTacoFoodById recupera alimento oficial (Pão francês)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo isolado TACO: nutrientes padronizados estritamente para porção de 100g
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Arquivo isolado TACO: busca textual por 'arroz' retorna 2 resultados
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 50g de pão francês = 150.0 kcal (esperado 150.0)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 50g de pão francês = 29.3g CHO (esperado 29.3)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 50g de pão francês = 4.0g PTN (esperado 4.0)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 50g de pão francês = 1.6g LIP (esperado 1.6)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 50g de pão francês = 1.2g Fibra (esperado 1.2)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: suporta gramatura com vírgula (75.5g)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Regra de três: 75.5g de pão = 226.5 kcal (300 * 0.755)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Medida Caseira: aceita texto descritivo livre de forma integral
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Medida Caseira: texto livre NÃO afeta cálculos matemáticos de calorias e macros
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Subtotal da Refeição: 229.2 kcal (esperado 229.2, obtido 229.2)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Subtotal da Refeição: 30.3g CHO (esperado 30.3, obtido 30.3)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Subtotal da Refeição: 9.2g PTN (esperado 9.2, obtido 9.2)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Subtotal da Refeição: 7.7g LIP (esperado 7.7, obtido 7.7)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Síntese da Refeição: formata com alimento, medida caseira livre, gramatura e calorias
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Totais do Cardápio: VET total 229.2 kcal
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Totais do Cardápio: CHO apurado com % calórico
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Adequação do VET do Cardápio: 12.7% da meta de 1800 kcal
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Classificação da Adequação do Cardápio: Hipocalórico
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Word (.docx) gerado com sucesso com Cardápio TACO e tabela de metas (84864 bytes)
             </div>
           </div>
 
@@ -855,7 +1012,7 @@ Questões Avaliativas:
         }
       };
       const revisto = ClinicalPortugueseReviser.reviewCase(caseComDemais);
-      assert(revisto.antropometria.demaisAvaliacoes.includes("circunferência da cintura") && revisto.antropometria.demaisAvaliacoes.includes("triglicerídeos"),
+      assert(revisto.antropometria.demaisAvaliacoes.toLowerCase().includes("circunferência da cintura") && revisto.antropometria.demaisAvaliacoes.toLowerCase().includes("triglicerídeos"),
         "ClinicalPortugueseReviser corrige ortografia no campo demaisAvaliacoes");
 
       // 27. Teste de Inclusão da Altura do Joelho no Relatório Word (.docx)
@@ -942,6 +1099,180 @@ Questões Avaliativas:
       });
       syncEngineTest.notifyDataListenersFromStorage();
       assert(listenerDisparado === true, "Motor de sincronização notifica listeners instantaneamente a partir dos dados do storage");
+
+      // 32. Teste da Equação de Chumlea (1985/1988) para Estimativa de Peso por CB e AJ
+      // Mulher: (AJ * 1.01) + (CB * 2.81) - 66.04
+      const pesoEstimadoMulher = prontManager.estimateChumleaWeight(26.0, 48.5, "Feminino");
+      assert(pesoEstimadoMulher && pesoEstimadoMulher.kg === "56.0", `Equação de Chumlea (CB+AJ) Mulher calcula 56.0 kg: ${pesoEstimadoMulher?.kg} kg`);
+
+      // Homem: (AJ * 1.19) + (CB * 3.21) - 86.82
+      const pesoEstimadoHomem = prontManager.estimateChumleaWeight(31.0, 53.5, "Masculino");
+      assert(pesoEstimadoHomem && pesoEstimadoHomem.kg === "76.4", `Equação de Chumlea (CB+AJ) Homem calcula 76.4 kg: ${pesoEstimadoHomem?.kg} kg`);
+
+      // 33. Teste do Cálculo Dinâmico de IMC com Medidas Alternativas/Estimadas
+      // Caso o aluno não preencha pesoAtual e estatura convencionais, usa os valores de Chumlea
+      const estChumleaIdosa = prontManager.estimateChumleaStature(48.5, 76, "Feminino"); // 1.55m
+      const pesoChumleaIdosa = prontManager.estimateChumleaWeight(22.0, 48.5, "Feminino"); // (48.5*1.01)+(22*2.81)-66.04 = 44.8 kg
+      const imcIdosaEstimado = prontManager.calculateIMC(pesoChumleaIdosa.kg, estChumleaIdosa.m, 76);
+      assert(imcIdosaEstimado.imc === "18.65", `Cálculo de IMC a partir de medidas estimadas por Chumlea resulta em 18.65: ${imcIdosaEstimado.imc}`);
+      assert(imcIdosaEstimado.classificacao.includes("Baixo Peso"), `Diagnóstico nutricional de baixo peso para idosa estimada: ${imcIdosaEstimado.classificacao}`);
+
+      // 34. Teste de Diagnóstico Nutricional por Extenso (OMS para Adultos e Lipschitz para Idosos)
+      const imcAdultoSobrepeso = prontManager.calculateIMC(78.0, 1.70, 35);
+      assert(imcAdultoSobrepeso.diagnosticoExtenso.includes("Sobrepeso / Pré-obesidade") && imcAdultoSobrepeso.criterio === "OMS", 
+        `Diagnóstico por extenso Adulto (OMS): "${imcAdultoSobrepeso.diagnosticoExtenso}"`);
+
+      const imcAdultoObeso = prontManager.calculateIMC(95.0, 1.70, 40);
+      assert(imcAdultoObeso.diagnosticoExtenso.includes("Obesidade Grau I") && imcAdultoObeso.criterio === "OMS",
+        `Diagnóstico por extenso Obesidade I (OMS): "${imcAdultoObeso.diagnosticoExtenso}"`);
+
+      const imcIdosoEutrofia = prontManager.calculateIMC(62.0, 1.60, 68); // IMC = 24.22
+      assert(imcIdosoEutrofia.diagnosticoExtenso.includes("Eutrofia / Estado Nutricional Adequado") && imcIdosoEutrofia.criterio.includes("Lipschitz"),
+        `Diagnóstico por extenso Idoso Eutrofia (Lipschitz): "${imcIdosoEutrofia.diagnosticoExtenso}"`);
+
+      const imcIdosoDesnutricao = prontManager.calculateIMC(48.0, 1.60, 72); // IMC = 18.75 (< 22.0)
+      assert(imcIdosoDesnutricao.diagnosticoExtenso.includes("Baixo Peso / Desnutrição") && imcIdosoDesnutricao.criterio.includes("Lipschitz"),
+        `Diagnóstico por extenso Idoso Baixo Peso (Lipschitz): "${imcIdosoDesnutricao.diagnosticoExtenso}"`);
+
+      // 35. Teste de Avaliação Quantitativa do Consumo e Adequação do VET (Hipocalórica, Normocalórica, Hipercalórica)
+      const neePadrao = 1850;
+      
+      // Dieta Hipocalórica (< 90%)
+      const adeqHipo = prontManager.calculateVetAdequacy(1400, neePadrao);
+      assert(adeqHipo.percentual === "75.7" && adeqHipo.classificacao.includes("Hipocalórica"), 
+        `Adequação do VET Hipocalórica (75.7%): "${adeqHipo.classificacao}"`);
+
+      // Dieta Normocalórica (90% a 110%)
+      const adeqNormo = prontManager.calculateVetAdequacy(1800, neePadrao);
+      assert(adeqNormo.percentual === "97.3" && adeqNormo.classificacao.includes("Normocalórica"),
+        `Adequação do VET Normocalórica (97.3%): "${adeqNormo.classificacao}"`);
+
+      // Dieta Hipercalórica (> 110%)
+      const adeqHiper = prontManager.calculateVetAdequacy(2300, neePadrao);
+      assert(adeqHiper.percentual === "124.3" && adeqHiper.classificacao.includes("Hipercalórica"),
+        `Adequação do VET Hipercalórica (124.3%): "${adeqHiper.classificacao}"`);
+
+      // 36. Teste da Base Oficial de Alimentos TACO (UNICAMP)
+      assert(Array.isArray(TACO_FOODS_DATABASE) && TACO_FOODS_DATABASE.length >= 20, `Base TACO carregada com ${TACO_FOODS_DATABASE.length} alimentos oficiais`);
+      const arrozTaco = TACO_FOODS_DATABASE.find(a => a.nome.includes("Arroz, tipo 1"));
+      assert(arrozTaco && arrozTaco.kcal === 128 && arrozTaco.cho === 28.1, `Arroz TACO com dados oficiais (128 kcal, 28.1g CHO por 100g)`);
+      const feijaoTaco = TACO_FOODS_DATABASE.find(a => a.nome.includes("Feijão, carioca"));
+      assert(feijaoTaco && feijaoTaco.kcal === 76 && feijaoTaco.ptn === 4.8, `Feijão TACO com dados oficiais (76 kcal, 4.8g PTN por 100g)`);
+
+      // 37. Teste de Relatório Word (.docx) com Antropometria Alternativa e Adequação do VET TACO
+      const prontRelatorioCompleto = prontManager.getEmptyProntuario("caso-dm2-has");
+      prontRelatorioCompleto.aluno.nome = "Aluno Teste Antro";
+      prontRelatorioCompleto.antropometria.pesoAtual = "";
+      prontRelatorioCompleto.antropometria.estatura = "";
+      prontRelatorioCompleto.antropometria.alturaJoelho = "53.5";
+      prontRelatorioCompleto.antropometria.circBraco = "31.0";
+      prontRelatorioCompleto.antropometria.pesoEstimadoChumlea = "76.4";
+      prontRelatorioCompleto.antropometria.estaturaEstimadaChumlea = "1.70";
+      prontRelatorioCompleto.antropometria.imc = "26.44";
+      prontRelatorioCompleto.antropometria.classificacaoImc = "Sobrepeso";
+      prontRelatorioCompleto.antropometria.diagnosticoNutricionalExtenso = "Sobrepeso / Pré-obesidade segundo os Pontos de Corte da Organização Mundial da Saúde (OMS)";
+      prontRelatorioCompleto.antropometria.criterioClassificacao = "OMS";
+      prontRelatorioCompleto.consumoAlimentar.vetRecordatorio = "1450";
+      prontRelatorioCompleto.consumoAlimentar.neeCaso = "1850";
+      prontRelatorioCompleto.consumoAlimentar.adequacaoVetPct = "78.4";
+      prontRelatorioCompleto.consumoAlimentar.adequacaoVetClassificacao = "Ingestão Hipocalórica / Inadequada";
+      prontRelatorioCompleto.consumoAlimentar.baseAlimentosReferencia = "TACO (UNICAMP, 4ª edição)";
+
+      const docxAlternativo = DietoterapiaDocxReport.buildReportDocument(prontRelatorioCompleto, caso1);
+      const blobAlternativo = docxAlternativo.generateBlob();
+      assert(blobAlternativo && blobAlternativo.size > 2500, `Relatório Word gerado com dados alternativos de Chumlea e adequação do VET TACO (${blobAlternativo.size} bytes)`);
+
+      // 38. Regra 1: Arquivo Isolado para a TACO (tacoData.js e taco.json)
+      assert(typeof TACO_DATABASE !== "undefined" && Array.isArray(TACO_DATABASE), "Arquivo isolado TACO: TACO_DATABASE existe como array global");
+      assert(TACO_DATABASE.length >= 30, `Arquivo isolado TACO: contém ${TACO_DATABASE.length} alimentos cadastrados`);
+      const paoTaco = getTacoFoodById("taco-13");
+      assert(paoTaco && paoTaco.nome.includes("Pão, de trigo, francês"), "Arquivo isolado TACO: getTacoFoodById recupera alimento oficial (Pão francês)");
+      assert(paoTaco.baseGramas === 100 && paoTaco.kcal === 300.0 && paoTaco.cho === 58.6, "Arquivo isolado TACO: nutrientes padronizados estritamente para porção de 100g");
+      const buscaArroz = searchTacoFoods("arroz");
+      assert(buscaArroz.length >= 2, `Arquivo isolado TACO: busca textual por 'arroz' retorna ${buscaArroz.length} resultados`);
+
+      // 39. Regra 2: Regra de três das Gramaturas (cálculo proporcional a partir de 100g)
+      // Pão francês: 300 kcal, 58.6g CHO, 8.0g PTN, 3.2g LIP, 2.4g Fibra por 100g
+      // Para 50g (metade): Kcal = 150.0, CHO = 29.3, PTN = 4.0, LIP = 1.6, Fibra = 1.2
+      const calcPao50g = prontManager.calculateItemNutrition(paoTaco, 50);
+      assert(calcPao50g.kcal === 150.0, `Regra de três: 50g de pão francês = 150.0 kcal (esperado 150.0)`);
+      assert(calcPao50g.cho === 29.3, `Regra de três: 50g de pão francês = 29.3g CHO (esperado 29.3)`);
+      assert(calcPao50g.ptn === 4.0, `Regra de três: 50g de pão francês = 4.0g PTN (esperado 4.0)`);
+      assert(calcPao50g.lip === 1.6, `Regra de três: 50g de pão francês = 1.6g LIP (esperado 1.6)`);
+      assert(calcPao50g.fibra === 1.2, `Regra de três: 50g de pão francês = 1.2g Fibra (esperado 1.2)`);
+
+      // Teste com gramatura decimal em formato string com vírgula ("75,5g")
+      const calcPao75g = prontManager.calculateItemNutrition(paoTaco, "75,5");
+      assert(calcPao75g.gramatura === 75.5, `Regra de três: suporta gramatura com vírgula (75.5g)`);
+      assert(calcPao75g.kcal === 226.5, `Regra de três: 75.5g de pão = 226.5 kcal (300 * 0.755)`);
+
+      // 40. Regra 3: Medida Caseira em Texto Livre (sem interferência em cálculos)
+      const itemMedida1 = {
+        id: "it-1",
+        tacoId: "taco-13",
+        alimentoNome: "Pão, de trigo, francês",
+        medidaCaseira: "1 unidade média bem quentinha",
+        gramatura: 50,
+        ...calcPao50g
+      };
+      const itemMedida2 = {
+        id: "it-2",
+        tacoId: "taco-19",
+        alimentoNome: "Queijo, minas frescal",
+        medidaCaseira: "1 fatia grossa cortada em cubos",
+        gramatura: 30,
+        ...prontManager.calculateItemNutrition(getTacoFoodById("taco-19"), 30) // 264 kcal / 100g => 79.2 kcal
+      };
+      assert(typeof itemMedida1.medidaCaseira === "string" && itemMedida1.medidaCaseira === "1 unidade média bem quentinha",
+        "Medida Caseira: aceita texto descritivo livre de forma integral");
+      assert(itemMedida1.kcal === 150.0 && typeof itemMedida1.kcal === "number",
+        "Medida Caseira: texto livre NÃO afeta cálculos matemáticos de calorias e macros");
+
+      // 41. Subtotais por Refeição e Totais Consolidados do Cardápio vs Prescrição
+      const refeicaoCafe = {
+        id: "ref-1",
+        refeicao: "Desjejum / Café da Manhã",
+        horario: "07:00",
+        itens: [itemMedida1, itemMedida2],
+        substituicoes: "Pode substituir o queijo minas por 1 ovo mexido sem óleo"
+      };
+
+      const subtotalCafe = prontManager.calculateMealSubtotal(refeicaoCafe);
+      // Pão 50g (150 kcal, 29.3 cho, 4.0 ptn, 1.6 lip) + Queijo minas 30g (79.2 kcal, 1.0 cho, 5.2 ptn, 6.1 lip)
+      // Kcal = 229.2, CHO = 30.3, PTN = 9.2, LIP = 7.7
+      assert(subtotalCafe.kcal === 229.2, `Subtotal da Refeição: 229.2 kcal (esperado 229.2, obtido ${subtotalCafe.kcal})`);
+      assert(subtotalCafe.cho === 30.3, `Subtotal da Refeição: 30.3g CHO (esperado 30.3, obtido ${subtotalCafe.cho})`);
+      assert(subtotalCafe.ptn === 9.2, `Subtotal da Refeição: 9.2g PTN (esperado 9.2, obtido ${subtotalCafe.ptn})`);
+      assert(subtotalCafe.lip === 7.7, `Subtotal da Refeição: 7.7g LIP (esperado 7.7, obtido ${subtotalCafe.lip})`);
+
+      // Síntese formatada da refeição para relatório
+      const sinteseTexto = prontManager.formatMealFoodsSummary(refeicaoCafe);
+      assert(sinteseTexto.includes("Pão, de trigo, francês (1 unidade média bem quentinha - 50g) [150 kcal]"),
+        `Síntese da Refeição: formata com alimento, medida caseira livre, gramatura e calorias`);
+
+      // Totais do Cardápio e % de Adequação frente à Prescrição (Meta: 1800 kcal, Peso: 70kg)
+      const totaisCardapio = prontManager.calculateCardapioTotals([refeicaoCafe], 70, 1800);
+      assert(totaisCardapio.vetTotalKcal === 229.2, `Totais do Cardápio: VET total ${totaisCardapio.vetTotalKcal} kcal`);
+      assert(totaisCardapio.carboidratosG === 30.3 && totaisCardapio.carboidratosPct > 0, `Totais do Cardápio: CHO apurado com % calórico`);
+      assert(totaisCardapio.adequacaoVetPct === 12.7, `Adequação do VET do Cardápio: 12.7% da meta de 1800 kcal`);
+      assert(totaisCardapio.classificacaoAdequacao.includes("Hipocalórico"), `Classificação da Adequação do Cardápio: Hipocalórico`);
+
+      // 42. Relatório Word (.docx) com Cardápio Estruturado TACO e Consolidação de Metas
+      const prontCardapioCompleto = prontManager.getEmptyProntuario("caso-dm2-has");
+      prontCardapioCompleto.aluno.nome = "Estudante Nutrição Cardápio";
+      prontCardapioCompleto.prescricaoDietoterapica.vetKcal = "1800";
+      prontCardapioCompleto.prescricaoDietoterapica.carboidratosG = "225";
+      prontCardapioCompleto.prescricaoDietoterapica.carboidratosPct = "50";
+      prontCardapioCompleto.prescricaoDietoterapica.proteinasG = "90";
+      prontCardapioCompleto.prescricaoDietoterapica.proteinasPct = "20";
+      prontCardapioCompleto.prescricaoDietoterapica.lipidiosG = "60";
+      prontCardapioCompleto.prescricaoDietoterapica.lipidiosPct = "30";
+      prontCardapioCompleto.planejamentoAlimentar = [refeicaoCafe];
+      prontCardapioCompleto.totaisCardapio = totaisCardapio;
+
+      const docxCardapio = DietoterapiaDocxReport.buildReportDocument(prontCardapioCompleto, caso1);
+      const blobCardapio = docxCardapio.generateBlob();
+      assert(blobCardapio && blobCardapio.size > 2500, `Relatório Word (.docx) gerado com sucesso com Cardápio TACO e tabela de metas (${blobCardapio.size} bytes)`);
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
