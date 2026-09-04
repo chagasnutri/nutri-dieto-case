@@ -829,34 +829,135 @@
             </div>
 
             <!-- ABA 8: CARDÁPIO E PLANEJAMENTO ALIMENTAR -->
-            <div id="tab-content-cardapio" class="student-tab-content hidden space-y-3">
-              <div class="flex items-center justify-between border-b pb-1">
-                <h4 class="font-bold text-slate-800 text-sm">Planejamento Alimentar Quali-Quantitativo</h4>
-                <button type="button" id="addCardapioMealBtn" class="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded text-xs font-semibold">
-                  + Adicionar Refeição
+            <div id="tab-content-cardapio" class="student-tab-content hidden space-y-4">
+              <!-- CABEÇALHO DA ABA E BOTÃO DE ADICIONAR REFEIÇÃO -->
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>🍽️</span>
+                    <span>Planejamento Alimentar Quali-Quantitativo (Cardápio)</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500">Estruture o cardápio do paciente selecionando os alimentos da TACO e definindo medidas caseiras e gramaturas.</p>
+                </div>
+                <button type="button" id="addCardapioMealBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
+                  <span>➕</span>
+                  <span>Adicionar Refeição</span>
                 </button>
               </div>
 
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border border-slate-200 rounded">
-                  <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase font-bold">
-                    <tr>
-                      <th class="p-2">Refeição</th>
-                      <th class="p-2 w-24">Horário</th>
-                      <th class="p-2">Alimentos & Medidas Caseiras</th>
-                      <th class="p-2">Substituições</th>
-                      <th class="p-2 text-center w-10">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody id="cardapioTableBody">
-                    <!-- Renderizado dinamicamente -->
-                  </tbody>
-                </table>
+              <!-- CARD INFORMATIVO OFICIAL: BASE TACO + REGRA DE TRÊS + MEDIDA CASEIRA LIVRE -->
+              <div class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">🥦</span>
+                    <strong class="text-emerald-950 font-bold text-xs">Base Oficial: Tabela TACO (UNICAMP) & Livros Oficiais</strong>
+                  </div>
+                  <span class="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">Base: 100g de Alimento</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] text-emerald-900 pt-1">
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">1. Base em 100g:</strong>
+                    <span>Nutrientes oficiais cadastrados estritamente para porção de 100g.</span>
+                  </div>
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">2. Regra de Três Automática:</strong>
+                    <span>Ao digitar a <strong>Gramatura (g)</strong>, o sistema calcula Kcal, CHO, PTN e LIP em tempo real.</span>
+                  </div>
+                  <div class="bg-white/80 p-2 rounded-lg border border-emerald-200">
+                    <strong class="block text-emerald-950">3. Medida Caseira em Texto Livre:</strong>
+                    <span>Digite livremente (ex: <em>"1 escumadeira cheia"</em>, <em>"2 fatias médias"</em>). Não interfere em cálculos matemáticos.</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="pt-2">
+              <!-- CONTAINER DINÂMICO DE REFEIÇÕES DO CARDÁPIO -->
+              <div id="cardapioMealsContainer" class="space-y-4">
+                <!-- Cards de cada refeição (Desjejum, Almoço, etc.) e tabelas de alimentos renderizados dinamicamente via JS -->
+              </div>
+
+              <!-- TABELA LEGADA OCULTA (Preservada para compatibilidade retroativa com seletores) -->
+              <table class="hidden">
+                <tbody id="cardapioTableBody"></tbody>
+              </table>
+
+              <!-- PAINEL CONSOLIDADO DE TOTAIS DO CARDÁPIO VS META PRESCRITA -->
+              <div id="cardapioTotalsPanel" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 space-y-3 shadow-md">
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-700/80 pb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">📊</span>
+                    <h5 class="font-bold text-xs uppercase tracking-wider text-emerald-400">Consolidação Nutricional do Cardápio vs Metas Prescritas</h5>
+                  </div>
+                  <span id="dispCardapioVetStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                    Aguardando Itens
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <!-- Card VET -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">VET do Cardápio:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioVetTotal" class="text-lg font-black text-emerald-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">kcal</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispCardapioMetaVet">--</strong> kcal</span>
+                      <span class="text-emerald-400 font-bold" id="dispCardapioVetAdeq">--%</span>
+                    </div>
+                  </div>
+
+                  <!-- Card Carboidratos -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Carboidratos:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioChoTotalG" class="text-lg font-black text-amber-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-amber-300 font-bold">(<span id="dispCardapioChoTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispCardapioMetaCho">--</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Card Proteínas -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Proteínas:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-sky-300 font-bold">(<span id="dispCardapioPtnTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispCardapioMetaPtn">--</strong></span>
+                      <span class="text-sky-300 font-semibold" id="dispCardapioPtnGKg">0 g/kg</span>
+                    </div>
+                  </div>
+
+                  <!-- Card Lipídios -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Lipídios:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispCardapioLipTotalG" class="text-lg font-black text-rose-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-rose-300 font-bold">(<span id="dispCardapioLipTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispCardapioMetaLip">--</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LINHA INFORMATIVA DE FIBRAS E BALANÇO -->
+                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
+                  <span>🌾 Fibras Alimentares Totais apuradas no Cardápio: <strong id="dispCardapioFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
+                  <span id="dispCardapioBalancoMsg" class="text-slate-400 italic">Preencha os alimentos para confrontar com a prescrição</span>
+                </div>
+              </div>
+
+              <!-- ORIENTAÇÕES E RECOMENDAÇÕES NUTRICIONAIS -->
+              <div class="pt-1">
                 <label class="block font-semibold text-slate-700 mb-1">Orientações e Recomendações Dietoterápicas ao Paciente:</label>
-                <textarea id="prontOrientacoesGerais" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Recomendações práticas para o paciente: modo de preparo, rotina de hidratação, substituições salutares, sinais de alerta..."></textarea>
+                <textarea id="prontOrientacoesGerais" class="w-full border border-slate-300 rounded p-2 text-xs" rows="3" placeholder="Recomendações práticas para o paciente: modo de preparo, rotina de hidratação, substituições salutares, sinais de alerta..."></textarea>
               </div>
             </div>
 
@@ -1866,6 +1967,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="lib/mini-docx.js"></script>
+  <script src="js/tacoData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>

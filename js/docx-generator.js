@@ -224,24 +224,69 @@ class DietoterapiaDocxReport {
     
     const cardapioRows = [];
     plano.forEach(ref => {
+      let alimentosFormatados = ref.alimentos || "";
+      if (Array.isArray(ref.itens) && ref.itens.length > 0) {
+        const itemLines = ref.itens.map(it => {
+          const parts = [];
+          if (it.medidaCaseira && String(it.medidaCaseira).trim()) {
+            parts.push(String(it.medidaCaseira).trim());
+          }
+          if (it.gramatura) {
+            parts.push(`${it.gramatura}g`);
+          }
+          let line = it.alimentoNome || "Alimento";
+          if (parts.length > 0) {
+            line += ` (${parts.join(" - ")})`;
+          }
+          if (it.kcal !== undefined && it.kcal !== null && it.kcal !== "") {
+            line += ` [${it.kcal} kcal]`;
+          }
+          return "• " + line;
+        });
+        alimentosFormatados = itemLines.join("\n");
+        if (ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
+          alimentosFormatados += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
+        }
+      }
+
       cardapioRows.push([
         `${ref.refeicao}\n(${ref.horario || '--:--'})`,
-        ref.alimentos || "Alimentos não especificados",
+        alimentosFormatados || "Alimentos não especificados",
         ref.substituicoes || "Não descrita"
       ]);
     });
 
     if (cardapioRows.length > 0) {
       doc.addTable(
-        ["Refeição e Horário", "Alimentos e Medidas Caseiras", "Opções de Substituição"],
+        ["Refeição e Horário", "Alimentos, Medidas Caseiras e Gramaturas (TACO)", "Opções de Substituição"],
         cardapioRows,
-        [2500, 4500, 2000]
+        [2500, 4800, 1700]
       );
     } else {
       doc.addParagraph("Nenhuma refeição detalhada no planejamento alimentar.");
     }
 
-    doc.addHeading("3.1. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento", 2);
+    // Tabela de Totais Consolidados do Cardápio vs Metas Prescritas
+    const totais = studentData.totaisCardapio;
+    const hasTotais = totais && (totais.vetTotalKcal > 0 || (Array.isArray(plano) && plano.some(r => r.itens && r.itens.length > 0)));
+    if (hasTotais) {
+      doc.addHeading("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas", 2);
+      const rowsTotais = [
+        ["VET Total Planejado no Cardápio", `${totais.vetTotalKcal || 0} kcal/dia`, `Meta Prescrita: ${presc.vetKcal || '--'} kcal`],
+        ["Adequação do VET do Cardápio", `${totais.adequacaoVetPct ? totais.adequacaoVetPct + '%' : '--'}`, `${totais.classificacaoAdequacao || 'Adequação calórica do cardápio'}`],
+        ["Carboidratos do Cardápio", `${totais.carboidratosG || 0} g (${totais.carboidratosPct || 0}% do VET)`, `Prescrito: ${presc.carboidratosG || '--'} g (${presc.carboidratosPct || '--'}%)`],
+        ["Proteínas do Cardápio", `${totais.proteinasG || 0} g (${totais.proteinasGKg ? totais.proteinasGKg + ' g/kg' : '--'}, ${totais.proteinasPct || 0}%)`, `Prescrito: ${presc.proteinasG || '--'} g (${presc.proteinasGKg || '--'} g/kg)`],
+        ["Lipídios do Cardápio", `${totais.lipidiosG || 0} g (${totais.lipidiosPct || 0}% do VET)`, `Prescrito: ${presc.lipidiosG || '--'} g (${presc.lipidiosPct || '--'}%)`],
+        ["Fibras Alimentares Totais", `${totais.fibrasG || 0} g/dia`, "Composição oficial TACO (UNICAMP)"]
+      ];
+      doc.addTable(
+        ["Parâmetro Nutricional Consolidado", "Aporte Obtido no Cardápio", "Meta da Prescrição Dietética"],
+        rowsTotais,
+        [3600, 2800, 2600]
+      );
+    }
+
+    doc.addHeading(hasTotais ? "3.2. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento" : "3.1. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento", 2);
     doc.addParagraph(studentData.orientacoesNutricionais || "Nenhuma orientação nutricional específica registrada.");
 
     // 6. SEÇÃO IV: RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO
