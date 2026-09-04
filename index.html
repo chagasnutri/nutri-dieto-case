@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DietoCase - Simulador Clínico e Prontuário de Dietoterapia</title>
+  <!-- Tailwind CSS CDN para renderização moderna -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#059669">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DietoCase">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- NAVBAR SUPERIOR COM SELEÇÃO DE PAINEL -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- LOGO E TÍTULO -->
+      <div id="navBrandBtn" class="flex items-center space-x-3 cursor-pointer select-none" title="Voltar ao Painel do Aluno">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-xl shadow-sm">
+          🥗
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-bold text-slate-900 text-base sm:text-lg leading-tight">DietoCase</h1>
+            <span id="modeBadge" class="badge-clinical bg-emerald-100 text-emerald-800 border border-emerald-300">PAINEL DO ALUNO</span>
+            <span id="navSyncBadge" class="hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs" title="Sincronização em tempo real com o servidor central">
+              <span id="navSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+              <span id="navSyncText">Servidor Conectado</span>
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">Simulação Clínica, Anamnese Interativa & Prontuário de Dietoterapia</p>
+        </div>
+      </div>
+
+      <!-- NAVEGAÇÃO DE PERFIS: ALUNO VS PROFESSOR + INSTALAR NO CELULAR -->
+      <div class="flex items-center space-x-2 sm:space-x-2.5">
+        <!-- Botão Painel de Casos do Aluno -->
+        <button id="navStudentCatalogBtn" class="bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer">
+          <span>🎓</span>
+          <span>Casos do Aluno</span>
+        </button>
+
+        <!-- Botão Instalar App no Celular (PWA) -->
+        <button id="navInstallAppBtn" class="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer" title="Como instalar no celular (iOS / Android)">
+          <span>📲</span>
+          <span class="hidden sm:inline">Instalar no Celular</span>
+        </button>
+
+        <!-- Botão Chave API Gemini (Opcional) -->
+        <button id="openApiKeyBtn" class="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition" title="Configurar chave de IA (Opcional)">
+          ⚙️
+        </button>
+
+        <!-- Botão Acesso Restrito ao Painel do Professor (requer senha Nutri2@26) -->
+        <button id="switchModeBtn" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-xs transition flex items-center space-x-1.5 cursor-pointer">
+          <span>🔐</span>
+          <span id="teacherBtnText">Painel do Professor</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL: PAINEL DO ALUNO -->
+  <main id="studentView" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
+    
+    <!-- 1. VITRINE / CATÁLOGO DE CASOS CLÍNICOS DO ALUNO -->
+    <section id="studentCatalogSection" class="space-y-4">
+      
+      <!-- VISÃO A: PORTAL DE DISCIPLINAS DO ALUNO (Visível inicialmente - Casos NÃO aparecem aqui) -->
+      <div id="studentDisciplinePortalSection" class="space-y-4">
+        <!-- HERO BANNER DAS DISCIPLINAS -->
+        <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center space-x-1.5 bg-emerald-700/60 border border-emerald-500/40 px-3 py-0.5 rounded-full text-xs font-medium mb-2.5 text-emerald-100">
+              <span>🎓</span>
+              <span>Portal Acadêmico de Nutrição</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black tracking-tight mb-1.5">Disciplinas & Módulos</h2>
+            <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+              Selecione a disciplina em que você irá participar. Ao clicar na matéria correspondente, você terá acesso aos casos clínicos simulados cadastrados pelo professor.
+            </p>
+          </div>
+          <div class="flex items-center gap-2.5 flex-shrink-0">
+            <div class="bg-white/10 backdrop-blur-xs border border-white/20 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
+              <span class="block text-2xl font-black text-white" id="portalTotalDisciplinasCount">2</span>
+              <span class="text-[10px] text-emerald-200 uppercase tracking-wider font-semibold">Disciplinas</span>
+            </div>
+            <div class="bg-white/10 backdrop-blur-xs border border-white/20 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
+              <span class="block text-2xl font-black text-emerald-300" id="portalTotalCasesAvailable">3</span>
+              <span class="text-[10px] text-emerald-100 uppercase tracking-wider font-semibold">Casos Prontos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRADE DE CARDS DAS DISCIPLINAS CADASTRADAS -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+              <span>📚</span>
+              <span>Escolha a sua disciplina para acessar os casos:</span>
+            </h3>
+            <span class="text-xs text-slate-400">Clique na disciplina para entrar</span>
+          </div>
+
+          <!-- CONTAINER DOS CARDS DE DISCIPLINAS (INJETADO VIA JS) -->
+          <div id="studentDisciplinesCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Injetado dinamicamente via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VISÃO B: CASOS DA DISCIPLINA SELECIONADA (Oculto inicialmente - só aparece após o aluno clicar na disciplina) -->
+      <div id="studentDisciplineCasesSection" class="hidden space-y-4">
+        
+        <!-- BARRA DE NAVEGAÇÃO E ABAS DA DISCIPLINA SELECIONADA -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-3">
+              <button id="studentBackToDisciplinesBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 transition flex items-center space-x-1 cursor-pointer">
+                <span>⬅</span>
+                <span>Trocar de Disciplina</span>
+              </button>
+              <div class="h-4 w-px bg-slate-300"></div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xl" id="studentSelectedDisciplineIcon">🥗</span>
+                <div>
+                  <h3 class="font-black text-slate-900 text-sm" id="studentSelectedDisciplineTitle">Dietoterapia</h3>
+                  <p class="text-[11px] text-slate-500" id="studentSelectedDisciplineDesc">Casos clínicos da disciplina</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABAS HORIZONTAIS DE TODAS AS DISCIPLINAS PARA ALTERNÂNCIA RÁPIDA -->
+            <div class="flex flex-wrap items-center gap-1.5" id="studentQuickDisciplineTabs">
+              <!-- Injetado via JS -->
+            </div>
+          </div>
+
+          <!-- BARRA DE FILTROS E PESQUISA DA DISCIPLINA -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <!-- Filtros por Status -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500 mr-1 uppercase text-[10px] tracking-wider">Filtrar:</span>
+              <button class="catalog-filter-btn active bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer" data-filter="all">
+                Todos (<span id="countAllFilter">0</span>)
+              </button>
+              <button class="catalog-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer" data-filter="available">
+                🟢 Disponíveis (<span id="countAvailableFilter">0</span>)
+              </button>
+              <button class="catalog-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer" data-filter="locked">
+                🔒 Travados (<span id="countLockedFilter">0</span>)
+              </button>
+            </div>
+            <!-- Busca rápida -->
+            <div class="relative min-w-[240px]">
+              <input type="text" id="catalogSearchInput" placeholder="Buscar por paciente ou diagnóstico..." class="w-full text-xs border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+              <span class="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID DE CARDS DOS CASOS CLÍNICOS DA DISCIPLINA -->
+        <div id="studentCasesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populado dinamicamente via JS -->
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- 2. AMBIENTE DE SIMULAÇÃO DO CASO SELECIONADO (INICIALMENTE OCULTO) -->
+    <div id="studentSimulationContainer" class="hidden space-y-4">
+      
+      <!-- BARRA DE CONTROLE DO CASO E BOTÃO DE VOLTAR AO CATÁLOGO -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <button id="backToCatalogBtn" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center space-x-1.5 shadow-2xs">
+            <span>⬅</span>
+            <span>Voltar ao Painel de Casos</span>
+          </button>
+          <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 id="casePatientNameHeader" class="font-bold text-slate-900 text-sm sm:text-base">Carregando caso...</h2>
+              <span id="caseCategoryHeader" class="badge-clinical bg-slate-100 text-slate-700">Ambulatorial</span>
+            </div>
+            <p id="caseDescHeader" class="text-xs text-slate-500 line-clamp-1">Descrição breve do caso clínico e patologia em estudo.</p>
+          </div>
+        </div>
+
+        <!-- Seletor Rápido e Salvamento Local -->
+        <div class="flex items-center space-x-2 text-xs text-slate-500">
+          <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1">
+            <span class="text-[11px] font-semibold text-slate-600 hidden sm:inline">Trocar caso:</span>
+            <select id="caseSelectDropdown" class="bg-transparent text-xs font-medium text-slate-800 focus:outline-none cursor-pointer max-w-[180px] truncate">
+              <!-- Populado via JavaScript -->
+            </select>
+          </div>
+          <span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded border border-emerald-200 font-medium text-[11px] hidden sm:inline-flex items-center space-x-1">
+            <span>💾</span> <span>Auto-salvamento ativo</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- GRID SPLIT: CHAT À ESQUERDA / PRONTUÁRIO À DIREITA -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      
+      <!-- COLUNA DA ESQUERDA: CHAT E SIMULAÇÃO DE ANAMNESE (5 colunas) -->
+      <section class="lg:col-span-5 flex flex-col space-y-3">
+        
+        <!-- CARD DO CHAT -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden flex flex-col h-[720px]">
+          
+          <!-- CABEÇALHO DO INTERLOCUTOR -->
+          <div class="bg-slate-50 border-b border-slate-200 p-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div id="interlocutorAvatar" class="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xl shadow-2xs">
+                👤
+              </div>
+              <div>
+                <h3 id="interlocutorName" class="font-bold text-xs sm:text-sm text-slate-800 leading-tight">Paciente</h3>
+                <p id="interlocutorRole" class="text-[11px] text-emerald-700 font-medium">Paciente Simulado</p>
+              </div>
+            </div>
+
+            <!-- SELETOR DE INTERLOCUTOR -->
+            <div class="flex items-center space-x-1">
+              <select id="interlocutorSelect" class="text-xs bg-white border border-slate-300 rounded-md px-2 py-1 font-medium text-slate-700 cursor-pointer focus:border-emerald-500">
+                <option value="paciente">👤 Paciente</option>
+                <option value="acompanhante">👥 Acompanhante / Familiar</option>
+                <option value="medico">🩺 Médico(a) Assistente</option>
+                <option value="enfermagem">💉 Enfermeiro(a) do Plantão</option>
+                <option value="fono">🗣️ Fonoaudiólogo(a)</option>
+                <option value="psicologia">🤝 Psicologia / Serv. Social</option>
+              </select>
+              <button id="clearChatBtn" class="text-slate-400 hover:text-slate-600 p-1 text-xs" title="Reiniciar conversa com este personagem">
+                🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- MENSAGEM DE AVISO DE REGRAS ESTREITAS -->
+          <div class="bg-amber-50/70 border-b border-amber-200/60 px-3 py-1.5 text-[11px] text-amber-800 flex items-center space-x-1.5">
+            <span>🛡️</span>
+            <span><strong>Regra estrita:</strong> O interlocutor responderá apenas dados cadastrados pelo professor. Perguntas fora do caso retornarão "Não sei informar".</span>
+          </div>
+
+          <!-- FEED DE MENSAGENS -->
+          <div id="chatMessagesList" class="flex-1 p-3.5 overflow-y-auto bg-slate-50/50">
+            <!-- Mensagens renderizadas via JS -->
+          </div>
+
+          <!-- SUGESTÕES RÁPIDAS DE PERGUNTAS (PROMPT CHIPS) -->
+          <div class="px-3 py-2 bg-white border-t border-slate-100 flex items-center space-x-1.5 overflow-x-auto text-[11px]">
+            <span class="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex-shrink-0">Perguntas Rápidas:</span>
+            <button class="prompt-chip bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full">💬 Qual a sua queixa principal?</button>
+            <button class="prompt-chip bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full">⚖️ Qual o seu peso atual e habitual?</button>
+            <button class="prompt-chip bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full">🍎 O que o senhor costuma comer ontem?</button>
+            <button class="prompt-chip bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full">💊 Toma algum medicamento?</button>
+            <button class="prompt-chip bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full">🩺 O que o médico informou?</button>
+          </div>
+
+          <!-- ÁREA DE DIGITAÇÃO -->
+          <div class="p-2.5 bg-white border-t border-slate-200 flex items-center space-x-2">
+            <input type="text" id="chatInput" placeholder="Faça uma pergunta ao personagem..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+            <button id="sendChatBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold shadow-xs transition flex items-center space-x-1">
+              <span>Enviar</span>
+              <span>➔</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- EXAMES LABORATORIAIS DISPONÍVEIS (ACCORDION / PAINEL COMPACTO) -->
+        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-xs text-slate-700 flex items-center">
+              <span class="mr-1.5">🧪</span> Exames Cadastrados no Prontuário
+            </h4>
+            <span class="text-[10px] text-slate-400">Consulte via chat ou visualize</span>
+          </div>
+          <div id="labExamsContainer" class="max-h-36 overflow-y-auto space-y-1">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLUNA DA DIREITA: PRONTUÁRIO ELETRÔNICO DO ALUNO (7 colunas) -->
+      <section class="lg:col-span-7 flex flex-col space-y-3">
+        
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden flex flex-col h-[820px]">
+          
+          <!-- CABEÇALHO DO PRONTUÁRIO -->
+          <div class="bg-emerald-800 text-white px-4 py-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">📋</span>
+              <h3 class="font-bold text-sm">Prontuário Nutricional do Aluno</h3>
+            </div>
+            <div class="flex items-center space-x-2 text-xs">
+              <span id="prontAutoSaveIndicator" class="text-[10px] text-emerald-100 font-medium opacity-90"></span>
+              <button id="saveDraftBtn" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1 rounded text-xs transition flex items-center space-x-1">
+                <span>💾</span>
+                <span>Salvar Rascunho</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- IDENTIFICAÇÃO DO ALUNO (CAMPOS COMPACTOS) -->
+          <div class="bg-slate-50 border-b border-slate-200 p-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-600 text-[10px] uppercase">Nome do Estudante:</label>
+              <input type="text" id="alunoNome" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Seu nome completo">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 text-[10px] uppercase">Matrícula / Turma:</label>
+              <input type="text" id="alunoMatricula" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: NUT-2026/1 - Matr. 12345">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 text-[10px] uppercase">Data do Atendimento:</label>
+              <input type="date" id="alunoData" class="w-full border border-slate-300 rounded px-2 py-1 text-xs">
+            </div>
+          </div>
+
+          <!-- ABAS DO PRONTUÁRIO -->
+          <div class="flex border-b border-slate-200 bg-white overflow-x-auto text-xs font-medium">
+            <button class="student-tab-btn nav-tab-btn active px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="anamnese">
+              <span>👤</span> <span>Anamnese</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="antropometria">
+              <span>⚖️</span> <span>Antropometria</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="bioquimica">
+              <span>🧪</span> <span>Bioquímica</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="examefisico">
+              <span>🩺</span> <span>Exame Físico</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="consumo">
+              <span>🍎</span> <span>Consumo</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="pes">
+              <span>🎯</span> <span>Diagnóstico PES</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="prescricao">
+              <span>💊</span> <span>Prescrição Dietética</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="cardapio">
+              <span>🍽️</span> <span>Cardápio</span>
+            </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1 bg-amber-50 text-amber-800" data-tab="questoes">
+              <span>❓</span> <span>Questões Avaliativas</span>
+            </button>
+          </div>
+
+          <!-- CONTEÚDO DAS ABAS (SCROLLABLE) -->
+          <div class="flex-1 p-4 overflow-y-auto text-xs space-y-3">
+            
+            <!-- ABA 1: ANAMNESE -->
+            <div id="tab-content-anamnese" class="student-tab-content space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">História Clínica e Anamnese Geral</h4>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Queixa Principal (relatada pelo paciente):</label>
+                <input type="text" id="prontQueixaPrincipal" class="w-full border border-slate-300 rounded p-2" placeholder="Descreva a queixa que trouxe o paciente à consulta">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">História da Doença Atual (HDA):</label>
+                <textarea id="prontHistoriaClinica" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Evolução do quadro, início dos sintomas, alterações recentes de rotina..."></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">História Patológica Pregressa (HPP) e Medicamentos em Uso:</label>
+                <textarea id="prontAntecedentesMed" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Comorbidades prévias, cirurgias, medicamentos contínuos e dosagens..."></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">História Familiar e Hábitos de Vida:</label>
+                <textarea id="prontHabitosEstiloVida" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Doenças na família, tabagismo, etilismo, rotina de sono e atividade física..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 2: ANTROPOMETRIA -->
+            <div id="tab-content-antropometria" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Avaliação Antropométrica e Estado Nutricional</h4>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Peso Atual (kg):</label>
+                  <input type="text" inputmode="decimal" id="prontPesoAtual" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 75.5">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Peso Habitual (kg):</label>
+                  <input type="text" inputmode="decimal" id="prontPesoHabitual" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 80.0">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Estatura (m):</label>
+                  <input type="text" inputmode="decimal" id="prontEstatura" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 1.70">
+                </div>
+                <div>
+                  <label class="block font-semibold text-emerald-800 mb-1">Altura do Joelho - AJ (cm):</label>
+                  <input type="text" inputmode="decimal" id="prontAlturaJoelho" class="w-full border border-emerald-300 bg-emerald-50/30 rounded p-2" placeholder="Ex: 51.5">
+                  <div id="ajChumleaHelper" class="hidden mt-1 text-[11px] text-emerald-800 bg-emerald-100/70 border border-emerald-200 rounded px-2 py-1 flex items-center justify-between">
+                    <span>📐 Estatura est. por Chumlea: <strong id="ajChumleaValue">--</strong></span>
+                    <button type="button" id="btnApplyChumlea" class="underline font-bold text-emerald-900 hover:text-emerald-950 ml-2">Usar estatura</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CARD DE CÁLCULO AUTOMÁTICO EM TEMPO REAL -->
+              <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <span class="text-slate-500 font-semibold uppercase text-[10px] block">Índice de Massa Corporal (IMC Calculado):</span>
+                  <div class="flex items-baseline space-x-2 mt-0.5">
+                    <span id="calculatedImcDisplay" class="text-xl font-extrabold text-emerald-800">--</span>
+                    <span class="text-xs text-emerald-700">kg/m²</span>
+                  </div>
+                  <span id="calculatedImcClassDisplay" class="font-semibold text-emerald-900 block mt-0.5">Aguardando dados</span>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold uppercase text-[10px] block">Variação / Perda Ponderal:</span>
+                  <div class="flex items-baseline space-x-2 mt-0.5">
+                    <span id="calculatedLossDisplay" class="text-xl font-extrabold text-emerald-800">--</span>
+                  </div>
+                  <span id="calculatedLossClassDisplay" class="font-semibold text-emerald-900 block mt-0.5">-</span>
+                </div>
+              </div>
+
+              <!-- DEMAIS AVALIAÇÕES: CIRCUNFERÊNCIAS E DOBRAS CUTÂNEAS -->
+              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
+                  <h5 class="font-bold text-slate-800 text-xs flex items-center">
+                    <span class="mr-1.5 text-sm">📏</span> Demais Avaliações: Circunferências e Dobras Cutâneas
+                  </h5>
+                  <button type="button" id="btnSintetizarMedidas" class="text-emerald-700 hover:text-emerald-800 text-[11px] font-semibold flex items-center space-x-1">
+                    <span>✨</span><span>Sintetizar Medidas</span>
+                  </button>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Cintura (cm):</label>
+                    <input type="text" inputmode="decimal" id="prontCircCintura" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 104">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Quadril (cm):</label>
+                    <input type="text" inputmode="decimal" id="prontCircQuadril" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 108">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Braço - CB (cm):</label>
+                    <input type="text" inputmode="decimal" id="prontCircBraco" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 35">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Circunf. Panturrilha - CP (cm):</label>
+                    <input type="text" inputmode="decimal" id="prontCircPanturrilha" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 31">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Tricipital - DCT (mm):</label>
+                    <input type="text" inputmode="decimal" id="prontDobraTricipital" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 24">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Subescapular (mm):</label>
+                    <input type="text" inputmode="decimal" id="prontDobraSubescapular" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 26">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Supra-ilíaca (mm):</label>
+                    <input type="text" inputmode="decimal" id="prontDobraSuprailiaca" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 28">
+                  </div>
+                  <div>
+                    <label class="block font-medium text-slate-600 text-[11px] mb-0.5">Dobra Abdominal / Outras (mm):</label>
+                    <input type="text" inputmode="decimal" id="prontDobraAbdominal" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Ex: 30">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-medium text-slate-700 text-[11px] mb-0.5">Demais Avaliações, Relações e Observações Antropométricas:</label>
+                  <textarea id="prontDemaisAvaliacoes" class="w-full border border-slate-300 rounded p-2 text-xs" rows="2" placeholder="Digite outras medidas (ex: RCQ, punho, CMB, AMB) ou observações detalhadas sobre a composição corporal..."></textarea>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Resumo Síntese das Medidas Antropométricas:</label>
+                <textarea id="prontCircunferencias" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Resumo integrado das circunferências, dobras e composição corporal para o prontuário..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 3: BIOQUÍMICA -->
+            <div id="tab-content-bioquimica" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Avaliação Bioquímica Relevante</h4>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Exames Laboratoriais Apurados na Anamnese:</label>
+                <textarea id="prontExamesRelevantes" class="w-full border border-slate-300 rounded p-2" rows="4" placeholder="Ex: Glicemia: 188 mg/dL; HbA1c: 8.9%; Colesterol Total: 235 mg/dL; Triglicerídeos: 260 mg/dL..."></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Interpretação e Raciocínio Clínico-Nutricional dos Exames:</label>
+                <textarea id="prontInterpretacaoBioq" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Qual a relação dos exames com o quadro clínico e quais exigem intervenção dietoterápica prioritária?"></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 4: EXAME FÍSICO -->
+            <div id="tab-content-examefisico" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Exame Físico Nutricional e Sinais Clínicos</h4>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Sinais Clínicos de Carência ou Toxicidade Nutricional:</label>
+                <input type="text" id="prontSinaisClinicos" class="w-full border border-slate-300 rounded p-2" placeholder="Pele, cabelos, unhas, acantose nigricans, integridade de mucosas...">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Avaliação da Massa Muscular e Tecido Adiposo:</label>
+                <textarea id="prontMassaMuscular" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Fossa temporal, clavículas, escápulas, quadríceps, bola de Bichat..."></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Condições Orais, Trato Gastrointestinal e Edemas:</label>
+                <textarea id="prontTGIEdemas" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Mastigação, deglutição, dentição/prótese, náuseas, vômitos, edema periférico, ascite..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 5: CONSUMO ALIMENTAR -->
+            <div id="tab-content-consumo" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Consumo Alimentar e Inquérito Dietético</h4>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Resumo do Recordatório Alimentar / Padrão Habitual:</label>
+                <textarea id="prontInqueritoResumo" class="w-full border border-slate-300 rounded p-2" rows="4" placeholder="Descreva os horários, refeições habituais, grupos alimentares mais consumidos e erros identificados..."></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Ingestão Hídrica, Preferências, Aversões e Alergias Alimentares:</label>
+                <textarea id="prontAguaPreferencias" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Volume diário de líquidos, preferências, rejeições alimentares e preparo das refeições..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 6: DIAGNÓSTICO PES -->
+            <div id="tab-content-pes" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Diagnóstico em Nutrição (Metodologia PES)</h4>
+              <p class="text-slate-500 text-[11px]">Estruture o diagnóstico no padrão da Terminologia Padronizada em Nutrição: Problema (P) relacionado à Etiologia (E) evidenciado por Sinais e Sintomas (S).</p>
+              
+              <div class="space-y-2">
+                <div>
+                  <label class="block font-semibold text-slate-700">Problema (P) - Diagnóstico Nutricional:</label>
+                  <input type="text" id="prontPesProblema" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: Ingestão excessiva de carboidratos simples e gorduras OU Desnutrição proteico-calórica">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700">Relacionado a (E) - Etiologia / Causa Raiz:</label>
+                  <input type="text" id="prontPesEtiologia" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: Escolhas alimentares inadequadas associadas à rotina de trabalho OU Síndrome urêmica e hiporexia">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700">Evidenciado por (S) - Sinais e Sintomas:</label>
+                  <input type="text" id="prontPesSinais" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: HbA1c de 8.9%, glicemia de jejum de 188 mg/dL e IMC de 31.2 kg/m² OU Perda de 14.4% de peso corporal">
+                </div>
+                <div class="pt-1">
+                  <div class="flex items-center justify-between mb-0.5">
+                    <label class="block font-semibold text-emerald-800">Texto Completo da Formulação do PES:</label>
+                    <button type="button" id="btnGerarPesCompleto" class="text-emerald-700 hover:text-emerald-800 text-[11px] font-semibold flex items-center space-x-1">
+                      <span>✨</span><span>Montar Frase PES</span>
+                    </button>
+                  </div>
+                  <textarea id="prontPesTextoCompleto" class="w-full border border-emerald-300 bg-emerald-50/50 rounded p-2 text-slate-800" rows="3" placeholder="Formulação completa unificada do PES..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 7: PRESCRIÇÃO DIETOTERÁPICA -->
+            <div id="tab-content-prescricao" class="student-tab-content hidden space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Conduta e Prescrição Dietoterápica</h4>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Valor Energético Total (VET - kcal/dia):</label>
+                  <input type="text" id="prontVetKcal" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 1850 kcal/dia">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Regra de Bolso / Taxa Metabólica Utilizada:</label>
+                  <input type="text" id="prontRegraBolso" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 25 kcal/kg de peso ajustado">
+                </div>
+              </div>
+
+              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                <span class="font-bold text-slate-800 text-[11px] block uppercase">Distribuição de Macronutrientes:</span>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[11px] text-slate-600 font-medium">Carboidratos (g e %):</label>
+                    <input type="text" id="prontChoG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 230g">
+                    <input type="text" id="prontChoPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 50%">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] text-slate-600 font-medium">Proteínas (g, g/kg e %):</label>
+                    <input type="text" id="prontPtnG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 75g">
+                    <input type="text" id="prontPtnGKg" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 1.2 g/kg">
+                    <input type="text" id="prontPtnPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 16%">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] text-slate-600 font-medium">Lipídios (g e %):</label>
+                    <input type="text" id="prontLipG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 60g">
+                    <input type="text" id="prontLipPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 34%">
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Consistência da Dieta:</label>
+                  <select id="prontConsistencia" class="w-full border border-slate-300 rounded p-2">
+                    <option value="Normal / Livre">Normal / Livre</option>
+                    <option value="Branda">Branda</option>
+                    <option value="Pastosa">Pastosa</option>
+                    <option value="Líquida Completa">Líquida Completa</option>
+                    <option value="Líquida Restrita">Líquida Restrita</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Fracionamento:</label>
+                  <select id="prontFracionamento" class="w-full border border-slate-300 rounded p-2">
+                    <option value="5 a 6 refeições/dia">5 a 6 refeições/dia</option>
+                    <option value="6 a 8 refeições/dia (Dumping/pequenos volumes)">6 a 8 refeições/dia (pequenos volumes)</option>
+                    <option value="3 a 4 refeições/dia">3 a 4 refeições/dia</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Fibras, Micronutrientes Alvo e Restrições Específicas:</label>
+                <input type="text" id="prontFibrasMicronutrientes" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: Fibras > 30g/dia; Sódio < 2000mg; Fósforo < 800mg; Potássio < 2000mg...">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Justificativa Fisiopatológica da Conduta:</label>
+                <textarea id="prontJustificativa" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Justifique cientificamente as decisões dietoterápicas tomadas com base na fisiopatologia da doença..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 8: CARDÁPIO E PLANEJAMENTO ALIMENTAR -->
+            <div id="tab-content-cardapio" class="student-tab-content hidden space-y-3">
+              <div class="flex items-center justify-between border-b pb-1">
+                <h4 class="font-bold text-slate-800 text-sm">Planejamento Alimentar Quali-Quantitativo</h4>
+                <button type="button" id="addCardapioMealBtn" class="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded text-xs font-semibold">
+                  + Adicionar Refeição
+                </button>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border border-slate-200 rounded">
+                  <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase font-bold">
+                    <tr>
+                      <th class="p-2">Refeição</th>
+                      <th class="p-2 w-24">Horário</th>
+                      <th class="p-2">Alimentos & Medidas Caseiras</th>
+                      <th class="p-2">Substituições</th>
+                      <th class="p-2 text-center w-10">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cardapioTableBody">
+                    <!-- Renderizado dinamicamente -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pt-2">
+                <label class="block font-semibold text-slate-700 mb-1">Orientações e Recomendações Dietoterápicas ao Paciente:</label>
+                <textarea id="prontOrientacoesGerais" class="w-full border border-slate-300 rounded p-2" rows="3" placeholder="Recomendações práticas para o paciente: modo de preparo, rotina de hidratação, substituições salutares, sinais de alerta..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA 9: QUESTÕES AVALIATIVAS DO CASO -->
+            <div id="tab-content-questoes" class="student-tab-content hidden space-y-3">
+              <div class="flex items-center justify-between border-b pb-1">
+                <h4 class="font-bold text-amber-900 text-sm">Questões Avaliativas Específicas do Caso</h4>
+                <span id="questionsCountBadge" class="badge-clinical bg-amber-100 text-amber-800">0 questões</span>
+              </div>
+              
+              <div class="bg-blue-50 border border-blue-200 text-blue-900 p-2.5 rounded text-xs leading-relaxed">
+                📌 <strong>Instrução da Avaliação:</strong> Responda às perguntas formuladas pelo professor para este caso clínico. Ao finalizar, clique no botão <strong>"Finalizar Caso e Gerar Documento Word"</strong> no rodapé.
+              </div>
+
+              <div id="studentQuestionsList">
+                <!-- Perguntas renderizadas dinamicamente -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- FOOTER DE AÇÕES DO ALUNO -->
+          <div class="bg-slate-50 border-t border-slate-200 p-3 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs text-slate-500">
+              Caso: <strong id="footerCaseTitle" class="text-slate-800">DM2 / HAS</strong>
+            </span>
+            <div class="flex items-center space-x-2">
+              <button id="finalizeAndExportDocxBtn" class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-md transition flex items-center space-x-1.5">
+                <span>📄</span>
+                <span>Finalizar Caso e Gerar Documento Word (.docx)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+    </div> <!-- /studentSimulationContainer -->
+
+  </main>
+
+  <!-- PAINEL DO ADMINISTRADOR / PROFESSOR (OCULTO POR PADRÃO - ACESSO RESTRITO POR SENHA Nutri2@26) -->
+  <main id="adminView" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
+    
+    <!-- SEÇÃO 1: LISTAGEM E GESTÃO DE CASOS CLÍNICOS -->
+    <section id="adminCasesListSection" class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div>
+          <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-bold text-slate-800">Gerenciamento de Casos Clínicos</h2>
+            <span class="badge-clinical bg-purple-100 text-purple-800 border border-purple-300">Área do Docente</span>
+          </div>
+          <p class="text-xs text-slate-500">Trave ou libere os casos para os estudantes e configure os dados e gabaritos.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="adminLockSessionBtn" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold px-3 py-2 rounded-lg border border-rose-300 transition flex items-center space-x-1" title="Sair do modo professor e bloquear painel">
+            <span>🔒</span>
+            <span>Bloquear Painel / Sair</span>
+          </button>
+          <input type="file" id="adminImportJsonInput" accept=".json" class="hidden">
+          <button id="adminImportJsonBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition">
+            📥 Importar (.json)
+          </button>
+          <button id="adminExportJsonBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition">
+            📤 Exportar Casos (.json)
+          </button>
+          <button id="adminResetDefaultsBtn" class="bg-slate-100 hover:bg-slate-200 text-amber-800 text-xs font-semibold px-3 py-2 rounded-lg border border-amber-300 transition">
+            🔄 Restaurar Padrões
+          </button>
+          <button id="adminUploadCaseNavBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-sm transition flex items-center space-x-1.5" title="Subir arquivo (.docx, .txt, .md, .json) ou colar texto e montar caso clínico automaticamente">
+            <span>📄</span>
+            <span>Subir Arquivo e Montar Caso</span>
+          </button>
+          <button id="adminNewCaseBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
+            + Criar Novo Caso
+          </button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD DE MÉTRICAS DO DOCENTE -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Total de Casos</span>
+            <h3 class="text-2xl font-black text-slate-800 mt-0.5" id="admMetricTotalCases">0</h3>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-xl font-bold border border-purple-200">
+            📁
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider text-[10px]">Liberados para Alunos</span>
+            <h3 class="text-2xl font-black text-emerald-700 mt-0.5" id="admMetricUnlockedCases">0</h3>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl font-bold border border-emerald-200">
+            🔓
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider text-[10px]">Travados / Bloqueados</span>
+            <h3 class="text-2xl font-black text-amber-700 mt-0.5" id="admMetricLockedCases">0</h3>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl font-bold border border-amber-200">
+            🔒
+          </div>
+        </div>
+      </div>
+
+      <!-- BARRA DE ABAS DE DISCIPLINAS NO PAINEL DO PROFESSOR -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-bold text-slate-700 uppercase tracking-wider text-[11px]">Disciplinas & Módulos:</span>
+            <span class="text-xs text-slate-300">|</span>
+            <span class="text-xs text-slate-500 font-medium">Selecione a aba para gerenciar os casos clínicos de cada matéria</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button id="adminEditDisciplineBtn" class="text-xs text-slate-600 hover:text-indigo-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 hover:border-indigo-300 bg-slate-50 hover:bg-indigo-50 transition flex items-center space-x-1" title="Editar nome, sigla ou ícone da disciplina ativa">
+              <span>✏️</span>
+              <span>Editar Disciplina</span>
+            </button>
+            <button id="adminDeleteDisciplineBtn" class="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2.5 py-1 rounded-lg border border-rose-200 hover:border-rose-300 bg-rose-50/50 hover:bg-rose-100 transition flex items-center space-x-1" title="Excluir disciplina selecionada (apenas se vazia)">
+              <span>🗑️</span>
+              <span>Excluir</span>
+            </button>
+            <button id="adminNewDisciplineBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-2xs transition flex items-center space-x-1" title="Cadastrar uma nova disciplina acadêmica">
+              <span>➕</span>
+              <span>Nova Disciplina</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ABAS HORIZONTAIS DE DISCIPLINAS (INJETADAS VIA JS) -->
+        <div id="adminDisciplineTabsContainer" class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5">
+          <!-- Injetado dinamicamente via JS -->
+        </div>
+      </div>
+
+      <!-- CARDS COM CASOS CADASTRADOS -->
+      <div id="adminCasesListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Injetado via JS -->
+      </div>
+    </section>
+
+    <!-- SEÇÃO 3: IMPORTAR ARQUIVO E MONTAR CASO CLÍNICO AUTOMATICAMENTE -->
+    <section id="adminUploadCaseSection" class="hidden space-y-4">
+      <!-- CABEÇALHO DA SEÇÃO DE UPLOAD -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-xl font-bold border border-indigo-200">
+            📄
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-base sm:text-lg font-bold text-slate-800">Subir Arquivo e Montar Caso Clínico</h2>
+              <span class="badge-clinical bg-indigo-100 text-indigo-800 border border-indigo-300">Inteligente / IA</span>
+            </div>
+            <p class="text-xs text-slate-500">Faça upload de documentos Word (.docx), textos (.txt, .md, .json) ou cole a descrição do caso para estruturação automática.</p>
+          </div>
+        </div>
+        <button id="adminCancelUploadBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition flex items-center space-x-1">
+          <span>⬅</span>
+          <span>Voltar aos Casos</span>
+        </button>
+      </div>
+
+      <!-- ÁREA DE CARREGAMENTO E DROPZONE -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- COLUNA ESQUERDA: DROPZONE E CONTROLES DE ARQUIVO (5 COLS) -->
+        <div class="lg:col-span-5 space-y-3.5">
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+            <h3 class="font-bold text-xs text-slate-800 mb-2 flex items-center space-x-1.5">
+              <span>📥</span>
+              <span>1. Selecione ou Arraste o Arquivo</span>
+            </h3>
+
+            <!-- DROPZONE -->
+            <div id="adminCaseDropzone" class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 hover:bg-indigo-50/70 rounded-xl p-6 text-center transition cursor-pointer flex flex-col items-center justify-center min-h-[170px]">
+              <input type="file" id="adminCaseFileInput" accept=".docx,.txt,.md,.json,.text" class="hidden">
+              <div class="w-12 h-12 bg-white text-indigo-600 rounded-full flex items-center justify-center text-2xl shadow-xs border border-indigo-200 mb-2">
+                📁
+              </div>
+              <p class="text-xs font-bold text-slate-800 mb-1">
+                Arraste seu arquivo aqui ou <span class="text-indigo-600 underline">procure no computador</span>
+              </p>
+              <p class="text-[11px] text-slate-500 mb-3">
+                Formatos aceitos: Word (.docx), Texto (.txt), Markdown (.md), JSON (.json)
+              </p>
+              <div class="flex flex-wrap items-center justify-center gap-1.5">
+                <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded">Word .DOCX</span>
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">Texto .TXT</span>
+                <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded">Markdown .MD</span>
+                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">JSON .JSON</span>
+              </div>
+            </div>
+
+            <!-- CARD DE ARQUIVO SELECIONADO (INICIALMENTE OCULTO) -->
+            <div id="adminSelectedFileInfo" class="hidden mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-center justify-between">
+              <div class="flex items-center space-x-2.5 overflow-hidden">
+                <span class="text-xl" id="adminFileIcon">📄</span>
+                <div class="truncate">
+                  <h4 class="text-xs font-bold text-indigo-900 truncate" id="adminFileName">documento.docx</h4>
+                  <p class="text-[10px] text-indigo-700" id="adminFileSize">0 KB</p>
+                </div>
+              </div>
+              <button id="adminRemoveFileBtn" class="text-xs text-slate-400 hover:text-rose-600 p-1 font-bold" title="Remover arquivo">✕</button>
+            </div>
+          </div>
+
+          <!-- DICAS DIDÁTICAS DE FORMATAÇÃO -->
+          <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-800 space-y-1.5">
+            <h4 class="font-bold flex items-center space-x-1 text-[11px]">
+              <span>💡</span>
+              <span>Como funciona a montagem automática:</span>
+            </h4>
+            <p class="text-[11px] text-amber-900 leading-relaxed">
+              O motor inteligente analisa os parágrafos do documento e identifica automaticamente: 
+              <strong>identificação do paciente</strong>, <strong>história e queixa</strong>, <strong>dados antropométricos (peso, altura)</strong>, 
+              <strong>tabela de exames laboratoriais</strong>, <strong>recordatório 24h</strong>, 
+              <strong>pareceres da equipe multiprofissional</strong> e <strong>questões avaliativas</strong>.
+            </p>
+            <p class="text-[11px] text-amber-900 leading-relaxed">
+              Após a montagem, o caso abre diretamente no <strong>Editor de 8 Abas</strong> para você revisar e salvar!
+            </p>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: PRÉ-VISUALIZAÇÃO / COLAGEM DIRETA E AÇÃO (7 COLS) -->
+        <div class="lg:col-span-7 space-y-3.5">
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
+                <span>📝</span>
+                <span>2. Texto do Caso Clínico (Extraído ou Colado):</span>
+              </h3>
+              <button id="adminClearTextBtn" class="text-slate-400 hover:text-slate-600 text-[11px] font-semibold">
+                Limpar Texto
+              </button>
+            </div>
+
+            <!-- SELETOR DE DISCIPLINA DE DESTINO NO UPLOAD -->
+            <div class="bg-indigo-50/60 border border-indigo-200 rounded-lg p-2.5 flex flex-wrap items-center justify-between gap-2">
+              <label class="text-xs font-bold text-indigo-900 flex items-center space-x-1.5">
+                <span>📚</span>
+                <span>Vincular Caso à Disciplina:</span>
+              </label>
+              <select id="adminUploadCaseDiscipline" class="text-xs border border-indigo-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold text-slate-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 min-w-[200px]">
+                <!-- Populado dinamicamente -->
+              </select>
+            </div>
+
+            <!-- TEXTAREA DE EDIÇÃO / COLAGEM DIRETA -->
+            <textarea id="adminCaseExtractedText" class="w-full border border-slate-300 rounded-xl p-3 text-xs leading-relaxed font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" rows="11" placeholder="Arraste um arquivo Word/Texto ao lado ou cole o texto do caso clínico diretamente aqui...
+Exemplo:
+Paciente: Dona Francisca, 58 anos, feminina, aposentada.
+Queixa Principal: Descontrole de glicemia e ganho de peso.
+Antropometria: Peso atual: 84.5 kg, Estatura: 1.62 m.
+Exames: Glicemia de jejum: 178 mg/dL, HbA1c: 8.9%, Colesterol total: 242 mg/dL.
+Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
+
+            <!-- BARRA DE AÇÃO E DISPARO -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
+              <div class="text-[11px] text-slate-500 flex items-center space-x-1">
+                <span>⚙️</span>
+                <span>Motor: <strong class="text-indigo-700">Extração Inteligente DietoCase</strong></span>
+              </div>
+              <button id="adminProcessAndBuildCaseBtn" class="bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2">
+                <span>✨</span>
+                <span>Montar Caso Clínico nas 8 Abas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 2: EDITOR DE CASO EM ABAS (ABERTO QUANDO O PROFESSOR EDITA OU CRIA UM CASO) -->
+    <section id="adminCaseEditorSection" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+      
+      <!-- CABEÇALHO DO EDITOR -->
+      <div class="bg-slate-800 text-white p-4 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">Editor de Caso Clínico de Dietoterapia</h3>
+          <p class="text-xs text-slate-300">Insira as informações nas abas. Se o aluno perguntar dados não inseridos, o personagem responderá que não consta.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button type="button" id="adminReviewPortugueseBtn" class="bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center space-x-1 cursor-pointer" title="Revisar ortografia, concordância e tempos verbais de todas as abas">
+            <span>✨</span>
+            <span>Revisar Português & Verbos</span>
+          </button>
+          <button id="adminCancelEditBtn" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded transition">Cancelar</button>
+          <button id="adminSaveCaseBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded shadow transition">Salvar Caso</button>
+        </div>
+      </div>
+
+      <!-- ABAS DO EDITOR DE CASO -->
+      <div class="flex border-b border-slate-200 bg-slate-50 overflow-x-auto text-xs font-medium">
+        <button class="admin-editor-tab-btn nav-tab-btn active px-3.5 py-2.5 whitespace-nowrap" data-admintab="identificacao">1. Identificação & História</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="antropometria">2. Antropometria</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="bioquimica">3. Bioquímica</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="examefisico">4. Exame Físico</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="consumo">5. Consumo Alimentar</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="multiprofissional">6. Equipe Multiprofissional</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap text-amber-800" data-admintab="questoes">7. Questões Avaliativas</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap text-purple-800" data-admintab="gabarito">8. Gabarito / Resolução</button>
+      </div>
+
+      <!-- CONTEÚDO DAS ABAS DO EDITOR -->
+      <div class="p-5 text-xs space-y-4 max-h-[700px] overflow-y-auto">
+        
+        <!-- ABA 1: IDENTIFICAÇÃO & HISTÓRIA -->
+        <div id="adm-tab-identificacao" class="admin-tab-content space-y-3">
+          
+          <!-- CONTROLE DE TRAVA / LIBERAÇÃO DO CASO -->
+          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+            <div>
+              <span class="font-bold text-slate-800 text-xs flex items-center">
+                <span class="mr-1.5 text-base">🔓</span> Liberação para Alunos:
+              </span>
+              <span class="text-[11px] text-slate-600">Se travado, este caso clínico não aparecerá na lista de casos do aluno.</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="admCaseIsUnlocked" class="sr-only peer" checked>
+              <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <span id="admCaseLockLabel" class="ml-2.5 text-xs font-bold text-emerald-800">Liberado</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div class="sm:col-span-2">
+              <label class="block font-bold text-slate-700 mb-1">Título do Caso:</label>
+              <input type="text" id="admCaseTitle" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Disciplina / Módulo:</label>
+              <select id="admCaseDiscipline" class="w-full border rounded p-2 text-xs bg-white font-medium focus:border-indigo-500">
+                <!-- Populado dinamicamente -->
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Categoria / Especialidade:</label>
+              <input type="text" id="admCaseCategory" class="w-full border rounded p-2 text-xs">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Descrição Breve:</label>
+            <input type="text" id="admCaseDesc" class="w-full border rounded p-2 text-xs">
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Nome do Paciente:</label>
+              <input type="text" id="admPatName" class="w-full border rounded p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Idade:</label>
+              <input type="number" id="admPatAge" class="w-full border rounded p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Sexo:</label>
+              <select id="admPatGender" class="w-full border rounded p-1.5 text-xs">
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Avatar Emoji:</label>
+              <input type="text" id="admPatAvatar" class="w-full border rounded p-1.5 text-xs" placeholder="Ex: 👨 ou 👵">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Ocupação / Trabalho:</label>
+              <input type="text" id="admPatOccupation" class="w-full border rounded p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Estado Civil:</label>
+              <input type="text" id="admPatMarital" class="w-full border rounded p-1.5 text-xs">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block font-semibold text-slate-600 mb-1">Residência:</label>
+              <input type="text" id="admPatResidence" class="w-full border rounded p-1.5 text-xs">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Queixa Principal (QP):</label>
+            <textarea id="admHistQP" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">História da Doença Atual (HDA):</label>
+            <textarea id="admHistHDA" class="w-full border rounded p-2 text-xs" rows="3"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">História Patológica Pregressa (HPP):</label>
+            <textarea id="admHistHPP" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">História Familiar:</label>
+            <textarea id="admHistFamilia" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Medicamentos em Uso:</label>
+            <textarea id="admHistMeds" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Hábitos de Vida (Álcool, Tabagismo, Atividade Física):</label>
+            <textarea id="admHistHabitos" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Função Intestinal e Diurese:</label>
+            <textarea id="admHistEliminacoes" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+        </div>
+
+        <!-- ABA 2: ANTROPOMETRIA -->
+        <div id="adm-tab-antropometria" class="admin-tab-content hidden space-y-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Peso Atual (kg):</label>
+              <input type="number" step="0.1" id="admAntroPesoAtual" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Peso Habitual (kg):</label>
+              <input type="number" step="0.1" id="admAntroPesoHab" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Estatura (m):</label>
+              <input type="number" step="0.01" id="admAntroAltura" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-emerald-800 mb-1">Altura do Joelho - AJ (cm):</label>
+              <input type="number" step="0.1" id="admAntroAJ" class="w-full border border-emerald-300 bg-emerald-50/20 rounded p-2 text-xs" placeholder="Ex: 51.5">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Circunf. Cintura (cm):</label>
+              <input type="number" step="0.1" id="admAntroCC" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Circunf. Braço (cm):</label>
+              <input type="number" step="0.1" id="admAntroCB" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Dobra Tricipital (mm):</label>
+              <input type="number" step="0.1" id="admAntroDCT" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Circunf. Panturrilha (cm):</label>
+              <input type="number" step="0.1" id="admAntroCP" class="w-full border rounded p-2 text-xs">
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block font-bold text-slate-700">Demais Avaliações (Outras Circunferências, Dobras Cutâneas e Observações):</label>
+              <div class="flex flex-wrap items-center gap-1">
+                <span class="text-[10px] text-slate-400 font-semibold">Inserir:</span>
+                <button type="button" class="admin-antro-tag-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-tag="Circunferência do Quadril: [ ] cm (RCQ: [ ])">+ Quadril/RCQ</button>
+                <button type="button" class="admin-antro-tag-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-tag="CMB: [ ] cm; AMB: [ ] cm²">+ CMB/AMB</button>
+                <button type="button" class="admin-antro-tag-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-tag="Dobra Subescapular: [ ] mm">+ Subescapular</button>
+                <button type="button" class="admin-antro-tag-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-tag="Dobra Supra-ilíaca: [ ] mm">+ Supra-ilíaca</button>
+                <button type="button" class="admin-antro-tag-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-tag="Bioimpedância Elétrica: % Gordura: [ ]%; Massa Magra: [ ] kg">+ Bioimpedância</button>
+              </div>
+            </div>
+            <textarea id="admAntroDemaisAvaliacoes" class="w-full border rounded p-2 text-xs" rows="2" placeholder="Ex: Circunferência do quadril: 108 cm (RCQ: 0.96); Dobra subescapular: 26 mm; Dobra suprailíaca: 28 mm..."></textarea>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Histórico de Perda ou Ganho Ponderal (descrição):</label>
+            <textarea id="admAntroPerda" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+        </div>
+
+        <!-- ABA 3: BIOQUÍMICA -->
+        <div id="adm-tab-bioquimica" class="admin-tab-content hidden space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div>
+              <h4 class="font-bold text-slate-800 text-xs">Tabela de Exames Laboratoriais</h4>
+              <p class="text-[10px] text-slate-500">Adicione exames do catálogo com referências oficiais ou crie exames personalizados.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <select id="adminQuickBioSelect" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white font-medium text-slate-700 focus:border-indigo-500">
+                <option value="">-- Catálogo de Exames Frequentes --</option>
+                <option value="glicemia">Glicemia de Jejum (< 99 mg/dL)</option>
+                <option value="hba1c">Hemoglobina Glicada - HbA1c (< 5.7%)</option>
+                <option value="colesterol_total">Colesterol Total (< 190 mg/dL)</option>
+                <option value="hdl">Colesterol HDL (> 40 mg/dL)</option>
+                <option value="ldl">Colesterol LDL (< 100 mg/dL)</option>
+                <option value="triglicerideos">Triglicerídeos (< 150 mg/dL)</option>
+                <option value="creatinina">Creatinina Sérica (0.7 - 1.2 mg/dL)</option>
+                <option value="ureia">Ureia Sérica (15 - 40 mg/dL)</option>
+                <option value="hemoglobina">Hemoglobina (12.0 - 16.0 g/dL)</option>
+                <option value="hematocrito">Hematócrito (36 - 48%)</option>
+                <option value="albumina">Albumina Sérica (3.5 - 5.0 g/dL)</option>
+                <option value="potassio">Potássio - K+ (3.5 - 5.1 mEq/L)</option>
+                <option value="sodio">Sódio - Na+ (135 - 145 mEq/L)</option>
+                <option value="tgo">TGO / AST (< 35 U/L)</option>
+                <option value="tgp">TGP / ALT (< 35 U/L)</option>
+                <option value="ferritina">Ferritina (30 - 300 ng/mL)</option>
+                <option value="pcr">Proteína C Reativa - PCR (< 5.0 mg/L)</option>
+                <option value="acido_urico">Ácido Úrico (3.0 - 7.0 mg/dL)</option>
+              </select>
+              <button type="button" id="adminAddQuickBioBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded text-xs font-semibold shadow-2xs transition">+ Inserir do Catálogo</button>
+              <button type="button" id="adminAddBioRowBtn" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded text-xs font-semibold transition">+ Exame em Branco</button>
+            </div>
+          </div>
+
+          <table class="w-full text-left border border-slate-200">
+            <thead class="bg-slate-100 text-slate-700 font-bold text-[11px]">
+              <tr>
+                <th class="p-2">Nome do Exame</th>
+                <th class="p-2">Valor Encontrado</th>
+                <th class="p-2">Valor de Referência</th>
+                <th class="p-2">Interpretação Clínica</th>
+                <th class="p-2 text-center w-10">✕</th>
+              </tr>
+            </thead>
+            <tbody id="adminBioTableBody">
+              <!-- Injetado via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ABA 4: EXAME FÍSICO -->
+        <div id="adm-tab-examefisico" class="admin-tab-content hidden space-y-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Estado Geral e Mucosas:</label>
+            <textarea id="admEfEstadoGeral" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Sinais Específicos (Manchas, Acantose, Pele, Cabelos, Sarcopenia):</label>
+            <textarea id="admEfSinais" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Edema ou Ascite:</label>
+            <input type="text" id="admEfEdema" class="w-full border rounded p-2 text-xs">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Cavidade Oral, Dentes, Prótese e Mastigação:</label>
+            <textarea id="admEfBoca" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Trato Gastrointestinal (TGI):</label>
+            <textarea id="admEfTGI" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+        </div>
+
+        <!-- ABA 5: CONSUMO ALIMENTAR -->
+        <div id="adm-tab-consumo" class="admin-tab-content hidden space-y-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Padrão Geral da Dieta:</label>
+            <input type="text" id="admCaPadrao" class="w-full border rounded p-2 text-xs">
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <h5 class="font-bold text-slate-700 text-xs">Recordatório Alimentar Habitual (24h)</h5>
+            <div class="flex flex-wrap items-center gap-1">
+              <span class="text-[10px] text-slate-400 font-semibold mr-0.5">Inserir Refeição:</span>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Café da Manhã">+ Café da Manhã</button>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Colação / Lanche da Manhã">+ Colação</button>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Almoço">+ Almoço</button>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Lanche da Tarde">+ Lanche da Tarde</button>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Jantar">+ Jantar</button>
+              <button type="button" class="admin-quick-rec-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-refeicao="Ceia">+ Ceia</button>
+              <button type="button" id="adminAddRecRowBtn" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-xs font-semibold">+ Outra</button>
+            </div>
+          </div>
+
+          <table class="w-full border border-slate-200">
+            <thead class="bg-slate-100 text-slate-700 text-[11px] font-bold">
+              <tr>
+                <th class="p-2 w-44">Refeição / Horário</th>
+                <th class="p-2">Alimentos e Quantidades</th>
+                <th class="p-2 text-center w-12">✕</th>
+              </tr>
+            </thead>
+            <tbody id="adminRecTableBody">
+              <!-- Injetado via JS -->
+            </tbody>
+          </table>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Ingestão Hídrica:</label>
+              <input type="text" id="admCaAgua" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Preferências Alimentares:</label>
+              <input type="text" id="admCaPreferencias" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Aversões, Alergias ou Intolerâncias:</label>
+              <input type="text" id="admCaAversoes" class="w-full border rounded p-2 text-xs">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Quem Prepara as Refeições:</label>
+              <input type="text" id="admCaQuemPrepara" class="w-full border rounded p-2 text-xs">
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 6: EQUIPE MULTIPROFISSIONAL (DINÂMICA: ADICIONAR E RETIRAR PROFISSIONAIS) -->
+        <div id="adm-tab-multiprofissional" class="admin-tab-content hidden space-y-4">
+          <!-- CABEÇALHO E FERRAMENTAS -->
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                <span>👥</span>
+                <span>Equipe Multiprofissional do Caso Clínico</span>
+              </h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Acrescente ou retire profissionais de saúde para este caso. O estudante poderá conversar com cada profissional configurado no chat da simulação.
+              </p>
+            </div>
+
+            <!-- CONTROLE DE ACRÉSCIMO DE PROFISSIONAIS -->
+            <div class="flex items-center space-x-2">
+              <select id="adminAddProfPresetSelect" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium text-slate-700 focus:border-emerald-500 cursor-pointer">
+                <!-- Populado via JS a partir de PROFESSIONAL_PRESETS -->
+              </select>
+              <button type="button" id="adminAddProfBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1">
+                <span>+</span>
+                <span>Acrescentar Profissional</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- LISTA DINÂMICA DE PROFISSIONAIS (CARDS COM OPÇÃO DE RETIRAR) -->
+          <div id="adminEquipeListContainer" class="space-y-3">
+            <!-- Populado via JS com renderAdminEquipeList() -->
+          </div>
+        </div>
+
+        <!-- ABA 7: QUESTÕES AVALIATIVAS -->
+        <div id="adm-tab-questoes" class="admin-tab-content hidden space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div>
+              <h4 class="font-bold text-slate-800 text-xs">Perguntas Avaliativas do Caso</h4>
+              <p class="text-[10px] text-slate-500">Perguntas específicas que o aluno deve responder no final da atividade.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1">
+              <span class="text-[10px] text-slate-400 font-semibold mr-0.5">Modelos Rápidos:</span>
+              <button type="button" class="admin-quick-q-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-q="Formule o Diagnóstico em Nutrição (Metodologia PES) prioritário para o caso, detalhando o problema, etiologia e sinais/sintomas evidenciados.">+ PES</button>
+              <button type="button" class="admin-quick-q-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-q="Calcule a estimativa do Valor Energético Total (VET) e estabeleça a distribuição recomendada de macronutrientes (g/kg e percentual).">+ VET & Macros</button>
+              <button type="button" class="admin-quick-q-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-q="Descreva a conduta dietoterápica detalhada, incluindo metas nutricionais, micronutrientes prioritários e orientações clínicas.">+ Conduta</button>
+              <button type="button" class="admin-quick-q-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-q="Planeje um cardápio quali-quantitativo de 1 dia com fracionamento adequado e opções práticas de substituição para a rotina do paciente.">+ Cardápio</button>
+              <button type="button" class="admin-quick-q-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px]" data-q="Avalie as potenciais interações fármaco-nutriente entre os medicamentos em uso e a terapia nutricional planejada.">+ Fármaco-Nutriente</button>
+              <button type="button" id="adminAddQuestionBtn" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-2.5 py-0.5 rounded text-xs font-semibold">+ Em Branco</button>
+            </div>
+          </div>
+
+          <div id="adminQuestionsContainer">
+            <!-- Injetado via JS -->
+          </div>
+        </div>
+
+        <!-- ABA 8: GABARITO / RESOLUÇÃO DO PROFESSOR -->
+        <div id="adm-tab-gabarito" class="admin-tab-content hidden space-y-3">
+          <div class="bg-purple-50 border border-purple-200 text-purple-900 p-2.5 rounded text-xs">
+            ℹ️ <strong>Área do Professor:</strong> Estas respostas e resoluções padrão ficam salvas para o professor comparar durante a discussão do caso. <em>O aluno não terá acesso a este gabarito durante a atividade.</em>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Diagnóstico em Nutrição Oficial (PES de Referência):</label>
+            <textarea id="admGabDiag" class="w-full border rounded p-2 text-xs" rows="3"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Cálculo Energético Esperado (VET):</label>
+            <textarea id="admGabCalc" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Distribuição de Macronutrientes de Referência:</label>
+            <textarea id="admGabMacros" class="w-full border rounded p-2 text-xs" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Conduta e Planejamento Dietoterápico Esperado:</label>
+            <textarea id="admGabConduta" class="w-full border rounded p-2 text-xs" rows="3"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL: CONFIRMAÇÃO DE SUBMISSÃO E FINALIZAÇÃO DO CASO -->
+  <div id="submissionConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-slate-200">
+      <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
+        ✅
+      </div>
+      <h3 class="text-center font-bold text-slate-900 text-lg mb-1">Caso Finalizado com Sucesso!</h3>
+      <p class="text-center text-xs text-slate-500 mb-4">
+        Estudante: <strong id="modalStudentName" class="text-slate-800">Aluno</strong><br>
+        <span id="modalCaseTitle" class="text-emerald-700 font-medium">Caso Clínico</span>
+      </p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-2 mb-4 leading-relaxed">
+        <p>📥 <strong>Seu relatório completo em formato Word (.docx) foi baixado automaticamente.</strong></p>
+        <p class="text-slate-600">
+          O documento contém o prontuário construído durante a anamnese, a resolução dietoterápica, os cálculos das necessidades energéticas, o planejamento alimentar e suas respostas às questões avaliativas.
+        </p>
+        <div class="bg-amber-50 border border-amber-200 p-2 rounded text-amber-800 text-[11px]">
+          🔒 <strong>Nota Didática:</strong> Conforme as diretrizes da disciplina, <strong>não é exibido feedback imediato de acertos ou erros</strong>. A avaliação e discussão detalhada serão realizadas pelo professor.
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center">
+        <button id="closeSubmissionModalBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 py-2 rounded-lg shadow transition">
+          OK, Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAÇÃO DE CHAVE GEMINI API (OPCIONAL) -->
+  <div id="apiKeyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl modal-fade-in border border-slate-200">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-sm text-slate-900 flex items-center">
+          <span class="mr-1.5">🔑</span> Chave Google Gemini API (Opcional)
+        </h3>
+        <button id="closeApiKeyModalBtn" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+        O aplicativo já possui um <strong>motor clínico offline integrado</strong> que funciona perfeitamente sem nenhuma chave. Se desejar usar o modelo Gemini 1.5 Flash para roleplay conversacional, insira sua chave abaixo. O motor manterá a <strong>regra estrita anti-alucinação</strong>.
+      </p>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-lg p-2.5 text-xs mb-3 font-mono">
+      <div class="flex items-center justify-end space-x-2">
+        <button id="saveApiKeyBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow transition">
+          Salvar Configuração
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ACESSO RESTRITO DO PROFESSOR (SENHA Nutri2@26) -->
+  <div id="teacherPasswordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl modal-fade-in border border-slate-200">
+      <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
+        🔐
+      </div>
+      <h3 class="text-center font-bold text-slate-900 text-base mb-1">Acesso do Professor</h3>
+      <p class="text-center text-xs text-slate-500 mb-4 leading-relaxed">
+        Área restrita ao docente para gerenciar, travar ou liberar os casos clínicos da disciplina.
+      </p>
+
+      <form id="teacherPasswordForm" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-slate-700 text-xs mb-1">Digite a senha de acesso:</label>
+          <input type="password" id="teacherPasswordInput" placeholder="Senha de acesso" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-center font-mono tracking-wider focus:border-purple-600 focus:ring-1 focus:ring-purple-600" autocomplete="current-password">
+        </div>
+        <div id="teacherPasswordError" class="text-xs text-rose-600 text-center font-medium hidden">
+          ⚠️ Senha incorreta! Acesso restrito ao docente.
+        </div>
+        <div class="flex items-center space-x-2 pt-1">
+          <button type="button" id="closeTeacherPasswordModalBtn" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" id="submitTeacherPasswordBtn" class="w-1/2 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs py-2 rounded-lg shadow transition">
+            Entrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CRIAR / EDITAR DISCIPLINA DO PROFESSOR -->
+  <div id="adminDisciplineModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-slate-200">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <span class="text-xl" id="adminDisciplineModalIconHeader">📚</span>
+          <h3 class="font-bold text-slate-900 text-sm" id="adminDisciplineModalTitle">Cadastrar Nova Disciplina</h3>
+        </div>
+        <button id="closeDisciplineModalBtn" class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1">✕</button>
+      </div>
+
+      <form id="adminDisciplineForm" class="space-y-3.5">
+        <input type="hidden" id="adminDisciplineId">
+        
+        <div>
+          <label class="block font-semibold text-slate-700 text-xs mb-1">Nome da Disciplina / Módulo:</label>
+          <input type="text" id="adminDisciplineName" required placeholder="Ex: Nutrição Clínica Ambulatorial" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 text-xs mb-1">Código / Sigla:</label>
+            <input type="text" id="adminDisciplineCode" placeholder="Ex: NUT-402" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs uppercase font-mono focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 text-xs mb-1">Ícone / Emoji:</label>
+            <input type="text" id="adminDisciplineIcon" maxlength="2" placeholder="🥗" value="📚" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-center font-bold focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1.5">Sugestões de Ícones:</label>
+          <div class="flex flex-wrap gap-1.5" id="adminDisciplineIconPresets">
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🥗</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🏥</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🩺</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">👶</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">👵</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🍎</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🧪</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">🏃</button>
+            <button type="button" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm transition disc-icon-preset-btn">📚</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 text-xs mb-1">Descrição / Ementa Breve:</label>
+          <textarea id="adminDisciplineDesc" rows="2" placeholder="Breve resumo dos objetivos clínicos desta matéria..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <button type="button" id="adminCancelDisciplineBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" id="adminSaveDisciplineBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition">
+            Salvar Disciplina
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: COMO INSTALAR O APP NO CELULAR (PWA IOS & ANDROID) -->
+  <div id="installAppModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-200 space-y-4">
+      
+      <!-- Cabeçalho do Modal -->
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-xl shadow-xs">
+            📲
+          </div>
+          <div>
+            <h3 class="font-black text-slate-900 text-base">Instalar DietoCase no Celular</h3>
+            <p class="text-xs text-slate-500">Acesso rápido em tela cheia sem lojas de aplicativos (PWA)</p>
+          </div>
+        </div>
+        <button id="closeInstallAppModalBtn" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
+
+      <!-- Botão de Instalação Automática (Android / Desktop Chrome) -->
+      <div id="pwaNativeInstallBox" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center justify-between gap-2">
+        <div class="text-xs text-emerald-900">
+          <strong class="block font-bold mb-0.5">Instalação Direta Disponível:</strong>
+          <span>Seu navegador suporta instalação imediata com 1 clique.</span>
+        </div>
+        <button id="pwaTriggerInstallBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-xs transition flex-shrink-0 cursor-pointer">
+          Instalar Agora 📲
+        </button>
+      </div>
+
+      <!-- Guia Passo a Passo por Plataforma -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        
+        <!-- CARD IPHONE (IOS) -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 mb-2.5">
+              <span class="text-lg">🍏</span>
+              <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">iPhone / iPad (iOS)</h4>
+            </div>
+            <ol class="text-[11px] text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+              <li>Abra o link no navegador <strong>Safari</strong>.</li>
+              <li>Toque no botão <strong>Compartilhar</strong> <span class="bg-slate-200 px-1 py-0.5 rounded text-[10px]">📤</span> (quadrado com seta).</li>
+              <li>Role as opções e toque em <strong>"Adicionar à Tela de Início"</strong> <span class="bg-slate-200 px-1 py-0.5 rounded text-[10px]">➕</span>.</li>
+              <li>Toque em <strong>"Adicionar"</strong> no topo direito.</li>
+            </ol>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-200 text-[10px] text-emerald-800 font-semibold flex items-center space-x-1">
+            <span>✨</span>
+            <span>Abre em tela cheia como app nativo!</span>
+          </div>
+        </div>
+
+        <!-- CARD ANDROID -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 mb-2.5">
+              <span class="text-lg">🤖</span>
+              <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Android (Chrome)</h4>
+            </div>
+            <ol class="text-[11px] text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+              <li>Abra o link no <strong>Google Chrome</strong>.</li>
+              <li>Toque no botão <strong>"Instalar"</strong> no topo ou no menu de <strong>3 pontinhos</strong> <span class="bg-slate-200 px-1 py-0.5 rounded text-[10px]">⋮</span>.</li>
+              <li>Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</li>
+              <li>Confirme a instalação.</li>
+            </ol>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-200 text-[10px] text-emerald-800 font-semibold flex items-center space-x-1">
+            <span>📱</span>
+            <span>Ícone criado na gaveta de apps!</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Vantagens do App Mobile -->
+      <div class="bg-slate-100 rounded-xl p-3 text-[11px] text-slate-600 flex items-start space-x-2">
+        <span class="text-sm">💡</span>
+        <p>
+          O aplicativo mobile não ocupa espaço no celular, funciona rápido com carregamento instantâneo e mantém os rascunhos dos alunos salvos com segurança.
+        </p>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button type="button" id="closeInstallAppModalBtn2" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">
+          Entendi, Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL INTELIGENTE: EXCLUSÃO DE DISCIPLINA COM OPÇÃO DE MOVER OU EXCLUIR CASOS -->
+  <div id="adminDeleteDisciplineModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-slate-200 space-y-4">
+      
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold border border-rose-200">
+            🗑️
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base" id="adminDeleteDiscModalTitle">Excluir Disciplina</h3>
+            <p class="text-xs text-slate-500" id="adminDeleteDiscModalSub">Gerencie o destino dos casos antes de excluir</p>
+          </div>
+        </div>
+        <button type="button" id="adminCloseDeleteDiscModalBtn" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
+
+      <!-- Informações da Disciplina -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500">Disciplina selecionada:</span>
+          <strong class="text-slate-800" id="adminDeleteDiscName">--</strong>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500">Casos clínicos vinculados:</span>
+          <span class="font-bold px-2 py-0.5 rounded text-[11px]" id="adminDeleteDiscCountBadge">0 casos</span>
+        </div>
+      </div>
+
+      <!-- OPÇÕES DE AÇÃO QUANDO HOUVER CASOS VINCULADOS -->
+      <div id="adminDeleteDiscWithCasesBox" class="space-y-3 hidden">
+        <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded-lg leading-relaxed">
+          ⚠️ <strong>Atenção:</strong> Esta disciplina possui casos clínicos. Escolha o que deseja fazer com eles para que seus alunos não percam conteúdos:
+        </p>
+
+        <div class="space-y-2 text-xs">
+          <!-- Opção 1: Mover casos (Recomendada) -->
+          <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-emerald-300 bg-emerald-50/40 cursor-pointer transition hover:bg-emerald-50">
+            <input type="radio" name="adminDeleteDiscAction" value="move" class="mt-0.5 text-emerald-600 focus:ring-emerald-500" checked>
+            <div class="flex-1">
+              <strong class="text-emerald-950 font-bold block mb-1">Mover casos para outra disciplina (Recomendado)</strong>
+              <p class="text-[11px] text-emerald-800 mb-2">Transfere todos os casos desta matéria para a disciplina selecionada abaixo:</p>
+              <select id="adminDeleteDiscTargetSelect" class="w-full text-xs border border-emerald-300 rounded-lg p-1.5 bg-white font-semibold text-slate-800 focus:border-emerald-600">
+                <!-- Populado dinamicamente com as outras disciplinas -->
+              </select>
+            </div>
+          </label>
+
+          <!-- Opção 2: Excluir casos em cascata -->
+          <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-rose-200 bg-rose-50/30 cursor-pointer transition hover:bg-rose-50">
+            <input type="radio" name="adminDeleteDiscAction" value="cascade" class="mt-0.5 text-rose-600 focus:ring-rose-500">
+            <div>
+              <strong class="text-rose-900 font-bold block mb-0.5">Excluir a disciplina e todos os seus casos</strong>
+              <p class="text-[11px] text-rose-700">Apaga permanentemente a disciplina e todos os casos clínicos vinculados a ela.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- MENSAGEM QUANDO NÃO HOUVER CASOS (DISCIPLINA VAZIA) -->
+      <div id="adminDeleteDiscEmptyBox" class="text-xs text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-xl hidden">
+        Esta disciplina não possui nenhum caso clínico vinculado. A exclusão será realizada de forma limpa e imediata.
+      </div>
+
+      <!-- BOTÕES DE AÇÃO -->
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+        <button type="button" id="adminCancelDeleteDiscBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg transition">
+          Cancelar
+        </button>
+        <button type="button" id="adminConfirmDeleteDiscBtn" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
+          Confirmar Exclusão
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPTS DA APLICAÇÃO -->
+  <script src="lib/mini-docx.js"></script>
+  <script src="js/cases-data.js"></script>
+  <script src="js/portuguese-reviser.js"></script>
+  <script src="js/case-builder.js"></script>
+  <script src="js/chat-engine.js"></script>
+  <script src="js/student-prontuario.js"></script>
+  <script src="js/docx-generator.js"></script>
+  <script src="js/sync-engine.js"></script>
+  <script src="js/admin-manager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

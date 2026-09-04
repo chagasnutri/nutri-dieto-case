@@ -1,0 +1,23 @@
+﻿# Arquivos de log do servidor local
+server.log
+*.log
+
+# Arquivos de saída e relatórios gerados por testes locais
+test-output.html
+test_output.html
+export-output.html
+test-run-result.txt
+Relatorio_Dietoterapia_Teste.docx
+*.docx
+
+# Arquivos de sistema e editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Arquivos temporários
+scratch/
+*.tmp
+*.temp
