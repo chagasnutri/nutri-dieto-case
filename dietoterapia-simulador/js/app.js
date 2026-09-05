@@ -3822,48 +3822,96 @@ document.addEventListener("DOMContentLoaded", () => {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then((reg) => {
-          console.log('DietoCase Service Worker registrado:', reg.scope);
+          console.log('✅ DietoCase Service Worker registrado com escopo:', reg.scope);
         }).catch((err) => {
-          console.log('Falha ao registrar Service Worker:', err);
+          console.warn('Falha ao registrar Service Worker:', err);
         });
       });
     }
 
-    // Suporte ao evento nativo de instalação do PWA (Android / Chrome Desktop)
+    // Suporte ao evento nativo de instalação do PWA (Progressive Web App)
     let deferredPwaPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPwaPrompt = e;
-      const installBox = document.getElementById("pwaNativeInstallBox");
-      if (installBox) installBox.classList.remove("hidden");
-    });
-
-    const pwaTriggerBtn = document.getElementById("pwaTriggerInstallBtn");
-    if (pwaTriggerBtn) {
-      pwaTriggerBtn.addEventListener("click", async () => {
-        if (deferredPwaPrompt) {
-          deferredPwaPrompt.prompt();
-          const { outcome } = await deferredPwaPrompt.userChoice;
-          console.log(`Resposta do usuário ao prompt de instalação: ${outcome}`);
-          deferredPwaPrompt = null;
-          const installBox = document.getElementById("pwaNativeInstallBox");
-          if (installBox) installBox.classList.add("hidden");
-          document.getElementById("installAppModal")?.classList.add("hidden");
-        }
-      });
-    }
-
-    // Modal de Instalação no Celular (iOS / Android)
     const installAppNavBtn = document.getElementById("navInstallAppBtn");
     const installAppModal = document.getElementById("installAppModal");
+    const pwaTriggerBtn = document.getElementById("pwaTriggerInstallBtn");
+    const pwaInstallBox = document.getElementById("pwaNativeInstallBox");
     const closeInstallAppModalBtn = document.getElementById("closeInstallAppModalBtn");
     const closeInstallAppModalBtn2 = document.getElementById("closeInstallAppModalBtn2");
 
-    if (installAppNavBtn && installAppModal) {
+    // Verifica se o app já está rodando em tela cheia / standalone (já instalado)
+    const isAppRunningStandalone = window.matchMedia('(display-mode: standalone)').matches || (typeof navigator !== 'undefined' && navigator.standalone === true);
+    if (isAppRunningStandalone && installAppNavBtn) {
+      installAppNavBtn.classList.add("hidden");
+    }
+
+    // Captura o evento beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Previne a barra padrão automática do navegador para controlar a exibição pelo botão
+      e.preventDefault();
+      deferredPwaPrompt = e;
+      console.log('📲 [PWA] Evento beforeinstallprompt capturado com sucesso!');
+
+      // Destaca visualmente o botão "Instalar Aplicativo" no topo
+      if (installAppNavBtn && !isAppRunningStandalone) {
+        installAppNavBtn.classList.remove("bg-emerald-50", "text-emerald-800", "border-emerald-300");
+        installAppNavBtn.classList.add("bg-emerald-600", "hover:bg-emerald-700", "text-white", "border-emerald-500", "shadow-sm");
+        installAppNavBtn.setAttribute("title", "Clique para instalar o aplicativo no seu dispositivo");
+      }
+
+      if (pwaInstallBox) {
+        pwaInstallBox.classList.remove("hidden");
+      }
+    });
+
+    // Função central para acionar o prompt nativo de instalação
+    async function triggerPwaInstallationFlow() {
+      if (deferredPwaPrompt) {
+        try {
+          deferredPwaPrompt.prompt();
+          const choiceResult = await deferredPwaPrompt.userChoice;
+          console.log(`📲 [PWA] Resposta do usuário ao prompt de instalação: ${choiceResult.outcome}`);
+          if (choiceResult.outcome === 'accepted') {
+            showToast("🎉 Instalando DietoCase na tela inicial...");
+            if (installAppNavBtn) installAppNavBtn.classList.add("hidden");
+          }
+        } catch (err) {
+          console.warn("Aviso no prompt de instalação:", err);
+        } finally {
+          deferredPwaPrompt = null;
+          if (pwaInstallBox) pwaInstallBox.classList.add("hidden");
+          if (installAppModal) installAppModal.classList.add("hidden");
+        }
+      } else {
+        // Se o navegador não suportar beforeinstallprompt (ex: iOS Safari), abre o modal com o guia ilustrado
+        if (installAppModal) {
+          installAppModal.classList.remove("hidden");
+        }
+      }
+    }
+
+    // Evento disparado quando o app é instalado com sucesso
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('📲 [PWA] DietoCase instalado com sucesso na tela inicial!');
+      deferredPwaPrompt = null;
+      if (installAppNavBtn) installAppNavBtn.classList.add("hidden");
+      if (pwaInstallBox) pwaInstallBox.classList.add("hidden");
+      if (installAppModal) installAppModal.classList.add("hidden");
+      showToast("🎉 DietoCase instalado com sucesso! Você já pode abrir direto pelo ícone na tela inicial.");
+    });
+
+    // Cliques nos botões de instalação
+    if (installAppNavBtn) {
       installAppNavBtn.addEventListener("click", () => {
-        installAppModal.classList.remove("hidden");
+        triggerPwaInstallationFlow();
       });
     }
+
+    if (pwaTriggerBtn) {
+      pwaTriggerBtn.addEventListener("click", () => {
+        triggerPwaInstallationFlow();
+      });
+    }
+
     if (closeInstallAppModalBtn && installAppModal) {
       closeInstallAppModalBtn.addEventListener("click", () => {
         installAppModal.classList.add("hidden");
