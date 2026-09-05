@@ -1,27 +1,48 @@
-// Gerenciador de Nuvem Firebase Firestore em Tempo Real - DietoCase
-// Conecta os dispositivos dos professores e dos alunos em tempo real utilizando o Google Cloud Firestore.
+/**
+ * DietoCase - Serviço de Sincronização Firebase Firestore (v9 Modular)
+ * Conexão direta em nuvem para sincronização em tempo real entre Aluno e Professor.
+ * 
+ * Estrutura no Cloud Firestore:
+ * - Coleção: 'configuracoes'
+ * - Documento: 'estado_atual'
+ *   Contém: { disciplinas, cases, updatedAt, updatedBy }
+ */
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
+  authDomain: "simulador-dieto-e114c.firebaseapp.com",
+  projectId: "simulador-dieto-e114c",
+  storageBucket: "simulador-dieto-e114c.firebasestorage.app",
+  messagingSenderId: "380596633724",
+  appId: "1:380596633724:web:dc9948bbcb9b8f379989f9"
+};
+
+const COLLECTION_NAME = "configuracoes";
+const DOCUMENT_ID = "estado_atual";
 
 class FirebaseSyncService {
   constructor() {
+    this.config = (typeof window !== "undefined" && window.firebaseConfig) ? window.firebaseConfig : firebaseConfig;
     this.app = null;
     this.db = null;
-    this.status = this.isConfigured() ? "connecting" : "unconfigured";
+    this.status = "connecting";
     this.statusListeners = [];
     this.dataListeners = [];
-    this.casosUnsubscribe = null;
-    this.disciplinasUnsubscribe = null;
-    this.isSeeding = false;
-    this.hasReceivedInitialSnapshot = false;
+    this.unsubscribeSnapshot = null;
+    this.isApplyingRemote = false;
+
+    this.init();
   }
 
   isConfigured() {
-    const cfg = (typeof window !== "undefined") ? (window.FIREBASE_CONFIG || window.firebaseConfig) : null;
-    return !!(cfg && cfg.apiKey && cfg.projectId && cfg.apiKey.trim() !== "" && cfg.projectId.trim() !== "");
+    return !!(this.config && this.config.apiKey && this.config.projectId && !this.config.apiKey.includes("SUA_API_KEY"));
   }
 
   getConfig() {
-    const cfg = (typeof window !== "undefined") ? (window.FIREBASE_CONFIG || window.firebaseConfig) : null;
-    return cfg || {};
+    return this.config;
   }
 
   onStatusChange(callback) {
@@ -31,319 +52,253 @@ class FirebaseSyncService {
     }
   }
 
-  setStatus(newStatus, detail = null) {
-    this.status = newStatus;
-    this.statusListeners.forEach(cb => {
-      try { cb(newStatus, detail); } catch (e) {}
-    });
-  }
-
   onDataChange(callback) {
     if (typeof callback === "function") {
       this.dataListeners.push(callback);
     }
   }
 
-  // Inicializa o Firebase Firestore
-  async init() {
-    if (!this.isConfigured()) {
-      this.setStatus("unconfigured", "Chaves do Firebase não configuradas. Operando em modo local.");
-      console.log("☁️ Firebase: chaves pendentes em js/firebase-config.js. Sistema rodando em cache local.");
-      return false;
-    }
+  setStatus(newStatus, detail = null) {
+    this.status = newStatus;
+    this.statusListeners.forEach(cb => {
+      try { cb(newStatus, detail); } catch (e) { console.error(e); }
+    });
+  }
 
-    if (typeof firebase === "undefined") {
-      this.setStatus("error", "SDK do Firebase não foi carregado pelo navegador.");
-      console.warn("Firebase SDK compat não disponível.");
+  init() {
+    if (!this.isConfigured()) {
+      this.setStatus("unconfigured_firebase");
       return false;
     }
 
     try {
-      this.setStatus("connecting");
-      const config = this.getConfig();
+      this.app = initializeApp(this.config);
+      this.db = getFirestore(this.app);
+      this.setStatus("online_firebase");
+      console.log("☁️ [Firebase v9 Modular] Firestore conectado com sucesso para o projeto:", this.config.projectId);
 
-      // Evita duplicar inicialização se o app já existir
-      if (!firebase.apps || firebase.apps.length === 0) {
-        this.app = firebase.initializeApp(config);
-      } else {
-        this.app = firebase.apps[0];
-      }
-
-      this.db = firebase.firestore();
-
-      // Habilita persistência offline se possível
-      try {
-        await this.db.enablePersistence({ synchronizeTabs: true });
-      } catch (err) {
-        // Ignora erros de múltiplas abas ou navegador não suportado
-      }
-
-      this.setStatus("online");
-      this.setupRealtimeListeners();
+      // Inicia a escuta em tempo real do documento estado_atual
+      this.startRealtimeListener();
       return true;
     } catch (err) {
-      console.error("Erro ao inicializar Firebase Firestore:", err);
-      this.setStatus("error", err.message);
+      console.error("❌ Erro ao inicializar Firebase v9 Modular:", err);
+      this.setStatus("error_firebase");
       return false;
     }
   }
 
-  // Configura ouvintes em tempo real (onSnapshot) para sincronização instantânea
-  setupRealtimeListeners() {
+  // Escuta em tempo real no documento: configuracoes/estado_atual
+  startRealtimeListener() {
     if (!this.db) return;
+    if (this.unsubscribeSnapshot) {
+      this.unsubscribeSnapshot();
+    }
 
-    // Cancela ouvintes anteriores se existirem
-    if (this.casosUnsubscribe) this.casosUnsubscribe();
-    if (this.disciplinasUnsubscribe) this.disciplinasUnsubscribe();
+    const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
 
-    let cachedCasos = [];
-    let cachedDisciplinas = [];
-    let casosLoaded = false;
-    let discLoaded = false;
+    this.unsubscribeSnapshot = onSnapshot(estadoRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log("📡 [Firestore onSnapshot] Alteração recebida em tempo real:", data.updatedAt);
+        this.handleRemoteUpdate(data);
+      } else {
+        console.log("ℹ️ Documento configuracoes/estado_atual não existe ainda. Criando com dados padrão (auto-seed)...");
+        this.seedInitialState();
+      }
+    }, (error) => {
+      console.warn("⚠️ Aviso no onSnapshot do Firestore:", error.message);
+      this.setStatus("error_firebase");
+    });
+  }
 
-    const checkInitialSeed = async () => {
-      if (casosLoaded && discLoaded && !this.hasReceivedInitialSnapshot) {
-        this.hasReceivedInitialSnapshot = true;
-        // Se o banco de dados estiver completamente virgem, faz o seed dos dados padrão
-        if (cachedCasos.length === 0 && cachedDisciplinas.length === 0) {
-          await this.seedInitialDataIfEmpty();
+  // Processa atualização recebida da nuvem e bloqueia a tela do aluno em tempo real
+  handleRemoteUpdate(data) {
+    if (!data) return;
+    this.isApplyingRemote = true;
+
+    try {
+      const cases = Array.isArray(data.cases) ? data.cases : [];
+      const disciplinas = Array.isArray(data.disciplinas) ? data.disciplinas : [];
+
+      // Atualiza o cache local (localStorage) para permitir funcionamento offline e persistência
+      if (disciplinas.length > 0) {
+        localStorage.setItem("dietocase_disciplinas_data", JSON.stringify(disciplinas));
+      }
+      if (cases.length > 0) {
+        localStorage.setItem("dietocase_cases_data", JSON.stringify(cases));
+      }
+      if (data.updatedAt) {
+        localStorage.setItem("dietocase_last_sync_ts", data.updatedAt);
+      }
+
+      // Atualiza os modelos do AdminManager
+      if (typeof window !== "undefined" && window.adminManager) {
+        window.adminManager.disciplinas = disciplinas;
+        window.adminManager.cases = cases;
+      }
+
+      // Notifica ouvintes registrados (ex: sync-engine)
+      this.dataListeners.forEach(cb => {
+        try { cb({ disciplinas, cases, isRemote: true, updatedAt: data.updatedAt }); } catch (e) {}
+      });
+
+      // Se o app já estiver ativo na janela, atualiza imediatamente a interface do aluno
+      if (typeof window !== "undefined") {
+        if (typeof window.syncAppStateAndNotify === "function") {
+          window.syncAppStateAndNotify(null, false);
+        } else if (window.dietoSyncEngine) {
+          window.dietoSyncEngine.notifyDataListeners({ disciplinas, cases, isRemote: true });
+        }
+
+        // Se o aluno estiver dentro de um caso clínico, atualiza travas de abas e bloqueios instantaneamente
+        if (window.appState && window.appState.currentCase) {
+          const currentId = window.appState.currentCase.id;
+          const updatedCase = cases.find(c => c.id === currentId);
+          if (updatedCase) {
+            window.appState.currentCase = updatedCase;
+            if (typeof window.applyStudentTabBlockingState === "function") {
+              window.applyStudentTabBlockingState(updatedCase);
+            }
+          }
         }
       }
-    };
-
-    // Ouvinte da coleção 'disciplinas'
-    this.disciplinasUnsubscribe = this.db.collection("disciplinas").onSnapshot(snapshot => {
-      const disciplinas = [];
-      snapshot.forEach(doc => {
-        disciplinas.push({ id: doc.id, ...doc.data() });
-      });
-      cachedDisciplinas = disciplinas;
-      discLoaded = true;
-      this.notifyListenersIfReady(cachedDisciplinas, cachedCasos);
-      checkInitialSeed();
-    }, error => {
-      console.error("Erro no listener do Firestore (disciplinas):", error);
-      this.setStatus("error", error.message);
-    });
-
-    // Ouvinte da coleção 'casos'
-    this.casosUnsubscribe = this.db.collection("casos").onSnapshot(snapshot => {
-      const casos = [];
-      snapshot.forEach(doc => {
-        casos.push({ id: doc.id, ...doc.data() });
-      });
-      cachedCasos = casos;
-      casosLoaded = true;
-      this.notifyListenersIfReady(cachedDisciplinas, cachedCasos);
-      checkInitialSeed();
-    }, error => {
-      console.error("Erro no listener do Firestore (casos):", error);
-      this.setStatus("error", error.message);
-    });
-  }
-
-  notifyListenersIfReady(disciplinas, cases) {
-    if (disciplinas.length === 0 && cases.length === 0 && !this.hasReceivedInitialSnapshot) {
-      return;
-    }
-    // Atualiza localmente para caso o usuário fique offline depois
-    if (Array.isArray(disciplinas) && disciplinas.length > 0) {
-      localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(disciplinas));
-    }
-    if (Array.isArray(cases) && cases.length > 0) {
-      localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(cases));
-    }
-
-    this.dataListeners.forEach(cb => {
-      try {
-        cb({
-          disciplinas: disciplinas,
-          cases: cases,
-          isRemote: true,
-          updatedAt: new Date().toISOString()
-        });
-      } catch (e) {
-        console.error("Erro no callback do listener de dados do Firebase:", e);
-      }
-    });
-  }
-
-  // Popula o Firestore virgem com os casos e disciplinas padrão locais
-  async seedInitialDataIfEmpty() {
-    if (this.isSeeding || !this.db) return;
-    this.isSeeding = true;
-    console.log("☁️ Firestore virgem detectado: realizando envio inicial dos dados padrão...");
-    try {
-      const defaultDisciplinas = (typeof getDisciplinas === "function") ? getDisciplinas() : [];
-      const defaultCases = (typeof getCases === "function") ? getCases() : [];
-
-      const batch = this.db.batch();
-
-      defaultDisciplinas.forEach(d => {
-        const ref = this.db.collection("disciplinas").doc(d.id);
-        batch.set(ref, this.sanitizeForFirestore(d));
-      });
-
-      defaultCases.forEach(c => {
-        const ref = this.db.collection("casos").doc(c.id);
-        const data = {
-          ...c,
-          isLocked: c.isLocked === true,
-          blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : []
-        };
-        batch.set(ref, this.sanitizeForFirestore(data));
-      });
-
-      await batch.commit();
-      console.log("✅ Dados padrão enviados com sucesso ao Firestore!");
-    } catch (e) {
-      console.warn("Erro ao fazer seed inicial no Firestore:", e);
     } finally {
-      this.isSeeding = false;
+      setTimeout(() => { this.isApplyingRemote = false; }, 300);
     }
   }
 
-  // Remove valores undefined para compatibilidade estrita com Firestore
-  sanitizeForFirestore(obj) {
-    if (obj === null || typeof obj !== "object") return obj;
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeForFirestore(item));
-    }
-    const clean = {};
-    Object.keys(obj).forEach(key => {
-      const val = obj[key];
-      if (val !== undefined) {
-        clean[key] = this.sanitizeForFirestore(val);
-      }
-    });
-    return clean;
-  }
-
-  // Salva ou atualiza uma disciplina no Firestore
-  async saveDisciplina(disciplina) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
+  // Cria o estado inicial no Firestore caso o banco esteja vazio
+  async seedInitialState() {
+    if (!this.db) return;
     try {
-      await this.db.collection("disciplinas").doc(disciplina.id).set(this.sanitizeForFirestore(disciplina), { merge: true });
-      this.setStatus("online");
-      return { success: true };
-    } catch (err) {
-      console.error("Erro ao salvar disciplina no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
+      const initialCases = (typeof window !== "undefined" && window.adminManager)
+        ? window.adminManager.cases
+        : (typeof getCases === "function" ? getCases() : []);
+      const initialDisc = (typeof window !== "undefined" && window.adminManager)
+        ? window.adminManager.disciplinas
+        : (typeof getDisciplinas === "function" ? getDisciplinas() : []);
+
+      await this.saveEstadoAtual(initialDisc, initialCases, { seeded: true });
+    } catch (e) {
+      console.warn("Aviso ao semear dados iniciais no Firestore:", e);
     }
   }
 
-  // Exclui uma disciplina no Firestore
-  async deleteDisciplina(disciplinaId) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
-    try {
-      await this.db.collection("disciplinas").doc(disciplinaId).delete();
-      this.setStatus("online");
-      return { success: true };
-    } catch (err) {
-      console.error("Erro ao excluir disciplina no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
+  // Salva o estado completo no Firestore: configuracoes/estado_atual
+  async saveEstadoAtual(disciplinas, cases, meta = {}) {
+    if (!this.db) {
+      console.warn("Firestore não inicializado para gravação.");
+      return false;
     }
-  }
 
-  // Salva ou atualiza um caso clínico no Firestore
-  async saveCase(caseData) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
     try {
-      const dataToSave = {
-        ...caseData,
-        isLocked: caseData.isLocked === true,
-        blockedTabs: Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [],
-        updatedAt: new Date().toISOString()
+      const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
+      const payload = {
+        disciplinas: Array.isArray(disciplinas) ? disciplinas : [],
+        cases: Array.isArray(cases) ? cases : [],
+        updatedAt: new Date().toISOString(),
+        updatedBy: "professor",
+        ...meta
       };
-      await this.db.collection("casos").doc(caseData.id).set(this.sanitizeForFirestore(dataToSave), { merge: true });
-      this.setStatus("online");
-      return { success: true };
+
+      await setDoc(estadoRef, payload, { merge: true });
+      console.log("☁️ [Firestore] Estado salvo com sucesso em configuracoes/estado_atual:", payload.updatedAt);
+      this.setStatus("online_firebase");
+      return true;
     } catch (err) {
-      console.error("Erro ao salvar caso clínico no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
+      console.error("❌ Erro ao salvar estado no Firestore:", err);
+      this.setStatus("error_firebase");
+      return false;
     }
   }
 
-  // Exclui um caso clínico no Firestore
-  async deleteCase(caseId) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
-    try {
-      await this.db.collection("casos").doc(caseId).delete();
-      this.setStatus("online");
-      return { success: true };
-    } catch (err) {
-      console.error("Erro ao excluir caso no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
-    }
-  }
-
-  // Tranca ou libera um caso clínico no Firestore (Tempo Real)
-  async setCaseLock(caseId, isLocked) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
-    try {
-      await this.db.collection("casos").doc(caseId).set({
-        isLocked: !!isLocked,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      this.setStatus("online");
-      return { success: true, isLocked: !!isLocked };
-    } catch (err) {
-      console.error("Erro ao atualizar trava do caso no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
-    }
-  }
-
-  // Atualiza as abas bloqueadas de um caso clínico no Firestore (Tempo Real)
+  // Aba do Professor: Trancar ou destravar abas de um caso
   async setCaseBlockedTabs(caseId, blockedTabs) {
-    if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
-    this.setStatus("syncing");
-    try {
-      const list = Array.isArray(blockedTabs) ? blockedTabs : [];
-      await this.db.collection("casos").doc(caseId).set({
-        blockedTabs: list,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      this.setStatus("online");
-      return { success: true, blockedTabs: list };
-    } catch (err) {
-      console.error("Erro ao atualizar abas bloqueadas no Firestore:", err);
-      this.setStatus("error", err.message);
-      return { success: false, error: err.message };
+    const cases = (window.adminManager ? window.adminManager.cases : []);
+    const c = cases.find(item => item.id === caseId);
+    if (c) {
+      c.blockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
     }
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "setBlockedTabs", caseId });
   }
 
-  // Busca dados remotos sob demanda diretamente do Firestore (sem fetch HTTP)
-  async fetchRemoteData() {
-    if (!this.db || !this.isConfigured()) return null;
-    try {
-      const discSnap = await this.db.collection("disciplinas").get();
-      const disciplinas = [];
-      discSnap.forEach(doc => disciplinas.push({ id: doc.id, ...doc.data() }));
-
-      const casosSnap = await this.db.collection("casos").get();
-      const cases = [];
-      casosSnap.forEach(doc => cases.push({ id: doc.id, ...doc.data() }));
-
-      return { disciplinas, cases };
-    } catch (err) {
-      console.warn("Aviso ao buscar dados sob demanda do Firestore:", err);
-      return null;
+  // Aba do Professor: Trancar ou liberar um caso clínico
+  async setCaseLock(caseId, isLocked) {
+    const cases = (window.adminManager ? window.adminManager.cases : []);
+    const c = cases.find(item => item.id === caseId);
+    if (c) {
+      c.isLocked = isLocked === true;
     }
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "setLock", caseId });
+  }
+
+  // Aba do Professor: Salvar caso (criar ou editar)
+  async saveCase(caseData) {
+    const cases = (window.adminManager ? window.adminManager.cases : []);
+    const idx = cases.findIndex(c => c.id === caseData.id);
+    if (idx >= 0) {
+      cases[idx] = caseData;
+    } else {
+      cases.push(caseData);
+    }
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "saveCase", caseId: caseData.id });
+  }
+
+  // Aba do Professor: Excluir caso
+  async deleteCase(caseId) {
+    let cases = (window.adminManager ? window.adminManager.cases : []);
+    cases = cases.filter(c => c.id !== caseId);
+    if (window.adminManager) window.adminManager.cases = cases;
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteCase", caseId });
+  }
+
+  // Aba do Professor: Salvar disciplina
+  async saveDisciplina(discData) {
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    const idx = disciplinas.findIndex(d => d.id === discData.id);
+    if (idx >= 0) {
+      disciplinas[idx] = discData;
+    } else {
+      disciplinas.push(discData);
+    }
+    const cases = (window.adminManager ? window.adminManager.cases : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "saveDisciplina", disciplinaId: discData.id });
+  }
+
+  // Aba do Professor: Excluir disciplina
+  async deleteDisciplina(discId) {
+    let disciplinas = (window.adminManager ? window.adminManager.disciplinas : []);
+    disciplinas = disciplinas.filter(d => d.id !== discId);
+    if (window.adminManager) window.adminManager.disciplinas = disciplinas;
+    const cases = (window.adminManager ? window.adminManager.cases : []);
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteDisciplina", disciplinaId: discId });
+  }
+
+  // Leitura direta sob demanda do documento configuracoes/estado_atual
+  async fetchRemoteData() {
+    if (!this.db) return null;
+    try {
+      const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
+      const snap = await getDoc(estadoRef);
+      if (snap.exists()) {
+        return snap.data();
+      }
+    } catch (e) {
+      console.warn("Aviso ao buscar estado no Firestore:", e.message);
+    }
+    return null;
   }
 }
 
-// Instância global
+// Instanciação singleton
 const firebaseSyncService = new FirebaseSyncService();
 if (typeof window !== "undefined") {
   window.firebaseSyncService = firebaseSyncService;
 }
+
+export { FirebaseSyncService, firebaseSyncService };
+

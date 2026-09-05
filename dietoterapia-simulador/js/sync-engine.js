@@ -151,6 +151,9 @@ class DietoSyncEngine {
     }
 
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      if (typeof firebaseSyncService.saveEstadoAtual === "function") {
+        await firebaseSyncService.saveEstadoAtual(disciplinas, cases);
+      }
       this.setStatus("online_firebase");
       return { success: true, message: "Sincronizado na Nuvem Firebase Firestore!", serverOnline: true };
     }

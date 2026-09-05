@@ -253,8 +253,11 @@ class AdminManager {
     return c.blockedTabs;
   }
 
-  // Dispara sincronização em segundo plano com o servidor central
+  // Dispara sincronização em segundo plano com o Firebase Firestore (configuracoes/estado_atual)
   triggerServerSync() {
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
+      firebaseSyncService.saveEstadoAtual(this.disciplinas, this.cases);
+    }
     if (typeof window !== "undefined" && window.dietoSyncEngine && typeof window.dietoSyncEngine.pushToServer === "function") {
       window.dietoSyncEngine.pushToServer(this.disciplinas, this.cases);
     }

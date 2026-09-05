@@ -1045,6 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast(toastMessage);
     }
   }
+  window.syncAppStateAndNotify = syncAppStateAndNotify;
 
   // Seleciona caso clínico ativo
   function selectCase(caseId) {
@@ -3943,6 +3944,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
+  window.applyStudentTabBlockingState = applyStudentTabBlockingState;
 
   // Abre modal informando que a etapa foi bloqueada pelo professor
   function openStudentBlockedTabModal(tabId) {
