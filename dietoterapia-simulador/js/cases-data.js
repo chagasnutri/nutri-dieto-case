@@ -351,6 +351,11 @@ const DEFAULT_CASES = [
 const STORAGE_KEY_CASES = "dietoterapia_casos_clinicos_v1";
 const STORAGE_KEY_DISCIPLINAS = "dietocase_disciplinas_v1";
 
+if (typeof window !== "undefined") {
+  window.STORAGE_KEY_CASES = STORAGE_KEY_CASES;
+  window.STORAGE_KEY_DISCIPLINAS = STORAGE_KEY_DISCIPLINAS;
+}
+
 // Disciplinas acadêmicas predefinidas
 const DEFAULT_DISCIPLINAS = [
   {

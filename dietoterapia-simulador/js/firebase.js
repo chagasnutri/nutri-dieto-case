@@ -37,7 +37,44 @@ var firebaseSyncService = {
   async saveCase(c) { return true; },
   async deleteCase(id) { return true; },
   async saveDisciplina(d) { return true; },
-  async deleteDisciplina(id) { return true; }
+  async deleteDisciplina(id) { return true; },
+  applyPhysicalTabLocks(caseData) {
+    if (!caseData || typeof document === "undefined") return;
+    const blocked = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
+    const tabButtons = document.querySelectorAll(".student-tab-btn");
+    tabButtons.forEach(btn => {
+      const tabId = btn.dataset.tab;
+      const isBlocked = blocked.includes(tabId);
+      let lockSpan = btn.querySelector(".tab-lock-indicator");
+      if (isBlocked) {
+        btn.classList.add("tab-blocked", "opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        btn.dataset.isBlocked = "true";
+        btn.setAttribute("title", "🔒 Etapa bloqueada temporariamente pelo professor");
+        btn.setAttribute("aria-disabled", "true");
+        if (!lockSpan) {
+          lockSpan = document.createElement("span");
+          lockSpan.className = "tab-lock-indicator text-[11px] ml-1.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 rounded shadow-2xs";
+          lockSpan.textContent = "🔒";
+          btn.appendChild(lockSpan);
+        }
+      } else {
+        btn.classList.remove("tab-blocked", "opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        delete btn.dataset.isBlocked;
+        btn.removeAttribute("title");
+        btn.removeAttribute("aria-disabled");
+        if (lockSpan) lockSpan.remove();
+      }
+    });
+    const activeTabBtn = document.querySelector(".student-tab-btn.active");
+    if (activeTabBtn && blocked.includes(activeTabBtn.dataset.tab)) {
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "prescricao", "cardapio", "questoes"];
+      const firstAvailable = allTabs.find(t => !blocked.includes(t)) || "anamnese";
+      const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
+      if (targetBtn) {
+        targetBtn.click();
+      }
+    }
+  }
 };
 
 if (typeof window !== "undefined") {

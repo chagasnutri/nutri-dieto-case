@@ -832,6 +832,45 @@ Questões Avaliativas:
       });
       assert(Array.isArray(casoNormalizado.blockedTabs) && casoNormalizado.blockedTabs.length === 2 && casoNormalizado.blockedTabs.includes("consumo"),
         "CaseBuilderEngine: normalizeStructuredCase preserva blockedTabs preenchido");
+
+      // 52. Teste de Bloqueio Físico Imediato de Abas no DOM (applyPhysicalTabLocks)
+      const mockTabContainer = document.createElement("div");
+      mockTabContainer.id = "mockTabContainer";
+      mockTabContainer.innerHTML = `
+        <button class="student-tab-btn active" data-tab="anamnese">Anamnese</button>
+        <button class="student-tab-btn" data-tab="prescricao">Prescrição</button>
+        <button class="student-tab-btn" data-tab="cardapio">Cardápio</button>
+      `;
+      document.body.appendChild(mockTabContainer);
+
+      const btnPrescricao = mockTabContainer.querySelector('[data-tab="prescricao"]');
+      const btnCardapio = mockTabContainer.querySelector('[data-tab="cardapio"]');
+      const btnAnamnese = mockTabContainer.querySelector('[data-tab="anamnese"]');
+
+      // Aplica bloqueio na aba de prescrição
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: ["prescricao"] });
+      assert(btnPrescricao.dataset.isBlocked === "true", "DOM Bloqueio Físico: dataset.isBlocked definido como 'true' na aba bloqueada");
+      assert(btnPrescricao.classList.contains("tab-blocked") && btnPrescricao.classList.contains("cursor-not-allowed"), "DOM Bloqueio Físico: classes visuais 'tab-blocked' e 'cursor-not-allowed' aplicadas");
+      assert(btnPrescricao.querySelector(".tab-lock-indicator")?.textContent.includes("🔒"), "DOM Bloqueio Físico: badge indicador '🔒' inserido no botão");
+      assert(btnCardapio.dataset.isBlocked === undefined, "DOM Bloqueio Físico: aba liberada ('cardapio') permanece desbloqueada");
+
+      // 53. Teste de Desbloqueio e Remoção de Travas Físicas
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: [] });
+      assert(btnPrescricao.dataset.isBlocked === undefined, "DOM Desbloqueio: dataset.isBlocked removido com sucesso");
+      assert(!btnPrescricao.classList.contains("tab-blocked"), "DOM Desbloqueio: classe 'tab-blocked' removida");
+      assert(!btnPrescricao.querySelector(".tab-lock-indicator"), "DOM Desbloqueio: indicador '🔒' removido");
+
+      // 54. Teste de Redirecionamento Automático quando Aluno está na Aba Bloqueada
+      btnPrescricao.classList.add("active");
+      btnAnamnese.classList.remove("active");
+      let redirecionouParaPrimeiraDisponivel = false;
+      btnAnamnese.addEventListener("click", () => { redirecionouParaPrimeiraDisponivel = true; });
+
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: ["prescricao"] });
+      assert(redirecionouParaPrimeiraDisponivel === true, "DOM Redirecionamento: Aluno é automaticamente redirecionado para etapa disponível ao ser bloqueado");
+
+      // Limpeza do DOM de teste
+      mockTabContainer.remove();
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
