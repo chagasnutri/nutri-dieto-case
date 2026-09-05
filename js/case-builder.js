@@ -174,6 +174,7 @@ class CaseBuilderEngine {
       category: category,
       description: description,
       isLocked: false,
+      blockedTabs: [],
       patient: patientData,
       history: historyData,
       antropometria: antropometriaData,
@@ -200,6 +201,7 @@ class CaseBuilderEngine {
       category: c.category || "Clínica Médica / Ambulatorial",
       description: c.description || (c.patient ? `${c.patient.name || 'Paciente'}, ${c.patient.age || ''} anos.` : "Atendimento nutricional"),
       isLocked: c.isLocked === true,
+      blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
       patient: Object.assign({
         name: "Paciente",
         age: 45,

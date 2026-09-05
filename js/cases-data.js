@@ -11,6 +11,7 @@ const DEFAULT_CASES = [
     neeKcal: 1850,
     vetRecordatorioHabitual: 2750,
     isLocked: false,
+    blockedTabs: [],
     patient: {
       name: "Carlos Alberto da Silva",
       age: 54,
@@ -126,6 +127,7 @@ const DEFAULT_CASES = [
     neeKcal: 1500,
     vetRecordatorioHabitual: 920,
     isLocked: false,
+    blockedTabs: [],
     patient: {
       name: "Lourdes Maria de Oliveira",
       age: 76,
@@ -239,6 +241,7 @@ const DEFAULT_CASES = [
     neeKcal: 2150,
     vetRecordatorioHabitual: 1380,
     isLocked: false,
+    blockedTabs: [],
     patient: {
       name: "Roberto Silveira Santos",
       age: 42,
@@ -401,10 +404,11 @@ function getCases() {
   }
   try {
     const parsed = JSON.parse(stored);
-    // Garante que isLocked e disciplinaId existam com compatibilidade retroativa
+    // Garante que isLocked, blockedTabs e disciplinaId existam com compatibilidade retroativa
     return parsed.map(c => ({
       ...c,
       isLocked: c.isLocked === true,
+      blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
       disciplinaId: c.disciplinaId || "dietoterapia"
     }));
   } catch (e) {
