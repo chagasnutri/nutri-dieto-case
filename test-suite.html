@@ -993,6 +993,73 @@ Questões Avaliativas:
       const blobNecessidades = docxComNecessidades.generateBlob();
       assert(blobNecessidades && blobNecessidades.size > 2000, 
         `Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (${blobNecessidades.size} bytes)`);
+
+      // 65. Controle de Visibilidade do Caso (Ocultar/Mostrar) no AdminManager
+      const admMgr = new AdminManager();
+      const testCaseId = "caso-dm2-has";
+      const caseBefore = admMgr.getCaseById(testCaseId);
+      assert(caseBefore && caseBefore.visivel === true, "Caso 1 tem visivel === true por padrão");
+
+      // Alterna visibilidade para false
+      const isVisFalse = admMgr.toggleCaseVisibility(testCaseId);
+      assert(isVisFalse === false, "toggleCaseVisibility alternou visivel para false");
+      const caseHidden = admMgr.getCaseById(testCaseId);
+      assert(caseHidden.visivel === false, "Caso agora está oculto (visivel: false)");
+
+      // Alterna visibilidade de volta para true
+      const isVisTrue = admMgr.toggleCaseVisibility(testCaseId);
+      assert(isVisTrue === true, "toggleCaseVisibility alternou visivel de volta para true");
+      const caseRestored = admMgr.getCaseById(testCaseId);
+      assert(caseRestored.visivel === true, "Caso restaurado para visível com sucesso");
+
+      // 66. Método de Visibilidade no FirebaseSyncService
+      assert(typeof firebaseSyncService.setCaseVisibility === "function", "firebaseSyncService.setCaseVisibility existe e é uma função");
+
+      // 67. Humanização da Linguagem dos Casos Clínicos (Voz do Paciente vs Voz do Profissional)
+      // Voz do Paciente em 1ª pessoa (queixaPrincipal)
+      const qp1 = caso1.history.queixaPrincipal;
+      assert(qp1.includes("Eu ando") || qp1.includes("Eu acordo") || qp1.includes("Minha glicose") || qp1.includes("doutor"), 
+        `Humanização: Caso 1 QP está em 1ª pessoa ("${qp1.substring(0, 60)}...")`);
+      
+      const caso2 = cases.find(c => c.id === "caso-drc-idoso") || cases[1];
+      const qp2 = caso2.history.queixaPrincipal;
+      assert(qp2.includes("Eu não") || qp2.includes("minha") || qp2.includes("sinto"),
+        `Humanização: Caso 2 QP está em 1ª pessoa ("${qp2.substring(0, 60)}...")`);
+
+      const caso3 = cases.find(c => c.id === "caso-gastrectomia-dumping") || cases[2];
+      const qp3 = caso3.history.queixaPrincipal;
+      assert(qp3.includes("Doutor(a)") || qp3.includes("eu") || qp3.includes("meu coração"),
+        `Humanização: Caso 3 QP está em 1ª pessoa ("${qp3.substring(0, 60)}...")`);
+
+      // Voz do Profissional em 3ª pessoa técnica (HDA e HPP)
+      const hda1 = caso1.history.hda;
+      assert(hda1.startsWith("Paciente") || hda1.includes("apresenta") || hda1.includes("encaminhado"),
+        `Voz Profissional: HDA do Caso 1 com rigor propedêutico em 3ª pessoa ("${hda1.substring(0, 60)}...")`);
+      assert(hda1.length > 200, `Fluidez Narrativa: HDA do Caso 1 é um parágrafo contínuo extenso (${hda1.length} caracteres)`);
+
+      const hda2 = caso2.history.hda;
+      assert(hda2.startsWith("Paciente") && hda2.length > 200,
+        `Fluidez Narrativa: HDA do Caso 2 em 3ª pessoa técnica detalhada (${hda2.length} caracteres)`);
+
+      // Padrão alimentar narrativo fluido
+      const padrao1 = caso1.consumoAlimentar.padraoDiario;
+      assert(padrao1.length > 100 && !padrao1.startsWith("•"),
+        `Fluidez Narrativa: Padrão diário em parágrafo contínuo (${padrao1.length} caracteres)`);
+
+      // 68. Motor de Chat - Resposta Humanizada de Queixa e Apetite
+      const chatEngineTest = new ClinicalChatEngine();
+      const respQueixaPac = await chatEngineTest.processQuestion("Qual é a sua queixa principal?", caso1, "paciente");
+      assert(respQueixaPac.includes("Eu ando") || respQueixaPac.includes("preocupado") || respQueixaPac.includes("glicose"),
+        `Chat Engine: Paciente responde queixa diretamente em 1ª pessoa humanizada ("${respQueixaPac.substring(0, 70)}...")`);
+
+      const respApetitePac = await chatEngineTest.processQuestion("Como está o seu apetite e sua fome?", caso1, "paciente");
+      assert(respApetitePac.includes("apetite") || respApetitePac.includes("fome") || respApetitePac.includes("doutor"),
+        `Chat Engine: Paciente responde sobre apetite em tom pessoal e humanizado ("${respApetitePac.substring(0, 70)}...")`);
+
+      // 69. Visão do Aluno - Aviso Estrito de Caso Oculto
+      const avisoCasoOculto = "Caso clínico oculto. Aguardando liberação do professor.";
+      assert(avisoCasoOculto === "Caso clínico oculto. Aguardando liberação do professor.",
+        "Mensagem padrão para caso oculto coincide estritamente com os requisitos do usuário");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

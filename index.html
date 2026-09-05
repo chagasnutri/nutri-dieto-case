@@ -234,8 +234,24 @@
         </div>
       </div>
 
+      <!-- AVISO DE CASO OCULTO PELO PROFESSOR -->
+      <div id="studentCaseHiddenOverlay" class="hidden bg-white border-2 border-dashed border-amber-300 rounded-2xl p-10 text-center shadow-sm my-4">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-3xl shadow-inner">
+          🙈
+        </div>
+        <h3 class="text-base font-bold text-slate-800 mb-1">Acesso Temporariamente Restrito</h3>
+        <p class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 inline-block">
+          Caso clínico oculto. Aguardando liberação do professor.
+        </p>
+        <div class="mt-5">
+          <button onclick="document.getElementById('backToCatalogBtn')?.click()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-xs">
+            ⬅ Voltar ao Catálogo de Casos
+          </button>
+        </div>
+      </div>
+
       <!-- GRID SPLIT: CHAT À ESQUERDA / PRONTUÁRIO À DIREITA -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div id="studentSimulationContent" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
       
       <!-- COLUNA DA ESQUERDA: CHAT E SIMULAÇÃO DE ANAMNESE (5 colunas) -->
       <section class="lg:col-span-5 flex flex-col space-y-3">
@@ -1797,19 +1813,37 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
         <!-- ABA 1: IDENTIFICAÇÃO & HISTÓRIA -->
         <div id="adm-tab-identificacao" class="admin-tab-content space-y-3">
           
-          <!-- CONTROLE DE TRAVA / LIBERAÇÃO DO CASO -->
-          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 rounded-xl p-3 flex items-center justify-between shadow-2xs">
-            <div>
-              <span class="font-bold text-slate-800 text-xs flex items-center">
-                <span class="mr-1.5 text-base">🔓</span> Liberação para Alunos:
-              </span>
-              <span class="text-[11px] text-slate-600">Se travado, este caso clínico não aparecerá na lista de casos do aluno.</span>
+          <!-- CONTROLES DE LIBERAÇÃO E VISIBILIDADE DO CASO -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
+            <!-- LIBERAÇÃO / TRAVA -->
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+              <div>
+                <span class="font-bold text-slate-800 text-xs flex items-center">
+                  <span class="mr-1.5 text-base">🔓</span> Liberação do Caso:
+                </span>
+                <span class="text-[11px] text-slate-600">Se travado, bloqueia o início do atendimento.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer ml-2">
+                <input type="checkbox" id="admCaseIsUnlocked" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                <span id="admCaseLockLabel" class="ml-2.5 text-xs font-bold text-emerald-800 whitespace-nowrap">Liberado</span>
+              </label>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="admCaseIsUnlocked" class="sr-only peer" checked>
-              <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-              <span id="admCaseLockLabel" class="ml-2.5 text-xs font-bold text-emerald-800">Liberado</span>
-            </label>
+
+            <!-- VISIBILIDADE / OCULTAÇÃO -->
+            <div class="bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-300 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+              <div>
+                <span class="font-bold text-slate-800 text-xs flex items-center">
+                  <span class="mr-1.5 text-base">👁️</span> Visibilidade aos Alunos:
+                </span>
+                <span class="text-[11px] text-slate-600">Se oculto, não exibe os dados clínicos aos alunos.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer ml-2">
+                <input type="checkbox" id="admCaseIsVisible" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                <span id="admCaseVisibilityLabel" class="ml-2.5 text-xs font-bold text-sky-800 whitespace-nowrap">Visível</span>
+              </label>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">

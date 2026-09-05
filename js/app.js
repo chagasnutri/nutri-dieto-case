@@ -152,6 +152,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Suporte a parâmetro de visualização na URL (ex: ?view=simulation, ?view=password, ?view=admin, ?view=upload)
     const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("demo") === "visibilidade-aluno") {
+      adminManager.refreshCases();
+      const c2 = adminManager.getCaseById("caso-drc-idoso");
+      if (c2) {
+        c2.visivel = false;
+        if (typeof saveCases === "function") saveCases(adminManager.cases);
+      }
+      openStudentDiscipline("dietoterapia");
+    } else if (urlParams.get("demo") === "visibilidade") {
+      adminManager.refreshCases();
+      const c2 = adminManager.getCaseById("caso-drc-idoso");
+      if (c2) {
+        c2.visivel = false;
+        if (typeof saveCases === "function") saveCases(adminManager.cases);
+      }
+    }
+
     const requestedView = urlParams.get("view");
     if (requestedView === "simulation") {
       showStudentSimulation("caso-dm2-has");
@@ -503,6 +520,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function showStudentSimulation(caseId) {
     const found = adminManager.getCaseById(caseId);
     if (!found) return;
+
+    if (found.visivel === false && !isTeacherAuthenticated) {
+      showToast("Caso clínico oculto. Aguardando liberação do professor.", "warning");
+      return;
+    }
 
     if (found.isLocked) {
       showToast("🔒 Este caso está bloqueado pelo professor. Aguarde a liberação para realizar o atendimento.", "warning");
@@ -870,6 +892,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     filtered.forEach(c => {
+      // Se o caso estiver oculto pelo professor na visão do aluno, oculta os dados do caso e exibe estritamente o aviso
+      if (c.visivel === false && !isTeacherAuthenticated) {
+        const card = document.createElement("div");
+        card.className = "catalog-case-card bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden";
+        card.innerHTML = `
+          <div class="absolute top-0 left-0 right-0 h-1 bg-slate-300"></div>
+          <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-2xl mb-3 shadow-inner">
+            🙈
+          </div>
+          <p class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 max-w-xs shadow-2xs">
+            Caso clínico oculto. Aguardando liberação do professor.
+          </p>
+        `;
+        studentCasesGrid.appendChild(card);
+        return;
+      }
+
       const isLocked = !!c.isLocked;
       const card = document.createElement("div");
       card.className = `catalog-case-card bg-white border ${isLocked ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'} rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden`;
@@ -956,8 +995,8 @@ document.addEventListener("DOMContentLoaded", () => {
     adminManager.refreshCases();
     caseSelectDropdown.innerHTML = "";
 
-    // Filtra casos que NÃO estão travados pelo professor
-    const availableCases = adminManager.cases.filter(c => !c.isLocked);
+    // Filtra casos que NÃO estão travados pelo professor e NÃO estão ocultos para os alunos
+    const availableCases = adminManager.cases.filter(c => !c.isLocked && (isTeacherAuthenticated || c.visivel !== false));
 
     if (availableCases.length === 0) {
       const opt = document.createElement("option");
@@ -1046,10 +1085,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const updated = adminManager.getCaseById(activeCaseId);
       if (updated) {
         const wasLocked = appState.currentCase ? appState.currentCase.isLocked : false;
+        const wasVisible = appState.currentCase ? (appState.currentCase.visivel !== false) : true;
         appState.currentCase = updated;
         appState.currentCaseId = updated.id;
+
+        // Controle de visibilidade em tempo real do caso ativo para o aluno
+        const hiddenOverlay = document.getElementById("studentCaseHiddenOverlay");
+        const simContent = document.getElementById("studentSimulationContent");
+        if (!isTeacherAuthenticated && updated.visivel === false) {
+          if (hiddenOverlay) hiddenOverlay.classList.remove("hidden");
+          if (simContent) simContent.classList.add("hidden");
+        } else {
+          if (hiddenOverlay) hiddenOverlay.classList.add("hidden");
+          if (simContent) simContent.classList.remove("hidden");
+        }
+
         const patHeader = document.getElementById("simPatientHeaderName");
-        if (patHeader) patHeader.textContent = updated.patient?.name || updated.title;
+        if (patHeader) patHeader.textContent = (updated.visivel === false && !isTeacherAuthenticated) ? "Caso Oculto" : (updated.patient?.name || updated.title);
         updateInterlocutorDropdown(updated);
 
         // Aplica bloqueio de abas em tempo real fisicamente no DOM
@@ -1060,6 +1112,13 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast("🔒 Atenção: este caso clínico foi trancado pelo professor em tempo real.");
         } else if (wasLocked && !updated.isLocked && !isTeacherAuthenticated) {
           showToast("🔓 Este caso clínico foi liberado pelo professor em tempo real!");
+        }
+
+        // Notifica aluno se a visibilidade foi alterada pelo professor em tempo real
+        if (wasVisible && updated.visivel === false && !isTeacherAuthenticated) {
+          showToast("Caso clínico oculto. Aguardando liberação do professor.", "warning");
+        } else if (!wasVisible && updated.visivel !== false && !isTeacherAuthenticated) {
+          showToast("👁️ Este caso clínico foi tornado visível pelo professor!", "success");
         }
       }
     }
@@ -3654,6 +3713,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Toggle de visibilidade dentro do editor
+    const visCheckbox = document.getElementById("admCaseIsVisible");
+    if (visCheckbox) {
+      visCheckbox.addEventListener("change", (e) => {
+        updateCaseVisibilityLabel(e.target.checked);
+      });
+    }
+
     // Inicializa catálogo de modelos rápidos de profissionais na Aba 6
     const presetSelect = document.getElementById("adminAddProfPresetSelect");
     if (presetSelect && typeof PROFESSIONAL_PRESETS !== "undefined") {
@@ -4144,8 +4211,21 @@ document.addEventListener("DOMContentLoaded", () => {
       label.textContent = "Liberado para Alunos";
       label.className = "ml-2.5 text-xs font-bold text-emerald-800";
     } else {
-      label.textContent = "Travado (Oculto para Alunos)";
+      label.textContent = "Travado (Bloqueia Atendimento)";
       label.className = "ml-2.5 text-xs font-bold text-rose-700";
+    }
+  }
+
+  // Atualiza label do toggle de visibilidade do caso
+  function updateCaseVisibilityLabel(isVisible) {
+    const label = document.getElementById("admCaseVisibilityLabel");
+    if (!label) return;
+    if (isVisible) {
+      label.textContent = "Visível para Alunos";
+      label.className = "ml-2.5 text-xs font-bold text-sky-800";
+    } else {
+      label.textContent = "Oculto para Alunos";
+      label.className = "ml-2.5 text-xs font-bold text-slate-700";
     }
   }
 
@@ -4510,7 +4590,11 @@ document.addEventListener("DOMContentLoaded", () => {
               <span class="badge-clinical bg-slate-100 text-slate-800">${escapeHtml(c.category || 'Clínica')}</span>
               <span class="badge-clinical bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px]">${activeDisc?.icone || '📚'} ${escapeHtml(activeDisc?.nome || 'Disciplina')}</span>
             </div>
-            <div>
+            <div class="flex items-center space-x-1.5">
+              ${c.visivel === false
+                ? '<span class="badge-clinical bg-slate-200 text-slate-800 border border-slate-300">🙈 Oculto</span>'
+                : '<span class="badge-clinical bg-sky-100 text-sky-800 border border-sky-300">👁️ Visível</span>'
+              }
               ${c.isLocked 
                 ? '<span class="badge-clinical bg-rose-100 text-rose-800 border border-rose-300">🔒 Travado</span>' 
                 : '<span class="badge-clinical bg-emerald-100 text-emerald-800 border border-emerald-300">🔓 Liberado</span>'
@@ -4529,7 +4613,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
         <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-          <button class="px-2.5 py-1.5 text-xs font-semibold ${c.isLocked ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'} rounded transition adm-lock-btn" data-id="${c.id}" title="${c.isLocked ? 'Liberar caso para os alunos' : 'Travar e ocultar dos alunos'}">
+          <button class="px-2.5 py-1.5 text-xs font-semibold ${c.visivel === false ? 'bg-slate-700 hover:bg-slate-800 text-white' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300'} rounded transition adm-vis-btn" data-id="${c.id}" title="${c.visivel === false ? 'Caso oculto para os alunos. Clique para mostrar.' : 'Caso visível para os alunos. Clique para ocultar.'}">
+            ${c.visivel === false ? '🙈 Oculto' : '👁️ Visível'}
+          </button>
+          <button class="px-2.5 py-1.5 text-xs font-semibold ${c.isLocked ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'} rounded transition adm-lock-btn" data-id="${c.id}" title="${c.isLocked ? 'Liberar caso para os alunos' : 'Travar caso'}">
             ${c.isLocked ? '🔓 Liberar' : '🔒 Travar'}
           </button>
           <button class="px-2.5 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition adm-dup-btn" data-id="${c.id}">Duplicar</button>
@@ -4540,6 +4627,17 @@ document.addEventListener("DOMContentLoaded", () => {
       container.appendChild(card);
     });
 
+    // Listeners do botão Ocultar / Mostrar caso (Visibilidade)
+    container.querySelectorAll(".adm-vis-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const btnEl = e.currentTarget || e.target.closest(".adm-vis-btn");
+        const id = btnEl?.dataset?.id;
+        if (!id) return;
+        const isNowVisible = adminManager.toggleCaseVisibility(id);
+        syncAppStateAndNotify(isNowVisible ? "Caso agora visível para os alunos!" : "Caso ocultado para os alunos!");
+      });
+    });
+
     // Listeners do botão Travar / Liberar caso
     container.querySelectorAll(".adm-lock-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
@@ -4547,7 +4645,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const id = btnEl?.dataset?.id;
         if (!id) return;
         const isNowLocked = adminManager.toggleCaseLock(id);
-        syncAppStateAndNotify(isNowLocked ? "Caso travado (oculto para os alunos)!" : "Caso liberado para os alunos com sucesso!");
+        syncAppStateAndNotify(isNowLocked ? "Caso travado (bloqueado para os alunos)!" : "Caso liberado para os alunos com sucesso!");
       });
     });
 
@@ -4636,6 +4734,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lockCheckbox) {
       lockCheckbox.checked = isUnlocked;
       updateCaseLockLabel(isUnlocked);
+    }
+
+    // Status de Visibilidade (Ocultar / Mostrar)
+    const isVisible = c.visivel !== false;
+    const visCheckbox = document.getElementById("admCaseIsVisible");
+    if (visCheckbox) {
+      visCheckbox.checked = isVisible;
+      updateCaseVisibilityLabel(isVisible);
     }
     
     // Bloqueio de Abas do Aluno (Tempo Real)
@@ -4939,6 +5045,7 @@ document.addEventListener("DOMContentLoaded", () => {
       category: document.getElementById("admCaseCategory").value.trim(),
       description: document.getElementById("admCaseDesc").value.trim(),
       isLocked: !(document.getElementById("admCaseIsUnlocked")?.checked),
+      visivel: document.getElementById("admCaseIsVisible") ? document.getElementById("admCaseIsVisible").checked : true,
       blockedTabs: readBlockedTabsFromEditor(),
       patient: {
         name: document.getElementById("admPatName").value.trim(),

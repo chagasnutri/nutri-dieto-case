@@ -193,6 +193,7 @@ class AdminManager {
     copy.id = "caso-" + Date.now();
     copy.title = `${copy.title} (Cópia)`;
     copy.isLocked = true; // Por padrão, novas cópias nascem travadas
+    copy.visivel = original.visivel !== false;
     copy.blockedTabs = Array.isArray(original.blockedTabs) ? [...original.blockedTabs] : [];
     copy.disciplinaId = original.disciplinaId || this.activeDisciplinaId || "dietoterapia";
     this.cases.push(copy);
@@ -217,6 +218,26 @@ class AdminManager {
       return c.isLocked;
     }
     return false;
+  }
+
+  // Alterna a visibilidade do caso para os alunos (Ocultar / Mostrar)
+  toggleCaseVisibility(id) {
+    this.refreshCases();
+    const c = this.cases.find(item => item.id === id);
+    if (c) {
+      c.visivel = c.visivel === false ? true : false;
+      saveCases(this.cases);
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+        if (typeof firebaseSyncService.setCaseVisibility === "function") {
+          firebaseSyncService.setCaseVisibility(id, c.visivel);
+        } else {
+          firebaseSyncService.saveCase(c);
+        }
+      }
+      this.triggerServerSync();
+      return c.visivel;
+    }
+    return true;
   }
 
   // Alterna o bloqueio de uma aba específica para um caso clínico (Tempo Real)
@@ -335,6 +356,7 @@ class AdminManager {
       category: "Ambulatorial / Hospitalar",
       description: "Descrição breve dos objetivos e patologia do caso clínico.",
       isLocked: false,
+      visivel: true,
       blockedTabs: [],
       patient: {
         name: "Nome do Paciente",

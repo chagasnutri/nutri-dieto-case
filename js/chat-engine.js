@@ -356,12 +356,25 @@ class ClinicalChatEngine {
     // 3. QUEIXA PRINCIPAL E HISTÓRIA DA DOENÇA ATUAL (HDA)
     if (q.includes("queixa") || q.includes("sentindo") || q.includes("o que trouxe") || q.includes("motivo") || q.includes("o que esta sentindo") || q.includes("qual o problema") || q.includes("como posso ajudar") || q.includes("acontecendo") || q.includes("veio aqui")) {
       if (role === "paciente") {
-        return `Olha, doutor(a), o que me trouxe aqui foi o seguinte: ${this.cleanFirstPerson(h.queixaPrincipal || '')}. ${this.cleanFirstPerson(h.hda || '')}`;
+        return h.queixaPrincipal || `Olha, doutor(a), o que me trouxe aqui foi o seguinte: ${this.cleanFirstPerson(h.hda || '')}`;
       }
       if (role === "acompanhante") {
         return `Doutor(a), a gente veio porque ele(a) tá passando por isso: a queixa principal foi que "${h.queixaPrincipal || ''}". ${this.cleanThirdPerson(h.hda || '')}`;
       }
       return `Colega, o paciente deu entrada relatando como queixa principal: "${h.queixaPrincipal || ''}". Na história clínica atual: ${h.hda || ''}`;
+    }
+
+    if (q.includes("apetite") || q.includes("fome") || q.includes("vontade de comer") || q.includes("sem fome") || q.includes("com fome") || q.includes("come bem")) {
+      if (role === "paciente") {
+        if (h.queixaPrincipal && (h.queixaPrincipal.toLowerCase().includes("fome") || h.queixaPrincipal.toLowerCase().includes("comer") || h.queixaPrincipal.toLowerCase().includes("enjoo"))) {
+          return `Olha doutor(a), sobre a minha fome e o meu apetite: ${h.queixaPrincipal}`;
+        }
+        return `Olha doutor(a), sobre o meu apetite: ${this.cleanFirstPerson(ca.padraoDiario || 'Tenho momentos em que sinto pouca fome.')}`;
+      }
+      if (role === "acompanhante") {
+        return `Doutor(a), sobre o apetite e a alimentação dele(a): ${this.cleanThirdPerson(ca.padraoDiario || h.hda || 'O apetite tem sido uma preocupação pra gente.')}`;
+      }
+      return `Avaliação propedêutica do apetite e comportamento alimentar: ${ca.padraoDiario || h.hda || 'Sem registros de alteração do apetite.'}`;
     }
 
     if (q.includes("tempo") || q.includes("quando comecou") || q.includes("ha quanto tempo") || q.includes("quanto tempo faz") || q.includes("desde quando")) {
