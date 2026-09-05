@@ -619,11 +619,172 @@
 
             <!-- ABA 5: CONSUMO ALIMENTAR -->
             <div id="tab-content-consumo" class="student-tab-content hidden space-y-3.5">
-              <div class="flex items-center justify-between border-b pb-1">
-                <h4 class="font-bold text-slate-800 text-sm">Consumo Alimentar e Inquérito Dietético</h4>
-                <span class="text-[11px] text-emerald-800 font-semibold flex items-center">
-                  <span class="mr-1">🥦</span> Base TACO Integrada
-                </span>
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-1">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>🍎</span>
+                    <span>Consumo Alimentar e Recordatório de 24h</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500">Cadastre os alimentos do recordatório de 24h pela base TACO com regra de três proporcional e medida caseira.</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-[11px] text-emerald-800 font-semibold hidden sm:flex items-center">
+                    <span class="mr-1">🥦</span> Base TACO Integrada
+                  </span>
+                  <button type="button" id="addRecordatorioMealBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
+                    <span>➕</span>
+                    <span>Adicionar Refeição (R24h)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- CARD INFORMATIVO TACO DO RECORDATÓRIO -->
+              <div class="bg-indigo-50/80 border border-indigo-200 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">🥦</span>
+                    <strong class="text-indigo-950 font-bold text-xs">Mecânica Oficial TACO: Regra de Três Proporcional & Medida Caseira Livre</strong>
+                  </div>
+                  <span class="text-[10px] bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded-full">Base: 100g de Alimento</span>
+                </div>
+                <p class="text-[11px] text-indigo-900">
+                  Cadastre as refeições habituais do paciente. Digite a gramatura para o cálculo proporcional automático e registre a medida caseira em texto livre.
+                </p>
+              </div>
+
+              <!-- CONTAINER DINÂMICO DE REFEIÇÕES DO RECORDATÓRIO -->
+              <div id="recordatorioMealsContainer" class="space-y-4">
+                <!-- Cards de refeições do R24h renderizados via JS -->
+              </div>
+
+              <!-- TABELA QUANTITATIVA CONSOLIDADA DO RECORDATÓRIO (MACROS + MICROS + RÉGUA DE STATUS) -->
+              <div id="recordatorioTotalsPanel" class="bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 text-white rounded-xl p-4 space-y-3.5 shadow-md">
+                <div class="flex flex-wrap items-center justify-between border-b border-indigo-800/60 pb-2 gap-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">📊</span>
+                    <h5 class="font-bold text-xs uppercase tracking-wider text-indigo-300">Tabela Quantitativa Consolidada do Recordatório de 24h</h5>
+                  </div>
+                  <span id="dispRecVetStatusBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-900 text-indigo-200 border border-indigo-700">
+                    Aguardando Alimentos
+                  </span>
+                </div>
+
+                <!-- CARDS DE MACRONUTRIENTES DO RECORDATÓRIO -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <!-- VET Consumido -->
+                  <div class="bg-slate-800/80 border border-indigo-900/60 p-2.5 rounded-lg space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-indigo-300 block">VET Consumido:</span>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispRecVetTotal" class="text-lg font-black text-indigo-300">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">kcal</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispRecMetaVet">--</strong> kcal</span>
+                      <span class="text-emerald-400 font-bold" id="dispRecVetAdeq">--%</span>
+                    </div>
+                  </div>
+
+                  <!-- Carboidratos Consumidos + Status -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Carboidratos:</span>
+                      <span id="dispRecChoStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispRecChoTotalG" class="text-lg font-black text-amber-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-amber-300 font-bold">(<span id="dispRecChoTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispRecMetaCho">--</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Proteínas Consumidas + Status -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Proteínas:</span>
+                      <span id="dispRecPtnStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispRecPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-sky-300 font-bold">(<span id="dispRecPtnTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 flex justify-between">
+                      <span>Meta: <strong id="dispRecMetaPtn">--</strong></span>
+                      <span class="text-sky-300 font-semibold" id="dispRecPtnGKg">0 g/kg</span>
+                    </div>
+                  </div>
+
+                  <!-- Lipídios Consumidos + Status -->
+                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Lipídios:</span>
+                      <span id="dispRecLipStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
+                    <div class="flex items-baseline space-x-1">
+                      <strong id="dispRecLipTotalG" class="text-lg font-black text-rose-400">0</strong>
+                      <span class="text-[10px] text-slate-400 font-bold">g</span>
+                      <span class="text-[10px] text-rose-300 font-bold">(<span id="dispRecLipTotalPct">0</span>%)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">
+                      <span>Meta: <strong id="dispRecMetaLip">--</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LINHA DE FIBRAS E SÍNTESE DO RECORDATÓRIO -->
+                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
+                  <span>🌾 Fibras Totais Consumidas: <strong id="dispRecFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
+                  <span id="dispRecBalancoMsg" class="text-slate-400 italic">Insira os alimentos para comparar com a régua da prescrição</span>
+                </div>
+
+                <!-- SEÇÃO CONSOLIDADA DE MICRONUTRIENTES PRIORITÁRIOS DA TACO -->
+                <div class="bg-slate-800/50 border border-indigo-800/50 rounded-lg p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] uppercase font-bold text-indigo-300 flex items-center space-x-1">
+                      <span>🧪</span>
+                      <span>Micronutrientes Prioritários Consumidos (TACO):</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">Soma de todos os alimentos informados</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <!-- Cálcio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🥛 Cálcio (Ca):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispRecCalcioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Ferro -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🥩 Ferro (Fe):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispRecFerroTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Sódio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🧂 Sódio (Na):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispRecSodioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Potássio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🍌 Potássio (K):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispRecPotassioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- SEÇÃO DE AVALIAÇÃO QUANTITATIVA DO CONSUMO (RECORDATÓRIO 24H E NEE) -->
@@ -631,13 +792,13 @@
                 <div class="flex items-center justify-between border-b border-indigo-100 pb-2">
                   <div>
                     <h5 class="font-bold text-indigo-950 text-xs flex items-center">
-                      <span class="mr-1.5 text-sm">⚡</span> Avaliação Quantitativa do Consumo Alimentar (Recordatório de 24h)
+                      <span class="mr-1.5 text-sm">⚡</span> Comparativo do VET Consumido vs Necessidade Estimada (NEE)
                     </h5>
                     <p class="text-[11px] text-indigo-800 mt-0.5">
-                      Insira o Valor Energético Total apurado no inquérito para calcular a porcentagem de adequação energética frente às necessidades do paciente.
+                      O VET é calculado automaticamente a partir dos alimentos do R24h acima (ou pode ser ajustado manualmente).
                     </p>
                   </div>
-                  <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">Quantitativo</span>
+                  <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">Adequação</span>
                 </div>
 
                 <!-- CAMPO DE DESTAQUE: VET DO RECORDATÓRIO DE 24H -->
@@ -774,26 +935,145 @@
                 </div>
               </div>
 
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
-                <span class="font-bold text-slate-800 text-[11px] block uppercase">Distribuição de Macronutrientes:</span>
-                <div class="grid grid-cols-3 gap-2">
-                  <div>
-                    <label class="block text-[11px] text-slate-600 font-medium">Carboidratos (g e %):</label>
-                    <input type="text" id="prontChoG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 230g">
-                    <input type="text" id="prontChoPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 50%">
+              <!-- NOVA TABELA DINÂMICA DE DISTRIBUIÇÃO DE MACRONUTRIENTES -->
+              <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span class="font-bold text-slate-800 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
+                    <span>📊</span>
+                    <span>Tabela Dinâmica de Distribuição de Macronutrientes</span>
+                  </span>
+                  <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Cálculo Automático por Faixa</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
+                      <tr>
+                        <th class="py-2 px-2.5 min-w-[140px]">Macronutriente</th>
+                        <th class="py-2 px-2.5 text-center min-w-[180px]">Faixa em % (Mín - Máx)</th>
+                        <th class="py-2 px-2.5 text-right min-w-[140px]">Kcal Planejada (Min - Max)</th>
+                        <th class="py-2 px-2.5 text-right min-w-[150px]">Gramas Calculadas (Min - Max)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      <!-- Linha Carboidratos (4 kcal/g) -->
+                      <tr class="hover:bg-amber-50/30 transition">
+                        <td class="py-2 px-2.5 font-bold text-amber-900">
+                          <div class="flex items-center space-x-1.5">
+                            <span>🍞</span>
+                            <div>
+                              <span>Carboidratos (CHO)</span>
+                              <span class="block text-[10px] text-amber-600 font-normal">Fator: 4 kcal/g</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-center">
+                          <div class="inline-flex items-center space-x-1.5">
+                            <input type="number" min="0" max="100" step="1" id="prontChoMinPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-amber-500" placeholder="Min %" value="45">
+                            <span class="text-slate-400 font-bold">% a</span>
+                            <input type="number" min="0" max="100" step="1" id="prontChoMaxPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-amber-500" placeholder="Max %" value="55">
+                            <span class="text-slate-400 font-bold">%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <span id="dispChoKcalRange" class="font-black text-amber-900 text-xs">-- kcal</span>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <strong id="dispChoGramasRange" class="font-black text-amber-900 text-xs bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">-- g</strong>
+                        </td>
+                      </tr>
+
+                      <!-- Linha Proteínas (4 kcal/g) -->
+                      <tr class="hover:bg-sky-50/30 transition">
+                        <td class="py-2 px-2.5 font-bold text-sky-900">
+                          <div class="flex items-center space-x-1.5">
+                            <span>🥩</span>
+                            <div>
+                              <span>Proteínas (PTN)</span>
+                              <span class="block text-[10px] text-sky-600 font-normal">Fator: 4 kcal/g</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-center">
+                          <div class="inline-flex items-center space-x-1.5">
+                            <input type="number" min="0" max="100" step="1" id="prontPtnMinPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-sky-500" placeholder="Min %" value="15">
+                            <span class="text-slate-400 font-bold">% a</span>
+                            <input type="number" min="0" max="100" step="1" id="prontPtnMaxPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-sky-500" placeholder="Max %" value="20">
+                            <span class="text-slate-400 font-bold">%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <span id="dispPtnKcalRange" class="font-black text-sky-900 text-xs">-- kcal</span>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <strong id="dispPtnGramasRange" class="font-black text-sky-900 text-xs bg-sky-50 border border-sky-200 px-2 py-0.5 rounded">-- g</strong>
+                        </td>
+                      </tr>
+
+                      <!-- Linha Lipídios (9 kcal/g) -->
+                      <tr class="hover:bg-rose-50/30 transition">
+                        <td class="py-2 px-2.5 font-bold text-rose-900">
+                          <div class="flex items-center space-x-1.5">
+                            <span>🥑</span>
+                            <div>
+                              <span>Lipídios (LIP)</span>
+                              <span class="block text-[10px] text-rose-600 font-normal">Fator: 9 kcal/g</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-center">
+                          <div class="inline-flex items-center space-x-1.5">
+                            <input type="number" min="0" max="100" step="1" id="prontLipMinPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-rose-500" placeholder="Min %" value="25">
+                            <span class="text-slate-400 font-bold">% a</span>
+                            <input type="number" min="0" max="100" step="1" id="prontLipMaxPct" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-rose-500" placeholder="Max %" value="30">
+                            <span class="text-slate-400 font-bold">%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <span id="dispLipKcalRange" class="font-black text-rose-900 text-xs">-- kcal</span>
+                        </td>
+                        <td class="py-2 px-2.5 text-right">
+                          <strong id="dispLipGramasRange" class="font-black text-rose-900 text-xs bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">-- g</strong>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- ÁREA ISOLADA PARA RECOMENDAÇÃO DE PROTEÍNA (G/KG) -->
+                <div class="bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-lg p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-sky-950 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
+                      <span>⚖️</span>
+                      <span>Recomendação de Proteína (g/kg):</span>
+                    </span>
+                    <span class="text-[10px] text-sky-700 font-medium">Multiplicado automaticamente pelo peso do paciente</span>
                   </div>
-                  <div>
-                    <label class="block text-[11px] text-slate-600 font-medium">Proteínas (g, g/kg e %):</label>
-                    <input type="text" id="prontPtnG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 75g">
-                    <input type="text" id="prontPtnGKg" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 1.2 g/kg">
-                    <input type="text" id="prontPtnPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 16%">
-                  </div>
-                  <div>
-                    <label class="block text-[11px] text-slate-600 font-medium">Lipídios (g e %):</label>
-                    <input type="text" id="prontLipG" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1" placeholder="Ex: 60g">
-                    <input type="text" id="prontLipPct" class="w-full border border-slate-300 rounded p-1.5 text-xs" placeholder="Ex: 34%">
+
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-2">
+                      <label class="text-[11px] font-semibold text-slate-700">Faixa recomendada:</label>
+                      <input type="number" min="0" max="5" step="0.1" id="prontPtnMinGKg" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-sky-500" placeholder="Min" value="1.0">
+                      <span class="text-slate-400 font-bold">a</span>
+                      <input type="number" min="0" max="5" step="0.1" id="prontPtnMaxGKg" class="w-16 border border-slate-300 rounded px-1.5 py-1 text-xs text-center font-bold text-slate-800 focus:border-sky-500" placeholder="Max" value="1.2">
+                      <span class="text-xs font-bold text-sky-800">g/kg/dia</span>
+                    </div>
+
+                    <div class="bg-white px-3 py-1.5 rounded-lg border border-sky-200 text-xs shadow-2xs">
+                      <span class="text-[10px] text-slate-500 font-semibold block uppercase">Total em Gramas Esperado:</span>
+                      <strong id="dispPtnGKgExpectedTotal" class="text-sky-900 font-black text-sm">-- g a -- g</strong>
+                      <span id="dispPtnGKgWeightRef" class="text-[10px] text-slate-500 block">(Peso adotado: -- kg)</span>
+                    </div>
                   </div>
                 </div>
+
+                <!-- CAMPOS OCULTOS PARA COMPATIBILIDADE RETROATIVA -->
+                <input type="hidden" id="prontChoG" value="">
+                <input type="hidden" id="prontChoPct" value="">
+                <input type="hidden" id="prontPtnG" value="">
+                <input type="hidden" id="prontPtnPct" value="">
+                <input type="hidden" id="prontLipG" value="">
+                <input type="hidden" id="prontLipPct" value="">
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -908,7 +1188,10 @@
 
                   <!-- Card Carboidratos -->
                   <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Carboidratos:</span>
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Carboidratos:</span>
+                      <span id="dispCardapioChoStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
                     <div class="flex items-baseline space-x-1">
                       <strong id="dispCardapioChoTotalG" class="text-lg font-black text-amber-400">0</strong>
                       <span class="text-[10px] text-slate-400 font-bold">g</span>
@@ -921,7 +1204,10 @@
 
                   <!-- Card Proteínas -->
                   <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Proteínas:</span>
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Proteínas:</span>
+                      <span id="dispCardapioPtnStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
                     <div class="flex items-baseline space-x-1">
                       <strong id="dispCardapioPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
                       <span class="text-[10px] text-slate-400 font-bold">g</span>
@@ -935,7 +1221,10 @@
 
                   <!-- Card Lipídios -->
                   <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Lipídios:</span>
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] uppercase font-bold text-slate-400">Lipídios:</span>
+                      <span id="dispCardapioLipStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                    </div>
                     <div class="flex items-baseline space-x-1">
                       <strong id="dispCardapioLipTotalG" class="text-lg font-black text-rose-400">0</strong>
                       <span class="text-[10px] text-slate-400 font-bold">g</span>
@@ -951,6 +1240,52 @@
                 <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
                   <span>🌾 Fibras Alimentares Totais apuradas no Cardápio: <strong id="dispCardapioFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
                   <span id="dispCardapioBalancoMsg" class="text-slate-400 italic">Preencha os alimentos para confrontar com a prescrição</span>
+                </div>
+
+                <!-- SEÇÃO CONSOLIDADA DE MICRONUTRIENTES PRIORITÁRIOS DA TACO NO CARDÁPIO -->
+                <div class="bg-slate-800/50 border border-emerald-700/40 rounded-lg p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] uppercase font-bold text-emerald-300 flex items-center space-x-1">
+                      <span>🧪</span>
+                      <span>Micronutrientes Prioritários no Cardápio (TACO):</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">Soma de todas as refeições planejadas</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <!-- Cálcio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🥛 Cálcio (Ca):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispCardapioCalcioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Ferro -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🥩 Ferro (Fe):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispCardapioFerroTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Sódio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🧂 Sódio (Na):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispCardapioSodioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                    <!-- Potássio -->
+                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                      <span class="text-[10px] font-semibold text-slate-400 block">🍌 Potássio (K):</span>
+                      <div class="flex items-baseline space-x-1 mt-0.5">
+                        <strong id="dispCardapioPotassioTotal" class="text-base font-black text-white">0</strong>
+                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -164,25 +164,63 @@ class DietoterapiaDocxReport {
     doc.addParagraph(ca.inqueritoResumo ? `Resumo do Recordatório Alimentar: ${ca.inqueritoResumo}` : "Recordatório: Não preenchido.");
     doc.addParagraph(ca.aguaPreferenciasAversoes ? `Ingestão hídrica, preferências e aversões: ${ca.aguaPreferenciasAversoes}` : "Preferências e aversões: Não informado.");
 
-    if (ca.vetRecordatorio || ca.neeCaso || ca.adequacaoVetPct) {
-      doc.addHeading("1.6.1. Avaliação Quantitativa do Recordatório de 24h e Adequação do VET", 3);
+    // Detalhamento das refeições cadastradas no Recordatório de 24h
+    const recMeals = ca.refeicoesRecordatorio || [];
+    if (Array.isArray(recMeals) && recMeals.some(r => r.itens && r.itens.length > 0)) {
+      doc.addHeading("1.6.1. Refeições e Alimentos Referidos no Recordatório de 24h", 3);
+      const recRows = [];
+      recMeals.forEach(ref => {
+        if (ref.itens && ref.itens.length > 0) {
+          const itemLines = ref.itens.map(it => {
+            const parts = [];
+            if (it.medidaCaseira && String(it.medidaCaseira).trim()) parts.push(String(it.medidaCaseira).trim());
+            if (it.gramatura) parts.push(`${it.gramatura}g`);
+            let line = it.alimentoNome || "Alimento";
+            if (parts.length > 0) line += ` (${parts.join(" - ")})`;
+            if (it.kcal !== undefined && it.kcal !== null && it.kcal !== "") line += ` [${it.kcal} kcal]`;
+            return "• " + line;
+          });
+          let desc = itemLines.join("\n");
+          if (ref.tipoPreparacao) {
+            desc = `Preparação: ${ref.tipoPreparacao}\n` + desc;
+          }
+          if (ref.subtotal) {
+            desc += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
+          }
+          recRows.push([
+            `${ref.refeicao}\n(${ref.horario || '--:--'})`,
+            desc
+          ]);
+        }
+      });
+      if (recRows.length > 0) {
+        doc.addTable(
+          ["Refeição e Horário", "Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
+          recRows,
+          [3000, 6000]
+        );
+      }
+    }
+
+    // Tabela Quantitativa Consolidada do Recordatório de 24h
+    const recTotals = ca.totaisRecordatorio;
+    if (recTotals && (recTotals.vetTotalKcal > 0 || ca.vetRecordatorio)) {
+      doc.addHeading("1.6.2. Avaliação Quantitativa Consolidada do Recordatório de 24h (Macros e Micros)", 3);
+      const rowsRecTotais = [
+        ["VET Consumido no Recordatório", `${recTotals.vetTotalKcal || ca.vetRecordatorio || '--'} kcal/dia`, `NEE do Caso: ${ca.neeCaso || '--'} kcal/dia (${ca.adequacaoVetPct || recTotals.adequacaoVetPct || '--'}% da meta)`],
+        ["Carboidratos Consumidos", `${recTotals.carboidratosG || 0} g (${recTotals.carboidratosPct || 0}% do VET)`, recTotals.statusMacros?.cho ? `Status frente à prescrição: ${recTotals.statusMacros.cho.label}` : "--"],
+        ["Proteínas Consumidas", `${recTotals.proteinasG || 0} g (${recTotals.proteinasGKg ? recTotals.proteinasGKg + ' g/kg' : '--'}, ${recTotals.proteinasPct || 0}%)`, recTotals.statusMacros?.ptn ? `Status frente à prescrição: ${recTotals.statusMacros.ptn.label}` : "--"],
+        ["Lipídios Consumidos", `${recTotals.lipidiosG || 0} g (${recTotals.lipidiosPct || 0}% do VET)`, recTotals.statusMacros?.lip ? `Status frente à prescrição: ${recTotals.statusMacros.lip.label}` : "--"],
+        ["Fibras Alimentares Totais", `${recTotals.fibrasG || 0} g/dia`, "TACO (UNICAMP, 4ª edição)"],
+        ["Cálcio (Ca) Consumido", `${recTotals.calcioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Ferro (Fe) Consumido", `${recTotals.ferroMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Sódio (Na) Consumido", `${recTotals.sodioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Potássio (K) Consumido", `${recTotals.potassioMg || 0} mg/dia`, "Micronutriente oficial TACO"]
+      ];
       doc.addTable(
-        ["Parâmetro de Avaliação Quantitativa", "Valor Obtido", "Interpretação / Referência Oficial"],
-        [
-          ["VET Consumido (Recordatório 24h)", `${ca.vetRecordatorio || '--'} kcal/dia`, "Calculado a partir do R24h"],
-          ["Necessidade Energética Estimada (NEE)", `${ca.neeCaso || '--'} kcal/dia`, "Meta calórica do caso clínico"],
-          [
-            "% de Adequação do VET",
-            `${ca.adequacaoVetPct ? ca.adequacaoVetPct + '%' : '--'}`,
-            ca.adequacaoVetClassificacao ? `${ca.adequacaoVetClassificacao}` : "Adequação do aporte calórico"
-          ],
-          [
-            "Base de Dados de Composição Oficial",
-            ca.baseAlimentosReferencia || "TACO (UNICAMP, 4ª edição)",
-            "Tabela Brasileira de Composição de Alimentos e livros oficiais"
-          ]
-        ],
-        [3200, 2600, 3200]
+        ["Parâmetro Nutricional Consumido", "Total Ingerido no R24h", "Régua da Prescrição / Observação Oficial"],
+        rowsRecTotais,
+        [3400, 2800, 2800]
       );
     }
 
@@ -195,19 +233,38 @@ class DietoterapiaDocxReport {
     
     doc.addCallout("DIAGNÓSTICO EM NUTRIÇÃO (PES):", pesText, "15803d", "f0fdf4");
 
-    doc.addHeading("2.2. Determinação das Necessidades Energéticas e de Macronutrientes", 2);
+    doc.addHeading("2.2. Determinação das Necessidades Energéticas e Distribuição Dinâmica de Macronutrientes", 2);
+    
+    const dm = presc.distribuicaoMacros || {};
+    const rp = presc.recomendacaoProteinaGKg || {};
     doc.addTable(
-      ["Parâmetro Prescrito", "Valor Numérico", "Unidade / Percentual"],
+      ["Parâmetro Prescrito", "Faixa / Valor Numérico", "Kcal e Gramas Calculadas"],
       [
-        ["Valor Energético Total (VET)", presc.vetKcal || "Não calculado", "kcal/dia"],
-        ["Regra de bolso / Taxa metabólica", presc.regraBolsoKcalKg || "--", "kcal/kg de peso/dia"],
-        ["Carboidratos", `${presc.carboidratosG || '--'} g`, `${presc.carboidratosPct || '--'} % do VET`],
-        ["Proteínas", `${presc.proteinasG || '--'} g (${presc.proteinasGKg || '--'} g/kg)`, `${presc.proteinasPct || '--'} % do VET`],
-        ["Lipídios", `${presc.lipidiosG || '--'} g`, `${presc.lipidiosPct || '--'} % do VET`],
+        ["Valor Energético Total (VET)", `${presc.vetKcal || 'Não calculado'} kcal/dia`, `Regra de bolso: ${presc.regraBolsoKcalKg || '--'}`],
+        [
+          "Carboidratos (CHO - 4 kcal/g)", 
+          dm.cho ? `${dm.cho.minPct}% a ${dm.cho.maxPct}%` : `${presc.carboidratosPct || '--'}%`, 
+          dm.cho ? `${dm.cho.minKcal} a ${dm.cho.maxKcal} kcal (${dm.cho.minG}g a ${dm.cho.maxG}g)` : `${presc.carboidratosG || '--'} g`
+        ],
+        [
+          "Proteínas (PTN - 4 kcal/g)", 
+          dm.ptn ? `${dm.ptn.minPct}% a ${dm.ptn.maxPct}%` : `${presc.proteinasPct || '--'}%`, 
+          dm.ptn ? `${dm.ptn.minKcal} a ${dm.ptn.maxKcal} kcal (${dm.ptn.minG}g a ${dm.ptn.maxG}g)` : `${presc.proteinasG || '--'} g`
+        ],
+        [
+          "Recomendação de Proteína (g/kg)",
+          rp.minGKg ? `${rp.minGKg} a ${rp.maxGKg} g/kg/dia` : `${presc.proteinasGKg || '--'} g/kg`,
+          rp.minTotalG ? `${rp.minTotalG}g a ${rp.maxTotalG}g de proteína esperada` : "Baseado no peso do paciente"
+        ],
+        [
+          "Lipídios (LIP - 9 kcal/g)", 
+          dm.lip ? `${dm.lip.minPct}% a ${dm.lip.maxPct}%` : `${presc.lipidiosPct || '--'}%`, 
+          dm.lip ? `${dm.lip.minKcal} a ${dm.lip.maxKcal} kcal (${dm.lip.minG}g a ${dm.lip.maxG}g)` : `${presc.lipidiosG || '--'} g`
+        ],
         ["Consistência da Dieta", presc.consistencia || "Normal", "-"],
         ["Fracionamento", presc.fracionamento || "5 a 6 refeições", "-"]
       ],
-      [3500, 2500, 3000]
+      [3400, 2600, 3000]
     );
 
     if (presc.fibrasMicronutrientes) {
@@ -244,9 +301,14 @@ class DietoterapiaDocxReport {
           return "• " + line;
         });
         alimentosFormatados = itemLines.join("\n");
+        if (ref.tipoPreparacao) {
+          alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+        }
         if (ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
           alimentosFormatados += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
         }
+      } else if (ref.tipoPreparacao) {
+        alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
       }
 
       cardapioRows.push([
@@ -258,9 +320,9 @@ class DietoterapiaDocxReport {
 
     if (cardapioRows.length > 0) {
       doc.addTable(
-        ["Refeição e Horário", "Alimentos, Medidas Caseiras e Gramaturas (TACO)", "Opções de Substituição"],
+        ["Refeição e Horário", "Tipo de Preparação, Alimentos e Gramaturas (TACO)", "Opções de Substituição"],
         cardapioRows,
-        [2500, 4800, 1700]
+        [2400, 5000, 1600]
       );
     } else {
       doc.addParagraph("Nenhuma refeição detalhada no planejamento alimentar.");
@@ -274,15 +336,31 @@ class DietoterapiaDocxReport {
       const rowsTotais = [
         ["VET Total Planejado no Cardápio", `${totais.vetTotalKcal || 0} kcal/dia`, `Meta Prescrita: ${presc.vetKcal || '--'} kcal`],
         ["Adequação do VET do Cardápio", `${totais.adequacaoVetPct ? totais.adequacaoVetPct + '%' : '--'}`, `${totais.classificacaoAdequacao || 'Adequação calórica do cardápio'}`],
-        ["Carboidratos do Cardápio", `${totais.carboidratosG || 0} g (${totais.carboidratosPct || 0}% do VET)`, `Prescrito: ${presc.carboidratosG || '--'} g (${presc.carboidratosPct || '--'}%)`],
-        ["Proteínas do Cardápio", `${totais.proteinasG || 0} g (${totais.proteinasGKg ? totais.proteinasGKg + ' g/kg' : '--'}, ${totais.proteinasPct || 0}%)`, `Prescrito: ${presc.proteinasG || '--'} g (${presc.proteinasGKg || '--'} g/kg)`],
-        ["Lipídios do Cardápio", `${totais.lipidiosG || 0} g (${totais.lipidiosPct || 0}% do VET)`, `Prescrito: ${presc.lipidiosG || '--'} g (${presc.lipidiosPct || '--'}%)`],
-        ["Fibras Alimentares Totais", `${totais.fibrasG || 0} g/dia`, "Composição oficial TACO (UNICAMP)"]
+        [
+          "Carboidratos do Cardápio", 
+          `${totais.carboidratosG || 0} g (${totais.carboidratosPct || 0}% do VET)`, 
+          totais.statusMacros?.cho ? `Status: ${totais.statusMacros.cho.label} (${presc.distribuicaoMacros?.cho?.minG || '--'}g a ${presc.distribuicaoMacros?.cho?.maxG || '--'}g)` : `Prescrito: ${presc.carboidratosG || '--'} g`
+        ],
+        [
+          "Proteínas do Cardápio", 
+          `${totais.proteinasG || 0} g (${totais.proteinasGKg ? totais.proteinasGKg + ' g/kg' : '--'}, ${totais.proteinasPct || 0}%)`, 
+          totais.statusMacros?.ptn ? `Status: ${totais.statusMacros.ptn.label} (${presc.distribuicaoMacros?.ptn?.minG || '--'}g a ${presc.distribuicaoMacros?.ptn?.maxG || '--'}g)` : `Prescrito: ${presc.proteinasG || '--'} g`
+        ],
+        [
+          "Lipídios do Cardápio", 
+          `${totais.lipidiosG || 0} g (${totais.lipidiosPct || 0}% do VET)`, 
+          totais.statusMacros?.lip ? `Status: ${totais.statusMacros.lip.label} (${presc.distribuicaoMacros?.lip?.minG || '--'}g a ${presc.distribuicaoMacros?.lip?.maxG || '--'}g)` : `Prescrito: ${presc.lipidiosG || '--'} g`
+        ],
+        ["Fibras Alimentares Totais", `${totais.fibrasG || 0} g/dia`, "Composição oficial TACO (UNICAMP)"],
+        ["Cálcio (Ca) no Cardápio", `${totais.calcioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Ferro (Fe) no Cardápio", `${totais.ferroMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Sódio (Na) no Cardápio", `${totais.sodioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+        ["Potássio (K) no Cardápio", `${totais.potassioMg || 0} mg/dia`, "Micronutriente oficial TACO"]
       ];
       doc.addTable(
-        ["Parâmetro Nutricional Consolidado", "Aporte Obtido no Cardápio", "Meta da Prescrição Dietética"],
+        ["Parâmetro Nutricional Consolidado", "Aporte Obtido no Cardápio", "Régua da Prescrição Dietética"],
         rowsTotais,
-        [3600, 2800, 2600]
+        [3400, 2800, 2800]
       );
     }
 
