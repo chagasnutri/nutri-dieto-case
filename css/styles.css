@@ -72,6 +72,23 @@ body {
   background-color: #f8fafc;
 }
 
+/* Bloqueio de abas do aluno pelo professor (Tempo Real) */
+.student-tab-btn[data-is-blocked="true"],
+.student-tab-btn.tab-blocked {
+  opacity: 0.5 !important;
+  background-color: #f8fafc !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  border-bottom: 3px dashed #f43f5e !important;
+  user-select: none !important;
+}
+
+.student-tab-btn[data-is-blocked="true"]:hover,
+.student-tab-btn.tab-blocked:hover {
+  background-color: #fff1f2 !important;
+  color: #e11d48 !important;
+}
+
 /* Form inputs */
 input, textarea, select {
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;

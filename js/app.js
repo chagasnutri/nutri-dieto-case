@@ -19,6 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
     studentSelectedDisciplinaId: null
   };
 
+  // Exposição global para que os listeners do Firebase Firestore atualizem a UI diretamente
+  window.adminManager = adminManager;
+  window.appState = appState;
+  window.chatEngine = chatEngine;
+  window.prontuarioManager = prontuarioManager;
+
   // Constante de segurança para acesso exclusivo do docente
   const TEACHER_PASSWORD = "Nutri2@26";
   let isTeacherAuthenticated = false;
@@ -949,6 +955,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Se o caso atual for nulo ou não estiver liberado, seleciona o primeiro disponível
     if (!appState.currentCaseId || !availableCases.some(c => c.id === appState.currentCaseId)) {
       selectCase(availableCases[0].id);
+    } else {
+      caseSelectDropdown.value = appState.currentCaseId;
     }
   }
 
@@ -1009,16 +1017,18 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCasesIntoDropdown();
 
     // Se o aluno estiver dentro da simulação e o caso ativo foi atualizado
-    if (appState.currentCase) {
-      const updated = adminManager.getCaseById(appState.currentCase.id);
+    const activeCaseId = appState.currentCaseId || (appState.currentCase ? appState.currentCase.id : null) || document.getElementById("caseSelectDropdown")?.value;
+    if (activeCaseId) {
+      const updated = adminManager.getCaseById(activeCaseId);
       if (updated) {
-        const wasLocked = appState.currentCase.isLocked;
+        const wasLocked = appState.currentCase ? appState.currentCase.isLocked : false;
         appState.currentCase = updated;
+        appState.currentCaseId = updated.id;
         const patHeader = document.getElementById("simPatientHeaderName");
         if (patHeader) patHeader.textContent = updated.patient?.name || updated.title;
         updateInterlocutorDropdown(updated);
 
-        // Aplica bloqueio de abas em tempo real
+        // Aplica bloqueio de abas em tempo real fisicamente no DOM
         applyStudentTabBlockingState(updated);
 
         // Notifica aluno se o caso foi trancado ou liberado pelo professor em tempo real
@@ -3902,6 +3912,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Verifica se uma aba está bloqueada para o aluno neste caso clínico
   function isStudentTabBlocked(tabId) {
     if (isTeacherAuthenticated) return false; // Professor tem acesso completo
+    const btn = document.querySelector(`.student-tab-btn[data-tab="${tabId}"]`);
+    if (btn && btn.dataset.isBlocked === "true") return true;
     const currentCase = appState.currentCase;
     if (!currentCase) return false;
     const blocked = Array.isArray(currentCase.blockedTabs) ? currentCase.blockedTabs : [];
@@ -3919,16 +3931,18 @@ document.addEventListener("DOMContentLoaded", () => {
       let lockSpan = btn.querySelector(".tab-lock-indicator");
 
       if (isBlocked) {
-        btn.classList.add("opacity-60");
-        btn.setAttribute("title", `Etapa bloqueada pelo professor: ${TAB_NAMES[tabId] || tabId}`);
+        btn.classList.add("opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        btn.dataset.isBlocked = "true";
+        btn.setAttribute("title", `🔒 Etapa bloqueada pelo professor: ${TAB_NAMES[tabId] || tabId}`);
         if (!lockSpan) {
           lockSpan = document.createElement("span");
-          lockSpan.className = "tab-lock-indicator text-[11px] ml-1";
+          lockSpan.className = "tab-lock-indicator text-[11px] ml-1.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 rounded shadow-2xs";
           lockSpan.textContent = "🔒";
           btn.appendChild(lockSpan);
         }
       } else {
-        btn.classList.remove("opacity-60");
+        btn.classList.remove("opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        delete btn.dataset.isBlocked;
         btn.removeAttribute("title");
         if (lockSpan) lockSpan.remove();
       }
@@ -3942,6 +3956,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (targetBtn) {
         targetBtn.click();
       }
+      showToast(`🔒 A etapa '${TAB_NAMES[appState.activeStudentTab] || appState.activeStudentTab}' foi bloqueada pelo professor.`);
     }
   }
   window.applyStudentTabBlockingState = applyStudentTabBlockingState;
@@ -3960,6 +3975,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("studentBlockedTabModal");
     if (modal) modal.classList.add("hidden");
   }
+  window.openStudentBlockedTabModal = openStudentBlockedTabModal;
+  window.closeStudentBlockedTabModal = closeStudentBlockedTabModal;
 
   // Preenche checkboxes de bloqueio de abas na Aba 9 do Editor do Professor
   function populateBlockedTabsInEditor(blockedTabs = []) {
