@@ -233,7 +233,52 @@ class DietoterapiaDocxReport {
     
     doc.addCallout("DIAGNÓSTICO EM NUTRIÇÃO (PES):", pesText, "15803d", "f0fdf4");
 
-    doc.addHeading("2.2. Determinação das Necessidades Energéticas e Distribuição Dinâmica de Macronutrientes", 2);
+    // 2.2. Cálculos de Necessidades Energéticas e Equações Preditivas
+    const calc = studentData.calculoNecessidades || {};
+    const formulasSel = Array.isArray(calc.formulasSelecionadas) ? calc.formulasSelecionadas : [];
+    if (formulasSel.length > 0 || calc.vetPlanejadoKcal) {
+      doc.addHeading("2.2. Cálculos de Necessidades Energéticas e Equações Preditivas", 2);
+      
+      const formulaRows = [];
+
+      if (formulasSel.includes("bolso") || calc.bolso?.resultadoKcal) {
+        const b = calc.bolso || {};
+        const faixa = (b.minKcalKg || b.maxKcalKg) ? `${b.minKcalKg || '--'} a ${b.maxKcalKg || '--'} kcal/kg` : "Faixa personalizada";
+        formulaRows.push(["Fórmula de Bolso (Regra Prática)", faixa, b.resultadoKcal ? `${b.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("harrisBenedict") || calc.harrisBenedict?.resultadoKcal) {
+        formulaRows.push(["Harris-Benedict (1919/1984)", "GEB × Fator Atividade × Fator Injúria", calc.harrisBenedict?.resultadoKcal ? `${calc.harrisBenedict.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("mifflin") || calc.mifflin?.resultadoKcal) {
+        formulaRows.push(["Mifflin-St Jeor (1990)", "TMB × NAF (Diretriz AND)", calc.mifflin?.resultadoKcal ? `${calc.mifflin.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("eerIom") || calc.eerIom?.resultadoKcal) {
+        formulaRows.push(["EER / IOM (DRI 2002/2005)", "Necessidade Estimada com CAF", calc.eerIom?.resultadoKcal ? `${calc.eerIom.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("faoOms") || calc.faoOms?.resultadoKcal) {
+        formulaRows.push(["FAO / OMS (1985/2004)", "TMB por idade/peso × NAF", calc.faoOms?.resultadoKcal ? `${calc.faoOms.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+
+      if (formulaRows.length > 0) {
+        doc.addTable(
+          ["Equação Preditiva Selecionada", "Metodologia / Parâmetros Adotados", "Resultado Calculado"],
+          formulaRows,
+          [3500, 3200, 2300]
+        );
+      }
+
+      if (calc.vetPlanejadoKcal) {
+        const taxaTexto = calc.taxaMetabolicaCalculada ? `${calc.taxaMetabolicaCalculada} kcal/kg` : (presc.regraBolsoKcalKg || "--");
+        doc.addCallout(
+          "DECISÃO CLÍNICA E VET PLANEJADO:",
+          `VET Planejado: ${calc.vetPlanejadoKcal} kcal/dia | Taxa Metabólica Utilizada: ${taxaTexto}\nJustificativa da Escolha: ${calc.justificativaEscolha || 'Não informada'}`,
+          "0d9488",
+          "f0fdfa"
+        );
+      }
+    }
+
+    doc.addHeading("2.3. Determinação das Necessidades Energéticas e Distribuição Dinâmica de Macronutrientes", 2);
     
     const dm = presc.distribuicaoMacros || {};
     const rp = presc.recomendacaoProteinaGKg || {};
@@ -272,7 +317,7 @@ class DietoterapiaDocxReport {
     }
 
     if (presc.justificativaFisiopatologica) {
-      doc.addHeading("2.3. Justificativa Fisiopatológica da Conduta", 2);
+      doc.addHeading("2.4. Justificativa Fisiopatológica da Conduta", 2);
       doc.addParagraph(presc.justificativaFisiopatologica);
     }
 

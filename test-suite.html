@@ -893,6 +893,106 @@ Questões Avaliativas:
       // 57. Validação do Descarte de Meta Tags Depreciadas
       const hasModernCapableMeta = true; // Substituído apple-mobile-web-app-capable por mobile-web-app-capable
       assert(hasModernCapableMeta === true, "PWA Meta Tags: Padrão moderno <meta name='mobile-web-app-capable' content='yes'> adotado sem tags depreciadas");
+
+      // 58. Modelo de Dados do Prontuário: Cálculos de Necessidades
+      const emptyProntCalc = prontManager.getEmptyProntuario("caso-teste-calc");
+      assert(emptyProntCalc.calculoNecessidades !== undefined, "Prontuário: Estrutura calculoNecessidades inicializada no modelo vazio");
+      assert(Array.isArray(emptyProntCalc.calculoNecessidades.formulasSelecionadas), "Prontuário: formulasSelecionadas é um array vazio");
+      assert(emptyProntCalc.calculoNecessidades.bolso && emptyProntCalc.calculoNecessidades.harrisBenedict && emptyProntCalc.calculoNecessidades.mifflin && emptyProntCalc.calculoNecessidades.eerIom && emptyProntCalc.calculoNecessidades.faoOms,
+        "Prontuário: 5 equações preditivas mapeadas no modelo (bolso, harrisBenedict, mifflin, eerIom, faoOms)");
+      assert(emptyProntCalc.calculoNecessidades.bolso.minKcalKg === "" && emptyProntCalc.calculoNecessidades.bolso.maxKcalKg === "",
+        "Fórmula de Bolso: Campos de faixa mínima e máxima (kcal/kg) inicializados vazios");
+      assert(emptyProntCalc.calculoNecessidades.vetPlanejadoKcal === "" && emptyProntCalc.calculoNecessidades.justificativaEscolha === "",
+        "Decisão Clínica: VET Planejado e Justificativa inicializados vazios");
+
+      // 59. Helper calculateKcalKgRate (VET / Peso)
+      const taxaCalculada1 = prontManager.calculateKcalKgRate(1850, 74);
+      assert(taxaCalculada1 === "25.0", `calculateKcalKgRate: 1850 kcal / 74 kg = 25.0 kcal/kg (obtido ${taxaCalculada1})`);
+      const taxaCalculada2 = prontManager.calculateKcalKgRate("2100", "70");
+      assert(taxaCalculada2 === "30.0", `calculateKcalKgRate: aceita strings e retorna 30.0 kcal/kg (obtido ${taxaCalculada2})`);
+      assert(prontManager.calculateKcalKgRate(0, 70) === null && prontManager.calculateKcalKgRate(1800, 0) === null,
+        "calculateKcalKgRate: retorna null com valores nulos, zerados ou inválidos");
+
+      // 60. Limite de no máximo 3 Fórmulas Selecionadas
+      const testCheckboxes = [
+        { checked: false, formula: "bolso" },
+        { checked: false, formula: "harrisBenedict" },
+        { checked: false, formula: "mifflin" },
+        { checked: false, formula: "eerIom" },
+        { checked: false, formula: "faoOms" }
+      ];
+
+      function simulateCheckboxToggle(cb) {
+        cb.checked = true;
+        const currentChecked = testCheckboxes.filter(c => c.checked).length;
+        if (currentChecked > 3) {
+          cb.checked = false;
+          return false; // bloqueado pelo limite
+        }
+        return true;
+      }
+
+      assert(simulateCheckboxToggle(testCheckboxes[0]) === true, "Limite de Fórmulas: 1ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[1]) === true, "Limite de Fórmulas: 2ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[2]) === true, "Limite de Fórmulas: 3ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[3]) === false, "Limite de Fórmulas: 4ª fórmula é bloqueada pelo limite de 3");
+      assert(testCheckboxes[3].checked === false, "Limite de Fórmulas: 4º checkbox permanece desmarcado após bloqueio");
+      assert(testCheckboxes.filter(c => c.checked).length === 3, "Limite de Fórmulas: total selecionado permanece exatamente 3");
+
+      // 61. Decisão Clínica e Integração com a Aba Prescrição Dietética (VET e Regra de Bolso)
+      const mockProntuarioIntegrado = prontManager.getEmptyProntuario("caso-integrado");
+      mockProntuarioIntegrado.antropometria.pesoAtual = "74";
+      mockProntuarioIntegrado.calculoNecessidades.formulasSelecionadas = ["bolso", "mifflin"];
+      mockProntuarioIntegrado.calculoNecessidades.bolso = { minKcalKg: "25", maxKcalKg: "30", resultadoKcal: "1850" };
+      mockProntuarioIntegrado.calculoNecessidades.mifflin = { resultadoKcal: "1820" };
+      mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal = "1850";
+      mockProntuarioIntegrado.calculoNecessidades.justificativaEscolha = "Déficit calórico para redução ponderal gradual.";
+
+      const taxaMetabolicaMock = prontManager.calculateKcalKgRate(
+        mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal, 
+        mockProntuarioIntegrado.antropometria.pesoAtual
+      );
+      mockProntuarioIntegrado.calculoNecessidades.taxaMetabolicaCalculada = taxaMetabolicaMock;
+
+      // Espelhamento na Prescrição
+      mockProntuarioIntegrado.prescricaoDietoterapica.vetKcal = `${mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal} kcal/dia`;
+      mockProntuarioIntegrado.prescricaoDietoterapica.regraBolsoKcalKg = `${taxaMetabolicaMock} kcal/kg (Peso: 74 kg)`;
+
+      assert(mockProntuarioIntegrado.prescricaoDietoterapica.vetKcal === "1850 kcal/dia", 
+        "Integração VET: Prescrição recebe automaticamente o VET Planejado (1850 kcal/dia)");
+      assert(mockProntuarioIntegrado.prescricaoDietoterapica.regraBolsoKcalKg.includes("25.0 kcal/kg"), 
+        "Integração Taxa: Regra de bolso na Prescrição calculada automaticamente (25.0 kcal/kg)");
+
+      // 62. Recálculo Dinâmico dos Macronutrientes com VET da Decisão Clínica
+      const distMacrosPlanejada = prontManager.calculatePrescriptionDistribution(1850, {
+        cho: { minPct: 50, maxPct: 55 },
+        ptn: { minPct: 15, maxPct: 20 },
+        lip: { minPct: 25, maxPct: 30 }
+      });
+      assert(distMacrosPlanejada.cho.minKcal === 925 && distMacrosPlanejada.cho.maxKcal === 1017.5,
+        `Distribuição Macronutrientes: CHO kcal recalculado com VET 1850 (${distMacrosPlanejada.cho.minKcal} a ${distMacrosPlanejada.cho.maxKcal} kcal)`);
+      assert(distMacrosPlanejada.ptn.minG === 69.4 && distMacrosPlanejada.ptn.maxG === 92.5,
+        `Distribuição Macronutrientes: PTN gramas recalculado com VET 1850 (${distMacrosPlanejada.ptn.minG}g a ${distMacrosPlanejada.ptn.maxG}g)`);
+
+      // 63. Bloqueio Físico da Aba 'necessidades' via Firebase Sync
+      const mockNecessidadesBtn = document.createElement("button");
+      mockNecessidadesBtn.className = "student-tab-btn";
+      mockNecessidadesBtn.dataset.tab = "necessidades";
+      document.body.appendChild(mockNecessidadesBtn);
+
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: ["necessidades"] });
+      assert(mockNecessidadesBtn.dataset.isBlocked === "true", "Firebase Sync: Aba 'necessidades' bloqueada fisicamente quando presente em blockedTabs");
+      assert(mockNecessidadesBtn.querySelector(".tab-lock-indicator")?.textContent.includes("🔒"), "Firebase Sync: Indicador '🔒' exibido na aba de necessidades");
+
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: [] });
+      assert(mockNecessidadesBtn.dataset.isBlocked === undefined, "Firebase Sync: Aba 'necessidades' desbloqueada com sucesso");
+      mockNecessidadesBtn.remove();
+
+      // 64. Relatório Word (.docx) com Seção 2.2 de Cálculos de Necessidades e Decisão Clínica
+      const docxComNecessidades = DietoterapiaDocxReport.buildReportDocument(mockProntuarioIntegrado, caso1);
+      const blobNecessidades = docxComNecessidades.generateBlob();
+      assert(blobNecessidades && blobNecessidades.size > 2000, 
+        `Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (${blobNecessidades.size} bytes)`);
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

@@ -183,6 +183,30 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         const tabBtn = document.querySelector(`.student-tab-btn[data-tab="${requestedTab}"]`);
         if (tabBtn) tabBtn.click();
+        if (urlParams.get("demo") === "necessidades") {
+          if (appState.currentProntuario) {
+            if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
+            appState.currentProntuario.antropometria.pesoAtual = "74";
+            appState.currentProntuario.calculoNecessidades = {
+              formulasSelecionadas: ["bolso", "mifflin", "eerIom"],
+              bolso: { minKcalKg: "25", maxKcalKg: "30", resultadoKcal: "1850" },
+              harrisBenedict: { resultadoKcal: "" },
+              mifflin: { resultadoKcal: "1820" },
+              eerIom: { resultadoKcal: "1910" },
+              faoOms: { resultadoKcal: "" },
+              vetPlanejadoKcal: "1850",
+              taxaMetabolicaCalculada: "25.0 kcal/kg",
+              justificativaEscolha: "Adoção de meta normocalórica com 25 kcal/kg de peso atual (1850 kcal/dia), em harmonia com as equações de Mifflin-St Jeor e DRI/EER."
+            };
+          }
+          const pesoInput = document.getElementById("prontPesoAtual");
+          if (pesoInput) pesoInput.value = "74";
+          const vetPlanInput = document.getElementById("prontCalcVetPlanejado");
+          if (vetPlanInput) vetPlanInput.value = "1850";
+          populateProntuarioForm();
+          updateCalculoNecessidadesDisplay();
+          updatePrescriptionCalculations();
+        }
         if (urlParams.get("demo") === "prescricao") {
           if (appState.currentProntuario) {
             if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
@@ -1326,23 +1350,68 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontPesSinais").value = p.diagnosticoPES.sinaisSintomas || "";
     document.getElementById("prontPesTextoCompleto").value = p.diagnosticoPES.textoCompletoPES || "";
 
+    // Cálculos de Necessidades
+    const calc = p.calculoNecessidades || {};
+    const formulasSel = Array.isArray(calc.formulasSelecionadas) ? calc.formulasSelecionadas : [];
+    
+    const formulaConfig = {
+      bolso: { checkId: "calcFormulaBolsoCheck", containerId: "calcBolsoFieldsContainer" },
+      harrisBenedict: { checkId: "calcFormulaHarrisCheck", containerId: "calcHarrisFieldsContainer" },
+      mifflin: { checkId: "calcFormulaMifflinCheck", containerId: "calcMifflinFieldsContainer" },
+      eerIom: { checkId: "calcFormulaEerCheck", containerId: "calcEerFieldsContainer" },
+      faoOms: { checkId: "calcFormulaFaoCheck", containerId: "calcFaoFieldsContainer" }
+    };
+
+    Object.keys(formulaConfig).forEach(key => {
+      const cfg = formulaConfig[key];
+      const cb = document.getElementById(cfg.checkId);
+      const container = document.getElementById(cfg.containerId);
+      const isSelected = formulasSel.includes(key);
+      if (cb) cb.checked = isSelected;
+      if (container) {
+        if (isSelected) container.classList.remove("hidden");
+        else container.classList.add("hidden");
+      }
+    });
+
+    const countEl = document.getElementById("calcFormulasSelectedCount");
+    if (countEl) countEl.textContent = formulasSel.length;
+
+    if (document.getElementById("calcBolsoMinKcalKg")) document.getElementById("calcBolsoMinKcalKg").value = calc.bolso?.minKcalKg || "";
+    if (document.getElementById("calcBolsoMaxKcalKg")) document.getElementById("calcBolsoMaxKcalKg").value = calc.bolso?.maxKcalKg || "";
+    if (document.getElementById("calcBolsoResultadoKcal")) document.getElementById("calcBolsoResultadoKcal").value = calc.bolso?.resultadoKcal || "";
+    if (document.getElementById("calcHarrisResultadoKcal")) document.getElementById("calcHarrisResultadoKcal").value = calc.harrisBenedict?.resultadoKcal || "";
+    if (document.getElementById("calcMifflinResultadoKcal")) document.getElementById("calcMifflinResultadoKcal").value = calc.mifflin?.resultadoKcal || "";
+    if (document.getElementById("calcEerResultadoKcal")) document.getElementById("calcEerResultadoKcal").value = calc.eerIom?.resultadoKcal || "";
+    if (document.getElementById("calcFaoResultadoKcal")) document.getElementById("calcFaoResultadoKcal").value = calc.faoOms?.resultadoKcal || "";
+
+    if (document.getElementById("prontCalcVetPlanejado")) document.getElementById("prontCalcVetPlanejado").value = calc.vetPlanejadoKcal || "";
+    if (document.getElementById("prontCalcJustificativa")) document.getElementById("prontCalcJustificativa").value = calc.justificativaEscolha || "";
+
     // Prescrição Dietoterápica
-    document.getElementById("prontVetKcal").value = p.prescricaoDietoterapica.vetKcal || "";
-    document.getElementById("prontRegraBolso").value = p.prescricaoDietoterapica.regraBolsoKcalKg || "";
-    if (p.prescricaoDietoterapica.distribuicaoMacros) {
-      const dm = p.prescricaoDietoterapica.distribuicaoMacros;
-      if (document.getElementById("prontChoMinPct")) document.getElementById("prontChoMinPct").value = dm.cho?.minPct ?? "45";
-      if (document.getElementById("prontChoMaxPct")) document.getElementById("prontChoMaxPct").value = dm.cho?.maxPct ?? "55";
-      if (document.getElementById("prontPtnMinPct")) document.getElementById("prontPtnMinPct").value = dm.ptn?.minPct ?? "15";
-      if (document.getElementById("prontPtnMaxPct")) document.getElementById("prontPtnMaxPct").value = dm.ptn?.maxPct ?? "20";
-      if (document.getElementById("prontLipMinPct")) document.getElementById("prontLipMinPct").value = dm.lip?.minPct ?? "25";
-      if (document.getElementById("prontLipMaxPct")) document.getElementById("prontLipMaxPct").value = dm.lip?.maxPct ?? "30";
+    if (p.prescricaoDietoterapica) {
+      if (document.getElementById("prontVetKcal")) {
+        document.getElementById("prontVetKcal").value = calc.vetPlanejadoKcal ? `${calc.vetPlanejadoKcal} kcal/dia` : (p.prescricaoDietoterapica.vetKcal || "");
+      }
+      if (document.getElementById("prontRegraBolso")) {
+        document.getElementById("prontRegraBolso").value = p.prescricaoDietoterapica.regraBolsoKcalKg || "";
+      }
+      if (p.prescricaoDietoterapica.distribuicaoMacros) {
+        const dm = p.prescricaoDietoterapica.distribuicaoMacros;
+        if (document.getElementById("prontChoMinPct")) document.getElementById("prontChoMinPct").value = dm.cho?.minPct ?? "45";
+        if (document.getElementById("prontChoMaxPct")) document.getElementById("prontChoMaxPct").value = dm.cho?.maxPct ?? "55";
+        if (document.getElementById("prontPtnMinPct")) document.getElementById("prontPtnMinPct").value = dm.ptn?.minPct ?? "15";
+        if (document.getElementById("prontPtnMaxPct")) document.getElementById("prontPtnMaxPct").value = dm.ptn?.maxPct ?? "20";
+        if (document.getElementById("prontLipMinPct")) document.getElementById("prontLipMinPct").value = dm.lip?.minPct ?? "25";
+        if (document.getElementById("prontLipMaxPct")) document.getElementById("prontLipMaxPct").value = dm.lip?.maxPct ?? "30";
+      }
+      if (p.prescricaoDietoterapica.recomendacaoProteinaGKg) {
+        const rp = p.prescricaoDietoterapica.recomendacaoProteinaGKg;
+        if (document.getElementById("prontPtnMinGKg")) document.getElementById("prontPtnMinGKg").value = rp.minGKg ?? "1.0";
+        if (document.getElementById("prontPtnMaxGKg")) document.getElementById("prontPtnMaxGKg").value = rp.maxGKg ?? "1.2";
+      }
     }
-    if (p.prescricaoDietoterapica.recomendacaoProteinaGKg) {
-      const rp = p.prescricaoDietoterapica.recomendacaoProteinaGKg;
-      if (document.getElementById("prontPtnMinGKg")) document.getElementById("prontPtnMinGKg").value = rp.minGKg ?? "1.0";
-      if (document.getElementById("prontPtnMaxGKg")) document.getElementById("prontPtnMaxGKg").value = rp.maxGKg ?? "1.2";
-    }
+    updateCalculoNecessidadesDisplay();
     updatePrescriptionCalculations();
 
     if (document.getElementById("prontChoG")) document.getElementById("prontChoG").value = p.prescricaoDietoterapica.carboidratosG || "";
@@ -1423,6 +1492,36 @@ document.addEventListener("DOMContentLoaded", () => {
     p.diagnosticoPES.etiologia = document.getElementById("prontPesEtiologia").value.trim();
     p.diagnosticoPES.sinaisSintomas = document.getElementById("prontPesSinais").value.trim();
     p.diagnosticoPES.textoCompletoPES = document.getElementById("prontPesTextoCompleto").value.trim();
+
+    // Cálculos de Necessidades
+    if (!p.calculoNecessidades) p.calculoNecessidades = {};
+    const formulasSel = [];
+    document.querySelectorAll(".calc-formula-checkbox").forEach(cb => {
+      if (cb.checked && cb.dataset.formula) {
+        formulasSel.push(cb.dataset.formula);
+      }
+    });
+    p.calculoNecessidades.formulasSelecionadas = formulasSel;
+    p.calculoNecessidades.bolso = {
+      minKcalKg: document.getElementById("calcBolsoMinKcalKg")?.value.trim() || "",
+      maxKcalKg: document.getElementById("calcBolsoMaxKcalKg")?.value.trim() || "",
+      resultadoKcal: document.getElementById("calcBolsoResultadoKcal")?.value.trim() || ""
+    };
+    p.calculoNecessidades.harrisBenedict = {
+      resultadoKcal: document.getElementById("calcHarrisResultadoKcal")?.value.trim() || ""
+    };
+    p.calculoNecessidades.mifflin = {
+      resultadoKcal: document.getElementById("calcMifflinResultadoKcal")?.value.trim() || ""
+    };
+    p.calculoNecessidades.eerIom = {
+      resultadoKcal: document.getElementById("calcEerResultadoKcal")?.value.trim() || ""
+    };
+    p.calculoNecessidades.faoOms = {
+      resultadoKcal: document.getElementById("calcFaoResultadoKcal")?.value.trim() || ""
+    };
+    p.calculoNecessidades.vetPlanejadoKcal = document.getElementById("prontCalcVetPlanejado")?.value.trim() || "";
+    p.calculoNecessidades.justificativaEscolha = document.getElementById("prontCalcJustificativa")?.value.trim() || "";
+    p.calculoNecessidades.taxaMetabolicaCalculada = document.getElementById("dispTaxaMetabolicaCalculada")?.textContent.replace(" kcal/kg", "").trim() || "";
 
     // Prescrição Dietoterápica
     p.prescricaoDietoterapica.vetKcal = document.getElementById("prontVetKcal").value.trim();
@@ -1613,6 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
       a.diagnosticoNutricionalExtenso = imcResult.diagnosticoExtenso || "";
       a.criterioClassificacao = imcResult.criterio || "";
     }
+    updateCalculoNecessidadesDisplay();
   }
 
   // Atualiza avaliação quantitativa do consumo alimentar e adequação energética do VET
@@ -1737,6 +1837,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return null;
   }
+
+  // Atualiza em tempo real o VET planejado, taxa metabólica resultante (kcal/kg) e espelhamento na Prescrição
+  function updateCalculoNecessidadesDisplay() {
+    const vetInput = document.getElementById("prontCalcVetPlanejado");
+    const vetRaw = vetInput ? vetInput.value.trim() : "";
+    const vet = vetRaw ? parseFloat(vetRaw.replace(",", ".")) : 0;
+
+    const peso = getEffectivePatientWeight();
+
+    const dispTaxa = document.getElementById("dispTaxaMetabolicaCalculada");
+    const dispPesoInfo = document.getElementById("dispTaxaMetabolicaPesoInfo");
+    const prescVetInput = document.getElementById("prontVetKcal");
+    const prescRegraBolso = document.getElementById("prontRegraBolso");
+
+    let taxaStr = "--";
+    if (vet > 0 && peso > 0) {
+      const taxa = (vet / peso).toFixed(1);
+      taxaStr = `${taxa} kcal/kg`;
+      if (dispTaxa) dispTaxa.textContent = taxaStr;
+      if (dispPesoInfo) dispPesoInfo.textContent = `(Baseado em ${peso} kg)`;
+      if (prescRegraBolso) prescRegraBolso.value = `${taxa} kcal/kg (Peso: ${peso} kg)`;
+    } else {
+      if (dispTaxa) dispTaxa.textContent = "-- kcal/kg";
+      if (dispPesoInfo) dispPesoInfo.textContent = "(Baseado no peso atual)";
+      if (prescRegraBolso) prescRegraBolso.value = vet > 0 ? `${vet} kcal/dia` : "";
+    }
+
+    // Espelhamento direto e bloqueio na aba Prescrição Dietética
+    if (prescVetInput) {
+      prescVetInput.value = vet > 0 ? `${vet} kcal/dia` : "";
+    }
+
+    // Salva no objeto atual do prontuário
+    if (appState.currentProntuario?.calculoNecessidades) {
+      appState.currentProntuario.calculoNecessidades.vetPlanejadoKcal = vetRaw;
+      appState.currentProntuario.calculoNecessidades.taxaMetabolicaCalculada = taxaStr !== "--" ? taxaStr : "";
+    }
+    if (appState.currentProntuario?.prescricaoDietoterapica) {
+      appState.currentProntuario.prescricaoDietoterapica.vetKcal = prescVetInput ? prescVetInput.value : "";
+      appState.currentProntuario.prescricaoDietoterapica.regraBolsoKcalKg = prescRegraBolso ? prescRegraBolso.value : "";
+    }
+
+    // Dispara recálculo da prescrição
+    updatePrescriptionCalculations();
+  }
+  window.updateCalculoNecessidadesDisplay = updateCalculoNecessidadesDisplay;
 
   // Atualiza em tempo real a tabela dinâmica da prescrição e cálculo de proteína g/kg
   function updatePrescriptionCalculations() {
@@ -2855,6 +3001,65 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Configura listeners da aba Cálculos de Necessidades (limite de 3 fórmulas, inputs dinâmicos, VET planejado)
+  function setupCalculoNecessidadesListeners() {
+    const formulaContainers = {
+      bolso: "calcBolsoFieldsContainer",
+      harrisBenedict: "calcHarrisFieldsContainer",
+      mifflin: "calcMifflinFieldsContainer",
+      eerIom: "calcEerFieldsContainer",
+      faoOms: "calcFaoFieldsContainer"
+    };
+
+    const checkboxes = document.querySelectorAll(".calc-formula-checkbox");
+    const countEl = document.getElementById("calcFormulasSelectedCount");
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener("change", () => {
+        const formulaKey = cb.dataset.formula;
+        const checkedList = Array.from(checkboxes).filter(c => c.checked);
+
+        if (checkedList.length > 3) {
+          cb.checked = false;
+          showToast("⚠️ Selecione no máximo 3 fórmulas preditivas para o cálculo manual.");
+          return;
+        }
+
+        if (countEl) countEl.textContent = checkedList.length;
+
+        const containerId = formulaContainers[formulaKey];
+        if (containerId) {
+          const container = document.getElementById(containerId);
+          if (container) {
+            if (cb.checked) {
+              container.classList.remove("hidden");
+            } else {
+              container.classList.add("hidden");
+            }
+          }
+        }
+      });
+    });
+
+    const vetPlanejadoInput = document.getElementById("prontCalcVetPlanejado");
+    if (vetPlanejadoInput) {
+      vetPlanejadoInput.addEventListener("input", () => {
+        updateCalculoNecessidadesDisplay();
+      });
+    }
+
+    const justificativaInput = document.getElementById("prontCalcJustificativa");
+    if (justificativaInput) {
+      justificativaInput.addEventListener("input", () => {
+        if (appState.currentProntuario?.calculoNecessidades) {
+          appState.currentProntuario.calculoNecessidades.justificativaEscolha = justificativaInput.value;
+        }
+      });
+    }
+  }
+  setupCalculoNecessidadesListeners();
+  window.setupCalculoNecessidadesListeners = setupCalculoNecessidadesListeners;
+
   function renderCaseLabExamsBadge() {
     const list = appState.currentCase?.bioquimica || [];
     const container = document.getElementById("labExamsContainer");
@@ -3952,9 +4157,10 @@ document.addEventListener("DOMContentLoaded", () => {
     examefisico: "4. Exame Físico e Sinais Clínicos",
     consumo: "5. Avaliação do Consumo Alimentar (R24h)",
     pes: "6. Diagnóstico Nutricional (PES)",
-    prescricao: "7. Prescrição Dietética",
-    cardapio: "8. Elaboração do Cardápio",
-    questoes: "9. Questões Avaliativas"
+    necessidades: "7. Cálculos de Necessidades",
+    prescricao: "8. Prescrição Dietética",
+    cardapio: "9. Elaboração do Cardápio",
+    questoes: "10. Questões Avaliativas"
   };
 
   // Verifica se uma aba está bloqueada para o aluno neste caso clínico
@@ -3998,7 +4204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Se o aluno estiver atualmente em uma aba bloqueada, redireciona para a primeira desimpedida
     if (!isTeacherAuthenticated && appState.activeStudentTab && blockedTabs.includes(appState.activeStudentTab)) {
-      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "prescricao", "cardapio", "questoes"];
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "necessidades", "prescricao", "cardapio", "questoes"];
       const firstAvailable = allTabs.find(t => !blockedTabs.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
       if (targetBtn) {

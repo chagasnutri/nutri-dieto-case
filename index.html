@@ -374,6 +374,9 @@
             <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="pes">
               <span>🎯</span> <span>Diagnóstico PES</span>
             </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="necessidades">
+              <span>🔥</span> <span>Cálculos de Necessidades</span>
+            </button>
             <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="prescricao">
               <span>💊</span> <span>Prescrição Dietética</span>
             </button>
@@ -923,18 +926,198 @@
               </div>
             </div>
 
-            <!-- ABA 7: PRESCRIÇÃO DIETOTERÁPICA -->
+            <!-- ABA 7: CÁLCULOS DE NECESSIDADES ENERGÉTICAS -->
+            <div id="tab-content-necessidades" class="student-tab-content hidden space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>🔥</span>
+                    <span>Estimativa de Necessidades Energéticas (Fórmulas Preditivas)</span>
+                  </h4>
+                  <p class="text-slate-500 text-[11px] mt-0.5">Selecione até 3 equações preditivas para calcular manualmente e comparar os resultados.</p>
+                </div>
+                <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                  <span>Fórmulas selecionadas:</span>
+                  <span id="calcFormulasSelectedCount" class="text-emerald-900 font-extrabold text-sm">0</span>
+                  <span>/ 3</span>
+                </div>
+              </div>
+
+              <!-- LISTA DAS 5 EQUAÇÕES PREDITIVAS -->
+              <div class="space-y-3" id="calcFormulasListContainer">
+                
+                <!-- 1. FÓRMULA DE BOLSO -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaBolsoCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="bolso">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-emerald-700 font-semibold">1.</span>
+                          <span>Fórmula de Bolso (Regra Prática)</span>
+                          <span class="badge-clinical bg-amber-50 text-amber-800 border border-amber-200 text-[10px] py-0 px-1.5">kcal/kg</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Estimativa rápida baseada no peso corporal (ex: 20-25 kcal/kg para perda, 25-30 manutenção, 30-35 ganho/hipermetabolismo).</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Inputs exclusivos da Fórmula de Bolso (Faixa Min/Max e Resultado) -->
+                  <div id="calcBolsoFieldsContainer" class="hidden pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-2.5 rounded-lg">
+                    <div>
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Faixa Mínima (kcal/kg):</label>
+                      <input type="number" id="calcBolsoMinKcalKg" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white focus:border-emerald-500" placeholder="Ex: 25" min="10" max="60" step="0.5">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Faixa Máxima (kcal/kg):</label>
+                      <input type="number" id="calcBolsoMaxKcalKg" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white focus:border-emerald-500" placeholder="Ex: 30" min="10" max="60" step="0.5">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-emerald-800 text-[11px] mb-1">Resultado Calculado (kcal/dia):</label>
+                      <input type="number" id="calcBolsoResultadoKcal" class="w-full border border-emerald-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1850" min="500" max="6000" step="1">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. HARRIS-BENEDICT -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaHarrisCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="harrisBenedict">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-emerald-700 font-semibold">2.</span>
+                          <span>Harris-Benedict (1919 / 1984)</span>
+                          <span class="badge-clinical bg-blue-50 text-blue-800 border border-blue-200 text-[10px] py-0 px-1.5">GEB × FA × FI</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Cálculo do Gasto Energético Basal por peso, estatura e idade, corrigido por Fator Atividade e Fator Injúria.</p>
+                      </div>
+                    </label>
+                  </div>
+                  <div id="calcHarrisFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
+                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
+                    <input type="number" id="calcHarrisResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1780" min="500" max="6000" step="1">
+                  </div>
+                </div>
+
+                <!-- 3. MIFFLIN-ST JEOR -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaMifflinCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="mifflin">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-emerald-700 font-semibold">3.</span>
+                          <span>Mifflin-St Jeor (1990)</span>
+                          <span class="badge-clinical bg-teal-50 text-teal-800 border border-teal-200 text-[10px] py-0 px-1.5">Recomendada AND</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Altamente acurada para adultos eutróficos e obesos, integrando TMB multiplicada pelo NAF.</p>
+                      </div>
+                    </label>
+                  </div>
+                  <div id="calcMifflinFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
+                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
+                    <input type="number" id="calcMifflinResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1820" min="500" max="6000" step="1">
+                  </div>
+                </div>
+
+                <!-- 4. EER / IOM -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaEerCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="eerIom">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-emerald-700 font-semibold">4.</span>
+                          <span>EER / IOM (DRI 2002 / 2005)</span>
+                          <span class="badge-clinical bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] py-0 px-1.5">Institute of Medicine</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Equação de Necessidade Estimada de Energia com Coeficiente de Atividade Física (CAF) ponderado.</p>
+                      </div>
+                    </label>
+                  </div>
+                  <div id="calcEerFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
+                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
+                    <input type="number" id="calcEerResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1910" min="500" max="6000" step="1">
+                  </div>
+                </div>
+
+                <!-- 5. FAO / OMS -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaFaoCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="faoOms">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-emerald-700 font-semibold">5.</span>
+                          <span>FAO / OMS (1985 / 2004)</span>
+                          <span class="badge-clinical bg-purple-50 text-purple-800 border border-purple-200 text-[10px] py-0 px-1.5">OMS / UNU</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">TMB predita por faixa etária e peso, ajustada pelo Nível de Atividade Física individual.</p>
+                      </div>
+                    </label>
+                  </div>
+                  <div id="calcFaoFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
+                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
+                    <input type="number" id="calcFaoResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1840" min="500" max="6000" step="1">
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- SEÇÃO: DECISÃO CLÍNICA E VET PLANEJADO -->
+              <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/70 border border-emerald-300 rounded-2xl p-4 space-y-3 shadow-xs">
+                <div class="flex items-center justify-between border-b border-emerald-200 pb-2">
+                  <span class="font-bold text-emerald-950 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
+                    <span>🎯</span>
+                    <span>Decisão Clínica e VET Planejado</span>
+                  </span>
+                  <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">Integração com Prescrição</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-800 text-xs mb-1">VET Planejado (kcal/dia):</label>
+                    <input type="number" id="prontCalcVetPlanejado" class="w-full border border-emerald-400 rounded-lg p-2 text-sm font-bold text-emerald-900 bg-white focus:ring-2 focus:ring-emerald-500 shadow-2xs" placeholder="Ex: 1850" min="500" max="6000" step="10">
+                    <p class="text-[10px] text-slate-500 mt-1">Este valor será transmitido automaticamente para a aba de Prescrição Dietética.</p>
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-800 text-xs mb-1">Taxa Metabólica Resultante (kcal/kg):</label>
+                    <div class="border border-slate-200 bg-white rounded-lg p-2 flex items-center justify-between min-h-[38px] shadow-2xs">
+                      <span id="dispTaxaMetabolicaCalculada" class="text-xs font-bold text-emerald-800">-- kcal/kg</span>
+                      <span class="text-[10px] text-slate-400" id="dispTaxaMetabolicaPesoInfo">(Baseado no peso atual)</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Calculado dividindo o VET Planejado pelo Peso Atual da Antropometria.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-800 text-xs mb-1">Justificativa da Escolha Clínica:</label>
+                  <textarea id="prontCalcJustificativa" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" rows="3" placeholder="Justifique a equação escolhida ou o valor calórico estabelecido (ex: meta de déficit energético para perda de peso, aporte normocalórico de manutenção, necessidades aumentadas por estresse metabólico ou recuperação nutricional)..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 8: PRESCRIÇÃO DIETOTERÁPICA -->
             <div id="tab-content-prescricao" class="student-tab-content hidden space-y-3">
               <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Conduta e Prescrição Dietoterápica</h4>
               
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block font-semibold text-slate-700 mb-1">Valor Energético Total (VET - kcal/dia):</label>
-                  <input type="text" id="prontVetKcal" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 1850 kcal/dia">
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-semibold text-slate-700">Valor Energético Total (VET - kcal/dia):</label>
+                    <span class="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">🔒 Bloqueado</span>
+                  </div>
+                  <input type="text" id="prontVetKcal" class="w-full border border-slate-300 bg-slate-100 text-slate-700 font-bold rounded p-2 cursor-not-allowed" placeholder="Definido na aba 'Cálculos de Necessidades'" readonly>
+                  <p class="text-[10px] text-slate-500 mt-1">Preenchido automaticamente a partir da aba 'Cálculos de Necessidades'.</p>
                 </div>
                 <div>
-                  <label class="block font-semibold text-slate-700 mb-1">Regra de Bolso / Taxa Metabólica Utilizada:</label>
-                  <input type="text" id="prontRegraBolso" class="w-full border border-slate-300 rounded p-2" placeholder="Ex: 25 kcal/kg de peso ajustado">
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-semibold text-slate-700">Regra de Bolso / Taxa Metabólica Utilizada:</label>
+                    <span class="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">⚡ Automático</span>
+                  </div>
+                  <input type="text" id="prontRegraBolso" class="w-full border border-slate-300 bg-slate-100 text-slate-700 font-semibold rounded p-2 cursor-not-allowed" placeholder="Calculado automaticamente a partir do VET / Peso" readonly>
+                  <p class="text-[10px] text-slate-500 mt-1">Calculado dividindo o VET pelo peso atual do paciente.</p>
                 </div>
               </div>
 
@@ -2093,12 +2276,25 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
               <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
             </label>
 
-            <!-- 7. Prescrição Dietética -->
+            <!-- 7. Cálculos de Necessidades -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🔥</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">7. Cálculos de Necessidades</div>
+                  <div class="text-[10px] text-slate-500">Fórmulas preditivas e VET planejado</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="necessidades">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 8. Prescrição Dietética -->
             <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
               <div class="flex items-center space-x-2.5">
                 <span class="text-lg">💊</span>
                 <div>
-                  <div class="font-bold text-slate-800 text-xs">7. Prescrição Dietética</div>
+                  <div class="font-bold text-slate-800 text-xs">8. Prescrição Dietética</div>
                   <div class="text-[10px] text-slate-500">VET, Macros dinâmicos e g/kg</div>
                 </div>
               </div>
@@ -2106,12 +2302,12 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
               <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
             </label>
 
-            <!-- 8. Cardápio -->
+            <!-- 9. Cardápio -->
             <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
               <div class="flex items-center space-x-2.5">
                 <span class="text-lg">🍽️</span>
                 <div>
-                  <div class="font-bold text-slate-800 text-xs">8. Cardápio</div>
+                  <div class="font-bold text-slate-800 text-xs">9. Cardápio</div>
                   <div class="text-[10px] text-slate-500">Preparações e tabela de metas</div>
                 </div>
               </div>
@@ -2119,12 +2315,12 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
               <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
             </label>
 
-            <!-- 9. Questões Avaliativas -->
+            <!-- 10. Questões Avaliativas -->
             <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
               <div class="flex items-center space-x-2.5">
                 <span class="text-lg">❓</span>
                 <div>
-                  <div class="font-bold text-slate-800 text-xs">9. Questões Avaliativas</div>
+                  <div class="font-bold text-slate-800 text-xs">10. Questões Avaliativas</div>
                   <div class="text-[10px] text-slate-500">Perguntas discursivas do caso</div>
                 </div>
               </div>

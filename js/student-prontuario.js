@@ -106,6 +106,29 @@ class StudentProntuarioManager {
         sinaisSintomas: "",
         textoCompletoPES: ""
       },
+      calculoNecessidades: {
+        formulasSelecionadas: [],
+        bolso: {
+          minKcalKg: "",
+          maxKcalKg: "",
+          resultadoKcal: ""
+        },
+        harrisBenedict: {
+          resultadoKcal: ""
+        },
+        mifflin: {
+          resultadoKcal: ""
+        },
+        eerIom: {
+          resultadoKcal: ""
+        },
+        faoOms: {
+          resultadoKcal: ""
+        },
+        vetPlanejadoKcal: "",
+        taxaMetabolicaCalculada: "",
+        justificativaEscolha: ""
+      },
       prescricaoDietoterapica: {
         vetKcal: "",
         regraBolsoKcalKg: "",
@@ -415,6 +438,15 @@ class StudentProntuarioManager {
     }
 
     return { percentual: pctFormatted, interpretacao };
+  }
+
+  // Calcula Taxa Metabólica Resultante (kcal/kg) baseada no VET e Peso Atual
+  calculateKcalKgRate(vetKcal, weightKg) {
+    if (!vetKcal || !weightKg) return null;
+    const vet = typeof vetKcal === "string" ? parseFloat(vetKcal.replace(",", ".")) : parseFloat(vetKcal);
+    const weight = typeof weightKg === "string" ? parseFloat(weightKg.replace(",", ".")) : parseFloat(weightKg);
+    if (isNaN(vet) || isNaN(weight) || weight <= 0 || vet <= 0) return null;
+    return (vet / weight).toFixed(1);
   }
 
   // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g da TACO
