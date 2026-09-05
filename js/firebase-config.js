@@ -11,12 +11,12 @@
  */
 
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
+  authDomain: "simulador-dieto-e114c.firebaseapp.com",
+  projectId: "simulador-dieto-e114c",
+  storageBucket: "simulador-dieto-e114c.firebasestorage.app",
+  messagingSenderId: "380596633724",
+  appId: "1:380596633724:web:dc9948bbcb9b8f379989f9",
   measurementId: ""
 };
 

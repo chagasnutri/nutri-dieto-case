@@ -209,6 +209,15 @@ class DietoSyncEngine {
   async pushToServer(disciplinas, cases, password = "Nutri2@26") {
     this.setStatus("syncing");
 
+    // Validação de segurança da senha do docente
+    if (password !== "Nutri2@26") {
+      return {
+        success: false,
+        message: "Senha de docente incorreta. Acesso não autorizado.",
+        serverOnline: false
+      };
+    }
+
     // Atualiza imediatamente o localStorage local por segurança
     if (Array.isArray(disciplinas)) {
       localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(disciplinas));

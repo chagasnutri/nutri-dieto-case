@@ -289,10 +289,10 @@ class FirebaseSyncService {
     if (!this.db || !this.isConfigured()) return { success: false, localOnly: true };
     this.setStatus("syncing");
     try {
-      await this.db.collection("casos").doc(caseId).update({
+      await this.db.collection("casos").doc(caseId).set({
         isLocked: !!isLocked,
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
       this.setStatus("online");
       return { success: true, isLocked: !!isLocked };
     } catch (err) {
@@ -308,10 +308,10 @@ class FirebaseSyncService {
     this.setStatus("syncing");
     try {
       const list = Array.isArray(blockedTabs) ? blockedTabs : [];
-      await this.db.collection("casos").doc(caseId).update({
+      await this.db.collection("casos").doc(caseId).set({
         blockedTabs: list,
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
       this.setStatus("online");
       return { success: true, blockedTabs: list };
     } catch (err) {
