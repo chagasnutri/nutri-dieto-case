@@ -10,7 +10,7 @@
  * 4. Copie os valores e cole abaixo entre as aspas:
  */
 
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
   authDomain: "simulador-dieto-e114c.firebaseapp.com",
   projectId: "simulador-dieto-e114c",
@@ -19,7 +19,7 @@ const firebaseConfig = {
   appId: "1:380596633724:web:dc9948bbcb9b8f379989f9"
 };
 
-const FIREBASE_CONFIG = firebaseConfig;
+var FIREBASE_CONFIG = firebaseConfig;
 
 // Permite carregar chaves salvas dinamicamente via painel do professor (localStorage)
 (function initFirebaseConfig() {
