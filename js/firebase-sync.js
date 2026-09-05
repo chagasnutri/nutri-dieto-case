@@ -5,7 +5,7 @@ class FirebaseSyncService {
   constructor() {
     this.app = null;
     this.db = null;
-    this.status = "unconfigured"; // unconfigured, connecting, online, syncing, error
+    this.status = this.isConfigured() ? "connecting" : "unconfigured";
     this.statusListeners = [];
     this.dataListeners = [];
     this.casosUnsubscribe = null;
@@ -15,12 +15,13 @@ class FirebaseSyncService {
   }
 
   isConfigured() {
-    const cfg = (typeof window !== "undefined" && window.FIREBASE_CONFIG) ? window.FIREBASE_CONFIG : null;
+    const cfg = (typeof window !== "undefined") ? (window.FIREBASE_CONFIG || window.firebaseConfig) : null;
     return !!(cfg && cfg.apiKey && cfg.projectId && cfg.apiKey.trim() !== "" && cfg.projectId.trim() !== "");
   }
 
   getConfig() {
-    return (typeof window !== "undefined" && window.FIREBASE_CONFIG) ? window.FIREBASE_CONFIG : {};
+    const cfg = (typeof window !== "undefined") ? (window.FIREBASE_CONFIG || window.firebaseConfig) : null;
+    return cfg || {};
   }
 
   onStatusChange(callback) {
@@ -318,6 +319,25 @@ class FirebaseSyncService {
       console.error("Erro ao atualizar abas bloqueadas no Firestore:", err);
       this.setStatus("error", err.message);
       return { success: false, error: err.message };
+    }
+  }
+
+  // Busca dados remotos sob demanda diretamente do Firestore (sem fetch HTTP)
+  async fetchRemoteData() {
+    if (!this.db || !this.isConfigured()) return null;
+    try {
+      const discSnap = await this.db.collection("disciplinas").get();
+      const disciplinas = [];
+      discSnap.forEach(doc => disciplinas.push({ id: doc.id, ...doc.data() }));
+
+      const casosSnap = await this.db.collection("casos").get();
+      const cases = [];
+      casosSnap.forEach(doc => cases.push({ id: doc.id, ...doc.data() }));
+
+      return { disciplinas, cases };
+    } catch (err) {
+      console.warn("Aviso ao buscar dados sob demanda do Firestore:", err);
+      return null;
     }
   }
 }
