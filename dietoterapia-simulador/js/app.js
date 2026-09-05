@@ -152,53 +152,229 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         const tabBtn = document.querySelector(`.student-tab-btn[data-tab="${requestedTab}"]`);
         if (tabBtn) tabBtn.click();
-        if (urlParams.get("demo") === "cardapio") {
-          const meal = appState.currentProntuario?.planejamentoAlimentar?.[0];
-          if (meal) {
-            meal.itens = [
+        if (urlParams.get("demo") === "prescricao") {
+          if (appState.currentProntuario) {
+            if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
+            appState.currentProntuario.antropometria.pesoAtual = "70";
+          }
+          const pesoInput = document.getElementById("prontPesoAtual");
+          if (pesoInput) pesoInput.value = "70";
+          const vetInput = document.getElementById("prontVetKcal");
+          if (vetInput) {
+            vetInput.value = "1800";
+            document.getElementById("prontChoMinPct").value = "50";
+            document.getElementById("prontChoMaxPct").value = "60";
+            document.getElementById("prontPtnMinPct").value = "15";
+            document.getElementById("prontPtnMaxPct").value = "20";
+            document.getElementById("prontLipMinPct").value = "25";
+            document.getElementById("prontLipMaxPct").value = "30";
+            document.getElementById("prontPtnMinGKg").value = "1.2";
+            document.getElementById("prontPtnMaxGKg").value = "1.5";
+            updatePrescriptionCalculations();
+          }
+        }
+        if (urlParams.get("demo") === "consumo") {
+          if (appState.currentProntuario) {
+            if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
+            appState.currentProntuario.antropometria.pesoAtual = "70";
+            appState.currentProntuario.prescricaoDietoterapica.vetKcal = "1800";
+            appState.currentProntuario.prescricaoDietoterapica.distribuicaoMacros = {
+              cho: { minPct: 50, maxPct: 60, minKcal: 900, maxKcal: 1080, minG: 225, maxG: 270 },
+              ptn: { minPct: 15, maxPct: 20, minKcal: 270, maxKcal: 360, minG: 67.5, maxG: 90 },
+              lip: { minPct: 25, maxPct: 30, minKcal: 450, maxKcal: 540, minG: 50, maxG: 60 }
+            };
+            if (!appState.currentProntuario.consumoAlimentar) appState.currentProntuario.consumoAlimentar = {};
+            appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [
               {
-                id: "demo-1",
-                tacoId: "taco-13",
-                alimentoNome: "Pão, de trigo, francês",
-                medidaCaseira: "1 unidade média bem quentinha",
-                gramatura: 50,
-                kcal: 150.0,
-                cho: 29.3,
-                ptn: 4.0,
-                lip: 1.6,
-                fibra: 1.2
+                id: "rec-demo-1",
+                refeicao: "Café da Manhã (Recordatório)",
+                horario: "07:30",
+                itens: [
+                  {
+                    id: "rec-item-1",
+                    tacoId: "taco-13",
+                    alimentoNome: "Pão, de trigo, francês",
+                    medidaCaseira: "1 unidade média bem quentinha",
+                    gramatura: 50,
+                    kcal: 150.0,
+                    cho: 29.3,
+                    ptn: 4.0,
+                    lip: 1.6,
+                    fibra: 1.2,
+                    calcio: 19.5,
+                    ferro: 0.5,
+                    sodio: 324.0,
+                    potassio: 58.5
+                  },
+                  {
+                    id: "rec-item-2",
+                    tacoId: "taco-19",
+                    alimentoNome: "Queijo, minas frescal",
+                    medidaCaseira: "1 fatia média generosa",
+                    gramatura: 35,
+                    kcal: 92.4,
+                    cho: 1.1,
+                    ptn: 6.1,
+                    lip: 7.1,
+                    fibra: 0.0,
+                    calcio: 178.5,
+                    ferro: 0.1,
+                    sodio: 108.5,
+                    potassio: 31.5
+                  },
+                  {
+                    id: "rec-item-3",
+                    tacoId: "taco-17",
+                    alimentoNome: "Leite, de vaca, integral",
+                    medidaCaseira: "1 xícara com café",
+                    gramatura: 150,
+                    kcal: 91.5,
+                    cho: 6.8,
+                    ptn: 4.8,
+                    lip: 5.3,
+                    fibra: 0.0,
+                    calcio: 184.5,
+                    ferro: 0.2,
+                    sodio: 87.0,
+                    potassio: 202.5
+                  }
+                ]
               },
               {
-                id: "demo-2",
-                tacoId: "taco-19",
-                alimentoNome: "Queijo, minas frescal",
-                medidaCaseira: "1 fatia média",
-                gramatura: 30,
-                kcal: 79.2,
-                cho: 1.0,
-                ptn: 5.2,
-                lip: 6.1,
-                fibra: 0.0
-              },
-              {
-                id: "demo-3",
-                tacoId: "taco-17",
-                alimentoNome: "Leite de vaca, pasteurizado, integral",
-                medidaCaseira: "1 caneca com café (150mL)",
-                gramatura: 150,
-                kcal: 91.5,
-                cho: 6.8,
-                ptn: 4.8,
-                lip: 5.3,
-                fibra: 0.0
+                id: "rec-demo-2",
+                refeicao: "Almoço (Recordatório)",
+                horario: "12:30",
+                itens: [
+                  {
+                    id: "rec-item-4",
+                    tacoId: "taco-01",
+                    alimentoNome: "Arroz, tipo 1, cozido",
+                    medidaCaseira: "4 colheres de sopa cheias",
+                    gramatura: 150,
+                    kcal: 192.0,
+                    cho: 42.2,
+                    ptn: 3.8,
+                    lip: 0.3,
+                    fibra: 2.4,
+                    calcio: 6.0,
+                    ferro: 0.2,
+                    sodio: 1.5,
+                    potassio: 22.5
+                  },
+                  {
+                    id: "rec-item-5",
+                    tacoId: "taco-03",
+                    alimentoNome: "Feijão, carioca, cozido",
+                    medidaCaseira: "1 concha média",
+                    gramatura: 100,
+                    kcal: 76.0,
+                    cho: 13.6,
+                    ptn: 4.8,
+                    lip: 0.5,
+                    fibra: 8.5,
+                    calcio: 27.0,
+                    ferro: 1.3,
+                    sodio: 2.0,
+                    potassio: 255.0
+                  },
+                  {
+                    id: "rec-item-6",
+                    tacoId: "taco-21",
+                    alimentoNome: "Peito de frango, sem pele, grelhado",
+                    medidaCaseira: "1 filé médio",
+                    gramatura: 120,
+                    kcal: 190.8,
+                    cho: 0.0,
+                    ptn: 38.4,
+                    lip: 3.8,
+                    fibra: 0.0,
+                    calcio: 10.8,
+                    ferro: 0.6,
+                    sodio: 67.2,
+                    potassio: 388.8
+                  }
+                ]
               }
             ];
-            renderCardapioTable();
+            renderRecordatorioMeals();
+            updateRecordatorioTotalsDisplay();
+          }
+        }
+        if (urlParams.get("demo") === "cardapio") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.prescricaoDietoterapica.vetKcal = "1800";
+            appState.currentProntuario.prescricaoDietoterapica.distribuicaoMacros = {
+              cho: { minPct: 50, maxPct: 60, minKcal: 900, maxKcal: 1080, minG: 225, maxG: 270 },
+              ptn: { minPct: 15, maxPct: 20, minKcal: 270, maxKcal: 360, minG: 67.5, maxG: 90 },
+              lip: { minPct: 25, maxPct: 30, minKcal: 450, maxKcal: 540, minG: 50, maxG: 60 }
+            };
+            const meal = appState.currentProntuario?.planejamentoAlimentar?.[0];
+            if (meal) {
+              meal.tipoPreparacao = "Sanduíche Natural Integral com Queijo Branco e Bebida Láctea";
+              meal.itens = [
+                {
+                  id: "demo-1",
+                  tacoId: "taco-13",
+                  alimentoNome: "Pão, de trigo, francês",
+                  medidaCaseira: "1 unidade média bem quentinha",
+                  gramatura: 50,
+                  kcal: 150.0,
+                  cho: 29.3,
+                  ptn: 4.0,
+                  lip: 1.6,
+                  fibra: 1.2,
+                  calcio: 19.5,
+                  ferro: 0.5,
+                  sodio: 324.0,
+                  potassio: 58.5
+                },
+                {
+                  id: "demo-2",
+                  tacoId: "taco-19",
+                  alimentoNome: "Queijo, minas frescal",
+                  medidaCaseira: "1 fatia média",
+                  gramatura: 30,
+                  kcal: 79.2,
+                  cho: 1.0,
+                  ptn: 5.2,
+                  lip: 6.1,
+                  fibra: 0.0,
+                  calcio: 153.0,
+                  ferro: 0.1,
+                  sodio: 93.0,
+                  potassio: 27.0
+                },
+                {
+                  id: "demo-3",
+                  tacoId: "taco-17",
+                  alimentoNome: "Leite de vaca, pasteurizado, integral",
+                  medidaCaseira: "1 caneca com café (150mL)",
+                  gramatura: 150,
+                  kcal: 91.5,
+                  cho: 6.8,
+                  ptn: 4.8,
+                  lip: 5.3,
+                  fibra: 0.0,
+                  calcio: 184.5,
+                  ferro: 0.2,
+                  sodio: 87.0,
+                  potassio: 202.5
+                }
+              ];
+              renderCardapioTable();
+              updateCardapioTotalsDisplay();
+            }
           }
         }
         if (urlParams.get("scroll") === "totals") {
           setTimeout(() => {
             const panel = document.getElementById("cardapioTotalsPanel");
+            if (panel) panel.scrollIntoView({ behavior: "instant", block: "center" });
+          }, 300);
+        }
+        if (urlParams.get("scroll") === "rectotals") {
+          setTimeout(() => {
+            const panel = document.getElementById("recordatorioTotalsPanel");
             if (panel) panel.scrollIntoView({ behavior: "instant", block: "center" });
           }, 300);
         }
@@ -1067,12 +1243,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontMassaMuscular").value = p.exameFisico.massaMuscularAdiposa || "";
     document.getElementById("prontTGIEdemas").value = p.exameFisico.condicoesTGIeEdemas || "";
 
-    // Consumo Alimentar
+    // Consumo Alimentar (Recordatório de 24h)
     if (document.getElementById("prontVetRecordatorio")) {
       document.getElementById("prontVetRecordatorio").value = p.consumoAlimentar.vetRecordatorio || "";
     }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
+    renderRecordatorioMeals();
     updateVetAdequacyCalculations();
 
     // Diagnóstico PES
@@ -1084,13 +1261,29 @@ document.addEventListener("DOMContentLoaded", () => {
     // Prescrição Dietoterápica
     document.getElementById("prontVetKcal").value = p.prescricaoDietoterapica.vetKcal || "";
     document.getElementById("prontRegraBolso").value = p.prescricaoDietoterapica.regraBolsoKcalKg || "";
-    document.getElementById("prontChoG").value = p.prescricaoDietoterapica.carboidratosG || "";
-    document.getElementById("prontChoPct").value = p.prescricaoDietoterapica.carboidratosPct || "";
-    document.getElementById("prontPtnG").value = p.prescricaoDietoterapica.proteinasG || "";
-    document.getElementById("prontPtnGKg").value = p.prescricaoDietoterapica.proteinasGKg || "";
-    document.getElementById("prontPtnPct").value = p.prescricaoDietoterapica.proteinasPct || "";
-    document.getElementById("prontLipG").value = p.prescricaoDietoterapica.lipidiosG || "";
-    document.getElementById("prontLipPct").value = p.prescricaoDietoterapica.lipidiosPct || "";
+    if (p.prescricaoDietoterapica.distribuicaoMacros) {
+      const dm = p.prescricaoDietoterapica.distribuicaoMacros;
+      if (document.getElementById("prontChoMinPct")) document.getElementById("prontChoMinPct").value = dm.cho?.minPct ?? "45";
+      if (document.getElementById("prontChoMaxPct")) document.getElementById("prontChoMaxPct").value = dm.cho?.maxPct ?? "55";
+      if (document.getElementById("prontPtnMinPct")) document.getElementById("prontPtnMinPct").value = dm.ptn?.minPct ?? "15";
+      if (document.getElementById("prontPtnMaxPct")) document.getElementById("prontPtnMaxPct").value = dm.ptn?.maxPct ?? "20";
+      if (document.getElementById("prontLipMinPct")) document.getElementById("prontLipMinPct").value = dm.lip?.minPct ?? "25";
+      if (document.getElementById("prontLipMaxPct")) document.getElementById("prontLipMaxPct").value = dm.lip?.maxPct ?? "30";
+    }
+    if (p.prescricaoDietoterapica.recomendacaoProteinaGKg) {
+      const rp = p.prescricaoDietoterapica.recomendacaoProteinaGKg;
+      if (document.getElementById("prontPtnMinGKg")) document.getElementById("prontPtnMinGKg").value = rp.minGKg ?? "1.0";
+      if (document.getElementById("prontPtnMaxGKg")) document.getElementById("prontPtnMaxGKg").value = rp.maxGKg ?? "1.2";
+    }
+    updatePrescriptionCalculations();
+
+    if (document.getElementById("prontChoG")) document.getElementById("prontChoG").value = p.prescricaoDietoterapica.carboidratosG || "";
+    if (document.getElementById("prontChoPct")) document.getElementById("prontChoPct").value = p.prescricaoDietoterapica.carboidratosPct || "";
+    if (document.getElementById("prontPtnG")) document.getElementById("prontPtnG").value = p.prescricaoDietoterapica.proteinasG || "";
+    if (document.getElementById("prontPtnGKg")) document.getElementById("prontPtnGKg").value = p.prescricaoDietoterapica.proteinasGKg || "";
+    if (document.getElementById("prontPtnPct")) document.getElementById("prontPtnPct").value = p.prescricaoDietoterapica.proteinasPct || "";
+    if (document.getElementById("prontLipG")) document.getElementById("prontLipG").value = p.prescricaoDietoterapica.lipidiosG || "";
+    if (document.getElementById("prontLipPct")) document.getElementById("prontLipPct").value = p.prescricaoDietoterapica.lipidiosPct || "";
     document.getElementById("prontConsistencia").value = p.prescricaoDietoterapica.consistencia || "Normal / Livre";
     document.getElementById("prontFracionamento").value = p.prescricaoDietoterapica.fracionamento || "5 a 6 refeições/dia";
     document.getElementById("prontFibrasMicronutrientes").value = p.prescricaoDietoterapica.fibrasMicronutrientes || "";
@@ -1151,10 +1344,11 @@ document.addEventListener("DOMContentLoaded", () => {
     p.exameFisico.massaMuscularAdiposa = document.getElementById("prontMassaMuscular").value.trim();
     p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas").value.trim();
 
-    // Consumo Alimentar
+    // Consumo Alimentar (Recordatório de 24h)
     p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio") ? document.getElementById("prontVetRecordatorio").value.trim() : "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo").value.trim();
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias").value.trim();
+    p.consumoAlimentar.refeicoesRecordatorio = readRecordatorioFromDOM();
 
     // Diagnóstico PES
     p.diagnosticoPES.problema = document.getElementById("prontPesProblema").value.trim();
@@ -1165,13 +1359,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // Prescrição Dietoterápica
     p.prescricaoDietoterapica.vetKcal = document.getElementById("prontVetKcal").value.trim();
     p.prescricaoDietoterapica.regraBolsoKcalKg = document.getElementById("prontRegraBolso").value.trim();
-    p.prescricaoDietoterapica.carboidratosG = document.getElementById("prontChoG").value.trim();
-    p.prescricaoDietoterapica.carboidratosPct = document.getElementById("prontChoPct").value.trim();
-    p.prescricaoDietoterapica.proteinasG = document.getElementById("prontPtnG").value.trim();
-    p.prescricaoDietoterapica.proteinasGKg = document.getElementById("prontPtnGKg").value.trim();
-    p.prescricaoDietoterapica.proteinasPct = document.getElementById("prontPtnPct").value.trim();
-    p.prescricaoDietoterapica.lipidiosG = document.getElementById("prontLipG").value.trim();
-    p.prescricaoDietoterapica.lipidiosPct = document.getElementById("prontLipPct").value.trim();
+    p.prescricaoDietoterapica.distribuicaoMacros = {
+      cho: {
+        minPct: document.getElementById("prontChoMinPct")?.value.trim() || "45",
+        maxPct: document.getElementById("prontChoMaxPct")?.value.trim() || "55"
+      },
+      ptn: {
+        minPct: document.getElementById("prontPtnMinPct")?.value.trim() || "15",
+        maxPct: document.getElementById("prontPtnMaxPct")?.value.trim() || "20"
+      },
+      lip: {
+        minPct: document.getElementById("prontLipMinPct")?.value.trim() || "25",
+        maxPct: document.getElementById("prontLipMaxPct")?.value.trim() || "30"
+      }
+    };
+    p.prescricaoDietoterapica.recomendacaoProteinaGKg = {
+      minGKg: document.getElementById("prontPtnMinGKg")?.value.trim() || "1.0",
+      maxGKg: document.getElementById("prontPtnMaxGKg")?.value.trim() || "1.2"
+    };
+    updatePrescriptionCalculations();
+
+    p.prescricaoDietoterapica.carboidratosG = document.getElementById("prontChoG")?.value.trim() || "";
+    p.prescricaoDietoterapica.carboidratosPct = document.getElementById("prontChoPct")?.value.trim() || "";
+    p.prescricaoDietoterapica.proteinasG = document.getElementById("prontPtnG")?.value.trim() || "";
+    p.prescricaoDietoterapica.proteinasGKg = document.getElementById("prontPtnGKg")?.value.trim() || "";
+    p.prescricaoDietoterapica.proteinasPct = document.getElementById("prontPtnPct")?.value.trim() || "";
+    p.prescricaoDietoterapica.lipidiosG = document.getElementById("prontLipG")?.value.trim() || "";
+    p.prescricaoDietoterapica.lipidiosPct = document.getElementById("prontLipPct")?.value.trim() || "";
     p.prescricaoDietoterapica.consistencia = document.getElementById("prontConsistencia").value;
     p.prescricaoDietoterapica.fracionamento = document.getElementById("prontFracionamento").value;
     p.prescricaoDietoterapica.fibrasMicronutrientes = document.getElementById("prontFibrasMicronutrientes").value.trim();
@@ -1439,18 +1653,579 @@ document.addEventListener("DOMContentLoaded", () => {
     return [];
   }
 
-  // Atualiza em tempo real o painel consolidado do cardápio vs metas prescritas
-  function updateCardapioTotalsDisplay() {
-    const list = appState.currentProntuario?.planejamentoAlimentar || [];
-    const pesoPaciente = document.getElementById("dispPesoEfetivo")?.textContent?.replace("kg", "").trim() 
-      || document.getElementById("prontPesoAtual")?.value?.trim() 
-      || appState.currentCase?.patient?.weight || null;
+  // Obtém o peso adotado/efetivo do paciente de forma robusta
+  function getEffectivePatientWeight() {
+    const dispPesoTxt = document.getElementById("dispPesoEfetivo")?.textContent?.replace("kg", "").trim();
+    if (dispPesoTxt && !isNaN(parseFloat(dispPesoTxt.replace(",", ".")))) {
+      return parseFloat(dispPesoTxt.replace(",", "."));
+    }
+    const formPeso = document.getElementById("prontPesoAtual")?.value?.trim();
+    if (formPeso && !isNaN(parseFloat(formPeso.replace(",", ".")))) {
+      return parseFloat(formPeso.replace(",", "."));
+    }
+    if (appState.currentCase?.patient?.weight) {
+      const caseW = parseFloat(String(appState.currentCase.patient.weight).replace(",", "."));
+      if (!isNaN(caseW)) return caseW;
+    }
+    return null;
+  }
+
+  // Atualiza em tempo real a tabela dinâmica da prescrição e cálculo de proteína g/kg
+  function updatePrescriptionCalculations() {
+    const vetRaw = document.getElementById("prontVetKcal")?.value || "";
+    const vetMatch = vetRaw.match(/[\d.,]+/);
+    const vet = vetMatch ? parseFloat(vetMatch[0].replace(",", ".")) : 0;
+
+    const choMinPct = document.getElementById("prontChoMinPct")?.value || "45";
+    const choMaxPct = document.getElementById("prontChoMaxPct")?.value || "55";
+    const ptnMinPct = document.getElementById("prontPtnMinPct")?.value || "15";
+    const ptnMaxPct = document.getElementById("prontPtnMaxPct")?.value || "20";
+    const lipMinPct = document.getElementById("prontLipMinPct")?.value || "25";
+    const lipMaxPct = document.getElementById("prontLipMaxPct")?.value || "30";
+
+    const distribuicaoInput = {
+      cho: { minPct: choMinPct, maxPct: choMaxPct },
+      ptn: { minPct: ptnMinPct, maxPct: ptnMaxPct },
+      lip: { minPct: lipMinPct, maxPct: lipMaxPct }
+    };
+
+    const distCalc = prontuarioManager.calculatePrescriptionDistribution(vet, distribuicaoInput);
+
+    // Atualiza ranges na tabela dinâmica
+    const dispChoKcal = document.getElementById("dispChoKcalRange");
+    const dispChoG = document.getElementById("dispChoGramasRange");
+    const dispPtnKcal = document.getElementById("dispPtnKcalRange");
+    const dispPtnG = document.getElementById("dispPtnGramasRange");
+    const dispLipKcal = document.getElementById("dispLipKcalRange");
+    const dispLipG = document.getElementById("dispLipGramasRange");
+
+    if (dispChoKcal) dispChoKcal.textContent = vet > 0 ? `${distCalc.cho.minKcal} a ${distCalc.cho.maxKcal} kcal` : "-- kcal";
+    if (dispChoG) dispChoG.textContent = vet > 0 ? `${distCalc.cho.minG}g a ${distCalc.cho.maxG}g` : "-- g";
+
+    if (dispPtnKcal) dispPtnKcal.textContent = vet > 0 ? `${distCalc.ptn.minKcal} a ${distCalc.ptn.maxKcal} kcal` : "-- kcal";
+    if (dispPtnG) dispPtnG.textContent = vet > 0 ? `${distCalc.ptn.minG}g a ${distCalc.ptn.maxG}g` : "-- g";
+
+    if (dispLipKcal) dispLipKcal.textContent = vet > 0 ? `${distCalc.lip.minKcal} a ${distCalc.lip.maxKcal} kcal` : "-- kcal";
+    if (dispLipG) dispLipG.textContent = vet > 0 ? `${distCalc.lip.minG}g a ${distCalc.lip.maxG}g` : "-- g";
+
+    // Cálculo da Proteína g/kg com o peso adotado do paciente
+    const pesoPaciente = getEffectivePatientWeight();
+
+    const ptnMinGKg = document.getElementById("prontPtnMinGKg")?.value || "1.0";
+    const ptnMaxGKg = document.getElementById("prontPtnMaxGKg")?.value || "1.2";
+
+    const protExpected = prontuarioManager.calculateProteinGKgExpected(pesoPaciente, ptnMinGKg, ptnMaxGKg);
+
+    const dispPtnExpTotal = document.getElementById("dispPtnGKgExpectedTotal");
+    const dispPtnWeightRef = document.getElementById("dispPtnGKgWeightRef");
+
+    if (dispPtnExpTotal) {
+      if (protExpected.peso > 0 && protExpected.minTotalG > 0) {
+        dispPtnExpTotal.textContent = `${protExpected.minTotalG}g a ${protExpected.maxTotalG}g`;
+      } else {
+        dispPtnExpTotal.textContent = "-- g a -- g";
+      }
+    }
+    if (dispPtnWeightRef) {
+      dispPtnWeightRef.textContent = protExpected.peso > 0 ? `(Peso adotado: ${protExpected.peso} kg)` : "(Aguardando peso do paciente)";
+    }
+
+    // Salva no estado
+    if (appState.currentProntuario?.prescricaoDietoterapica) {
+      const p = appState.currentProntuario.prescricaoDietoterapica;
+      p.distribuicaoMacros = distCalc;
+      p.recomendacaoProteinaGKg = {
+        minGKg: ptnMinGKg,
+        maxGKg: ptnMaxGKg,
+        minTotalG: protExpected.minTotalG,
+        maxTotalG: protExpected.maxTotalG
+      };
+      // Retrocompatibilidade de campos em texto
+      if (document.getElementById("prontChoG")) document.getElementById("prontChoG").value = `${distCalc.cho.minG}-${distCalc.cho.maxG}g`;
+      if (document.getElementById("prontChoPct")) document.getElementById("prontChoPct").value = `${choMinPct}-${choMaxPct}%`;
+      if (document.getElementById("prontPtnG")) document.getElementById("prontPtnG").value = `${distCalc.ptn.minG}-${distCalc.ptn.maxG}g`;
+      if (document.getElementById("prontPtnPct")) document.getElementById("prontPtnPct").value = `${ptnMinPct}-${ptnMaxPct}%`;
+      if (document.getElementById("prontPtnGKg")) document.getElementById("prontPtnGKg").value = `${ptnMinGKg}-${ptnMaxGKg} g/kg`;
+      if (document.getElementById("prontLipG")) document.getElementById("prontLipG").value = `${distCalc.lip.minG}-${distCalc.lip.maxG}g`;
+      if (document.getElementById("prontLipPct")) document.getElementById("prontLipPct").value = `${lipMinPct}-${lipMaxPct}%`;
+    }
+
+    // Conecta imediatamente com os painéis do Recordatório e do Cardápio para atualizar os alertas e réguas
+    updateRecordatorioTotalsDisplay();
+    updateCardapioTotalsDisplay();
+  }
+
+  // Renderiza as refeições do Recordatório de 24h com mecânica idêntica à do Cardápio
+  function renderRecordatorioMeals() {
+    const container = document.getElementById("recordatorioMealsContainer");
+    if (!container) return;
+
+    if (!appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio || appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.length === 0) {
+      if (!appState.currentProntuario.consumoAlimentar) {
+        appState.currentProntuario.consumoAlimentar = {};
+      }
+      appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [
+        { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+      ];
+    }
+
+    const list = appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio;
+    container.innerHTML = "";
+
+    list.forEach((meal, mealIdx) => {
+      meal.itens = meal.itens || [];
+      const subtotal = prontuarioManager.calculateMealSubtotal(meal);
+      meal.subtotal = subtotal;
+
+      const card = document.createElement("div");
+      card.className = "recordatorio-meal-card bg-white border border-indigo-200 rounded-xl p-3.5 shadow-2xs space-y-3 transition";
+      card.dataset.mealId = meal.id || `rec-${mealIdx + 1}`;
+      card.dataset.mealIdx = mealIdx;
+
+      // Cabeçalho da refeição
+      let headerHtml = `
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2">
+          <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+            <span class="text-base">🍎</span>
+            <input type="text" class="rec-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-transparent hover:border-slate-300 focus:border-indigo-600 rounded px-1.5 py-0.5 bg-transparent flex-1" value="${escapeHtml(meal.refeicao || `Refeição ${mealIdx + 1}`)}">
+            <input type="time" class="rec-ref-time text-xs border border-slate-300 rounded px-2 py-0.5 w-24 bg-white" value="${escapeHtml(meal.horario || '08:00')}">
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="rec-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 shadow-2xs">
+              ${subtotal.kcal} kcal | CHO: ${subtotal.cho}g | PTN: ${subtotal.ptn}g | LIP: ${subtotal.lip}g
+            </span>
+            <button type="button" class="remove-rec-meal-btn text-slate-400 hover:text-rose-600 p-1 text-sm rounded transition cursor-pointer" data-meal-idx="${mealIdx}" title="Excluir esta refeição do R24h">
+              🗑️
+            </button>
+          </div>
+        </div>
+        <div class="bg-indigo-50/40 border border-indigo-100 rounded-lg p-2 flex items-center space-x-2">
+          <label class="text-[11px] font-bold text-indigo-950 whitespace-nowrap flex items-center space-x-1">
+            <span>🍳</span>
+            <span>Tipo de Preparação (opcional):</span>
+          </label>
+          <input type="text" class="rec-ref-tipo-prep w-full border border-indigo-200 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 font-medium" placeholder="Ex: Café com leite e pão com manteiga..." value="${escapeHtml(meal.tipoPreparacao || '')}">
+        </div>
+      `;
+
+      // Tabela de itens do Recordatório
+      let itemsTableHtml = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO)</th>
+                <th class="py-1.5 px-2 min-w-[170px]">Medida Caseira (Texto Livre)</th>
+                <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
+                <th class="py-1.5 px-2 text-right w-16 text-indigo-900 font-bold">Kcal</th>
+                <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
+                <th class="py-1.5 px-2 text-right w-16 text-sky-800">PTN</th>
+                <th class="py-1.5 px-2 text-right w-16 text-rose-800">LIP</th>
+                <th class="py-1.5 px-1 text-center w-8">Ação</th>
+              </tr>
+            </thead>
+            <tbody class="recordatorio-items-tbody divide-y divide-slate-100">
+      `;
+
+      if (meal.itens.length === 0) {
+        itemsTableHtml += `
+          <tr class="empty-rec-items-row">
+            <td colspan="8" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+              Nenhum alimento referido nesta refeição. Clique no botão abaixo para adicionar itens da TACO.
+            </td>
+          </tr>
+        `;
+      } else {
+        meal.itens.forEach((it, itIdx) => {
+          itemsTableHtml += `
+            <tr class="rec-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `rec-it-${itIdx}`}" data-item-idx="${itIdx}">
+              <td class="py-1.5 px-2">
+                <select class="rec-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
+                  ${buildTacoSelectOptions(it.tacoId)}
+                </select>
+              </td>
+              <td class="py-1.5 px-2">
+                <input type="text" class="rec-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: 1 xícara, 2 colheres..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira: texto descritivo livre, não interfere nos cálculos">
+              </td>
+              <td class="py-1.5 px-2 text-right">
+                <input type="number" min="0" step="5" class="rec-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-indigo-600" placeholder="g" value="${it.gramatura || ''}">
+              </td>
+              <td class="py-1.5 px-2 text-right font-bold text-indigo-900 rec-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-ptn">${it.ptn !== undefined ? it.ptn : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-lip">${it.lip !== undefined ? it.lip : 0}</td>
+              <td class="py-1.5 px-1 text-center">
+                <button type="button" class="remove-rec-item-btn text-rose-400 hover:text-rose-700 font-bold px-1 text-xs cursor-pointer" data-meal-idx="${mealIdx}" data-item-idx="${itIdx}" title="Remover alimento">
+                  ✕
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      itemsTableHtml += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Rodapé da refeição
+      let footerHtml = `
+        <div class="flex items-center justify-between pt-1 border-t border-indigo-50">
+          <button type="button" class="add-rec-food-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
+            <span>➕</span>
+            <span>Adicionar Alimento no R24h (TACO)</span>
+          </button>
+        </div>
+      `;
+
+      card.innerHTML = headerHtml + itemsTableHtml + footerHtml;
+      container.appendChild(card);
+    });
+
+    attachRecordatorioEventListeners();
+    readRecordatorioFromDOM();
+  }
+
+  function attachRecordatorioEventListeners() {
+    const container = document.getElementById("recordatorioMealsContainer");
+    if (!container) return;
+
+    // 1. Mudança no alimento selecionado da TACO
+    container.querySelectorAll(".rec-item-food").forEach(select => {
+      select.addEventListener("change", (e) => {
+        const row = e.target.closest(".rec-item-row");
+        if (!row) return;
+        const foodId = e.target.value;
+        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
+
+        const gramasInput = row.querySelector(".rec-item-gramas");
+        const medidaInput = row.querySelector(".rec-item-medida");
+
+        if (food && food.porcaoSugerida && (!medidaInput.value || !medidaInput.value.trim())) {
+          medidaInput.placeholder = `Sugestão: ${food.porcaoSugerida}`;
+        }
+
+        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+        row.querySelector(".rec-item-kcal").textContent = nutri.kcal;
+        row.querySelector(".rec-item-cho").textContent = nutri.cho;
+        row.querySelector(".rec-item-ptn").textContent = nutri.ptn;
+        row.querySelector(".rec-item-lip").textContent = nutri.lip;
+
+        readRecordatorioFromDOM();
+      });
+    });
+
+    // 2. Gramatura (g) -> Regra de três da TACO
+    container.querySelectorAll(".rec-item-gramas").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const row = e.target.closest(".rec-item-row");
+        if (!row) return;
+
+        const foodSelect = row.querySelector(".rec-item-food");
+        const foodId = foodSelect ? foodSelect.value : "";
+        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
+
+        const gramas = parseFloat(e.target.value.replace(",", ".")) || 0;
+        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+        row.querySelector(".rec-item-kcal").textContent = nutri.kcal;
+        row.querySelector(".rec-item-cho").textContent = nutri.cho;
+        row.querySelector(".rec-item-ptn").textContent = nutri.ptn;
+        row.querySelector(".rec-item-lip").textContent = nutri.lip;
+
+        readRecordatorioFromDOM();
+      });
+    });
+
+    // 3. Medida Caseira Livre
+    container.querySelectorAll(".rec-item-medida").forEach(input => {
+      input.addEventListener("input", () => {
+        readRecordatorioFromDOM();
+      });
+    });
+
+    // 4. Edição de nomes, horários, tipo preparação
+    container.querySelectorAll(".rec-ref-name, .rec-ref-time, .rec-ref-tipo-prep").forEach(input => {
+      input.addEventListener("input", () => {
+        readRecordatorioFromDOM();
+      });
+    });
+
+    // 5. Botão Adicionar Alimento
+    container.querySelectorAll(".add-rec-food-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readRecordatorioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        if (!isNaN(mealIdx) && appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio?.[mealIdx]) {
+          const meal = appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio[mealIdx];
+          meal.itens = meal.itens || [];
+          meal.itens.push({
+            id: `rec-it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            tacoId: "",
+            alimentoNome: "",
+            medidaCaseira: "",
+            gramatura: "",
+            kcal: 0,
+            cho: 0,
+            ptn: 0,
+            lip: 0,
+            fibra: 0,
+            calcio: 0,
+            ferro: 0,
+            sodio: 0,
+            potassio: 0
+          });
+          renderRecordatorioMeals();
+        }
+      });
+    });
+
+    // 6. Botão Remover Alimento
+    container.querySelectorAll(".remove-rec-item-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readRecordatorioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        const itemIdx = parseInt(e.currentTarget.dataset.itemIdx);
+        if (!isNaN(mealIdx) && !isNaN(itemIdx) && appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio?.[mealIdx]?.itens) {
+          appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio[mealIdx].itens.splice(itemIdx, 1);
+          renderRecordatorioMeals();
+        }
+      });
+    });
+
+    // 7. Botão Remover Refeição do Recordatório
+    container.querySelectorAll(".remove-rec-meal-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readRecordatorioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        if (!isNaN(mealIdx) && appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio) {
+          appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.splice(mealIdx, 1);
+          renderRecordatorioMeals();
+        }
+      });
+    });
+  }
+
+  // Lê os dados do Recordatório do DOM
+  function readRecordatorioFromDOM() {
+    const container = document.getElementById("recordatorioMealsContainer");
+    const list = [];
+    if (container && container.querySelectorAll(".recordatorio-meal-card").length > 0) {
+      const cards = container.querySelectorAll(".recordatorio-meal-card");
+      cards.forEach((card, mealIdx) => {
+        const refName = card.querySelector(".rec-ref-name")?.value.trim() || `Refeição ${mealIdx + 1}`;
+        const refTime = card.querySelector(".rec-ref-time")?.value.trim() || "08:00";
+        const refTipoPrep = card.querySelector(".rec-ref-tipo-prep")?.value.trim() || "";
+
+        const itens = [];
+        card.querySelectorAll(".rec-item-row").forEach(row => {
+          const tacoSelect = row.querySelector(".rec-item-food");
+          const tacoId = tacoSelect ? tacoSelect.value : "";
+          const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId);
+          const alimentoNome = food ? food.nome : "";
+
+          const medidaInput = row.querySelector(".rec-item-medida");
+          const medidaCaseira = medidaInput ? medidaInput.value.trim() : "";
+
+          const gramasInput = row.querySelector(".rec-item-gramas");
+          const gramatura = parseFloat(gramasInput?.value?.replace(",", ".")) || 0;
+
+          const nutri = prontuarioManager.calculateItemNutrition(food, gramatura);
+
+          itens.push({
+            id: row.dataset.itemId || `rec-it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            tacoId: tacoId,
+            alimentoNome: alimentoNome,
+            medidaCaseira: medidaCaseira,
+            gramatura: gramatura,
+            kcal: nutri.kcal,
+            cho: nutri.cho,
+            ptn: nutri.ptn,
+            lip: nutri.lip,
+            fibra: nutri.fibra,
+            calcio: nutri.calcio,
+            ferro: nutri.ferro,
+            sodio: nutri.sodio,
+            potassio: nutri.potassio
+          });
+        });
+
+        const mealObj = {
+          id: card.dataset.mealId || `rec-${mealIdx + 1}`,
+          refeicao: refName,
+          horario: refTime,
+          tipoPreparacao: refTipoPrep,
+          itens: itens,
+          substituicoes: ""
+        };
+
+        mealObj.subtotal = prontuarioManager.calculateMealSubtotal(mealObj);
+        mealObj.alimentos = prontuarioManager.formatMealFoodsSummary(mealObj);
+        list.push(mealObj);
+      });
+    }
+
+    if (appState.currentProntuario?.consumoAlimentar) {
+      appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = list;
+    }
+
+    updateRecordatorioTotalsDisplay();
+    return list;
+  }
+
+  // Atualiza painel consolidado do Recordatório (macros, micros e régua de status da prescrição)
+  function updateRecordatorioTotalsDisplay() {
+    const list = appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio || [];
+    const pesoPaciente = getEffectivePatientWeight();
 
     const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
     const prescVetMatch = prescVetRaw.match(/[\d.,]+/);
     const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
 
-    const totals = prontuarioManager.calculateCardapioTotals(list, pesoPaciente, prescVet);
+    const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
+    const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+
+    if (appState.currentProntuario?.consumoAlimentar) {
+      appState.currentProntuario.consumoAlimentar.totaisRecordatorio = totals;
+    }
+
+    const dispVet = document.getElementById("dispRecVetTotal");
+    const dispMeta = document.getElementById("dispRecMetaVet");
+    const dispAdeq = document.getElementById("dispRecVetAdeq");
+    const dispBadge = document.getElementById("dispRecVetStatusBadge");
+
+    const dispChoG = document.getElementById("dispRecChoTotalG");
+    const dispChoPct = document.getElementById("dispRecChoTotalPct");
+    const dispMetaCho = document.getElementById("dispRecMetaCho");
+    const dispChoStatus = document.getElementById("dispRecChoStatusBadge");
+
+    const dispPtnG = document.getElementById("dispRecPtnTotalG");
+    const dispPtnPct = document.getElementById("dispRecPtnTotalPct");
+    const dispPtnGKg = document.getElementById("dispRecPtnGKg");
+    const dispMetaPtn = document.getElementById("dispRecMetaPtn");
+    const dispPtnStatus = document.getElementById("dispRecPtnStatusBadge");
+
+    const dispLipG = document.getElementById("dispRecLipTotalG");
+    const dispLipPct = document.getElementById("dispRecLipTotalPct");
+    const dispMetaLip = document.getElementById("dispRecMetaLip");
+    const dispLipStatus = document.getElementById("dispRecLipStatusBadge");
+
+    const dispFibra = document.getElementById("dispRecFibraTotal");
+    const dispBalancoMsg = document.getElementById("dispRecBalancoMsg");
+
+    if (dispVet) dispVet.textContent = totals.vetTotalKcal || 0;
+    if (dispMeta) dispMeta.textContent = prescVet ? `${prescVet}` : "--";
+    if (dispAdeq) dispAdeq.textContent = totals.adequacaoVetPct > 0 ? `${totals.adequacaoVetPct}%` : "--%";
+
+    if (dispBadge) {
+      if (!prescVet || totals.vetTotalKcal === 0) {
+        dispBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-900 text-indigo-200 border border-indigo-700";
+        dispBadge.textContent = totals.vetTotalKcal > 0 ? "Aguardando VET na Prescrição" : "Aguardando Alimentos";
+      } else if (totals.adequacaoVetPct < 90) {
+        dispBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-900";
+        dispBadge.textContent = `Consumo Hipocalórico (${totals.adequacaoVetPct}%)`;
+      } else if (totals.adequacaoVetPct <= 110) {
+        dispBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500 text-white";
+        dispBadge.textContent = `Consumo Adequado (${totals.adequacaoVetPct}%)`;
+      } else {
+        dispBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500 text-white";
+        dispBadge.textContent = `Consumo Hipercalórico (${totals.adequacaoVetPct}%)`;
+      }
+    }
+
+    if (dispChoG) dispChoG.textContent = totals.carboidratosG || 0;
+    if (dispChoPct) dispChoPct.textContent = totals.carboidratosPct || 0;
+    if (dispMetaCho) {
+      if (prescDist?.cho?.minG && prescDist?.cho?.maxG) {
+        dispMetaCho.textContent = `${prescDist.cho.minG}g - ${prescDist.cho.maxG}g`;
+      } else {
+        dispMetaCho.textContent = document.getElementById("prontChoG")?.value || "--";
+      }
+    }
+    if (dispChoStatus && totals.statusMacros?.cho) {
+      dispChoStatus.textContent = totals.statusMacros.cho.label;
+      dispChoStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.cho.badgeClass}`;
+    }
+
+    if (dispPtnG) dispPtnG.textContent = totals.proteinasG || 0;
+    if (dispPtnPct) dispPtnPct.textContent = totals.proteinasPct || 0;
+    if (dispPtnGKg) dispPtnGKg.textContent = totals.proteinasGKg ? `${totals.proteinasGKg} g/kg` : "0 g/kg";
+    if (dispMetaPtn) {
+      if (prescDist?.ptn?.minG && prescDist?.ptn?.maxG) {
+        dispMetaPtn.textContent = `${prescDist.ptn.minG}g - ${prescDist.ptn.maxG}g`;
+      } else {
+        dispMetaPtn.textContent = document.getElementById("prontPtnG")?.value || "--";
+      }
+    }
+    if (dispPtnStatus && totals.statusMacros?.ptn) {
+      dispPtnStatus.textContent = totals.statusMacros.ptn.label;
+      dispPtnStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.ptn.badgeClass}`;
+    }
+
+    if (dispLipG) dispLipG.textContent = totals.lipidiosG || 0;
+    if (dispLipPct) dispLipPct.textContent = totals.lipidiosPct || 0;
+    if (dispMetaLip) {
+      if (prescDist?.lip?.minG && prescDist?.lip?.maxG) {
+        dispMetaLip.textContent = `${prescDist.lip.minG}g - ${prescDist.lip.maxG}g`;
+      } else {
+        dispMetaLip.textContent = document.getElementById("prontLipG")?.value || "--";
+      }
+    }
+    if (dispLipStatus && totals.statusMacros?.lip) {
+      dispLipStatus.textContent = totals.statusMacros.lip.label;
+      dispLipStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.lip.badgeClass}`;
+    }
+
+    if (dispFibra) dispFibra.textContent = (totals.fibrasG || 0).toFixed(1);
+
+    // Micronutrientes do Recordatório
+    const dispCalcio = document.getElementById("dispRecCalcioTotal");
+    const dispFerro = document.getElementById("dispRecFerroTotal");
+    const dispSodio = document.getElementById("dispRecSodioTotal");
+    const dispPotassio = document.getElementById("dispRecPotassioTotal");
+    if (dispCalcio) dispCalcio.textContent = totals.calcioMg || 0;
+    if (dispFerro) dispFerro.textContent = totals.ferroMg || 0;
+    if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
+    if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
+
+    if (dispBalancoMsg) {
+      if (totals.vetTotalKcal === 0) {
+        dispBalancoMsg.textContent = "Insira os alimentos para comparar com a régua da prescrição.";
+      } else if (prescVet) {
+        dispBalancoMsg.textContent = `Recordatório totalizado em ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta prescrita).`;
+      } else {
+        dispBalancoMsg.textContent = `Recordatório totalizado em ${totals.vetTotalKcal} kcal. Defina a prescrição para verificar as faixas adequadas.`;
+      }
+    }
+
+    // Atualiza automaticamente o campo VET do Recordatório e a adequação da NEE se alimentos foram inseridos
+    const vetInput = document.getElementById("prontVetRecordatorio");
+    if (vetInput && totals.vetTotalKcal > 0) {
+      vetInput.value = totals.vetTotalKcal;
+      updateVetAdequacyCalculations();
+    }
+  }
+
+  // Atualiza em tempo real o painel consolidado do cardápio vs metas prescritas
+  function updateCardapioTotalsDisplay() {
+    const list = appState.currentProntuario?.planejamentoAlimentar || [];
+    const pesoPaciente = getEffectivePatientWeight();
+
+    const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
+    const prescVetMatch = prescVetRaw.match(/[\d.,]+/);
+    const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
+
+    const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
+    const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
     if (appState.currentProntuario) {
       appState.currentProntuario.totaisCardapio = totals;
     }
@@ -1495,26 +2270,61 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dispChoG) dispChoG.textContent = totals.carboidratosG || 0;
     if (dispChoPct) dispChoPct.textContent = totals.carboidratosPct || 0;
     if (dispMetaCho) {
-      const choMeta = document.getElementById("prontChoG")?.value || "";
-      dispMetaCho.textContent = choMeta ? `${choMeta}` : "--";
+      if (prescDist?.cho?.minG && prescDist?.cho?.maxG) {
+        dispMetaCho.textContent = `${prescDist.cho.minG}g - ${prescDist.cho.maxG}g`;
+      } else {
+        dispMetaCho.textContent = document.getElementById("prontChoG")?.value || "--";
+      }
+    }
+    const dispChoStatus = document.getElementById("dispCardapioChoStatusBadge");
+    if (dispChoStatus && totals.statusMacros?.cho) {
+      dispChoStatus.textContent = totals.statusMacros.cho.label;
+      dispChoStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.cho.badgeClass}`;
     }
 
     if (dispPtnG) dispPtnG.textContent = totals.proteinasG || 0;
     if (dispPtnPct) dispPtnPct.textContent = totals.proteinasPct || 0;
     if (dispPtnGKg) dispPtnGKg.textContent = totals.proteinasGKg ? `${totals.proteinasGKg} g/kg` : "0 g/kg";
     if (dispMetaPtn) {
-      const ptnMeta = document.getElementById("prontPtnG")?.value || "";
-      dispMetaPtn.textContent = ptnMeta ? `${ptnMeta}` : "--";
+      if (prescDist?.ptn?.minG && prescDist?.ptn?.maxG) {
+        dispMetaPtn.textContent = `${prescDist.ptn.minG}g - ${prescDist.ptn.maxG}g`;
+      } else {
+        dispMetaPtn.textContent = document.getElementById("prontPtnG")?.value || "--";
+      }
+    }
+    const dispPtnStatus = document.getElementById("dispCardapioPtnStatusBadge");
+    if (dispPtnStatus && totals.statusMacros?.ptn) {
+      dispPtnStatus.textContent = totals.statusMacros.ptn.label;
+      dispPtnStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.ptn.badgeClass}`;
     }
 
     if (dispLipG) dispLipG.textContent = totals.lipidiosG || 0;
     if (dispLipPct) dispLipPct.textContent = totals.lipidiosPct || 0;
     if (dispMetaLip) {
-      const lipMeta = document.getElementById("prontLipG")?.value || "";
-      dispMetaLip.textContent = lipMeta ? `${lipMeta}` : "--";
+      if (prescDist?.lip?.minG && prescDist?.lip?.maxG) {
+        dispMetaLip.textContent = `${prescDist.lip.minG}g - ${prescDist.lip.maxG}g`;
+      } else {
+        dispMetaLip.textContent = document.getElementById("prontLipG")?.value || "--";
+      }
+    }
+    const dispLipStatus = document.getElementById("dispCardapioLipStatusBadge");
+    if (dispLipStatus && totals.statusMacros?.lip) {
+      dispLipStatus.textContent = totals.statusMacros.lip.label;
+      dispLipStatus.className = `text-[9px] font-bold px-1.5 py-0.5 rounded border ${totals.statusMacros.lip.badgeClass}`;
     }
 
     if (dispFibra) dispFibra.textContent = (totals.fibrasG || 0).toFixed(1);
+
+    // Micronutrientes do Cardápio
+    const dispCalcio = document.getElementById("dispCardapioCalcioTotal");
+    const dispFerro = document.getElementById("dispCardapioFerroTotal");
+    const dispSodio = document.getElementById("dispCardapioSodioTotal");
+    const dispPotassio = document.getElementById("dispCardapioPotassioTotal");
+    if (dispCalcio) dispCalcio.textContent = totals.calcioMg || 0;
+    if (dispFerro) dispFerro.textContent = totals.ferroMg || 0;
+    if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
+    if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
+
     if (dispBalancoMsg) {
       if (totals.vetTotalKcal === 0) {
         dispBalancoMsg.textContent = "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
@@ -1536,6 +2346,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mealCards.forEach((card, mealIdx) => {
         const refName = card.querySelector(".cardapio-ref-name")?.value.trim() || `Refeição ${mealIdx + 1}`;
         const refTime = card.querySelector(".cardapio-ref-time")?.value.trim() || "08:00";
+        const refTipoPrep = card.querySelector(".cardapio-ref-tipo-prep")?.value.trim() || "";
         const refSubs = card.querySelector(".cardapio-ref-subs")?.value.trim() || "";
 
         const itens = [];
@@ -1547,7 +2358,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const alimentoNome = food ? food.nome : "";
 
           const medidaInput = row.querySelector(".cardapio-item-medida");
-          const medidaCaseira = medidaInput ? medidaInput.value.trim() : ""; // Texto livre não interfere em cálculos
+          const medidaCaseira = medidaInput ? medidaInput.value.trim() : ""; 
 
           const gramasInput = row.querySelector(".cardapio-item-gramas");
           const gramasVal = gramasInput ? gramasInput.value.trim() : "";
@@ -1566,7 +2377,11 @@ document.addEventListener("DOMContentLoaded", () => {
             cho: nutri.cho,
             ptn: nutri.ptn,
             lip: nutri.lip,
-            fibra: nutri.fibra
+            fibra: nutri.fibra,
+            calcio: nutri.calcio,
+            ferro: nutri.ferro,
+            sodio: nutri.sodio,
+            potassio: nutri.potassio
           });
         });
 
@@ -1574,6 +2389,7 @@ document.addEventListener("DOMContentLoaded", () => {
           id: card.dataset.mealId || `ref-${mealIdx + 1}`,
           refeicao: refName,
           horario: refTime,
+          tipoPreparacao: refTipoPrep,
           itens: itens,
           substituicoes: refSubs
         };
@@ -1595,10 +2411,11 @@ document.addEventListener("DOMContentLoaded", () => {
           list.push({
             refeicao: refInput.value.trim(),
             horario: timeInput ? timeInput.value.trim() : "08:00",
+            tipoPreparacao: "",
             itens: [],
             alimentos: foodsInput ? foodsInput.value.trim() : "",
             substituicoes: subsInput ? subsInput.value.trim() : "",
-            subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 }
+            subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
           });
         }
       });
@@ -1606,20 +2423,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (appState.currentProntuario) {
       appState.currentProntuario.planejamentoAlimentar = list;
-    }
-
-    // Sincroniza tabela legada oculta para eventuais testes automáticos legados
-    const legacyTbody = document.getElementById("cardapioTableBody");
-    if (legacyTbody) {
-      legacyTbody.innerHTML = list.map((item, idx) => `
-        <tr class="border-b border-slate-100">
-          <td><input type="text" class="cardapio-ref" value="${escapeHtml(item.refeicao || '')}"></td>
-          <td><input type="time" class="cardapio-time" value="${escapeHtml(item.horario || '08:00')}"></td>
-          <td><textarea class="cardapio-foods">${escapeHtml(item.alimentos || '')}</textarea></td>
-          <td><textarea class="cardapio-subs">${escapeHtml(item.substituicoes || '')}</textarea></td>
-          <td><button type="button" class="remove-meal-btn" data-idx="${idx}">✕</button></td>
-        </tr>
-      `).join("");
     }
 
     updateCardapioTotalsDisplay();
@@ -1642,7 +2445,7 @@ document.addEventListener("DOMContentLoaded", () => {
       html += `<optgroup label="${escapeHtml(cat)}">`;
       categories[cat].forEach(f => {
         const isSel = f.id === selectedTacoId ? "selected" : "";
-        html += `<option value="${f.id}" ${isSel}>${escapeHtml(f.nome)}</option>`;
+        html += `<option value="${escapeHtml(f.id)}" ${isSel}>${escapeHtml(f.nome)} (100g = ${f.kcal} kcal, CHO ${f.cho}g, PTN ${f.ptn}g, LIP ${f.lip}g)</option>`;
       });
       html += `</optgroup>`;
     });
@@ -1650,19 +2453,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return html;
   }
 
-  // Renderiza a estrutura completa do cardápio com suporte a TACO, regra de três e medida caseira
+  // Renderiza a estrutura completa do cardápio com suporte a TACO, tipo de preparação, regra de três e medida caseira
   function renderCardapioTable() {
     const container = document.getElementById("cardapioMealsContainer");
     if (!container) return;
 
     if (!appState.currentProntuario.planejamentoAlimentar || appState.currentProntuario.planejamentoAlimentar.length === 0) {
       appState.currentProntuario.planejamentoAlimentar = [
-        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-3", refeicao: "Almoço", horario: "12:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-5", refeicao: "Jantar", horario: "19:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-6", refeicao: "Ceia", horario: "22:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } }
+        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
       ];
     }
 
@@ -1679,7 +2482,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.mealId = meal.id || `ref-${mealIdx + 1}`;
       card.dataset.mealIdx = mealIdx;
 
-      // Cabeçalho da refeição
+      // Cabeçalho da refeição: Nome/Horário seguido pelo Tipo de Preparação
       let headerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
@@ -1696,6 +2499,15 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
           </div>
         </div>
+
+        <!-- ESTRUTURA VISUAL: TIPO DE PREPARAÇÃO LOGO APÓS NOME/HORÁRIO -->
+        <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-lg p-2 flex items-center space-x-2">
+          <label class="text-[11px] font-bold text-emerald-950 whitespace-nowrap flex items-center space-x-1">
+            <span>🍳</span>
+            <span>Tipo de Preparação:</span>
+          </label>
+          <input type="text" class="cardapio-ref-tipo-prep w-full border border-emerald-300 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-medium" placeholder="Ex: Vitamina de banana, Omelete de claras com aveia, Sanduíche natural, Salada mista..." value="${escapeHtml(meal.tipoPreparacao || '')}" title="Defina a preparação culinária desta refeição antes dos alimentos da TACO">
+        </div>
       `;
 
       // Tabela de itens da refeição
@@ -1707,7 +2519,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO)</th>
                 <th class="py-1.5 px-2 min-w-[170px]">Medida Caseira (Texto Livre)</th>
                 <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
-                <th class="py-1.5 px-2 text-right w-16 text-emerald-800">Kcal</th>
+                <th class="py-1.5 px-2 text-right w-16 text-emerald-800 font-bold">Kcal</th>
                 <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
                 <th class="py-1.5 px-2 text-right w-16 text-sky-800">PTN</th>
                 <th class="py-1.5 px-2 text-right w-16 text-rose-800">LIP</th>
@@ -1848,8 +2660,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 4. Edição de nomes, horários e substituições
-    container.querySelectorAll(".cardapio-ref-name, .cardapio-ref-time, .cardapio-ref-subs").forEach(input => {
+    // 4. Edição de nomes, horários, tipo preparação e substituições
+    container.querySelectorAll(".cardapio-ref-name, .cardapio-ref-time, .cardapio-ref-tipo-prep, .cardapio-ref-subs").forEach(input => {
       input.addEventListener("input", () => {
         readCardapioFromDOM();
       });
@@ -1873,7 +2685,11 @@ document.addEventListener("DOMContentLoaded", () => {
             cho: 0,
             ptn: 0,
             lip: 0,
-            fibra: 0
+            fibra: 0,
+            calcio: 0,
+            ferro: 0,
+            sodio: 0,
+            potassio: 0
           });
           renderCardapioTable();
         }
@@ -1919,26 +2735,58 @@ document.addEventListener("DOMContentLoaded", () => {
         id: `ref-${Date.now()}`,
         refeicao: `Refeição ${nextNum}`,
         horario: "15:00",
+        tipoPreparacao: "",
         itens: [],
         alimentos: "",
         substituicoes: "",
-        subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 }
+        subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
       });
       renderCardapioTable();
     });
   }
 
-  // Listener nos inputs de prescrição para manter o balanço do cardápio atualizado
-  ["prontVetKcal", "prontChoG", "prontPtnG", "prontLipG"].forEach(id => {
+  // Adicionar nova refeição ao recordatório
+  const addRecMealBtn = document.getElementById("addRecordatorioMealBtn");
+  if (addRecMealBtn) {
+    addRecMealBtn.addEventListener("click", () => {
+      readRecordatorioFromDOM();
+      if (!appState.currentProntuario.consumoAlimentar) {
+        appState.currentProntuario.consumoAlimentar = {};
+      }
+      if (!appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio) {
+        appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [];
+      }
+      const nextNum = appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.length + 1;
+      appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.push({
+        id: `rec-${Date.now()}`,
+        refeicao: `Refeição ${nextNum}`,
+        horario: "15:00",
+        tipoPreparacao: "",
+        itens: [],
+        substituicoes: "",
+        subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
+      });
+      renderRecordatorioMeals();
+    });
+  }
+
+  // Listeners nos inputs de prescrição para atualizar tabela dinâmica, proteína g/kg e réguas do R24h e Cardápio
+  [
+    "prontVetKcal", 
+    "prontChoMinPct", "prontChoMaxPct", 
+    "prontPtnMinPct", "prontPtnMaxPct", 
+    "prontLipMinPct", "prontLipMaxPct",
+    "prontPtnMinGKg", "prontPtnMaxGKg",
+    "prontChoG", "prontPtnG", "prontLipG"
+  ].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener("input", () => {
-        updateCardapioTotalsDisplay();
+        updatePrescriptionCalculations();
       });
     }
   });
 
-  // Renderiza exames laboratoriais na barra lateral do aluno
   function renderCaseLabExamsBadge() {
     const list = appState.currentCase?.bioquimica || [];
     const container = document.getElementById("labExamsContainer");

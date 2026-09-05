@@ -109,6 +109,17 @@ class StudentProntuarioManager {
       prescricaoDietoterapica: {
         vetKcal: "",
         regraBolsoKcalKg: "",
+        distribuicaoMacros: {
+          cho: { minPct: "45", maxPct: "55", minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 },
+          ptn: { minPct: "15", maxPct: "20", minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 },
+          lip: { minPct: "25", maxPct: "30", minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 }
+        },
+        recomendacaoProteinaGKg: {
+          minGKg: "1.0",
+          maxGKg: "1.2",
+          minTotalG: 0,
+          maxTotalG: 0
+        },
         carboidratosG: "",
         carboidratosPct: "",
         proteinasG: "",
@@ -121,13 +132,51 @@ class StudentProntuarioManager {
         fibrasMicronutrientes: "",
         justificativaFisiopatologica: ""
       },
+      consumoAlimentar: {
+        vetRecordatorio: "",
+        neeCaso: "",
+        adequacaoVetPct: "",
+        adequacaoVetClassificacao: "",
+        baseAlimentosReferencia: "TACO (Tabela Brasileira de Composição de Alimentos - UNICAMP, 4ª edição)",
+        inqueritoResumo: "",
+        aguaPreferenciasAversoes: "",
+        refeicoesRecordatorio: [
+          { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+        ],
+        totaisRecordatorio: {
+          vetTotalKcal: 0,
+          carboidratosG: 0,
+          carboidratosPct: 0,
+          proteinasG: 0,
+          proteinasGKg: 0,
+          proteinasPct: 0,
+          lipidiosG: 0,
+          lipidiosPct: 0,
+          fibrasG: 0,
+          calcioMg: 0,
+          ferroMg: 0,
+          sodioMg: 0,
+          potassioMg: 0,
+          adequacaoVetPct: 0
+        },
+        statusMacrosRecordatorio: {
+          cho: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+          ptn: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+          lip: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" }
+        }
+      },
       planejamentoAlimentar: [
-        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-3", refeicao: "Almoço", horario: "12:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-5", refeicao: "Jantar", horario: "19:30", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } },
-        { id: "ref-6", refeicao: "Ceia", horario: "22:00", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 } }
+        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
       ],
       totaisCardapio: {
         vetTotalKcal: 0,
@@ -139,7 +188,16 @@ class StudentProntuarioManager {
         lipidiosG: 0,
         lipidiosPct: 0,
         fibrasG: 0,
-        adequacaoVetPct: 0
+        calcioMg: 0,
+        ferroMg: 0,
+        sodioMg: 0,
+        potassioMg: 0,
+        adequacaoVetPct: 0,
+        statusMacros: {
+          cho: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+          ptn: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+          lip: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" }
+        }
       },
       orientacoesNutricionais: "",
       respostasQuestoes: {} // id da questão -> resposta do aluno
@@ -362,11 +420,11 @@ class StudentProntuarioManager {
   // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g da TACO
   calculateItemNutrition(foodTaco, gramatura) {
     if (!foodTaco) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
     }
     const g = typeof gramatura === "string" ? parseFloat(gramatura.replace(",", ".")) : parseFloat(gramatura);
     if (isNaN(g) || g <= 0) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
     }
 
     const base = foodTaco.baseGramas || 100; // sempre 100g na TACO
@@ -380,13 +438,17 @@ class StudentProntuarioManager {
       cho: round1(foodTaco.cho),
       ptn: round1(foodTaco.ptn),
       lip: round1(foodTaco.lip),
-      fibra: round1(foodTaco.fibra)
+      fibra: round1(foodTaco.fibra),
+      calcio: round1(foodTaco.calcio),
+      ferro: round1(foodTaco.ferro),
+      sodio: round1(foodTaco.sodio),
+      potassio: round1(foodTaco.potassio)
     };
   }
 
   // Calcula subtotal nutricional de uma refeição somando todos os seus itens
   calculateMealSubtotal(meal) {
-    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0 };
+    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
     if (!meal || !Array.isArray(meal.itens)) return sub;
 
     meal.itens.forEach(item => {
@@ -395,6 +457,10 @@ class StudentProntuarioManager {
       sub.ptn += Number(item.ptn || 0);
       sub.lip += Number(item.lip || 0);
       sub.fibra += Number(item.fibra || 0);
+      sub.calcio += Number(item.calcio || 0);
+      sub.ferro += Number(item.ferro || 0);
+      sub.sodio += Number(item.sodio || 0);
+      sub.potassio += Number(item.potassio || 0);
     });
 
     const round1 = (val) => Math.round(val * 10) / 10;
@@ -403,12 +469,139 @@ class StudentProntuarioManager {
       cho: round1(sub.cho),
       ptn: round1(sub.ptn),
       lip: round1(sub.lip),
-      fibra: round1(sub.fibra)
+      fibra: round1(sub.fibra),
+      calcio: round1(sub.calcio),
+      ferro: round1(sub.ferro),
+      sodio: round1(sub.sodio),
+      potassio: round1(sub.potassio)
     };
   }
 
-  // Calcula os totais consolidados do Cardápio diário completo e compara com a prescrição
-  calculateCardapioTotals(planejamentoAlimentar, pesoPaciente = null, vetPrescrito = null) {
+  // Calcula faixas de calorias e gramas a partir do VET planejado e das faixas de % da prescrição
+  calculatePrescriptionDistribution(vet, distribuicaoInput) {
+    const v = typeof vet === "string" ? parseFloat(vet.replace(",", ".")) : parseFloat(vet);
+    const round1 = (val) => Math.round(val * 10) / 10;
+    const res = {
+      cho: { minPct: 0, maxPct: 0, minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 },
+      ptn: { minPct: 0, maxPct: 0, minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 },
+      lip: { minPct: 0, maxPct: 0, minKcal: 0, maxKcal: 0, minG: 0, maxG: 0 }
+    };
+
+    if (!distribuicaoInput) return res;
+
+    const parseNum = (val) => {
+      if (val === null || val === undefined || val === "") return 0;
+      const n = typeof val === "string" ? parseFloat(val.replace(",", ".")) : parseFloat(val);
+      return isNaN(n) ? 0 : n;
+    };
+
+    const macros = [
+      { key: "cho", factor: 4 },
+      { key: "ptn", factor: 4 },
+      { key: "lip", factor: 9 }
+    ];
+
+    macros.forEach(({ key, factor }) => {
+      const src = distribuicaoInput[key] || {};
+      const minP = parseNum(src.minPct);
+      const maxP = parseNum(src.maxPct);
+      res[key].minPct = minP;
+      res[key].maxPct = maxP;
+
+      if (v && v > 0) {
+        const minK = round1((v * minP) / 100);
+        const maxK = round1((v * maxP) / 100);
+        res[key].minKcal = minK;
+        res[key].maxKcal = maxK;
+        res[key].minG = round1(minK / factor);
+        res[key].maxG = round1(maxK / factor);
+      }
+    });
+
+    return res;
+  }
+
+  // Calcula os gramas esperados de proteína baseados em g/kg e peso do paciente
+  calculateProteinGKgExpected(peso, minGKg, maxGKg) {
+    const p = typeof peso === "string" ? parseFloat(peso.replace(",", ".")) : parseFloat(peso);
+    const minG = typeof minGKg === "string" ? parseFloat(minGKg.replace(",", ".")) : parseFloat(minGKg);
+    const maxG = typeof maxGKg === "string" ? parseFloat(maxGKg.replace(",", ".")) : parseFloat(maxGKg);
+    const round1 = (val) => Math.round(val * 10) / 10;
+
+    const res = {
+      peso: p || 0,
+      minGKg: isNaN(minG) ? 0 : minG,
+      maxGKg: isNaN(maxG) ? 0 : maxG,
+      minTotalG: 0,
+      maxTotalG: 0
+    };
+
+    if (p && p > 0) {
+      if (!isNaN(minG) && minG > 0) res.minTotalG = round1(p * minG);
+      if (!isNaN(maxG) && maxG > 0) res.maxTotalG = round1(p * maxG);
+    }
+    return res;
+  }
+
+  // Avalia o status de um macronutriente (em gramas) frente à faixa prescrita [minG, maxG]
+  evaluateMacroStatus(gramas, minGramas, maxGramas) {
+    const g = typeof gramas === "string" ? parseFloat(gramas.replace(",", ".")) : parseFloat(gramas);
+    const minG = typeof minGramas === "string" ? parseFloat(minGramas.replace(",", ".")) : parseFloat(minGramas);
+    const maxG = typeof maxGramas === "string" ? parseFloat(maxGramas.replace(",", ".")) : parseFloat(maxGramas);
+
+    if (isNaN(minG) || isNaN(maxG) || minG <= 0 || maxG <= 0) {
+      return {
+        status: "Indefinido",
+        label: "Aguardando Prescrição",
+        badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
+        icon: "help_outline"
+      };
+    }
+
+    const currentG = isNaN(g) ? 0 : g;
+
+    if (currentG < minG) {
+      return {
+        status: "Abaixo",
+        label: "Abaixo da Meta",
+        badgeClass: "bg-amber-100 text-amber-800 border-amber-300",
+        icon: "arrow_downward"
+      };
+    } else if (currentG > maxG) {
+      return {
+        status: "Acima",
+        label: "Acima da Meta",
+        badgeClass: "bg-rose-100 text-rose-800 border-rose-300",
+        icon: "arrow_upward"
+      };
+    } else {
+      return {
+        status: "Adequado",
+        label: "Adequado",
+        badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300",
+        icon: "check_circle"
+      };
+    }
+  }
+
+  // Compara os totais de macronutrientes com a prescrição
+  compareTotalsWithPrescription(totals, distribuicaoPrescrita) {
+    if (!distribuicaoPrescrita) {
+      return {
+        cho: this.evaluateMacroStatus(totals?.carboidratosG, 0, 0),
+        ptn: this.evaluateMacroStatus(totals?.proteinasG, 0, 0),
+        lip: this.evaluateMacroStatus(totals?.lipidiosG, 0, 0)
+      };
+    }
+    return {
+      cho: this.evaluateMacroStatus(totals?.carboidratosG, distribuicaoPrescrita.cho?.minG, distribuicaoPrescrita.cho?.maxG),
+      ptn: this.evaluateMacroStatus(totals?.proteinasG, distribuicaoPrescrita.ptn?.minG, distribuicaoPrescrita.ptn?.maxG),
+      lip: this.evaluateMacroStatus(totals?.lipidiosG, distribuicaoPrescrita.lip?.minG, distribuicaoPrescrita.lip?.maxG)
+    };
+  }
+
+  // Calcula totais nutricionais completos (Macros e Micronutrientes: Cálcio, Ferro, Sódio, Potássio) para uma lista de refeições
+  calculateNutritionalTotals(mealsList, pesoPaciente = null, vetPrescrito = null, distribuicaoPrescrita = null) {
     const totals = {
       vetTotalKcal: 0,
       carboidratosG: 0,
@@ -419,19 +612,32 @@ class StudentProntuarioManager {
       lipidiosG: 0,
       lipidiosPct: 0,
       fibrasG: 0,
+      calcioMg: 0,
+      ferroMg: 0,
+      sodioMg: 0,
+      potassioMg: 0,
       adequacaoVetPct: 0,
-      classificacaoAdequacao: ""
+      classificacaoAdequacao: "",
+      statusMacros: {
+        cho: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+        ptn: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+        lip: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" }
+      }
     };
 
-    if (!Array.isArray(planejamentoAlimentar)) return totals;
+    if (!Array.isArray(mealsList)) return totals;
 
-    planejamentoAlimentar.forEach(meal => {
+    mealsList.forEach(meal => {
       const sub = this.calculateMealSubtotal(meal);
       totals.vetTotalKcal += sub.kcal;
       totals.carboidratosG += sub.cho;
       totals.proteinasG += sub.ptn;
       totals.lipidiosG += sub.lip;
       totals.fibrasG += sub.fibra;
+      totals.calcioMg += sub.calcio;
+      totals.ferroMg += sub.ferro;
+      totals.sodioMg += sub.sodio;
+      totals.potassioMg += sub.potassio;
     });
 
     const round1 = (val) => Math.round(val * 10) / 10;
@@ -440,6 +646,10 @@ class StudentProntuarioManager {
     totals.proteinasG = round1(totals.proteinasG);
     totals.lipidiosG = round1(totals.lipidiosG);
     totals.fibrasG = round1(totals.fibrasG);
+    totals.calcioMg = round1(totals.calcioMg);
+    totals.ferroMg = round1(totals.ferroMg);
+    totals.sodioMg = round1(totals.sodioMg);
+    totals.potassioMg = round1(totals.potassioMg);
 
     // Percentuais calóricos dos macronutrientes: CHO e PTN = 4 kcal/g, LIP = 9 kcal/g
     if (totals.vetTotalKcal > 0) {
@@ -454,7 +664,7 @@ class StudentProntuarioManager {
       totals.proteinasGKg = round1(totals.proteinasG / pKg);
     }
 
-    // % de adequação do Cardápio em relação ao VET planejado/prescrito
+    // % de adequação em relação ao VET planejado/prescrito
     const vPresc = vetPrescrito ? (typeof vetPrescrito === "string" ? parseFloat(vetPrescrito.replace(",", ".")) : parseFloat(vetPrescrito)) : null;
     if (vPresc && vPresc > 0 && totals.vetTotalKcal > 0) {
       totals.adequacaoVetPct = round1((totals.vetTotalKcal / vPresc) * 100);
@@ -467,14 +677,26 @@ class StudentProntuarioManager {
       }
     }
 
+    // Status dos macros frente à prescrição
+    totals.statusMacros = this.compareTotalsWithPrescription(totals, distribuicaoPrescrita);
+
     return totals;
   }
 
-  // Gera síntese textual da refeição unindo alimento, medida caseira livre e gramatura
+  // Mantém compatibilidade com chamadas de calculateCardapioTotals
+  calculateCardapioTotals(planejamentoAlimentar, pesoPaciente = null, vetPrescrito = null, distribuicaoPrescrita = null) {
+    return this.calculateNutritionalTotals(planejamentoAlimentar, pesoPaciente, vetPrescrito, distribuicaoPrescrita);
+  }
+
+  // Gera síntese textual da refeição unindo tipo de preparação, alimento, medida caseira livre e gramatura
   formatMealFoodsSummary(meal) {
     if (!meal) return "";
+    let prepPrefix = "";
+    if (meal.tipoPreparacao && String(meal.tipoPreparacao).trim()) {
+      prepPrefix = `[${String(meal.tipoPreparacao).trim()}] `;
+    }
     if (Array.isArray(meal.itens) && meal.itens.length > 0) {
-      return meal.itens.map(item => {
+      const itemsStr = meal.itens.map(item => {
         let desc = item.alimentoNome || "Alimento";
         const parts = [];
         if (item.medidaCaseira && String(item.medidaCaseira).trim()) {
@@ -491,7 +713,8 @@ class StudentProntuarioManager {
         }
         return desc;
       }).join("; ");
+      return prepPrefix + itemsStr;
     }
-    return meal.alimentos || "";
+    return prepPrefix + (meal.alimentos || "");
   }
 }

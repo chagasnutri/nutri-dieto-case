@@ -698,6 +698,80 @@ Questões Avaliativas:
       const docxCardapio = DietoterapiaDocxReport.buildReportDocument(prontCardapioCompleto, caso1);
       const blobCardapio = docxCardapio.generateBlob();
       assert(blobCardapio && blobCardapio.size > 2500, `Relatório Word (.docx) gerado com sucesso com Cardápio TACO e tabela de metas (${blobCardapio.size} bytes)`);
+
+      // 43. Prescrição: Tabela Dinâmica de Distribuição de Macronutrientes (VET, Min/Max %, Kcal e Gramas com fatores Atwater)
+      const inputDist = {
+        cho: { minPct: 50, maxPct: 60 },
+        ptn: { minPct: 15, maxPct: 20 },
+        lip: { minPct: 25, maxPct: 30 }
+      };
+      const distCalculada = prontManager.calculatePrescriptionDistribution(2000, inputDist);
+      assert(distCalculada.cho.minKcal === 1000 && distCalculada.cho.maxKcal === 1200,
+        `Prescrição Dinâmica: CHO Kcal faixa de 1000 a 1200 kcal para VET 2000 kcal (${distCalculada.cho.minKcal} - ${distCalculada.cho.maxKcal})`);
+      assert(distCalculada.cho.minG === 250 && distCalculada.cho.maxG === 300,
+        `Prescrição Dinâmica: CHO Gramas (fator 4) faixa de 250g a 300g (${distCalculada.cho.minG}g - ${distCalculada.cho.maxG}g)`);
+      assert(distCalculada.ptn.minKcal === 300 && distCalculada.ptn.maxKcal === 400,
+        `Prescrição Dinâmica: PTN Kcal faixa de 300 a 400 kcal (${distCalculada.ptn.minKcal} - ${distCalculada.ptn.maxKcal})`);
+      assert(distCalculada.ptn.minG === 75 && distCalculada.ptn.maxG === 100,
+        `Prescrição Dinâmica: PTN Gramas (fator 4) faixa de 75g a 100g (${distCalculada.ptn.minG}g - ${distCalculada.ptn.maxG}g)`);
+      assert(distCalculada.lip.minKcal === 500 && distCalculada.lip.maxKcal === 600,
+        `Prescrição Dinâmica: LIP Kcal faixa de 500 a 600 kcal (${distCalculada.lip.minKcal} - ${distCalculada.lip.maxKcal})`);
+      assert(distCalculada.lip.minG === 55.6 && distCalculada.lip.maxG === 66.7,
+        `Prescrição Dinâmica: LIP Gramas (fator 9) faixa de 55.6g a 66.7g (${distCalculada.lip.minG}g - ${distCalculada.lip.maxG}g)`);
+
+      // 44. Prescrição: Recomendação de Proteína (g/kg) multiplicada pelo peso do paciente
+      const ptnEsperada = prontManager.calculateProteinGKgExpected(70, 1.2, 1.5);
+      assert(ptnEsperada.peso === 70 && ptnEsperada.minTotalG === 84.0 && ptnEsperada.maxTotalG === 105.0,
+        `Recomendação Proteica g/kg: 70kg x (1.2 a 1.5 g/kg) = ${ptnEsperada.minTotalG}g a ${ptnEsperada.maxTotalG}g esperado`);
+
+      // 45. Micronutrientes da TACO (Cálcio, Ferro, Sódio, Potássio) calculados por regra de três
+      const alimentoBanana = TACO_DATABASE.find(a => a.id === "frut-01" || a.nome.includes("Banana"));
+      assert(alimentoBanana && alimentoBanana.calcio !== undefined && alimentoBanana.ferro !== undefined && alimentoBanana.sodio !== undefined && alimentoBanana.potassio !== undefined,
+        "Base TACO enriquecida: Alimento possui micronutrientes oficiais de cálcio, ferro, sódio e potássio");
+      
+      const nutricaoBanana200g = prontManager.calculateItemNutrition(alimentoBanana, 200);
+      assert(nutricaoBanana200g.calcio === Math.round((alimentoBanana.calcio * 2) * 10) / 10 &&
+             nutricaoBanana200g.potassio === Math.round((alimentoBanana.potassio * 2) * 10) / 10,
+        `Regra de Três Micronutrientes: 200g de Banana calcula proporcionalmente Cálcio (${nutricaoBanana200g.calcio}mg) e Potássio (${nutricaoBanana200g.potassio}mg)`);
+
+      // 46. Cardápio: Campo 'Tipo de Preparação' e Formatação da Síntese
+      const refeicaoPreparacao = {
+        id: "ref-prep-1",
+        refeicao: "Lanche da Tarde",
+        horario: "16:00",
+        tipoPreparacao: "Vitamina Cremosa Reforçada",
+        itens: [
+          { alimentoNome: "Banana prata", medidaCaseira: "1 unidade", gramatura: 100, kcal: 98 },
+          { alimentoNome: "Leite integral", medidaCaseira: "1 copo americano", gramatura: 200, kcal: 122 }
+        ]
+      };
+      const sinteseComPrep = prontManager.formatMealFoodsSummary(refeicaoPreparacao);
+      assert(sinteseComPrep.startsWith("[Vitamina Cremosa Reforçada]"),
+        `Cardápio Tipo de Preparação: síntese prefixada com o tipo de preparação ("${sinteseComPrep.slice(0, 30)}...")`);
+      assert(sinteseComPrep.includes("1 unidade - 100g") && sinteseComPrep.includes("1 copo americano - 200g"),
+        "Cardápio Tipo de Preparação: síntese preserva medidas caseiras livres e gramaturas");
+
+      // 47. Réguas de Status de Macronutrientes (Adequado, Abaixo, Acima) no Recordatório e Cardápio
+      const statusAbaixo = prontManager.evaluateMacroStatus(50, 75, 100);
+      assert(statusAbaixo.status === "Abaixo" && statusAbaixo.badgeClass.includes("amber"),
+        `Régua de Status: 50g avaliado como Abaixo da faixa [75g - 100g]`);
+
+      const statusAdequado = prontManager.evaluateMacroStatus(85, 75, 100);
+      assert(statusAdequado.status === "Adequado" && statusAdequado.badgeClass.includes("emerald"),
+        `Régua de Status: 85g avaliado como Adequado na faixa [75g - 100g]`);
+
+      const statusAcima = prontManager.evaluateMacroStatus(120, 75, 100);
+      assert(statusAcima.status === "Acima" && statusAcima.badgeClass.includes("rose"),
+        `Régua de Status: 120g avaliado como Acima da faixa [75g - 100g]`);
+
+      const comparacaoCompleta = prontManager.compareTotalsWithPrescription(
+        { carboidratosG: 260, proteinasG: 60, lipidiosG: 70 },
+        distCalculada
+      );
+      assert(comparacaoCompleta.cho.status === "Adequado" &&
+             comparacaoCompleta.ptn.status === "Abaixo" &&
+             comparacaoCompleta.lip.status === "Acima",
+        "Comparação Completa com Prescrição: CHO Adequado, PTN Abaixo, LIP Acima correspondendo com precisão matemática");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
