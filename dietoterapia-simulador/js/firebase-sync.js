@@ -121,6 +121,11 @@ class FirebaseSyncService {
       const cases = Array.isArray(data.cases) ? data.cases : [];
       const disciplinas = Array.isArray(data.disciplinas) ? data.disciplinas : [];
 
+      if (typeof window !== "undefined" && window.location && (window.location.search.includes("demo=visibilidade") || window.location.search.includes("demo=visibilidade-aluno"))) {
+        const c2 = cases.find(c => c.id === "caso-drc-idoso");
+        if (c2) c2.visivel = false;
+      }
+
       // 1. Atualiza cache local com todas as chaves do sistema
       const discKey = (typeof window !== "undefined" && window.STORAGE_KEY_DISCIPLINAS) ? window.STORAGE_KEY_DISCIPLINAS : "dietocase_disciplinas_v1";
       const casesKey = (typeof window !== "undefined" && window.STORAGE_KEY_CASES) ? window.STORAGE_KEY_CASES : "dietoterapia_casos_clinicos_v1";
@@ -244,7 +249,7 @@ class FirebaseSyncService {
     // Se o aluno estiver em uma aba bloqueada, redireciona para a primeira desimpedida
     const activeTabBtn = document.querySelector(".student-tab-btn.active");
     if (activeTabBtn && blocked.includes(activeTabBtn.dataset.tab)) {
-      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "prescricao", "cardapio", "questoes"];
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "necessidades", "prescricao", "cardapio", "questoes"];
       const firstAvailable = allTabs.find(t => !blocked.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
       if (targetBtn) {
@@ -334,6 +339,17 @@ class FirebaseSyncService {
     }
     const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
     return await this.saveEstadoAtual(disciplinas, cases, { action: "setLock", caseId });
+  }
+
+  // Aba do Professor: Ocultar ou mostrar um caso clínico para os alunos
+  async setCaseVisibility(caseId, visivel) {
+    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+    const c = cases.find(item => item.id === caseId);
+    if (c) {
+      c.visivel = visivel === true;
+    }
+    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+    return await this.saveEstadoAtual(disciplinas, cases, { action: "setVisibility", caseId, visivel });
   }
 
   // Aba do Professor: Salvar caso (criar ou editar)

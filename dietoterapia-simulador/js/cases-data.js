@@ -11,6 +11,8 @@ const DEFAULT_CASES = [
     neeKcal: 1850,
     vetRecordatorioHabitual: 2750,
     isLocked: false,
+    visivel: true,
+    habilitarQuestoesAvaliativas: true,
     blockedTabs: [],
     patient: {
       name: "Carlos Alberto da Silva",
@@ -22,13 +24,13 @@ const DEFAULT_CASES = [
       avatar: "👨"
     },
     history: {
-      queixaPrincipal: "Minha glicose e pressão estão muito descontroladas ultimamente. O médico do posto pediu para eu passar com a nutricionista com urgência.",
-      hda: "Paciente relata diagnóstico de Diabetes Mellitus Tipo 2 há 6 anos e Hipertensão Arterial Sistêmica há 10 anos. Refere que nos últimos 4 meses tem sentido muita sede (polidipsia), boca seca e aumento da frequência urinária, inclusive acordando 2 a 3 vezes à noite para urinar (noctúria). Relata que ganhou cerca de 8 kg nos últimos 2 anos após assumir escala de turno noturno/vespertino na empresa de ônibus. Nega dor precordial ou dispneia.",
-      hpp: "Hipertensão arterial sistêmica (10 anos); Diabetes Mellitus tipo 2 (6 anos); Dislipidemia mista (diagnosticada há 2 anos). Nega cirurgias prévias ou internações recentes.",
-      historiaFamiliar: "Pai falecido aos 62 anos de Infarto Agudo do Miocárdio (IAM). Mãe viva com 78 anos, portadora de DM2 e HAS. Um irmão mais velho com hipertensão e sobrepeso.",
-      medicamentos: "Metformina 850mg (1 comprimido após o almoço e 1 comprimido após o jantar); Losartana Potássica 50mg (1 comprimido pela manhã); Sinvastatina 20mg (1 comprimido à noite antes de dormir). Relata que às vezes esquece de tomar os remédios nos dias de plantão dobrado.",
-      habitosVida: "Etilismo social: consome cerveja aos fins de semana (cerca de 3 a 4 latas por vez). Nega tabagismo. Não pratica nenhuma atividade física regular, referindo falta de tempo e cansaço físico pelo trabalho como motorista.",
-      funcaoIntestinalDiurese: "Intestino: funcionamento diário com fezes consistência normal (Escala Bristol 4), sem dor ou sangramento. Diurese: clara, aumentada em volume e frequência (poliúria e noctúria)."
+      queixaPrincipal: "Eu ando muito preocupado, doutor(a). Minha glicose e minha pressão subiram demais nas últimas semanas e o médico do posto disse que eu precisava de atendimento urgente com a nutricionista. Eu acordo sem fome nenhuma de manhã, tomo só um cafezinho adoçado correndo, mas de tarde no volante sinto uma fraqueza esquisita, uma boca seca danada e uma sede que não passa, tomo garrafas de refrigerante e água mas parece que não adianta. Além disso, tenho que parar o ônibus toda hora pra urinar e à noite acordo duas ou três vezes pra ir ao banheiro.",
+      hda: "Paciente do sexo masculino, 54 anos, hipertenso há 10 anos e diabético há 6 anos, comparece ao ambulatório encaminhado pela Estratégia de Saúde da Família com quadro de descompensação metabólica e pressórica progressiva nos últimos 4 meses. Apresenta sintomas clássicos de síndrome hiperglicêmica caracterizados por polidipsia intensa, xerostomia, poliúria com noctúria (2 a 3 episódios por noite) e astenia vespertina incapacitante. O paciente associa o agravamento do quadro clínico à recente transição para a escala de turno vespertino/noturno como motorista de transporte público coletivo urbano, período no qual apresentou ganho ponderal involuntário de 8,0 kg em 2 anos secundário a padrão alimentar desordenado e ritmo circadiano irregular. Nega precordialgia, palpitações ou dispneia paroxística.",
+      hpp: "Portador de Hipertensão Arterial Sistêmica diagnosticada há 10 anos, Diabetes Mellitus Tipo 2 diagnosticado há 6 anos e Dislipidemia mista identificada há 2 anos. Nega antecedentes cirúrgicos prévios, episódios de acidente vascular encefálico, infarto agudo do miocárdio ou histórico de internações hospitalares recentes.",
+      historiaFamiliar: "Histórico familiar positivo para eventos cardiovasculares precoces: pai falecido aos 62 anos por Infarto Agudo do Miocárdio (IAM). Mãe viva com 78 anos, portadora crônica de Diabetes Mellitus Tipo 2 e Hipertensão Arterial Sistêmica. Irmão consanguíneo mais velho portador de hipertensão arterial e sobrepeso.",
+      medicamentos: "Metformina 850mg (1 comprimido após o almoço e 1 comprimido após o jantar); Losartana Potássica 50mg (1 comprimido pela manhã); Sinvastatina 20mg (1 comprimido à noite antes de dormir). Paciente relata omissões posológicas ocasionais durante jornadas de trabalho em regime de dobra ou atrasos de linha.",
+      habitosVida: "Etilismo social com consumo de cerveja aos finais de semana (cerca de 3 a 4 latas por ocasião). Nega tabagismo pregressa ou atualmente. Nega prática de atividade física estruturada ou lazer ativo, referindo escassez de tempo disponível, sonolência diurna e exaustão osteomuscular decorrentes da rotina ao volante.",
+      funcaoIntestinalDiurese: "Hábito intestinal preservado com evacuações diárias de consistência normal (Escala de Bristol tipo 4), sem dor, esforço evacuatório ou hematoquezia. Diurese clara, aumentada expressivamente em volume e frequência diurna e noturna (poliúria e noctúria)."
     },
     antropometria: {
       pesoAtual: 92.5,
@@ -69,7 +71,7 @@ const DEFAULT_CASES = [
       tgi: "Abdome globoso à custa de panículo adiposo e adiposidade visceral, flácido, indolor à palpação, sem visceromegalias palpáveis. Ruídos hidroaéreos normais. Sem queixas de pirose, náuseas ou vômitos."
     },
     consumoAlimentar: {
-      padraoDiario: "Alimentação irregular, rica em carboidratos simples, gorduras saturadas, frituras e ultraprocessados. Longos períodos de jejum seguidos de grandes volumes.",
+      padraoDiario: "Padrão alimentar caótico e hipercalórico condicionado pela jornada de trabalho em turnos alternados, caracterizado por longos períodos de jejum diurno compensados por episódios hiperfágicos noturnos de alta densidade energética. Observa-se consumo maciço de carboidratos refinados simples, alimentos ultraprocessados, bebidas açucaradas de alto índice glicêmico e gorduras saturadas em pontos comerciais de terminais urbanos, com ingestão desprezível de fibras e vegetais folhosos.",
       recordatorio24h: [
         { refeicao: "Café da manhã (05:30)", alimentos: "2 pães franceses com bastante margarina, 1 caneca grande (300mL) de café com leite integral e 3 colheres de chá cheias de açúcar refinado." },
         { refeicao: "Colação no ponto de ônibus (09:00)", alimentos: "1 lata de refrigerante comum (350mL) ou café açucarado de garrafa térmica + 1 pacote pequeno de biscoito doce." },
@@ -127,6 +129,8 @@ const DEFAULT_CASES = [
     neeKcal: 1500,
     vetRecordatorioHabitual: 920,
     isLocked: false,
+    visivel: true,
+    habilitarQuestoesAvaliativas: true,
     blockedTabs: [],
     patient: {
       name: "Lourdes Maria de Oliveira",
@@ -138,13 +142,13 @@ const DEFAULT_CASES = [
       avatar: "👵"
     },
     history: {
-      queixaPrincipal: "Estou sem conseguir comer quase nada há quase um mês. Tenho muito enjoo de manhã, a comida parece que tem gosto de ferro e emagreci demais.",
-      hda: "Paciente portadora de Doença Renal Crônica estágio 4 em tratamento conservador (TFG estimada em 21 mL/min/1.73m²) e HAS há mais de 25 anos. Foi internada na enfermaria de clínica médica devido a astenia intensa, náuseas matinais diárias, sensação de boca seca, gosto metálico na boca (hipogeusia/disgeusia) e queda acentuada da ingestão alimentar (menor que 25% do habitual há mais de 20 dias). A filha relata que a mãe perdeu cerca de 8 kg em 3 meses.",
-      hpp: "Hipertensão arterial crônica (25 anos); DRC Estágio 4 (diagnosticada há 3 anos com piora progressiva da função renal); Osteoartrite de joelhos. Nega DM, infarto ou AVC. Nega tabagismo ou etilismo.",
-      historiaFamiliar: "Pai faleceu por complicações renais aos 70 anos. Mãe com histórico de hipertensão e demência senil.",
-      medicamentos: "Enalapril 10mg (1x/dia pela manhã); Furosemida 40mg (1x/dia); Carbonato de Cálcio 500mg (1 comprimido junto às refeições de almoço e jantar como quelante de fósforo); Ondansetrona 8mg se náuseas (SN).",
-      habitosVida: "Sedentária, passa a maior parte do dia sentada ou deitada na poltrona devido à fraqueza e dores articulares. Reside com a filha que é sua cuidadora principal.",
-      funcaoIntestinalDiurese: "Intestino: constipação intestinal (evacua a cada 4 ou 5 dias fezes ressecadas tipo Bristol 1 ou 2). Diurese: volume urinário reduzido nas 24h (~700 mL/dia), urina de coloração clara a moderada, sem hematúria macroscópica."
+      queixaPrincipal: "Eu não aguento mais essa fraqueza no corpo, minha filha que precisou me trazer. Já faz quase um mês que eu olho para a comida e não desce nada, sinto um enjoo muito ruim toda manhã, a boca fica amarga como se eu tivesse mastigando ferro ou moeda velha e as pernas parecem pesadas feito chumbo. Minhas roupas estão todas caindo e já perdi quase oito quilos sem querer.",
+      hda: "Paciente idosa de 76 anos, portadora de Doença Renal Crônica em estágio 4 não dialítico (eTFG estimada em 21 mL/min/1,73m²) e hipertensão arterial crônica de longa data, admitida na enfermaria de clínica médica para compensação de síndrome urêmica sintomática e desnutrição energético-proteica aguda. Apresenta astenia incapacitante, hiporexia severa com recusa alimentar superior a 75% da ingestão habitual nas últimas 3 semanas, náuseas matinais diárias, xerostomia e queixa de disgeusia pronunciada ('gosto metálico'). A cuidadora familiar confirma redução ponderal involuntária progressiva de 7,8 kg no último trimestre (perda de 14,4% da massa corporal total), acompanhada de sonolência e fadiga aos mínimos esforços.",
+      hpp: "Diagnóstico prévio de hipertensão arterial sistêmica há 25 anos em uso regular de medicação e doença renal crônica estágio 4 diagnosticada há 3 anos com declínio progressivo da filtração glomerular. Apresenta osteoartrite moderada em articulações de joelhos. Nega histórico de diabetes mellitus, tabagismo, etilismo ou cardiopatia isquêmica prévia.",
+      historiaFamiliar: "Histórico paterno de falecimento por complicações decorrentes de nefropatia aos 70 anos. Histórico materno positivo para hipertensão arterial crônica e demência senil.",
+      medicamentos: "Enalapril 10mg (1 comprimido via oral pela manhã); Furosemida 40mg (1 comprimido pela manhã); Carbonato de Cálcio 500mg (1 comprimido junto às refeições de almoço e jantar prescrito como quelante intestinal de fósforo); Ondansetrona 8mg se náuseas ou êmese.",
+      habitosVida: "Quadro de sedentarismo extremo condicionado pela senescência e limitação álgica articular, permanecendo a maior parte do dia em repouso no leito ou em poltrona. Reside com a filha que desempenha o papel de cuidadora primária.",
+      funcaoIntestinalDiurese: "Hábito intestinal caracterizado por constipação crônica agravada no período de internação (evacuações a cada 4 ou 5 dias com fezes ressecadas tipo Bristol 1 ou 2). Diurese espontânea oligúrica em 24h (~700 mL/dia), límpida a moderadamente concentrada, sem hematúria macroscópica."
     },
     antropometria: {
       pesoAtual: 46.2,
@@ -183,7 +187,7 @@ const DEFAULT_CASES = [
       tgi: "Abdome escavado, ruídos hidroaéreos diminuídos, indolor à palpação superficial e profunda. Sem visceromegalias. Náuseas frequentes ao sentir cheiro forte de comida quente."
     },
     consumoAlimentar: {
-      padraoDiario: "Ingestão alimentar drasticamente reduzida (< 700 kcal/dia nos últimos dias). Aversão severa a carnes vermelhas e aves pelo gosto metálico.",
+      padraoDiario: "Ingestão calórico-proteica gravemente deficitária com consumo energético habitual inferior a 700 kcal/dia nas últimas semanas. Observa-se aversão acentuada a carnes vermelhas, aves e caldos concentrados secundária à disgeusia urêmica, associada à recusa sistemática de preparações sólidas e quentes devido a náuseas desencadeadas por estímulos olfativos.",
       recordatorio24h: [
         { refeicao: "Café da manhã no hospital (08:00)", alimentos: "1 fatia fina de pão de forma com manteiga (deixou a casca) + 1/2 xícara de chá de erva-doce morno com 1 colherzinha de açúcar." },
         { refeicao: "Colação (10:00)", alimentos: "Recusou a fruta oferecida (alegou náusea)." },
@@ -241,6 +245,8 @@ const DEFAULT_CASES = [
     neeKcal: 2150,
     vetRecordatorioHabitual: 1380,
     isLocked: false,
+    visivel: true,
+    habilitarQuestoesAvaliativas: true,
     blockedTabs: [],
     patient: {
       name: "Roberto Silveira Santos",
@@ -252,13 +258,13 @@ const DEFAULT_CASES = [
       avatar: "👨‍💻"
     },
     history: {
-      queixaPrincipal: "Depois que operei o estômago, toda vez que termino de almoçar ou como algo doce sinto meu coração disparar, começo a suar frio, sinto tontura e logo em seguida vem uma cólica forte com diarreia.",
-      hda: "Paciente submetido à gastrectomia subtotal com reconstrução em Y de Roux há 45 dias devido a complicação de úlcera péptica gástrica terebrante com displasia de alto grau. Teve alta hospitalar com orientações gerais, porém relata episódios diários e aflitivos que iniciam cerca de 15 a 30 minutos após as principais refeições: sensação de plenitude gástrica desconfortável, sudorese profusa, palpitações taquicárdicas, fraqueza extrema nas pernas e diarreia líquida profusa de alívio rápido. Relata ainda episódios secundários de tremores e tontura intensa cerca de 1h30 a 2h após comer quando ingere sobremesas. Está com medo terrível de comer.",
-      hpp: "Histórico de doença ulcerosa péptica por H. pylori tratada previamente. Sem histórico de diabetes ou hipertensão. Ex-tabagista (parou há 6 meses após o diagnóstico cirúrgico).",
-      historiaFamiliar: "Mãe teve câncer gástrico aos 65 anos. Pai hipertenso.",
-      medicamentos: "Omeprazol 40mg (1 comprimido em jejum); Suplemento polivitamínico e mineral oral 1 comprimido ao dia; Dimeticona gotas se distensão abdominal.",
-      habitosVida: "Trabalha sentado em bancada de testes de computadores. Afastado pelo INSS no momento devido às queixas pós-operatórias.",
-      funcaoIntestinalDiurese: "Intestino: episódios diarreicos explosivos (fezes líquidas Bristol 7) 2 a 3 vezes ao dia, tipicamente 20 a 40 minutos após o almoço ou jantar. Diurese: normal em coloração e volume."
+      queixaPrincipal: "Doutor(a), eu estou com um medo enorme de comer. Desde que eu passei pela cirurgia de retirada do estômago, cerca de vinte minutos depois que eu almoço ou quando como qualquer doce, meu coração começa a disparar forte no peito, eu começo a suar frio pela testa, as vistas escurecem de tontura e logo em seguida vem uma cólica desesperadora com diarreia que tenho que sair correndo pro banheiro. Depois de uma hora e meia ainda sinto minhas mãos tremerem como se eu fosse desmaiar.",
+      hda: "Paciente masculino de 42 anos, no 45º dia de pós-operatório tardio de gastrectomia subtotal com reconstrução em Y de Roux secundária a complicação de úlcera péptica gástrica terebrante com displasia de alto grau. Evolui com quadro clínico típico de Síndrome de Dumping mista: fase precoce vasomotora e gastrointestinal aos 15 a 30 minutos pós-prandiais (plenitude precoce desconfortável, sudorese profusa, palpitações taquicárdicas e diarreia líquida motora explosiva secundária à sobrecarga osmótica hiperosmolar no jejuno) associada à fase tardia aos 90 a 120 minutos pós-prandiais (tremores de extremidades, diaforese e lipotimia decorrentes de hipoglicemia reativa hiperinsulinêmica). Paciente desenvolveu sitofobia (medo de se alimentar) que culminou em emagrecimento severo de 11,0 kg em 45 dias.",
+      hpp: "Histórico pregresso de gastrite crônica e úlcera péptica associada a H. pylori erradicada no pré-operatório. Sem antecedentes de hipertensão arterial ou diabetes mellitus. Ex-tabagista (cessação há 6 meses após a indicação cirúrgica).",
+      historiaFamiliar: "Histórico materno de neoplasia gástrica aos 65 anos. Histórico paterno de hipertensão arterial sistêmica.",
+      medicamentos: "Omeprazol 40mg (1 comprimido em jejum pela manhã); suplemento polivitamínico e mineral por via oral (1 comprimido ao dia); Dimeticona em gotas se meteorismo ou distensão abdominal.",
+      habitosVida: "Atividade profissional desempenhada predominantemente sentado em bancada técnica de testes computacionais. Atualmente em benefício temporário de auxílio-doença pelo INSS em decorrência da incapacidade funcional gerada pelos sintomas pós-prandiais.",
+      funcaoIntestinalDiurese: "Evacuações diarreicas explosivas de padrão motor e osmótico (fezes líquidas Bristol 7) cerca de 2 a 3 vezes ao dia, tipicamente 20 a 40 minutos após o almoço ou jantar. Diurese fisiológica preservada em volume e coloração."
     },
     antropometria: {
       pesoAtual: 67.0,
@@ -296,7 +302,7 @@ const DEFAULT_CASES = [
       tgi: "Abdome plano, ruídos hidroaéreos acentuados e audíveis à ausculta em mesogástrio imediatamente após a ingestão de água e alimentos. Timpanismo difuso aumentado. Desconforto à palpação profunda pós-prandial."
     },
     consumoAlimentar: {
-      padraoDiario: "Comete erros clássicos de manejo dietético pós-gastrectomia: realiza refeições volumosas apenas 3 vezes ao dia, bebe copos cheios de líquidos (sucos ou refrigerantes) durante a refeição e consome doces simples para 'compensar as calorias perdidas'.",
+      padraoDiario: "Padrão dietético transgressor e inadequado ao pós-operatório gástrico: realiza refeições excessivamente volumosas em apenas 3 momentos ao dia, ingere grandes volumes hídricos durante as refeições principais e consome preparações hiperosmolares ricas em sacarose na tentativa equivocada de estancar a perda de peso, desencadeando esvaziamento gástrico precipitado.",
       recordatorio24h: [
         { refeicao: "Café da manhã (07:30)", alimentos: "1 xícara grande de café com leite e 2 colheres cheias de açúcar + 2 fatias de bolo caseiro açucarado." },
         { refeicao: "Colação (10:00)", alimentos: "Não costuma comer nada no meio da manhã." },
@@ -409,10 +415,11 @@ function getCases() {
   }
   try {
     const parsed = JSON.parse(stored);
-    // Garante que isLocked, blockedTabs e disciplinaId existam com compatibilidade retroativa
+    // Garante que isLocked, visivel, blockedTabs e disciplinaId existam com compatibilidade retroativa
     return parsed.map(c => ({
       ...c,
       isLocked: c.isLocked === true,
+      visivel: c.visivel !== false,
       blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
       disciplinaId: c.disciplinaId || "dietoterapia"
     }));

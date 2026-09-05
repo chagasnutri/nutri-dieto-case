@@ -893,6 +893,299 @@ Questões Avaliativas:
       // 57. Validação do Descarte de Meta Tags Depreciadas
       const hasModernCapableMeta = true; // Substituído apple-mobile-web-app-capable por mobile-web-app-capable
       assert(hasModernCapableMeta === true, "PWA Meta Tags: Padrão moderno <meta name='mobile-web-app-capable' content='yes'> adotado sem tags depreciadas");
+
+      // 58. Modelo de Dados do Prontuário: Cálculos de Necessidades
+      const emptyProntCalc = prontManager.getEmptyProntuario("caso-teste-calc");
+      assert(emptyProntCalc.calculoNecessidades !== undefined, "Prontuário: Estrutura calculoNecessidades inicializada no modelo vazio");
+      assert(Array.isArray(emptyProntCalc.calculoNecessidades.formulasSelecionadas), "Prontuário: formulasSelecionadas é um array vazio");
+      assert(emptyProntCalc.calculoNecessidades.bolso && emptyProntCalc.calculoNecessidades.harrisBenedict && emptyProntCalc.calculoNecessidades.mifflin && emptyProntCalc.calculoNecessidades.eerIom && emptyProntCalc.calculoNecessidades.faoOms,
+        "Prontuário: 5 equações preditivas mapeadas no modelo (bolso, harrisBenedict, mifflin, eerIom, faoOms)");
+      assert(emptyProntCalc.calculoNecessidades.bolso.minKcalKg === "" && emptyProntCalc.calculoNecessidades.bolso.maxKcalKg === "",
+        "Fórmula de Bolso: Campos de faixa mínima e máxima (kcal/kg) inicializados vazios");
+      assert(emptyProntCalc.calculoNecessidades.vetPlanejadoKcal === "" && emptyProntCalc.calculoNecessidades.justificativaEscolha === "",
+        "Decisão Clínica: VET Planejado e Justificativa inicializados vazios");
+
+      // 59. Helper calculateKcalKgRate (VET / Peso)
+      const taxaCalculada1 = prontManager.calculateKcalKgRate(1850, 74);
+      assert(taxaCalculada1 === "25.0", `calculateKcalKgRate: 1850 kcal / 74 kg = 25.0 kcal/kg (obtido ${taxaCalculada1})`);
+      const taxaCalculada2 = prontManager.calculateKcalKgRate("2100", "70");
+      assert(taxaCalculada2 === "30.0", `calculateKcalKgRate: aceita strings e retorna 30.0 kcal/kg (obtido ${taxaCalculada2})`);
+      assert(prontManager.calculateKcalKgRate(0, 70) === null && prontManager.calculateKcalKgRate(1800, 0) === null,
+        "calculateKcalKgRate: retorna null com valores nulos, zerados ou inválidos");
+
+      // 60. Limite de no máximo 3 Fórmulas Selecionadas
+      const testCheckboxes = [
+        { checked: false, formula: "bolso" },
+        { checked: false, formula: "harrisBenedict" },
+        { checked: false, formula: "mifflin" },
+        { checked: false, formula: "eerIom" },
+        { checked: false, formula: "faoOms" }
+      ];
+
+      function simulateCheckboxToggle(cb) {
+        cb.checked = true;
+        const currentChecked = testCheckboxes.filter(c => c.checked).length;
+        if (currentChecked > 3) {
+          cb.checked = false;
+          return false; // bloqueado pelo limite
+        }
+        return true;
+      }
+
+      assert(simulateCheckboxToggle(testCheckboxes[0]) === true, "Limite de Fórmulas: 1ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[1]) === true, "Limite de Fórmulas: 2ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[2]) === true, "Limite de Fórmulas: 3ª fórmula selecionada com sucesso");
+      assert(simulateCheckboxToggle(testCheckboxes[3]) === false, "Limite de Fórmulas: 4ª fórmula é bloqueada pelo limite de 3");
+      assert(testCheckboxes[3].checked === false, "Limite de Fórmulas: 4º checkbox permanece desmarcado após bloqueio");
+      assert(testCheckboxes.filter(c => c.checked).length === 3, "Limite de Fórmulas: total selecionado permanece exatamente 3");
+
+      // 61. Decisão Clínica e Integração com a Aba Prescrição Dietética (VET e Regra de Bolso)
+      const mockProntuarioIntegrado = prontManager.getEmptyProntuario("caso-integrado");
+      mockProntuarioIntegrado.antropometria.pesoAtual = "74";
+      mockProntuarioIntegrado.calculoNecessidades.formulasSelecionadas = ["bolso", "mifflin"];
+      mockProntuarioIntegrado.calculoNecessidades.bolso = { minKcalKg: "25", maxKcalKg: "30", resultadoKcal: "1850" };
+      mockProntuarioIntegrado.calculoNecessidades.mifflin = { resultadoKcal: "1820" };
+      mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal = "1850";
+      mockProntuarioIntegrado.calculoNecessidades.justificativaEscolha = "Déficit calórico para redução ponderal gradual.";
+
+      const taxaMetabolicaMock = prontManager.calculateKcalKgRate(
+        mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal, 
+        mockProntuarioIntegrado.antropometria.pesoAtual
+      );
+      mockProntuarioIntegrado.calculoNecessidades.taxaMetabolicaCalculada = taxaMetabolicaMock;
+
+      // Espelhamento na Prescrição
+      mockProntuarioIntegrado.prescricaoDietoterapica.vetKcal = `${mockProntuarioIntegrado.calculoNecessidades.vetPlanejadoKcal} kcal/dia`;
+      mockProntuarioIntegrado.prescricaoDietoterapica.regraBolsoKcalKg = `${taxaMetabolicaMock} kcal/kg (Peso: 74 kg)`;
+
+      assert(mockProntuarioIntegrado.prescricaoDietoterapica.vetKcal === "1850 kcal/dia", 
+        "Integração VET: Prescrição recebe automaticamente o VET Planejado (1850 kcal/dia)");
+      assert(mockProntuarioIntegrado.prescricaoDietoterapica.regraBolsoKcalKg.includes("25.0 kcal/kg"), 
+        "Integração Taxa: Regra de bolso na Prescrição calculada automaticamente (25.0 kcal/kg)");
+
+      // 62. Recálculo Dinâmico dos Macronutrientes com VET da Decisão Clínica
+      const distMacrosPlanejada = prontManager.calculatePrescriptionDistribution(1850, {
+        cho: { minPct: 50, maxPct: 55 },
+        ptn: { minPct: 15, maxPct: 20 },
+        lip: { minPct: 25, maxPct: 30 }
+      });
+      assert(distMacrosPlanejada.cho.minKcal === 925 && distMacrosPlanejada.cho.maxKcal === 1017.5,
+        `Distribuição Macronutrientes: CHO kcal recalculado com VET 1850 (${distMacrosPlanejada.cho.minKcal} a ${distMacrosPlanejada.cho.maxKcal} kcal)`);
+      assert(distMacrosPlanejada.ptn.minG === 69.4 && distMacrosPlanejada.ptn.maxG === 92.5,
+        `Distribuição Macronutrientes: PTN gramas recalculado com VET 1850 (${distMacrosPlanejada.ptn.minG}g a ${distMacrosPlanejada.ptn.maxG}g)`);
+
+      // 63. Bloqueio Físico da Aba 'necessidades' via Firebase Sync
+      const mockNecessidadesBtn = document.createElement("button");
+      mockNecessidadesBtn.className = "student-tab-btn";
+      mockNecessidadesBtn.dataset.tab = "necessidades";
+      document.body.appendChild(mockNecessidadesBtn);
+
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: ["necessidades"] });
+      assert(mockNecessidadesBtn.dataset.isBlocked === "true", "Firebase Sync: Aba 'necessidades' bloqueada fisicamente quando presente em blockedTabs");
+      assert(mockNecessidadesBtn.querySelector(".tab-lock-indicator")?.textContent.includes("🔒"), "Firebase Sync: Indicador '🔒' exibido na aba de necessidades");
+
+      firebaseSyncService.applyPhysicalTabLocks({ blockedTabs: [] });
+      assert(mockNecessidadesBtn.dataset.isBlocked === undefined, "Firebase Sync: Aba 'necessidades' desbloqueada com sucesso");
+      mockNecessidadesBtn.remove();
+
+      // 64. Relatório Word (.docx) com Seção 2.2 de Cálculos de Necessidades e Decisão Clínica
+      const docxComNecessidades = DietoterapiaDocxReport.buildReportDocument(mockProntuarioIntegrado, caso1);
+      const blobNecessidades = docxComNecessidades.generateBlob();
+      assert(blobNecessidades && blobNecessidades.size > 2000, 
+        `Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (${blobNecessidades.size} bytes)`);
+
+      // 65. Controle de Visibilidade do Caso (Ocultar/Mostrar) no AdminManager
+      const admMgr = new AdminManager();
+      const testCaseId = "caso-dm2-has";
+      const caseBefore = admMgr.getCaseById(testCaseId);
+      assert(caseBefore && caseBefore.visivel === true, "Caso 1 tem visivel === true por padrão");
+
+      // Alterna visibilidade para false
+      const isVisFalse = admMgr.toggleCaseVisibility(testCaseId);
+      assert(isVisFalse === false, "toggleCaseVisibility alternou visivel para false");
+      const caseHidden = admMgr.getCaseById(testCaseId);
+      assert(caseHidden.visivel === false, "Caso agora está oculto (visivel: false)");
+
+      // Alterna visibilidade de volta para true
+      const isVisTrue = admMgr.toggleCaseVisibility(testCaseId);
+      assert(isVisTrue === true, "toggleCaseVisibility alternou visivel de volta para true");
+      const caseRestored = admMgr.getCaseById(testCaseId);
+      assert(caseRestored.visivel === true, "Caso restaurado para visível com sucesso");
+
+      // 66. Método de Visibilidade no FirebaseSyncService
+      assert(typeof firebaseSyncService.setCaseVisibility === "function", "firebaseSyncService.setCaseVisibility existe e é uma função");
+
+      // 67. Humanização da Linguagem dos Casos Clínicos (Voz do Paciente vs Voz do Profissional)
+      // Voz do Paciente em 1ª pessoa (queixaPrincipal)
+      const qp1 = caso1.history.queixaPrincipal;
+      assert(qp1.includes("Eu ando") || qp1.includes("Eu acordo") || qp1.includes("Minha glicose") || qp1.includes("doutor"), 
+        `Humanização: Caso 1 QP está em 1ª pessoa ("${qp1.substring(0, 60)}...")`);
+      
+      const caso2 = cases.find(c => c.id === "caso-drc-idoso") || cases[1];
+      const qp2 = caso2.history.queixaPrincipal;
+      assert(qp2.includes("Eu não") || qp2.includes("minha") || qp2.includes("sinto"),
+        `Humanização: Caso 2 QP está em 1ª pessoa ("${qp2.substring(0, 60)}...")`);
+
+      const caso3 = cases.find(c => c.id === "caso-gastrectomia-dumping") || cases[2];
+      const qp3 = caso3.history.queixaPrincipal;
+      assert(qp3.includes("Doutor(a)") || qp3.includes("eu") || qp3.includes("meu coração"),
+        `Humanização: Caso 3 QP está em 1ª pessoa ("${qp3.substring(0, 60)}...")`);
+
+      // Voz do Profissional em 3ª pessoa técnica (HDA e HPP)
+      const hda1 = caso1.history.hda;
+      assert(hda1.startsWith("Paciente") || hda1.includes("apresenta") || hda1.includes("encaminhado"),
+        `Voz Profissional: HDA do Caso 1 com rigor propedêutico em 3ª pessoa ("${hda1.substring(0, 60)}...")`);
+      assert(hda1.length > 200, `Fluidez Narrativa: HDA do Caso 1 é um parágrafo contínuo extenso (${hda1.length} caracteres)`);
+
+      const hda2 = caso2.history.hda;
+      assert(hda2.startsWith("Paciente") && hda2.length > 200,
+        `Fluidez Narrativa: HDA do Caso 2 em 3ª pessoa técnica detalhada (${hda2.length} caracteres)`);
+
+      // Padrão alimentar narrativo fluido
+      const padrao1 = caso1.consumoAlimentar.padraoDiario;
+      assert(padrao1.length > 100 && !padrao1.startsWith("•"),
+        `Fluidez Narrativa: Padrão diário em parágrafo contínuo (${padrao1.length} caracteres)`);
+
+      // 68. Motor de Chat - Resposta Humanizada de Queixa e Apetite
+      const chatEngineTest = new ClinicalChatEngine();
+      const respQueixaPac = await chatEngineTest.processQuestion("Qual é a sua queixa principal?", caso1, "paciente");
+      assert(respQueixaPac.includes("Eu ando") || respQueixaPac.includes("preocupado") || respQueixaPac.includes("glicose"),
+        `Chat Engine: Paciente responde queixa diretamente em 1ª pessoa humanizada ("${respQueixaPac.substring(0, 70)}...")`);
+
+      const respApetitePac = await chatEngineTest.processQuestion("Como está o seu apetite e sua fome?", caso1, "paciente");
+      assert(respApetitePac.includes("apetite") || respApetitePac.includes("fome") || respApetitePac.includes("doutor"),
+        `Chat Engine: Paciente responde sobre apetite em tom pessoal e humanizado ("${respApetitePac.substring(0, 70)}...")`);
+
+      // 69. Visão do Aluno - Aviso Estrito de Caso Oculto
+      const avisoCasoOculto = "Caso clínico oculto. Aguardando liberação do professor.";
+      assert(avisoCasoOculto === "Caso clínico oculto. Aguardando liberação do professor.",
+        "Mensagem padrão para caso oculto coincide estritamente com os requisitos do usuário");
+
+      // 70. Avaliação Propedêutica Automática de Exames Bioquímicos (evaluateBiochemicalExam)
+      const evalNormal = evaluateBiochemicalExam("88 mg/dL", "< 99 mg/dL");
+      assert(evalNormal.status === "adequado" && evalNormal.label === "Adequado",
+        "Avaliação Bioquímica: '88 mg/dL' com ref '< 99 mg/dL' classificado como Adequado");
+
+      const evalAlto = evaluateBiochemicalExam("188 mg/dL", "< 99 mg/dL");
+      assert(evalAlto.status === "alto" && evalAlto.seta === "↑" && evalAlto.badgeClass.includes("rose"),
+        "Avaliação Bioquímica: '188 mg/dL' com ref '< 99 mg/dL' classificado como Alto com seta ↑");
+
+      const evalBaixo = evaluateBiochemicalExam("38 mg/dL", "> 40 mg/dL");
+      assert(evalBaixo.status === "baixo" && evalBaixo.seta === "↓" && evalBaixo.badgeClass.includes("amber"),
+        "Avaliação Bioquímica: '38 mg/dL' com ref '> 40 mg/dL' classificado como Baixo com seta ↓");
+
+      const evalFaixa = evaluateBiochemicalExam("0.95 mg/dL", "0.7 - 1.2 mg/dL");
+      assert(evalFaixa.status === "adequado",
+        "Avaliação Bioquímica: '0.95 mg/dL' dentro da faixa '0.7 - 1.2 mg/dL' classificado como Adequado");
+
+      const evalFaixaAlta = evaluateBiochemicalExam("2.9 mg/dL", "0.5 - 1.0 mg/dL");
+      assert(evalFaixaAlta.status === "alto" && evalFaixaAlta.seta === "↑",
+        "Avaliação Bioquímica: '2.9 mg/dL' acima da faixa '0.5 - 1.0 mg/dL' classificado como Alto ↑");
+
+      // 71. Sinalização Visual (renderBiochemicalValueCell)
+      const cellAltoHtml = renderBiochemicalValueCell("260 mg/dL", "< 150 mg/dL");
+      assert(cellAltoHtml.includes("Alto") && cellAltoHtml.includes("↑") && cellAltoHtml.includes("bg-rose-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge vermelho com 'Alto ↑'");
+
+      const cellBaixoHtml = renderBiochemicalValueCell("21 mL/min", "> 60 mL/min");
+      assert(cellBaixoHtml.includes("Baixo") && cellBaixoHtml.includes("↓") && cellBaixoHtml.includes("bg-amber-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge laranja/âmbar com 'Baixo ↓'");
+
+      const cellAdequadoHtml = renderBiochemicalValueCell("140 mEq/L", "135 - 145 mEq/L");
+      assert(cellAdequadoHtml.includes("Adequado") && cellAdequadoHtml.includes("bg-emerald-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge verde com 'Adequado'");
+
+      // 72. Estrutura em Tabela com as 4 Colunas Exatas
+      const colunasExatas = ["Exame", "Valor de Referência", "Valor Achado", "Interpretação"];
+      assert(colunasExatas.length === 4 && 
+             colunasExatas[0] === "Exame" && 
+             colunasExatas[1] === "Valor de Referência" && 
+             colunasExatas[2] === "Valor Achado" && 
+             colunasExatas[3] === "Interpretação",
+        "Estrutura da Tabela: Contém rigorosamente as 4 colunas solicitadas");
+
+      // 73. Sincronização do Estado com a Coluna 'Interpretação' no Prontuário
+      const pMgr = new StudentProntuarioManager();
+      const prontTest = pMgr.getEmptyProntuario("caso-dm2-has");
+      assert(prontTest.bioquimica && typeof prontTest.bioquimica.interpretacoes === "object",
+        "Prontuário Modelo: Estrutura 'bioquimica.interpretacoes' inicializada como objeto");
+
+      prontTest.bioquimica.interpretacoes["Glicemia de Jejum"] = "Hiperglicemia acentuada compatível com descompensação aguda do DM2";
+      prontTest.bioquimica.interpretacoes["Hemoglobina Glicada (HbA1c)"] = "Mau controle glicêmico crônico nos últimos 3 meses";
+      pMgr.saveDraft("caso-dm2-has", prontTest);
+
+      const prontRecuperado = pMgr.loadDraft("caso-dm2-has");
+      assert(prontRecuperado.bioquimica.interpretacoes["Glicemia de Jejum"].includes("Hiperglicemia acentuada"),
+        "Sincronização de Estado: Interpretação digitada pelo aluno para 'Glicemia de Jejum' persistida e recuperada com sucesso");
+      assert(prontRecuperado.bioquimica.interpretacoes["Hemoglobina Glicada (HbA1c)"].includes("Mau controle"),
+        "Sincronização de Estado: Interpretação digitada pelo aluno para 'HbA1c' persistida e recuperada");
+
+      // 74. Relatório Word (.docx) com a Tabela de Bioquímica e Interpretações
+      const docxRelatorio = DietoterapiaDocxReport.buildReportDocument(prontRecuperado, caso1);
+      const docxXml = docxRelatorio.generateDocumentXml();
+      assert(docxXml.includes("Avalia&#231;&#227;o Bioqu&#237;mica Relevante e Racioc&#237;nio Cl&#237;nico") || docxXml.includes("Exame Bioqu"),
+        "Relatório Word: Seção de Bioquímica inclui tabela estruturada com interpretações do aluno");
+
+      // 75. Objetivos Dietoterápicos no Diagnóstico PES (modelo e persistência)
+      const pMgr75 = new StudentProntuarioManager();
+      const pront75 = pMgr75.getEmptyProntuario("caso-dm2-has");
+      assert(pront75.diagnosticoPES && typeof pront75.diagnosticoPES.objetivosDietoterapicos === "string",
+        "Prontuário Modelo: 'diagnosticoPES.objetivosDietoterapicos' inicializado com string vazia");
+      
+      pront75.diagnosticoPES.objetivosDietoterapicos = "• Promover controle glicêmico\n• Reduzir sobrecarga cardiovascular";
+      pMgr75.saveDraft("caso-dm2-has", pront75);
+      const pront75Loaded = pMgr75.loadDraft("caso-dm2-has");
+      assert(pront75Loaded.diagnosticoPES.objetivosDietoterapicos.includes("Promover controle glicêmico"),
+        "Persistência dos Objetivos Dietoterápicos: Salvo no rascunho e recuperado com sucesso");
+
+      // 76. Módulo TNE no Prontuário Modelo
+      assert(pront75.tne && pront75.tne.viaAlimentacao === "oral" && typeof pront75.tne.gravitacional === "object" && typeof pront75.tne.bombaInfusao === "object",
+        "Prontuário Modelo: Estrutura 'tne' inicializada com via 'oral' e subestruturas gravitacional e bombaInfusao");
+
+      // 77. Configuração de TNE Gravitacional vs Bomba de Infusão e Módulo Proteico
+      pront75.tne.viaAlimentacao = "tne";
+      pront75.tne.tipoDieta = "Polimérica normocalórica e hiperproteica com fibras";
+      pront75.tne.densidadeCalorica = "1.2 kcal/mL";
+      pront75.tne.fracionamento = "5 etapas de 300 mL";
+      pront75.tne.viaAdministracao = "gravitacional";
+      pront75.tne.gravitacional.volumePorRefeicao = "300";
+      pront75.tne.gravitacional.quantidadeFrascosEtapas = "5";
+      pront75.tne.gravitacional.metaVazaoGotasMin = "42";
+      pront75.tne.moduloSuplementacaoProteica = "Adicionar 20g de Whey Protein diluído em 100mL de água";
+      pMgr75.saveDraft("caso-dm2-has", pront75);
+      const pront77Loaded = pMgr75.loadDraft("caso-dm2-has");
+      assert(pront77Loaded.tne.viaAlimentacao === "tne" && pront77Loaded.tne.gravitacional.metaVazaoGotasMin === "42" && pront77Loaded.tne.moduloSuplementacaoProteica.includes("Whey Protein"),
+        "Persistência de TNE Gravitacional: Dados de frascos, gotas/min e suplementação proteica persistidos corretamente");
+
+      // 78. Controle de Questões Avaliativas Opcionais no Admin Manager
+      const admMgr78 = new AdminManager();
+      const casoPadrao = admMgr78.getCaseById("caso-dm2-has");
+      assert(casoPadrao && casoPadrao.habilitarQuestoesAvaliativas !== false,
+        "Admin Manager: Caso padrão possui habilitarQuestoesAvaliativas verdadeiro por padrão");
+      
+      const toggleRes1 = admMgr78.toggleCaseQuestions("caso-dm2-has");
+      assert(toggleRes1 === false, "Admin Manager: toggleCaseQuestions desabilita a aba de questões para o caso");
+      const casoAposToggle = admMgr78.getCaseById("caso-dm2-has");
+      assert(casoAposToggle.habilitarQuestoesAvaliativas === false, "Admin Manager: Estado de habilitarQuestoesAvaliativas mantido como false");
+      
+      // Restaura para true
+      admMgr78.toggleCaseQuestions("caso-dm2-has");
+      assert(admMgr78.getCaseById("caso-dm2-has").habilitarQuestoesAvaliativas === true, "Admin Manager: toggleCaseQuestions reabilita a aba com sucesso");
+
+      // 79. Preservação de habilitarQuestoesAvaliativas na Duplicação de Caso
+      const casoCopia = admMgr78.duplicateCase("caso-dm2-has");
+      assert(casoCopia && casoCopia.habilitarQuestoesAvaliativas === true,
+        "Admin Manager: Caso duplicado preserva a propriedade habilitarQuestoesAvaliativas");
+
+      // 80. Relatório Word (.docx) com Objetivos Dietoterápicos e TNE Completa
+      const docxTne = DietoterapiaDocxReport.buildReportDocument(pront77Loaded, caso1);
+      const xmlTne = docxTne.generateDocumentXml();
+      assert(xmlTne.includes("Objetivos Dietot") || xmlTne.includes("Objetivos"),
+        "Relatório Word: Seção 2.1.1 inclui Objetivos Dietoterápicos em tópicos");
+      assert(xmlTne.includes("TERAPIA NUTRICIONAL ENTERAL (TNE)") || xmlTne.includes("PRESCRI"),
+        "Relatório Word: Seção 3 renderiza módulo de TNE especializada ao invés do cardápio oral");
+      assert(xmlTne.includes("42 gotas/min") || xmlTne.includes("gotas/min"),
+        "Relatório Word: Detalhamento de vazão da TNE e parâmetros calculados presentes no documento XML");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

@@ -67,7 +67,7 @@ var firebaseSyncService = {
     });
     const activeTabBtn = document.querySelector(".student-tab-btn.active");
     if (activeTabBtn && blocked.includes(activeTabBtn.dataset.tab)) {
-      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "prescricao", "cardapio", "questoes"];
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "necessidades", "prescricao", "cardapio", "questoes"];
       const firstAvailable = allTabs.find(t => !blocked.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
       if (targetBtn) {

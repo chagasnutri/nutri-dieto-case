@@ -151,9 +151,44 @@ class DietoterapiaDocxReport {
       );
     }
 
-    doc.addHeading("1.4. Avaliação Bioquímica Relevante", 2);
-    doc.addParagraph(bio.examesRelevantes ? `Exames laboratoriais apurados: ${bio.examesRelevantes}` : "Exames apurados: Nenhum exame relatado.");
-    doc.addParagraph(bio.interpretacaoNutricional ? `Interpretação nutricional dos exames: ${bio.interpretacaoNutricional}` : "Interpretação nutricional: Não informada.");
+    doc.addHeading("1.4. Avaliação Bioquímica Relevante e Raciocínio Clínico", 2);
+    const caseBio = clinicalCase.bioquimica || [];
+    const interps = bio.interpretacoes || {};
+
+    if (Array.isArray(caseBio) && caseBio.length > 0) {
+      const bioRows = caseBio.map(item => {
+        const evalRes = (typeof evaluateBiochemicalExam === "function")
+          ? evaluateBiochemicalExam(item.valor, item.referencia)
+          : { label: "Apurado", seta: "" };
+        const statusStr = evalRes.seta ? `${item.valor} [${evalRes.label} ${evalRes.seta}]` : `${item.valor} [${evalRes.label}]`;
+        const interpAluno = interps[item.exame] || "Não informada individualmente.";
+        return [
+          item.exame || "Exame",
+          item.referencia || "-",
+          statusStr,
+          interpAluno
+        ];
+      });
+
+      doc.addTable(
+        ["Exame Bioquímico", "Valor de Referência", "Valor Achado (Status)", "Interpretação Clínica do Aluno"],
+        bioRows,
+        [2600, 2000, 2000, 2400]
+      );
+    } else if (bio.examesRelevantes) {
+      doc.addParagraph(`Exames laboratoriais apurados: ${bio.examesRelevantes}`);
+    } else {
+      doc.addParagraph("Nenhum exame laboratorial relatado.");
+    }
+
+    if (bio.interpretacaoNutricional) {
+      doc.addCallout(
+        "SÍNTESE E RACIOCÍNIO CLÍNICO-NUTRICIONAL GLOBAL:",
+        bio.interpretacaoNutricional,
+        "059669",
+        "ecfdf5"
+      );
+    }
 
     doc.addHeading("1.5. Exame Físico Nutricional e Sinais Clínicos", 2);
     doc.addParagraph(ef.sinaisClinicos ? `Sinais clínicos de carência / integridade: ${ef.sinaisClinicos}` : "Sinais clínicos: Não relatados.");
@@ -233,7 +268,57 @@ class DietoterapiaDocxReport {
     
     doc.addCallout("DIAGNÓSTICO EM NUTRIÇÃO (PES):", pesText, "15803d", "f0fdf4");
 
-    doc.addHeading("2.2. Determinação das Necessidades Energéticas e Distribuição Dinâmica de Macronutrientes", 2);
+    if (pes.objetivosDietoterapicos) {
+      doc.addHeading("2.1.1. Objetivos Dietoterápicos e Metas do Cuidado", 3);
+      doc.addParagraph(pes.objetivosDietoterapicos);
+    }
+
+    // 2.2. Cálculos de Necessidades Energéticas e Equações Preditivas
+    const calc = studentData.calculoNecessidades || {};
+    const formulasSel = Array.isArray(calc.formulasSelecionadas) ? calc.formulasSelecionadas : [];
+    if (formulasSel.length > 0 || calc.vetPlanejadoKcal) {
+      doc.addHeading("2.2. Cálculos de Necessidades Energéticas e Equações Preditivas", 2);
+      
+      const formulaRows = [];
+
+      if (formulasSel.includes("bolso") || calc.bolso?.resultadoKcal) {
+        const b = calc.bolso || {};
+        const faixa = (b.minKcalKg || b.maxKcalKg) ? `${b.minKcalKg || '--'} a ${b.maxKcalKg || '--'} kcal/kg` : "Faixa personalizada";
+        formulaRows.push(["Fórmula de Bolso (Regra Prática)", faixa, b.resultadoKcal ? `${b.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("harrisBenedict") || calc.harrisBenedict?.resultadoKcal) {
+        formulaRows.push(["Harris-Benedict (1919/1984)", "GEB × Fator Atividade × Fator Injúria", calc.harrisBenedict?.resultadoKcal ? `${calc.harrisBenedict.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("mifflin") || calc.mifflin?.resultadoKcal) {
+        formulaRows.push(["Mifflin-St Jeor (1990)", "TMB × NAF (Diretriz AND)", calc.mifflin?.resultadoKcal ? `${calc.mifflin.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("eerIom") || calc.eerIom?.resultadoKcal) {
+        formulaRows.push(["EER / IOM (DRI 2002/2005)", "Necessidade Estimada com CAF", calc.eerIom?.resultadoKcal ? `${calc.eerIom.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+      if (formulasSel.includes("faoOms") || calc.faoOms?.resultadoKcal) {
+        formulaRows.push(["FAO / OMS (1985/2004)", "TMB por idade/peso × NAF", calc.faoOms?.resultadoKcal ? `${calc.faoOms.resultadoKcal} kcal/dia` : "Não informado"]);
+      }
+
+      if (formulaRows.length > 0) {
+        doc.addTable(
+          ["Equação Preditiva Selecionada", "Metodologia / Parâmetros Adotados", "Resultado Calculado"],
+          formulaRows,
+          [3500, 3200, 2300]
+        );
+      }
+
+      if (calc.vetPlanejadoKcal) {
+        const taxaTexto = calc.taxaMetabolicaCalculada ? `${calc.taxaMetabolicaCalculada} kcal/kg` : (presc.regraBolsoKcalKg || "--");
+        doc.addCallout(
+          "DECISÃO CLÍNICA E VET PLANEJADO:",
+          `VET Planejado: ${calc.vetPlanejadoKcal} kcal/dia | Taxa Metabólica Utilizada: ${taxaTexto}\nJustificativa da Escolha: ${calc.justificativaEscolha || 'Não informada'}`,
+          "0d9488",
+          "f0fdfa"
+        );
+      }
+    }
+
+    doc.addHeading("2.3. Determinação das Necessidades Energéticas e Distribuição Dinâmica de Macronutrientes", 2);
     
     const dm = presc.distribuicaoMacros || {};
     const rp = presc.recomendacaoProteinaGKg || {};
@@ -272,113 +357,160 @@ class DietoterapiaDocxReport {
     }
 
     if (presc.justificativaFisiopatologica) {
-      doc.addHeading("2.3. Justificativa Fisiopatológica da Conduta", 2);
+      doc.addHeading("2.4. Justificativa Fisiopatológica da Conduta", 2);
       doc.addParagraph(presc.justificativaFisiopatologica);
     }
 
-    // 5. SEÇÃO III: PLANEJAMENTO ALIMENTAR (CARDÁPIO)
-    doc.addHeading("3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)", 1);
-    
-    const cardapioRows = [];
-    plano.forEach(ref => {
-      let alimentosFormatados = ref.alimentos || "";
-      if (Array.isArray(ref.itens) && ref.itens.length > 0) {
-        const itemLines = ref.itens.map(it => {
-          const parts = [];
-          if (it.medidaCaseira && String(it.medidaCaseira).trim()) {
-            parts.push(String(it.medidaCaseira).trim());
-          }
-          if (it.gramatura) {
-            parts.push(`${it.gramatura}g`);
-          }
-          let line = it.alimentoNome || "Alimento";
-          if (parts.length > 0) {
-            line += ` (${parts.join(" - ")})`;
-          }
-          if (it.kcal !== undefined && it.kcal !== null && it.kcal !== "") {
-            line += ` [${it.kcal} kcal]`;
-          }
-          return "• " + line;
-        });
-        alimentosFormatados = itemLines.join("\n");
-        if (ref.tipoPreparacao) {
-          alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
-        }
-        if (ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
-          alimentosFormatados += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
-        }
-      } else if (ref.tipoPreparacao) {
-        alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+    // 5. SEÇÃO III: PLANEJAMENTO ALIMENTAR (CARDÁPIO ORAL OU TNE)
+    const tne = studentData.tne || {};
+    if (tne.viaAlimentacao === "tne") {
+      doc.addHeading("3. PRESCRIÇÃO DE TERAPIA NUTRICIONAL ENTERAL (TNE)", 1);
+      const viaAdminText = tne.viaAdministracao === "bomba" 
+        ? "Bomba de Infusão Contínua / Automatizada" 
+        : "Infusão Gravitacional Intermitente";
+      
+      const tneRows = [
+        ["Via de Nutrição", "Terapia Nutricional Enteral (TNE)", "Via especializada não-oral"],
+        ["Tipo de Dieta Enteral", tne.tipoDieta || "Não especificado", "Fórmula enteral padronizada"],
+        ["Densidade Calórica", tne.densidadeCalorica || "Não informada", "Concentração calórica (kcal/mL)"],
+        ["Fracionamento / Horários", tne.fracionamento || "Não informado", "Distribuição diária"],
+        ["Método de Infusão", viaAdminText, "Via de administração programada"]
+      ];
+
+      if (tne.viaAdministracao === "bomba") {
+        const b = tne.bombaInfusao || {};
+        tneRows.push(["Tempo de Infusão Programado", b.tempoInfusaoHoras ? `${b.tempoInfusaoHoras} horas/dia` : "Não informado", "Infusão contínua na bomba"]);
+        tneRows.push(["Meta-Vazão Horária", b.metaVazaoMlHora ? `${b.metaVazaoMlHora} mL/h` : "Não calculada", "Taxa de infusão horária"]);
+      } else {
+        const g = tne.gravitacional || {};
+        tneRows.push(["Distribuição / Volume por Refeição", g.volumePorRefeicao ? `${g.volumePorRefeicao} mL` : "Não informado", "Volume por frasco/etapa"]);
+        tneRows.push(["Quantidade de Frascos / Etapas", g.quantidadeFrascosEtapas ? `${g.quantidadeFrascosEtapas} frascos/etapas` : "Não informado", "Fracionamento diário"]);
+        tneRows.push(["Meta-Vazão Calculada", g.metaVazaoGotasMin ? `${g.metaVazaoGotasMin} gotas/min` : "Não calculada", "Gotejamento gravitacional"]);
       }
 
-      cardapioRows.push([
-        `${ref.refeicao}\n(${ref.horario || '--:--'})`,
-        alimentosFormatados || "Alimentos não especificados",
-        ref.substituicoes || "Não descrita"
-      ]);
-    });
-
-    if (cardapioRows.length > 0) {
       doc.addTable(
-        ["Refeição e Horário", "Tipo de Preparação, Alimentos e Gramaturas (TACO)", "Opções de Substituição"],
-        cardapioRows,
-        [2400, 5000, 1600]
+        ["Parâmetro de TNE Prescrito", "Especificação / Cálculo do Aluno", "Finalidade Técnica"],
+        tneRows,
+        [3200, 3000, 2800]
       );
+
+      if (tne.moduloSuplementacaoProteica) {
+        doc.addCallout(
+          "MÓDULO DE SUPLEMENTAÇÃO PROTEICA:",
+          tne.moduloSuplementacaoProteica,
+          "0284c7",
+          "f0f9ff"
+        );
+      }
     } else {
-      doc.addParagraph("Nenhuma refeição detalhada no planejamento alimentar.");
+      doc.addHeading("3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)", 1);
+      
+      const cardapioRows = [];
+      plano.forEach(ref => {
+        let alimentosFormatados = ref.alimentos || "";
+        if (Array.isArray(ref.itens) && ref.itens.length > 0) {
+          const itemLines = ref.itens.map(it => {
+            const parts = [];
+            if (it.medidaCaseira && String(it.medidaCaseira).trim()) {
+              parts.push(String(it.medidaCaseira).trim());
+            }
+            if (it.gramatura) {
+              parts.push(`${it.gramatura}g`);
+            }
+            let line = it.alimentoNome || "Alimento";
+            if (parts.length > 0) {
+              line += ` (${parts.join(" - ")})`;
+            }
+            if (it.kcal !== undefined && it.kcal !== null && it.kcal !== "") {
+              line += ` [${it.kcal} kcal]`;
+            }
+            return "• " + line;
+          });
+          alimentosFormatados = itemLines.join("\n");
+          if (ref.tipoPreparacao) {
+            alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+          }
+          if (ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
+            alimentosFormatados += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
+          }
+        } else if (ref.tipoPreparacao) {
+          alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+        }
+
+        cardapioRows.push([
+          `${ref.refeicao}\n(${ref.horario || '--:--'})`,
+          alimentosFormatados || "Alimentos não especificados",
+          ref.substituicoes || "Não descrita"
+        ]);
+      });
+
+      if (cardapioRows.length > 0) {
+        doc.addTable(
+          ["Refeição e Horário", "Tipo de Preparação, Alimentos e Gramaturas (TACO)", "Opções de Substituição"],
+          cardapioRows,
+          [2400, 5000, 1600]
+        );
+      } else {
+        doc.addParagraph("Nenhuma refeição detalhada no planejamento alimentar.");
+      }
+
+      // Tabela de Totais Consolidados do Cardápio vs Metas Prescritas
+      const totais = studentData.totaisCardapio;
+      const hasTotais = totais && (totais.vetTotalKcal > 0 || (Array.isArray(plano) && plano.some(r => r.itens && r.itens.length > 0)));
+      if (hasTotais) {
+        doc.addHeading("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas", 2);
+        const rowsTotais = [
+          ["VET Total Planejado no Cardápio", `${totais.vetTotalKcal || 0} kcal/dia`, `Meta Prescrita: ${presc.vetKcal || '--'} kcal`],
+          ["Adequação do VET do Cardápio", `${totais.adequacaoVetPct ? totais.adequacaoVetPct + '%' : '--'}`, `${totais.classificacaoAdequacao || 'Adequação calórica do cardápio'}`],
+          [
+            "Carboidratos do Cardápio", 
+            `${totais.carboidratosG || 0} g (${totais.carboidratosPct || 0}% do VET)`, 
+            totais.statusMacros?.cho ? `Status: ${totais.statusMacros.cho.label} (${presc.distribuicaoMacros?.cho?.minG || '--'}g a ${presc.distribuicaoMacros?.cho?.maxG || '--'}g)` : `Prescrito: ${presc.carboidratosG || '--'} g`
+          ],
+          [
+            "Proteínas do Cardápio", 
+            `${totais.proteinasG || 0} g (${totais.proteinasGKg ? totais.proteinasGKg + ' g/kg' : '--'}, ${totais.proteinasPct || 0}%)`, 
+            totais.statusMacros?.ptn ? `Status: ${totais.statusMacros.ptn.label} (${presc.distribuicaoMacros?.ptn?.minG || '--'}g a ${presc.distribuicaoMacros?.ptn?.maxG || '--'}g)` : `Prescrito: ${presc.proteinasG || '--'} g`
+          ],
+          [
+            "Lipídios do Cardápio", 
+            `${totais.lipidiosG || 0} g (${totais.lipidiosPct || 0}% do VET)`, 
+            totais.statusMacros?.lip ? `Status: ${totais.statusMacros.lip.label} (${presc.distribuicaoMacros?.lip?.minG || '--'}g a ${presc.distribuicaoMacros?.lip?.maxG || '--'}g)` : `Prescrito: ${presc.lipidiosG || '--'} g`
+          ],
+          ["Fibras Alimentares Totais", `${totais.fibrasG || 0} g/dia`, "Composição oficial TACO (UNICAMP)"],
+          ["Cálcio (Ca) no Cardápio", `${totais.calcioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+          ["Ferro (Fe) no Cardápio", `${totais.ferroMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+          ["Sódio (Na) no Cardápio", `${totais.sodioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
+          ["Potássio (K) no Cardápio", `${totais.potassioMg || 0} mg/dia`, "Micronutriente oficial TACO"]
+        ];
+        doc.addTable(
+          ["Parâmetro Nutricional Consolidado", "Aporte Obtido no Cardápio", "Régua da Prescrição Dietética"],
+          rowsTotais,
+          [3400, 2800, 2800]
+        );
+      }
     }
 
-    // Tabela de Totais Consolidados do Cardápio vs Metas Prescritas
-    const totais = studentData.totaisCardapio;
-    const hasTotais = totais && (totais.vetTotalKcal > 0 || (Array.isArray(plano) && plano.some(r => r.itens && r.itens.length > 0)));
-    if (hasTotais) {
-      doc.addHeading("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas", 2);
-      const rowsTotais = [
-        ["VET Total Planejado no Cardápio", `${totais.vetTotalKcal || 0} kcal/dia`, `Meta Prescrita: ${presc.vetKcal || '--'} kcal`],
-        ["Adequação do VET do Cardápio", `${totais.adequacaoVetPct ? totais.adequacaoVetPct + '%' : '--'}`, `${totais.classificacaoAdequacao || 'Adequação calórica do cardápio'}`],
-        [
-          "Carboidratos do Cardápio", 
-          `${totais.carboidratosG || 0} g (${totais.carboidratosPct || 0}% do VET)`, 
-          totais.statusMacros?.cho ? `Status: ${totais.statusMacros.cho.label} (${presc.distribuicaoMacros?.cho?.minG || '--'}g a ${presc.distribuicaoMacros?.cho?.maxG || '--'}g)` : `Prescrito: ${presc.carboidratosG || '--'} g`
-        ],
-        [
-          "Proteínas do Cardápio", 
-          `${totais.proteinasG || 0} g (${totais.proteinasGKg ? totais.proteinasGKg + ' g/kg' : '--'}, ${totais.proteinasPct || 0}%)`, 
-          totais.statusMacros?.ptn ? `Status: ${totais.statusMacros.ptn.label} (${presc.distribuicaoMacros?.ptn?.minG || '--'}g a ${presc.distribuicaoMacros?.ptn?.maxG || '--'}g)` : `Prescrito: ${presc.proteinasG || '--'} g`
-        ],
-        [
-          "Lipídios do Cardápio", 
-          `${totais.lipidiosG || 0} g (${totais.lipidiosPct || 0}% do VET)`, 
-          totais.statusMacros?.lip ? `Status: ${totais.statusMacros.lip.label} (${presc.distribuicaoMacros?.lip?.minG || '--'}g a ${presc.distribuicaoMacros?.lip?.maxG || '--'}g)` : `Prescrito: ${presc.lipidiosG || '--'} g`
-        ],
-        ["Fibras Alimentares Totais", `${totais.fibrasG || 0} g/dia`, "Composição oficial TACO (UNICAMP)"],
-        ["Cálcio (Ca) no Cardápio", `${totais.calcioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
-        ["Ferro (Fe) no Cardápio", `${totais.ferroMg || 0} mg/dia`, "Micronutriente oficial TACO"],
-        ["Sódio (Na) no Cardápio", `${totais.sodioMg || 0} mg/dia`, "Micronutriente oficial TACO"],
-        ["Potássio (K) no Cardápio", `${totais.potassioMg || 0} mg/dia`, "Micronutriente oficial TACO"]
-      ];
-      doc.addTable(
-        ["Parâmetro Nutricional Consolidado", "Aporte Obtido no Cardápio", "Régua da Prescrição Dietética"],
-        rowsTotais,
-        [3400, 2800, 2800]
-      );
-    }
-
-    doc.addHeading(hasTotais ? "3.2. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento" : "3.1. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento", 2);
+    doc.addHeading("3.2. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento", 2);
     doc.addParagraph(studentData.orientacoesNutricionais || "Nenhuma orientação nutricional específica registrada.");
 
     // 6. SEÇÃO IV: RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO
-    doc.addHeading("4. RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO CLÍNICO", 1);
-    const questoes = clinicalCase.questoesAvaliativas || [];
-
-    if (questoes.length === 0) {
-      doc.addParagraph("Não foram cadastradas questões avaliativas específicas para este caso clínico.");
+    if (clinicalCase.habilitarQuestoesAvaliativas === false) {
+      doc.addHeading("4. QUESTÕES AVALIATIVAS DO CASO CLÍNICO", 1);
+      doc.addParagraph("Aba de questões avaliativas opcional desabilitada para este caso clínico pelo docente.");
     } else {
-      questoes.forEach((q, idx) => {
-        doc.addHeading(`Questão ${idx + 1}: ${q.pergunta}`, 2);
-        const respostaAluno = respostas[q.id] || "Questão não respondida pelo estudante.";
-        doc.addCallout(`Resposta do Estudante:`, respostaAluno, "0284c7", "f0f9ff");
-      });
+      doc.addHeading("4. RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO CLÍNICO", 1);
+      const questoes = clinicalCase.questoesAvaliativas || [];
+
+      if (questoes.length === 0) {
+        doc.addParagraph("Não foram cadastradas questões avaliativas específicas para este caso clínico.");
+      } else {
+        questoes.forEach((q, idx) => {
+          doc.addHeading(`Questão ${idx + 1}: ${q.pergunta}`, 2);
+          const respostaAluno = respostas[q.id] || "Questão não respondida pelo estudante.";
+          doc.addCallout(`Resposta do Estudante:`, respostaAluno, "0284c7", "f0f9ff");
+        });
+      }
     }
     return doc;
   }

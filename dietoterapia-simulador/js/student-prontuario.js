@@ -84,7 +84,8 @@ class StudentProntuarioManager {
       },
       bioquimica: {
         examesRelevantes: "",
-        interpretacaoNutricional: ""
+        interpretacaoNutricional: "",
+        interpretacoes: {}
       },
       exameFisico: {
         sinaisClinicos: "",
@@ -104,7 +105,31 @@ class StudentProntuarioManager {
         problema: "",
         etiologia: "",
         sinaisSintomas: "",
-        textoCompletoPES: ""
+        textoCompletoPES: "",
+        objetivosDietoterapicos: ""
+      },
+      calculoNecessidades: {
+        formulasSelecionadas: [],
+        bolso: {
+          minKcalKg: "",
+          maxKcalKg: "",
+          resultadoKcal: ""
+        },
+        harrisBenedict: {
+          resultadoKcal: ""
+        },
+        mifflin: {
+          resultadoKcal: ""
+        },
+        eerIom: {
+          resultadoKcal: ""
+        },
+        faoOms: {
+          resultadoKcal: ""
+        },
+        vetPlanejadoKcal: "",
+        taxaMetabolicaCalculada: "",
+        justificativaEscolha: ""
       },
       prescricaoDietoterapica: {
         vetKcal: "",
@@ -200,7 +225,24 @@ class StudentProntuarioManager {
         }
       },
       orientacoesNutricionais: "",
-      respostasQuestoes: {} // id da questão -> resposta do aluno
+      respostasQuestoes: {}, // id da questão -> resposta do aluno
+      tne: {
+        viaAlimentacao: "oral", // "oral" | "tne"
+        tipoDieta: "",
+        densidadeCalorica: "",
+        fracionamento: "",
+        viaAdministracao: "gravitacional", // "gravitacional" | "bomba"
+        gravitacional: {
+          volumePorRefeicao: "",
+          quantidadeFrascosEtapas: "",
+          metaVazaoGotasMin: ""
+        },
+        bombaInfusao: {
+          tempoInfusaoHoras: "",
+          metaVazaoMlHora: ""
+        },
+        moduloSuplementacaoProteica: ""
+      }
     };
   }
 
@@ -415,6 +457,15 @@ class StudentProntuarioManager {
     }
 
     return { percentual: pctFormatted, interpretacao };
+  }
+
+  // Calcula Taxa Metabólica Resultante (kcal/kg) baseada no VET e Peso Atual
+  calculateKcalKgRate(vetKcal, weightKg) {
+    if (!vetKcal || !weightKg) return null;
+    const vet = typeof vetKcal === "string" ? parseFloat(vetKcal.replace(",", ".")) : parseFloat(vetKcal);
+    const weight = typeof weightKg === "string" ? parseFloat(weightKg.replace(",", ".")) : parseFloat(weightKg);
+    if (isNaN(vet) || isNaN(weight) || weight <= 0 || vet <= 0) return null;
+    return (vet / weight).toFixed(1);
   }
 
   // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g da TACO
@@ -717,4 +768,169 @@ class StudentProntuarioManager {
     }
     return prepPrefix + (meal.alimentos || "");
   }
+}
+
+// Avaliador Clínico Propedêutico de Exames Bioquímicos
+// Compara o resultado com a faixa de referência e categoriza em Adequado (verde), Alto (vermelho ↑) ou Baixo (laranja/vermelho ↓)
+function evaluateBiochemicalExam(valorStr, refStr) {
+  if (!valorStr || typeof valorStr !== "string") {
+    return { status: "indeterminado", badgeClass: "bg-slate-100 text-slate-700 border-slate-200", label: "Indeterminado", seta: "", textClass: "text-slate-700" };
+  }
+
+  // 1. Extrai número do valor achado
+  const valClean = valorStr.replace(",", ".").trim();
+  const valMatch = valClean.match(/[-+]?[0-9]*\.?[0-9]+/);
+  if (!valMatch) {
+    return { status: "indeterminado", badgeClass: "bg-slate-100 text-slate-700 border-slate-200", label: "Indeterminado", seta: "", textClass: "text-slate-700" };
+  }
+  const valNum = parseFloat(valMatch[0]);
+
+  if (!refStr || typeof refStr !== "string") {
+    return { status: "indeterminado", badgeClass: "bg-slate-100 text-slate-700 border-slate-200", label: "Sem Ref.", seta: "", textClass: "text-slate-700" };
+  }
+
+  // Remove notas em parênteses para focar na faixa principal, ex: "< 5.7 % (meta < 7.0%)" -> "< 5.7 %"
+  const refClean = refStr.replace(/\(.*?\)/g, "").replace(",", ".").trim();
+
+  // Caso 1: Intervalo com hífen ou ' a ' (ex: "70 - 99 mg/dL", "0.7 - 1.2", "135 - 145", "3.5 a 5.0")
+  if (refClean.includes("-") || refClean.includes("–") || refClean.includes("—") || /\s+a\s+/i.test(refClean)) {
+    const rangeParts = refClean.split(/[-–—]|\s+a\s+/i);
+    if (rangeParts.length >= 2) {
+      const minMatch = rangeParts[0].match(/[-+]?[0-9]*\.?[0-9]+/);
+      const maxMatch = rangeParts[1].match(/[-+]?[0-9]*\.?[0-9]+/);
+      if (minMatch && maxMatch) {
+        const minVal = parseFloat(minMatch[0]);
+        const maxVal = parseFloat(maxMatch[0]);
+        if (valNum < minVal) {
+          return {
+            status: "baixo",
+            badgeClass: "bg-amber-50 text-amber-800 border-amber-300",
+            label: "Baixo",
+            seta: "↓",
+            textClass: "text-amber-700"
+          };
+        } else if (valNum > maxVal) {
+          return {
+            status: "alto",
+            badgeClass: "bg-rose-50 text-rose-700 border-rose-300",
+            label: "Alto",
+            seta: "↑",
+            textClass: "text-rose-700"
+          };
+        } else {
+          return {
+            status: "adequado",
+            badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-300",
+            label: "Adequado",
+            seta: "",
+            textClass: "text-emerald-700"
+          };
+        }
+      }
+    }
+  }
+
+  // Caso 2: Operador '<' ou '<=' ou 'inferior a'
+  if (refClean.includes("<") || /inferior|menor/i.test(refClean)) {
+    const maxMatch = refClean.match(/[-+]?[0-9]*\.?[0-9]+/);
+    if (maxMatch) {
+      const maxVal = parseFloat(maxMatch[0]);
+      if (valNum > maxVal) {
+        return {
+          status: "alto",
+          badgeClass: "bg-rose-50 text-rose-700 border-rose-300",
+          label: "Alto",
+          seta: "↑",
+          textClass: "text-rose-700"
+        };
+      } else {
+        return {
+          status: "adequado",
+          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-300",
+          label: "Adequado",
+          seta: "",
+          textClass: "text-emerald-700"
+        };
+      }
+    }
+  }
+
+  // Caso 3: Operador '>' ou '>=' ou 'superior a'
+  if (refClean.includes(">") || /superior|maior/i.test(refClean)) {
+    const minMatch = refClean.match(/[-+]?[0-9]*\.?[0-9]+/);
+    if (minMatch) {
+      const minVal = parseFloat(minMatch[0]);
+      if (valNum < minVal) {
+        return {
+          status: "baixo",
+          badgeClass: "bg-amber-50 text-amber-800 border-amber-300",
+          label: "Baixo",
+          seta: "↓",
+          textClass: "text-amber-700"
+        };
+      } else {
+        return {
+          status: "adequado",
+          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-300",
+          label: "Adequado",
+          seta: "",
+          textClass: "text-emerald-700"
+        };
+      }
+    }
+  }
+
+  return {
+    status: "adequado",
+    badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-300",
+    label: "Adequado",
+    seta: "",
+    textClass: "text-emerald-700"
+  };
+}
+
+// Renderiza a célula de 'Valor Achado' com sinalização visual por cores e ícones de setas
+function renderBiochemicalValueCell(valorStr, refStr) {
+  const evalRes = evaluateBiochemicalExam(valorStr, refStr);
+  const valEscaped = (typeof escapeHtml === "function") ? escapeHtml(valorStr || "") : (valorStr || "");
+
+  if (evalRes.status === "alto") {
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+        <span class="font-extrabold text-slate-800">${valEscaped}</span>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 tracking-wider">
+          Alto <span class="text-xs font-black ml-0.5 leading-none">↑</span>
+        </span>
+      </div>
+    `;
+  } else if (evalRes.status === "baixo") {
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+        <span class="font-extrabold text-slate-800">${valEscaped}</span>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 tracking-wider">
+          Baixo <span class="text-xs font-black ml-0.5 leading-none">↓</span>
+        </span>
+      </div>
+    `;
+  } else if (evalRes.status === "adequado") {
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+        <span class="font-extrabold text-slate-800">${valEscaped}</span>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 tracking-wider">
+          Adequado
+        </span>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium text-xs bg-slate-50 text-slate-700 border border-slate-200">
+        <span>${valEscaped}</span>
+      </div>
+    `;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.evaluateBiochemicalExam = evaluateBiochemicalExam;
+  window.renderBiochemicalValueCell = renderBiochemicalValueCell;
 }
