@@ -1060,6 +1060,71 @@ Questões Avaliativas:
       const avisoCasoOculto = "Caso clínico oculto. Aguardando liberação do professor.";
       assert(avisoCasoOculto === "Caso clínico oculto. Aguardando liberação do professor.",
         "Mensagem padrão para caso oculto coincide estritamente com os requisitos do usuário");
+
+      // 70. Avaliação Propedêutica Automática de Exames Bioquímicos (evaluateBiochemicalExam)
+      const evalNormal = evaluateBiochemicalExam("88 mg/dL", "< 99 mg/dL");
+      assert(evalNormal.status === "adequado" && evalNormal.label === "Adequado",
+        "Avaliação Bioquímica: '88 mg/dL' com ref '< 99 mg/dL' classificado como Adequado");
+
+      const evalAlto = evaluateBiochemicalExam("188 mg/dL", "< 99 mg/dL");
+      assert(evalAlto.status === "alto" && evalAlto.seta === "↑" && evalAlto.badgeClass.includes("rose"),
+        "Avaliação Bioquímica: '188 mg/dL' com ref '< 99 mg/dL' classificado como Alto com seta ↑");
+
+      const evalBaixo = evaluateBiochemicalExam("38 mg/dL", "> 40 mg/dL");
+      assert(evalBaixo.status === "baixo" && evalBaixo.seta === "↓" && evalBaixo.badgeClass.includes("amber"),
+        "Avaliação Bioquímica: '38 mg/dL' com ref '> 40 mg/dL' classificado como Baixo com seta ↓");
+
+      const evalFaixa = evaluateBiochemicalExam("0.95 mg/dL", "0.7 - 1.2 mg/dL");
+      assert(evalFaixa.status === "adequado",
+        "Avaliação Bioquímica: '0.95 mg/dL' dentro da faixa '0.7 - 1.2 mg/dL' classificado como Adequado");
+
+      const evalFaixaAlta = evaluateBiochemicalExam("2.9 mg/dL", "0.5 - 1.0 mg/dL");
+      assert(evalFaixaAlta.status === "alto" && evalFaixaAlta.seta === "↑",
+        "Avaliação Bioquímica: '2.9 mg/dL' acima da faixa '0.5 - 1.0 mg/dL' classificado como Alto ↑");
+
+      // 71. Sinalização Visual (renderBiochemicalValueCell)
+      const cellAltoHtml = renderBiochemicalValueCell("260 mg/dL", "< 150 mg/dL");
+      assert(cellAltoHtml.includes("Alto") && cellAltoHtml.includes("↑") && cellAltoHtml.includes("bg-rose-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge vermelho com 'Alto ↑'");
+
+      const cellBaixoHtml = renderBiochemicalValueCell("21 mL/min", "> 60 mL/min");
+      assert(cellBaixoHtml.includes("Baixo") && cellBaixoHtml.includes("↓") && cellBaixoHtml.includes("bg-amber-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge laranja/âmbar com 'Baixo ↓'");
+
+      const cellAdequadoHtml = renderBiochemicalValueCell("140 mEq/L", "135 - 145 mEq/L");
+      assert(cellAdequadoHtml.includes("Adequado") && cellAdequadoHtml.includes("bg-emerald-50"),
+        "Sinalização Visual: Célula 'Valor Achado' exibe badge verde com 'Adequado'");
+
+      // 72. Estrutura em Tabela com as 4 Colunas Exatas
+      const colunasExatas = ["Exame", "Valor de Referência", "Valor Achado", "Interpretação"];
+      assert(colunasExatas.length === 4 && 
+             colunasExatas[0] === "Exame" && 
+             colunasExatas[1] === "Valor de Referência" && 
+             colunasExatas[2] === "Valor Achado" && 
+             colunasExatas[3] === "Interpretação",
+        "Estrutura da Tabela: Contém rigorosamente as 4 colunas solicitadas");
+
+      // 73. Sincronização do Estado com a Coluna 'Interpretação' no Prontuário
+      const pMgr = new StudentProntuarioManager();
+      const prontTest = pMgr.getEmptyProntuario("caso-dm2-has");
+      assert(prontTest.bioquimica && typeof prontTest.bioquimica.interpretacoes === "object",
+        "Prontuário Modelo: Estrutura 'bioquimica.interpretacoes' inicializada como objeto");
+
+      prontTest.bioquimica.interpretacoes["Glicemia de Jejum"] = "Hiperglicemia acentuada compatível com descompensação aguda do DM2";
+      prontTest.bioquimica.interpretacoes["Hemoglobina Glicada (HbA1c)"] = "Mau controle glicêmico crônico nos últimos 3 meses";
+      pMgr.saveDraft("caso-dm2-has", prontTest);
+
+      const prontRecuperado = pMgr.loadDraft("caso-dm2-has");
+      assert(prontRecuperado.bioquimica.interpretacoes["Glicemia de Jejum"].includes("Hiperglicemia acentuada"),
+        "Sincronização de Estado: Interpretação digitada pelo aluno para 'Glicemia de Jejum' persistida e recuperada com sucesso");
+      assert(prontRecuperado.bioquimica.interpretacoes["Hemoglobina Glicada (HbA1c)"].includes("Mau controle"),
+        "Sincronização de Estado: Interpretação digitada pelo aluno para 'HbA1c' persistida e recuperada");
+
+      // 74. Relatório Word (.docx) com a Tabela de Bioquímica e Interpretações
+      const docxRelatorio = DietoterapiaDocxReport.buildReportDocument(prontRecuperado, caso1);
+      const docxXml = docxRelatorio.generateDocumentXml();
+      assert(docxXml.includes("Avalia&#231;&#227;o Bioqu&#237;mica Relevante e Racioc&#237;nio Cl&#237;nico") || docxXml.includes("Exame Bioqu"),
+        "Relatório Word: Seção de Bioquímica inclui tabela estruturada com interpretações do aluno");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

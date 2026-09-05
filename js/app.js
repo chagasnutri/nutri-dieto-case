@@ -224,6 +224,20 @@ document.addEventListener("DOMContentLoaded", () => {
           updateCalculoNecessidadesDisplay();
           updatePrescriptionCalculations();
         }
+        if (urlParams.get("demo") === "bioquimica") {
+          if (appState.currentProntuario) {
+            if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
+            appState.currentProntuario.bioquimica.interpretacoes = {
+              "Glicemia de Jejum": "Hiperglicemia acentuada (> 126 mg/dL), indicando descontrole glicêmico grave e resistência periférica à insulina.",
+              "Hemoglobina Glicada (HbA1c)": "Controle glicêmico crônico inadequado (> 7.0%), com elevado risco micro e macrovascular.",
+              "Colesterol Total": "Hipercolesterolemia moderada associada ao descontrole metabólico e perfil lipídico aterogênico.",
+              "HDL-Colesterol": "HDL reduzido (< 40 mg/dL), configurando fator de risco cardiovascular independente.",
+              "Triglicerídeos": "Hipertrigliceridemia moderada (> 150 mg/dL), fortemente ligada à dieta hiperglicídica de alto índice glicêmico."
+            };
+            appState.currentProntuario.bioquimica.interpretacaoNutricional = "Quadro de descompensação metabólica com síndrome de resistência insulínica e dislipidemia mista aterogênica. A intervenção dietoterápica prioritária deve focar no controle de carboidratos refinados, aumento de fibras solúveis e substituição de gorduras saturadas por mono e poli-insaturadas.";
+          }
+          populateProntuarioForm();
+        }
         if (urlParams.get("demo") === "prescricao") {
           if (appState.currentProntuario) {
             if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
@@ -1385,9 +1399,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontCircunferencias").value = p.antropometria.circunferenciasDobras || "";
     updateAnthropometricCalculations();
 
-    // Bioquímica
-    document.getElementById("prontExamesRelevantes").value = p.bioquimica.examesRelevantes || "";
-    document.getElementById("prontInterpretacaoBioq").value = p.bioquimica.interpretacaoNutricional || "";
+    // Bioquímica (Tabela Moderna de 4 Colunas e Raciocínio Clínico)
+    if (!p.bioquimica) p.bioquimica = {};
+    if (!p.bioquimica.interpretacoes) p.bioquimica.interpretacoes = {};
+    renderStudentBioTable(appState.currentCase?.bioquimica || [], p.bioquimica.interpretacoes);
+    if (document.getElementById("prontExamesRelevantes")) {
+      document.getElementById("prontExamesRelevantes").value = p.bioquimica.examesRelevantes || "";
+    }
+    if (document.getElementById("prontInterpretacaoBioq")) {
+      document.getElementById("prontInterpretacaoBioq").value = p.bioquimica.interpretacaoNutricional || "";
+    }
 
     // Exame Físico
     document.getElementById("prontSinaisClinicos").value = p.exameFisico.sinaisClinicos || "";
@@ -1531,9 +1552,23 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.percentualPerda = document.getElementById("calculatedLossDisplay").textContent.trim();
     p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias").value.trim();
 
-    // Bioquímica
-    p.bioquimica.examesRelevantes = document.getElementById("prontExamesRelevantes").value.trim();
-    p.bioquimica.interpretacaoNutricional = document.getElementById("prontInterpretacaoBioq").value.trim();
+    // Bioquímica (Tabela Moderna de 4 Colunas e Raciocínio Clínico)
+    if (!p.bioquimica) p.bioquimica = {};
+    if (!p.bioquimica.interpretacoes) p.bioquimica.interpretacoes = {};
+    const bioTextareas = document.querySelectorAll("#studentBioTableBody .student-bio-interp");
+    bioTextareas.forEach(ta => {
+      const examName = ta.dataset.exam;
+      if (examName) {
+        p.bioquimica.interpretacoes[examName] = ta.value.trim();
+      }
+    });
+    syncBioquimicaExamesRelevantesText();
+    if (document.getElementById("prontExamesRelevantes")) {
+      p.bioquimica.examesRelevantes = document.getElementById("prontExamesRelevantes").value.trim();
+    }
+    if (document.getElementById("prontInterpretacaoBioq")) {
+      p.bioquimica.interpretacaoNutricional = document.getElementById("prontInterpretacaoBioq").value.trim();
+    }
 
     // Exame Físico
     p.exameFisico.sinaisClinicos = document.getElementById("prontSinaisClinicos").value.trim();
@@ -3119,6 +3154,103 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCalculoNecessidadesListeners();
   window.setupCalculoNecessidadesListeners = setupCalculoNecessidadesListeners;
 
+  // Renderiza a Tabela Moderna de Exames Bioquímicos do Aluno (4 Colunas)
+  function renderStudentBioTable(bioList = null, existingInterpretacoes = null) {
+    const list = bioList || appState.currentCase?.bioquimica || [];
+    const interps = existingInterpretacoes || appState.currentProntuario?.bioquimica?.interpretacoes || {};
+    const tbody = document.getElementById("studentBioTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (!Array.isArray(list) || list.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
+            Nenhum exame laboratorial apurado para este caso clínico.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    list.forEach((item, idx) => {
+      const tr = document.createElement("tr");
+      tr.className = idx % 2 === 0 ? "bg-white hover:bg-slate-50/70 transition" : "bg-slate-50/40 hover:bg-slate-50/90 transition";
+
+      const exameNome = item.exame || `Exame ${idx + 1}`;
+      const refStr = item.referencia || "-";
+      const valorAchado = item.valor || "-";
+      const savedInterp = (interps && interps[exameNome] !== undefined)
+        ? interps[exameNome]
+        : (interps && interps[idx] !== undefined ? interps[idx] : "");
+
+      const badgeHtml = (typeof renderBiochemicalValueCell === "function")
+        ? renderBiochemicalValueCell(valorAchado, refStr)
+        : `<span class="font-bold text-slate-800">${escapeHtml(valorAchado)}</span>`;
+
+      tr.innerHTML = `
+        <td class="py-3 px-4 align-top">
+          <div class="flex items-start space-x-2">
+            <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
+            <div>
+              <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
+              <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 px-3 align-top">
+          <span class="inline-block font-mono text-[11px] text-slate-600 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200">
+            ${escapeHtml(refStr)}
+          </span>
+        </td>
+        <td class="py-3 px-3 align-top">
+          ${badgeHtml}
+        </td>
+        <td class="py-2.5 px-4 align-top">
+          <textarea 
+            class="student-bio-interp w-full text-xs p-2 border border-slate-300 rounded-lg bg-white focus:bg-emerald-50/20 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition resize-y shadow-2xs" 
+            rows="2" 
+            data-exam="${escapeHtml(exameNome)}" 
+            data-idx="${idx}" 
+            placeholder="Interprete este achado clínico (ex: diagnóstico provável, risco metabólico e impacto dietoterápico)..."
+          >${escapeHtml(savedInterp)}</textarea>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Sincronização imediata no estado ao digitar
+    tbody.querySelectorAll(".student-bio-interp").forEach(textarea => {
+      textarea.addEventListener("input", (e) => {
+        const exam = e.target.dataset.exam;
+        const val = e.target.value;
+        if (appState.currentProntuario) {
+          if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
+          if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
+          appState.currentProntuario.bioquimica.interpretacoes[exam] = val;
+          syncBioquimicaExamesRelevantesText();
+        }
+      });
+    });
+  }
+
+  // Gera texto consolidado de exames para compatibilidade com relatórios e validações
+  function syncBioquimicaExamesRelevantesText() {
+    if (!appState.currentProntuario || !appState.currentCase) return;
+    const bioList = appState.currentCase.bioquimica || [];
+    const interps = appState.currentProntuario.bioquimica?.interpretacoes || {};
+    const relevantSummary = bioList.map(item => {
+      const interp = interps[item.exame] ? ` [Interpretação: ${interps[item.exame]}]` : "";
+      return `${item.exame}: ${item.valor} (Ref: ${item.referencia})${interp}`;
+    }).join("; ");
+
+    const hiddenInput = document.getElementById("prontExamesRelevantes");
+    if (hiddenInput) hiddenInput.value = relevantSummary;
+    if (appState.currentProntuario.bioquimica) {
+      appState.currentProntuario.bioquimica.examesRelevantes = relevantSummary;
+    }
+  }
+
   function renderCaseLabExamsBadge() {
     const list = appState.currentCase?.bioquimica || [];
     const container = document.getElementById("labExamsContainer");
@@ -3129,12 +3261,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    container.innerHTML = list.map(item => `
-      <div class="bg-slate-50 border border-slate-200 rounded p-1.5 text-[11px] mb-1">
-        <div class="font-medium text-slate-800">${escapeHtml(item.exame)}</div>
-        <div class="text-emerald-700 font-semibold">${escapeHtml(item.valor)} <span class="text-slate-400 font-normal">(${escapeHtml(item.referencia)})</span></div>
-      </div>
-    `).join("");
+    container.innerHTML = list.map(item => {
+      const badge = (typeof renderBiochemicalValueCell === "function")
+        ? renderBiochemicalValueCell(item.valor, item.referencia)
+        : `<span class="text-emerald-700 font-semibold">${escapeHtml(item.valor)}</span>`;
+      return `
+        <div class="bg-white border border-slate-200 rounded-lg p-2 text-[11px] mb-1.5 shadow-2xs">
+          <div class="font-bold text-slate-800 mb-1 flex items-center justify-between">
+            <span>${escapeHtml(item.exame)}</span>
+            <span class="text-[10px] text-slate-400 font-mono">Ref: ${escapeHtml(item.referencia)}</span>
+          </div>
+          <div>${badge}</div>
+        </div>
+      `;
+    }).join("");
   }
 
   // Renderiza perguntas avaliativas específicas do caso
@@ -4822,14 +4962,37 @@ document.addEventListener("DOMContentLoaded", () => {
     bioList.forEach((item, idx) => {
       const tr = document.createElement("tr");
       tr.className = "border-b border-slate-100";
+      const evalBadge = (typeof renderBiochemicalValueCell === "function")
+        ? renderBiochemicalValueCell(item.valor || "", item.referencia || "")
+        : "";
+
       tr.innerHTML = `
         <td class="p-1.5"><input type="text" class="w-full border rounded px-2 py-1 text-xs bio-exame" value="${escapeHtml(item.exame || '')}"></td>
-        <td class="p-1.5"><input type="text" class="w-full border rounded px-2 py-1 text-xs bio-valor" value="${escapeHtml(item.valor || '')}"></td>
-        <td class="p-1.5"><input type="text" class="w-full border rounded px-2 py-1 text-xs bio-ref" value="${escapeHtml(item.referencia || '')}"></td>
+        <td class="p-1.5">
+          <div class="space-y-1">
+            <input type="text" class="w-full border rounded px-2 py-1 text-xs bio-valor font-semibold text-slate-800" value="${escapeHtml(item.valor || '')}">
+            <div class="admin-bio-eval-preview text-[10px]">${evalBadge}</div>
+          </div>
+        </td>
+        <td class="p-1.5"><input type="text" class="w-full border rounded px-2 py-1 text-xs bio-ref font-mono" value="${escapeHtml(item.referencia || '')}"></td>
         <td class="p-1.5"><input type="text" class="w-full border rounded px-2 py-1 text-xs bio-interp" value="${escapeHtml(item.interpretacao || '')}"></td>
-        <td class="p-1.5 text-center"><button type="button" class="text-rose-500 font-bold hover:text-rose-700 remove-bio-row" data-idx="${idx}">✕</button></td>
+        <td class="p-1.5 text-center"><button type="button" class="text-rose-500 font-bold hover:text-rose-700 remove-bio-row cursor-pointer" data-idx="${idx}">✕</button></td>
       `;
       tbody.appendChild(tr);
+    });
+
+    // Atualiza preview ao vivo ao digitar valor ou referência no painel do professor
+    tbody.querySelectorAll("tr").forEach(row => {
+      const valInput = row.querySelector(".bio-valor");
+      const refInput = row.querySelector(".bio-ref");
+      const preview = row.querySelector(".admin-bio-eval-preview");
+      const updatePreview = () => {
+        if (preview && typeof renderBiochemicalValueCell === "function") {
+          preview.innerHTML = renderBiochemicalValueCell(valInput.value, refInput.value);
+        }
+      };
+      if (valInput) valInput.addEventListener("input", updatePreview);
+      if (refInput) refInput.addEventListener("input", updatePreview);
     });
 
     tbody.querySelectorAll(".remove-bio-row").forEach(btn => {

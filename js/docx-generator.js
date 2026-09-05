@@ -151,9 +151,44 @@ class DietoterapiaDocxReport {
       );
     }
 
-    doc.addHeading("1.4. Avaliação Bioquímica Relevante", 2);
-    doc.addParagraph(bio.examesRelevantes ? `Exames laboratoriais apurados: ${bio.examesRelevantes}` : "Exames apurados: Nenhum exame relatado.");
-    doc.addParagraph(bio.interpretacaoNutricional ? `Interpretação nutricional dos exames: ${bio.interpretacaoNutricional}` : "Interpretação nutricional: Não informada.");
+    doc.addHeading("1.4. Avaliação Bioquímica Relevante e Raciocínio Clínico", 2);
+    const caseBio = clinicalCase.bioquimica || [];
+    const interps = bio.interpretacoes || {};
+
+    if (Array.isArray(caseBio) && caseBio.length > 0) {
+      const bioRows = caseBio.map(item => {
+        const evalRes = (typeof evaluateBiochemicalExam === "function")
+          ? evaluateBiochemicalExam(item.valor, item.referencia)
+          : { label: "Apurado", seta: "" };
+        const statusStr = evalRes.seta ? `${item.valor} [${evalRes.label} ${evalRes.seta}]` : `${item.valor} [${evalRes.label}]`;
+        const interpAluno = interps[item.exame] || "Não informada individualmente.";
+        return [
+          item.exame || "Exame",
+          item.referencia || "-",
+          statusStr,
+          interpAluno
+        ];
+      });
+
+      doc.addTable(
+        ["Exame Bioquímico", "Valor de Referência", "Valor Achado (Status)", "Interpretação Clínica do Aluno"],
+        bioRows,
+        [2600, 2000, 2000, 2400]
+      );
+    } else if (bio.examesRelevantes) {
+      doc.addParagraph(`Exames laboratoriais apurados: ${bio.examesRelevantes}`);
+    } else {
+      doc.addParagraph("Nenhum exame laboratorial relatado.");
+    }
+
+    if (bio.interpretacaoNutricional) {
+      doc.addCallout(
+        "SÍNTESE E RACIOCÍNIO CLÍNICO-NUTRICIONAL GLOBAL:",
+        bio.interpretacaoNutricional,
+        "059669",
+        "ecfdf5"
+      );
+    }
 
     doc.addHeading("1.5. Exame Físico Nutricional e Sinais Clínicos", 2);
     doc.addParagraph(ef.sinaisClinicos ? `Sinais clínicos de carência / integridade: ${ef.sinaisClinicos}` : "Sinais clínicos: Não relatados.");
