@@ -78,33 +78,58 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAdminDisciplineTabs();
     showStudentCatalog();
 
-    // Inicializa o Motor de Sincronização Automática com o Servidor Central
+    // Inicializa o Motor de Sincronização Automática com o Servidor Central / Firebase
     if (typeof dietoSyncEngine !== "undefined") {
+      const badge = document.getElementById("navSyncBadge");
+      if (badge) {
+        badge.style.cursor = "pointer";
+        badge.addEventListener("click", () => {
+          openFirebaseConfigModal();
+        });
+      }
+
       dietoSyncEngine.onStatusChange((status) => {
         const badge = document.getElementById("navSyncBadge");
         const dot = document.getElementById("navSyncDot");
         const text = document.getElementById("navSyncText");
         if (!badge || !dot || !text) return;
         badge.classList.remove("hidden");
-        if (status === "syncing") {
+
+        if (status === "online_firebase") {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5";
+          text.textContent = "Nuvem Ativa (Firestore)";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer hover:bg-emerald-100 transition";
+          badge.title = "Conectado ao Firebase Firestore em tempo real. Clique para gerenciar.";
+        } else if (status === "syncing") {
           dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5";
           text.textContent = "Sincronizando...";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs cursor-pointer";
+        } else if (status === "unconfigured_firebase") {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5";
+          text.textContent = "Nuvem: Chaves Pendentes";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs cursor-pointer hover:bg-amber-100 transition";
+          badge.title = "Chaves do Firebase pendentes. Operando em modo local. Clique para inserir.";
+        } else if (status === "error_firebase") {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5";
+          text.textContent = "Nuvem com Erro";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs cursor-pointer hover:bg-rose-100 transition";
+          badge.title = "Erro ao comunicar com o Firebase. Clique para verificar credenciais.";
         } else if (status === "online") {
           dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5";
           text.textContent = "Servidor Conectado";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs cursor-pointer";
         } else {
           dot.className = "w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5";
           text.textContent = "Modo Local";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 shadow-2xs";
+          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 shadow-2xs cursor-pointer hover:bg-slate-100 transition";
+          badge.title = "Operando em modo local neste navegador. Clique para conectar à nuvem.";
         }
       });
 
-      dietoSyncEngine.onDataUpdated(({ disciplinas, cases, isInitial }) => {
-        syncAppStateAndNotify();
+      dietoSyncEngine.onDataUpdated(({ disciplinas, cases, isInitial, isRemote }) => {
+        syncAppStateAndNotify(null, false);
         if (!isTeacherAuthenticated && !isInitial) {
-          showToast("🔄 Disciplinas e casos atualizados em tempo real pelo professor!");
+          showToast("🔄 Disciplinas, casos e travas atualizados em tempo real pelo professor!");
         }
       });
 
@@ -387,6 +412,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const admTabBtn = document.querySelector(`.admin-editor-tab-btn[data-admintab="${requestedAdminTab}"]`);
         if (admTabBtn) admTabBtn.click();
       }, 150);
+    }
+
+    const openModalParam = urlParams.get("openModal");
+    if (openModalParam === "firebase") {
+      setTimeout(() => openFirebaseConfigModal(), 200);
+    } else if (openModalParam === "blocked") {
+      setTimeout(() => openStudentBlockedTabModal("bioquimica"), 200);
+    }
+
+    if (urlParams.get("demo") === "student_blocked") {
+      setTimeout(() => {
+        if (appState.currentCase) {
+          appState.currentCase.blockedTabs = ["bioquimica", "pes", "prescricao"];
+          applyStudentTabBlockingState(appState.currentCase);
+        }
+      }, 200);
     }
 
     if (urlParams.get("modal") === "newdisc") {
@@ -950,7 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Sincronização centralizada e re-renderização imediata de todas as telas (Aluno e Professor)
-  function syncAppStateAndNotify(toastMessage = null) {
+  function syncAppStateAndNotify(toastMessage = null, shouldTriggerSync = true) {
     adminManager.refreshDisciplinas();
     adminManager.refreshCases();
 
@@ -971,10 +1012,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (appState.currentCase) {
       const updated = adminManager.getCaseById(appState.currentCase.id);
       if (updated) {
+        const wasLocked = appState.currentCase.isLocked;
         appState.currentCase = updated;
         const patHeader = document.getElementById("simPatientHeaderName");
         if (patHeader) patHeader.textContent = updated.patient?.name || updated.title;
         updateInterlocutorDropdown(updated);
+
+        // Aplica bloqueio de abas em tempo real
+        applyStudentTabBlockingState(updated);
+
+        // Notifica aluno se o caso foi trancado ou liberado pelo professor em tempo real
+        if (!wasLocked && updated.isLocked && !isTeacherAuthenticated) {
+          showToast("🔒 Atenção: este caso clínico foi trancado pelo professor em tempo real.");
+        } else if (wasLocked && !updated.isLocked && !isTeacherAuthenticated) {
+          showToast("🔓 Este caso clínico foi liberado pelo professor em tempo real!");
+        }
       }
     }
 
@@ -984,8 +1036,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAdminMetrics();
     populateDisciplineDropdowns();
 
-    // 3. Sincroniza com o servidor central e difunde para outras abas
-    adminManager.triggerServerSync();
+    // 3. Sincroniza com o servidor central e difunde para outras abas (apenas se originado localmente)
+    if (shouldTriggerSync) {
+      adminManager.triggerServerSync();
+    }
 
     if (toastMessage) {
       showToast(toastMessage);
@@ -1024,6 +1078,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Renderiza abas dinâmicas (exames laboratoriais, questões avaliativas)
     renderCaseLabExamsBadge();
     renderStudentEvaluationQuestions();
+
+    // Aplica bloqueio de abas configurado para este caso
+    applyStudentTabBlockingState(found);
   }
 
   // Alterna entre Modo Aluno e Modo Administrador (mantido para compatibilidade)
@@ -3127,17 +3184,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // Abas do Prontuário do Aluno (CORREÇÃO DE BUGS DE CLIQUE E PREENCHIMENTO)
     document.querySelectorAll(".student-tab-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        // 1. Salva o rascunho dos campos da aba atual antes de alternar
-        readProntuarioFromForm();
-        if (appState.currentCaseId && appState.currentProntuario) {
-          prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
-        }
-
-        // 2. Localiza o botão pai corretamente mesmo se o clique foi no <span> interno ou emoji
+        // 1. Localiza o botão pai corretamente mesmo se o clique foi no <span> interno ou emoji
         const btnEl = e.currentTarget || e.target.closest(".student-tab-btn");
         if (!btnEl) return;
         const tabId = btnEl.dataset.tab;
         if (!tabId) return;
+
+        // Se a aba estiver bloqueada pelo professor para este caso clínico (Tempo Real):
+        if (isStudentTabBlocked(tabId)) {
+          e.preventDefault();
+          e.stopPropagation();
+          openStudentBlockedTabModal(tabId);
+          return;
+        }
+
+        // 2. Salva o rascunho dos campos da aba atual antes de alternar
+        readProntuarioFromForm();
+        if (appState.currentCaseId && appState.currentProntuario) {
+          prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
+        }
 
         // 3. Atualiza estado das abas
         document.querySelectorAll(".student-tab-btn").forEach(b => b.classList.remove("active"));
@@ -3208,6 +3273,42 @@ document.addEventListener("DOMContentLoaded", () => {
       apiKeyModal.classList.add("hidden");
       showToast(apiKeyInput.value ? "Chave da Gemini API salva com sucesso!" : "Chave da Gemini API removida. Usando motor nativo offline.");
     });
+
+    // Modal de Aba Bloqueada (Aluno)
+    const closeBlockedTabModalBtn = document.getElementById("closeBlockedTabModalBtn");
+    if (closeBlockedTabModalBtn) {
+      closeBlockedTabModalBtn.addEventListener("click", () => closeStudentBlockedTabModal());
+    }
+    const studentBlockedTabModal = document.getElementById("studentBlockedTabModal");
+    if (studentBlockedTabModal) {
+      studentBlockedTabModal.addEventListener("click", (e) => {
+        if (e.target === studentBlockedTabModal) closeStudentBlockedTabModal();
+      });
+    }
+
+    // Modal de Configuração do Firebase (Banco em Nuvem)
+    const closeFbModalBtn = document.getElementById("closeFirebaseConfigModalBtn");
+    if (closeFbModalBtn) {
+      closeFbModalBtn.addEventListener("click", () => closeFirebaseConfigModal());
+    }
+    const cancelFbBtn = document.getElementById("fbCancelConfigBtn");
+    if (cancelFbBtn) {
+      cancelFbBtn.addEventListener("click", () => closeFirebaseConfigModal());
+    }
+    const saveFbBtn = document.getElementById("fbSaveConfigBtn");
+    if (saveFbBtn) {
+      saveFbBtn.addEventListener("click", () => saveFirebaseConfigFromModal());
+    }
+    const clearFbBtn = document.getElementById("fbClearConfigBtn");
+    if (clearFbBtn) {
+      clearFbBtn.addEventListener("click", () => clearFirebaseConfigFromModal());
+    }
+    const firebaseConfigModal = document.getElementById("firebaseConfigModal");
+    if (firebaseConfigModal) {
+      firebaseConfigModal.addEventListener("click", (e) => {
+        if (e.target === firebaseConfigModal) closeFirebaseConfigModal();
+      });
+    }
   }
 
   // Setup do Painel do Professor / Administrador
@@ -3227,6 +3328,34 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.add("hidden"));
         const targetContent = document.getElementById(`adm-tab-${tabId}`);
         if (targetContent) targetContent.classList.remove("hidden");
+      });
+    });
+
+    // Botões de Bloqueio em Massa de Abas no Editor do Professor (Tempo Real)
+    const blockAllBtn = document.getElementById("adminBlockAllTabsBtn");
+    if (blockAllBtn) {
+      blockAllBtn.addEventListener("click", () => {
+        document.querySelectorAll(".adm-tab-block-checkbox").forEach(cb => {
+          cb.checked = true;
+        });
+        updateBlockedTabsCountLabel();
+      });
+    }
+
+    const unblockAllBtn = document.getElementById("adminUnblockAllTabsBtn");
+    if (unblockAllBtn) {
+      unblockAllBtn.addEventListener("click", () => {
+        document.querySelectorAll(".adm-tab-block-checkbox").forEach(cb => {
+          cb.checked = false;
+        });
+        updateBlockedTabsCountLabel();
+      });
+    }
+
+    // Checkboxes individuais de bloqueio de abas
+    document.querySelectorAll(".adm-tab-block-checkbox").forEach(cb => {
+      cb.addEventListener("change", () => {
+        updateBlockedTabsCountLabel();
       });
     });
 
@@ -3756,6 +3885,224 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Mapeamento amigável dos nomes das abas do prontuário
+  const TAB_NAMES = {
+    anamnese: "1. Anamnese e História Clínica",
+    antropometria: "2. Antropometria e Composição Corporal",
+    bioquimica: "3. Bioquímica e Exames Laboratoriais",
+    examefisico: "4. Exame Físico e Sinais Clínicos",
+    consumo: "5. Avaliação do Consumo Alimentar (R24h)",
+    pes: "6. Diagnóstico Nutricional (PES)",
+    prescricao: "7. Prescrição Dietética",
+    cardapio: "8. Elaboração do Cardápio",
+    questoes: "9. Questões Avaliativas"
+  };
+
+  // Verifica se uma aba está bloqueada para o aluno neste caso clínico
+  function isStudentTabBlocked(tabId) {
+    if (isTeacherAuthenticated) return false; // Professor tem acesso completo
+    const currentCase = appState.currentCase;
+    if (!currentCase) return false;
+    const blocked = Array.isArray(currentCase.blockedTabs) ? currentCase.blockedTabs : [];
+    return blocked.includes(tabId);
+  }
+
+  // Aplica classes visuais de bloqueio nos botões das abas do aluno
+  function applyStudentTabBlockingState(caseData) {
+    if (!caseData) return;
+    const blockedTabs = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
+
+    document.querySelectorAll(".student-tab-btn").forEach(btn => {
+      const tabId = btn.dataset.tab;
+      const isBlocked = blockedTabs.includes(tabId);
+      let lockSpan = btn.querySelector(".tab-lock-indicator");
+
+      if (isBlocked) {
+        btn.classList.add("opacity-60");
+        btn.setAttribute("title", `Etapa bloqueada pelo professor: ${TAB_NAMES[tabId] || tabId}`);
+        if (!lockSpan) {
+          lockSpan = document.createElement("span");
+          lockSpan.className = "tab-lock-indicator text-[11px] ml-1";
+          lockSpan.textContent = "🔒";
+          btn.appendChild(lockSpan);
+        }
+      } else {
+        btn.classList.remove("opacity-60");
+        btn.removeAttribute("title");
+        if (lockSpan) lockSpan.remove();
+      }
+    });
+
+    // Se o aluno estiver atualmente em uma aba bloqueada, redireciona para a primeira desimpedida
+    if (!isTeacherAuthenticated && appState.activeStudentTab && blockedTabs.includes(appState.activeStudentTab)) {
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "prescricao", "cardapio", "questoes"];
+      const firstAvailable = allTabs.find(t => !blockedTabs.includes(t)) || "anamnese";
+      const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
+      if (targetBtn) {
+        targetBtn.click();
+      }
+    }
+  }
+
+  // Abre modal informando que a etapa foi bloqueada pelo professor
+  function openStudentBlockedTabModal(tabId) {
+    const modal = document.getElementById("studentBlockedTabModal");
+    const tabNameEl = document.getElementById("blockedTabModalTabName");
+    if (tabNameEl) {
+      tabNameEl.textContent = TAB_NAMES[tabId] || tabId;
+    }
+    if (modal) modal.classList.remove("hidden");
+  }
+
+  function closeStudentBlockedTabModal() {
+    const modal = document.getElementById("studentBlockedTabModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  // Preenche checkboxes de bloqueio de abas na Aba 9 do Editor do Professor
+  function populateBlockedTabsInEditor(blockedTabs = []) {
+    const safeBlocked = Array.isArray(blockedTabs) ? blockedTabs : [];
+    document.querySelectorAll(".adm-tab-block-checkbox").forEach(cb => {
+      const tabId = cb.dataset.tabId;
+      cb.checked = safeBlocked.includes(tabId);
+    });
+    updateBlockedTabsCountLabel();
+  }
+
+  // Lê abas selecionadas para bloqueio no Editor do Professor
+  function readBlockedTabsFromEditor() {
+    const blocked = [];
+    document.querySelectorAll(".adm-tab-block-checkbox").forEach(cb => {
+      if (cb.checked && cb.dataset.tabId) {
+        blocked.push(cb.dataset.tabId);
+      }
+    });
+    return blocked;
+  }
+
+  // Atualiza label do contador de abas bloqueadas no editor
+  function updateBlockedTabsCountLabel() {
+    const label = document.getElementById("admBlockedCountLabel");
+    if (!label) return;
+    const count = document.querySelectorAll(".adm-tab-block-checkbox:checked").length;
+    label.textContent = `${count} ${count === 1 ? "aba bloqueada" : "abas bloqueadas"} neste caso`;
+    if (count > 0) {
+      label.className = "text-[11px] font-bold text-rose-700";
+    } else {
+      label.className = "text-[11px] font-semibold text-slate-700";
+    }
+  }
+
+  // Modal de Configuração do Firebase
+  function openFirebaseConfigModal() {
+    const modal = document.getElementById("firebaseConfigModal");
+    if (!modal) return;
+
+    const currentCfg = (typeof firebaseSyncService !== "undefined" && firebaseSyncService.config)
+      ? firebaseSyncService.config
+      : (window.FIREBASE_CONFIG || {});
+
+    const apiKeyInput = document.getElementById("fbInputApiKey");
+    const projIdInput = document.getElementById("fbInputProjectId");
+    const authDomInput = document.getElementById("fbInputAuthDomain");
+    const bucketInput = document.getElementById("fbInputStorageBucket");
+    const appIdInput = document.getElementById("fbInputAppId");
+
+    if (apiKeyInput) apiKeyInput.value = currentCfg.apiKey || "";
+    if (projIdInput) projIdInput.value = currentCfg.projectId || "";
+    if (authDomInput) authDomInput.value = currentCfg.authDomain || "";
+    if (bucketInput) bucketInput.value = currentCfg.storageBucket || "";
+    if (appIdInput) appIdInput.value = currentCfg.appId || "";
+
+    const badge = document.getElementById("fbModalStatusBadge");
+    if (badge) {
+      const isConfigured = (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured());
+      if (isConfigured) {
+        badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800";
+        badge.textContent = "Conectado ao Firestore";
+      } else {
+        badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800";
+        badge.textContent = "Chaves Pendentes";
+      }
+    }
+
+    modal.classList.remove("hidden");
+  }
+
+  function closeFirebaseConfigModal() {
+    const modal = document.getElementById("firebaseConfigModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function saveFirebaseConfigFromModal() {
+    const apiKey = document.getElementById("fbInputApiKey")?.value.trim() || "";
+    const projectId = document.getElementById("fbInputProjectId")?.value.trim() || "";
+    const authDomain = document.getElementById("fbInputAuthDomain")?.value.trim() || "";
+    const storageBucket = document.getElementById("fbInputStorageBucket")?.value.trim() || "";
+    const appId = document.getElementById("fbInputAppId")?.value.trim() || "";
+
+    if (!apiKey || !projectId) {
+      alert("Por favor, preencha ao menos o 'API Key' e o 'Project ID' fornecidos pelo console do Firebase.");
+      return;
+    }
+
+    const newConfig = { apiKey, projectId, authDomain, storageBucket, appId };
+
+    try {
+      localStorage.setItem("dietocase_custom_firebase_config", JSON.stringify(newConfig));
+      if (window.FIREBASE_CONFIG) {
+        Object.assign(window.FIREBASE_CONFIG, newConfig);
+      }
+      if (typeof firebaseSyncService !== "undefined") {
+        firebaseSyncService.config = newConfig;
+        firebaseSyncService.init();
+      }
+      if (typeof dietoSyncEngine !== "undefined") {
+        dietoSyncEngine.init();
+      }
+      closeFirebaseConfigModal();
+      showToast("Configuração do Firebase salva com sucesso! Conectando à nuvem...");
+    } catch (e) {
+      console.error("Erro ao salvar configuração do Firebase:", e);
+      alert("Erro ao salvar credenciais no navegador: " + e.message);
+    }
+  }
+
+  function clearFirebaseConfigFromModal() {
+    if (!confirm("Deseja remover as credenciais personalizadas do Firebase? O aplicativo voltará a operar em modo local.")) {
+      return;
+    }
+
+    try {
+      localStorage.removeItem("dietocase_custom_firebase_config");
+      const emptyConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+      if (window.FIREBASE_CONFIG) {
+        Object.assign(window.FIREBASE_CONFIG, emptyConfig);
+      }
+      if (typeof firebaseSyncService !== "undefined") {
+        firebaseSyncService.config = emptyConfig;
+        firebaseSyncService.status = "unconfigured";
+        firebaseSyncService.listeners.forEach(cb => cb("unconfigured_firebase"));
+      }
+
+      const apiKeyInput = document.getElementById("fbInputApiKey");
+      const projIdInput = document.getElementById("fbInputProjectId");
+      const authDomInput = document.getElementById("fbInputAuthDomain");
+      const bucketInput = document.getElementById("fbInputStorageBucket");
+      const appIdInput = document.getElementById("fbInputAppId");
+      if (apiKeyInput) apiKeyInput.value = "";
+      if (projIdInput) projIdInput.value = "";
+      if (authDomInput) authDomInput.value = "";
+      if (bucketInput) bucketInput.value = "";
+      if (appIdInput) appIdInput.value = "";
+
+      closeFirebaseConfigModal();
+      showToast("Credenciais do Firebase removidas. Operando em modo local.");
+    } catch (e) {
+      console.error("Erro ao limpar configuração do Firebase:", e);
+    }
+  }
+
   // Renderiza a lista dinâmica de profissionais na Aba 6 do editor de caso
   function renderAdminEquipeList(equipeList) {
     const container = document.getElementById("adminEquipeListContainer");
@@ -4017,6 +4364,9 @@ document.addEventListener("DOMContentLoaded", () => {
       lockCheckbox.checked = isUnlocked;
       updateCaseLockLabel(isUnlocked);
     }
+    
+    // Bloqueio de Abas do Aluno (Tempo Real)
+    populateBlockedTabsInEditor(c.blockedTabs || []);
     
     // Paciente
     document.getElementById("admPatName").value = c.patient?.name || "";
@@ -4316,6 +4666,7 @@ document.addEventListener("DOMContentLoaded", () => {
       category: document.getElementById("admCaseCategory").value.trim(),
       description: document.getElementById("admCaseDesc").value.trim(),
       isLocked: !(document.getElementById("admCaseIsUnlocked")?.checked),
+      blockedTabs: readBlockedTabsFromEditor(),
       patient: {
         name: document.getElementById("admPatName").value.trim(),
         age: parseInt(document.getElementById("admPatAge").value) || 0,

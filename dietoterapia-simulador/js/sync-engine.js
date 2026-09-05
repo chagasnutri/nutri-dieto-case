@@ -30,6 +30,16 @@ class DietoSyncEngine {
     }
   }
 
+  notifyDataListeners({ disciplinas, cases, isInitial = false, isRemote = false }) {
+    this.dataListeners.forEach(cb => {
+      try {
+        cb({ disciplinas, cases, isInitial, isRemote, updatedAt: new Date().toISOString() });
+      } catch (e) {
+        console.error("Erro no callback de sincronização:", e);
+      }
+    });
+  }
+
   notifyDataListenersFromStorage() {
     try {
       const rawCases = localStorage.getItem(STORAGE_KEY_CASES);
@@ -37,18 +47,39 @@ class DietoSyncEngine {
       if (rawCases && rawDisc) {
         const cases = JSON.parse(rawCases);
         const disciplinas = JSON.parse(rawDisc);
-        this.dataListeners.forEach(cb => {
-          try {
-            cb({ disciplinas, cases, isInitial: false });
-          } catch (e) {}
-        });
+        this.notifyDataListeners({ disciplinas, cases, isInitial: false, isRemote: false });
       }
     } catch (e) {}
   }
 
   // Inicializa o motor, ouve eventos de foco/visibilidade e inicia auto-sync
   async init() {
-    // Sincronização imediata ao abrir o aplicativo
+    // 1. Tenta inicializar a Nuvem Firebase se disponível
+    if (typeof firebaseSyncService !== "undefined") {
+      firebaseSyncService.onStatusChange((fbStatus, detail) => {
+        if (fbStatus === "online") {
+          this.setStatus("online_firebase");
+        } else if (fbStatus === "syncing") {
+          this.setStatus("syncing");
+        } else if (fbStatus === "unconfigured") {
+          this.setStatus("unconfigured_firebase");
+        } else if (fbStatus === "error") {
+          this.setStatus("error_firebase");
+        }
+      });
+
+      firebaseSyncService.onDataChange(({ disciplinas, cases, isRemote }) => {
+        this.notifyDataListeners({ disciplinas, cases, isInitial: false, isRemote: true });
+      });
+
+      const fbStarted = await firebaseSyncService.init();
+      if (fbStarted) {
+        console.log("⚡ DietoSyncEngine conectado ao Firebase Firestore com sucesso!");
+        return;
+      }
+    }
+
+    // 2. Sincronização imediata ao abrir o aplicativo (fallback local/HTTP)
     await this.pullFromServer(true);
 
     // Sincroniza quando o aluno ou professor volta para a aba do navegador
@@ -178,12 +209,36 @@ class DietoSyncEngine {
   async pushToServer(disciplinas, cases, password = "Nutri2@26") {
     this.setStatus("syncing");
 
+    // Validação de segurança da senha do docente
+    if (password !== "Nutri2@26") {
+      return {
+        success: false,
+        message: "Senha de docente incorreta. Acesso não autorizado.",
+        serverOnline: false
+      };
+    }
+
     // Atualiza imediatamente o localStorage local por segurança
     if (Array.isArray(disciplinas)) {
       localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(disciplinas));
     }
     if (Array.isArray(cases)) {
       localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(cases));
+    }
+
+    if (this.broadcastChannel) {
+      try {
+        this.broadcastChannel.postMessage({
+          type: "DATA_UPDATED",
+          updatedAt: new Date().toISOString()
+        });
+      } catch (e) {}
+    }
+
+    // Se Firebase estiver configurado e ativo, a persistência na nuvem Firestore já é o canal prioritário
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      this.setStatus("online_firebase");
+      return { success: true, message: "Sincronizado na Nuvem Firebase Firestore!", serverOnline: true };
     }
 
     try {

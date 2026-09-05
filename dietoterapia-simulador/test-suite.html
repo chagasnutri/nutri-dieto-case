@@ -11,6 +11,9 @@
   <script src="js/chat-engine.js"></script>
   <script src="js/student-prontuario.js"></script>
   <script src="js/docx-generator.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/firebase-sync.js"></script>
   <script src="js/sync-engine.js"></script>
   <script src="js/admin-manager.js"></script>
 </head>
@@ -772,6 +775,64 @@ Questões Avaliativas:
              comparacaoCompleta.ptn.status === "Abaixo" &&
              comparacaoCompleta.lip.status === "Acima",
         "Comparação Completa com Prescrição: CHO Adequado, PTN Abaixo, LIP Acima correspondendo com precisão matemática");
+
+      // 48. Firebase Config e Inicialização com Credenciais Reais
+      assert(typeof window.FIREBASE_CONFIG === "object" && window.FIREBASE_CONFIG.projectId === "simulador-dieto-e114c",
+        "Firebase Config: Chaves do projeto 'simulador-dieto-e114c' carregadas com sucesso");
+      assert(typeof firebaseSyncService !== "undefined",
+        "Firebase Sync Service: Instância global de sincronização instanciada com sucesso");
+      assert(firebaseSyncService.isConfigured() === true,
+        "Firebase Sync: Detecta configuração ativa do projeto");
+      assert(firebaseSyncService.getConfig().apiKey.startsWith("AIzaSy"),
+        "Firebase Config: API Key válida do Google Firebase presente");
+
+      // 49. Admin Manager - Bloqueio de Abas em Tempo Real
+      const adminMgr = new AdminManager();
+      const testCaseId = "caso-dm2-has";
+      
+      // Define abas bloqueadas iniciais
+      const blockedInitial = adminMgr.setCaseBlockedTabs(testCaseId, ["bioquimica", "pes"]);
+      assert(Array.isArray(blockedInitial) && blockedInitial.includes("bioquimica") && blockedInitial.includes("pes"),
+        "Admin Manager: setCaseBlockedTabs bloqueia abas selecionadas ('bioquimica' e 'pes')");
+      
+      // Alterna bloqueio de aba existente (deve remover)
+      const tabAindaBloqueada = adminMgr.toggleCaseTabBlock(testCaseId, "pes");
+      assert(tabAindaBloqueada === false,
+        "Admin Manager: toggleCaseTabBlock remove aba previamente bloqueada ('pes')");
+      
+      // Alterna bloqueio de nova aba (deve adicionar)
+      const novaTabBloqueada = adminMgr.toggleCaseTabBlock(testCaseId, "cardapio");
+      assert(novaTabBloqueada === true,
+        "Admin Manager: toggleCaseTabBlock adiciona nova aba para bloqueio ('cardapio')");
+      
+      // Reseta abas bloqueadas para padrão limpo
+      adminMgr.setCaseBlockedTabs(testCaseId, []);
+      const casoAposReset = adminMgr.getCaseById(testCaseId);
+      assert(Array.isArray(casoAposReset.blockedTabs) && casoAposReset.blockedTabs.length === 0,
+        "Admin Manager: blockedTabs limpo e restaurado com sucesso");
+
+      // 50. Admin Manager - Trava e Liberação de Casos (isLocked)
+      const lockStatusInicial = casoAposReset.isLocked;
+      const novoLock = adminMgr.toggleCaseLock(testCaseId);
+      assert(novoLock === !lockStatusInicial,
+        `Admin Manager: toggleCaseLock alterna estado da trava com sucesso (${lockStatusInicial} -> ${novoLock})`);
+      // Restaura trava original
+      adminMgr.toggleCaseLock(testCaseId);
+      assert(adminMgr.getCaseById(testCaseId).isLocked === lockStatusInicial,
+        "Admin Manager: Estado de trava restaurado ao valor original");
+
+      // 51. Model Normalization e Preservação de blockedTabs
+      const novoCasoTemplate = adminMgr.getEmptyCase();
+      assert(Array.isArray(novoCasoTemplate.blockedTabs),
+        "AdminManager: getEmptyCase inicializa blockedTabs como array vazio");
+      
+      const casoNormalizado = CaseBuilderEngine.normalizeStructuredCase({
+        id: "caso-norm-test",
+        title: "Caso Normalizado",
+        blockedTabs: ["antropometria", "consumo"]
+      });
+      assert(Array.isArray(casoNormalizado.blockedTabs) && casoNormalizado.blockedTabs.length === 2 && casoNormalizado.blockedTabs.includes("consumo"),
+        "CaseBuilderEngine: normalizeStructuredCase preserva blockedTabs preenchido");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

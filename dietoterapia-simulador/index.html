@@ -1602,6 +1602,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
         <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap" data-admintab="multiprofissional">6. Equipe Multiprofissional</button>
         <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap text-amber-800" data-admintab="questoes">7. Questões Avaliativas</button>
         <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap text-purple-800" data-admintab="gabarito">8. Gabarito / Resolução</button>
+        <button class="admin-editor-tab-btn nav-tab-btn px-3.5 py-2.5 whitespace-nowrap text-rose-700 font-bold bg-rose-50/50" data-admintab="bloqueio-abas">🔒 9. Bloqueio de Abas</button>
       </div>
 
       <!-- CONTEÚDO DAS ABAS DO EDITOR -->
@@ -1982,6 +1983,154 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
           </div>
         </div>
 
+        <!-- ABA 9: BLOQUEIO DE ABAS DO ALUNO (SINCRONIZAÇÃO EM TEMPO REAL) -->
+        <div id="adm-tab-bloqueio-abas" class="admin-tab-content space-y-4 hidden">
+          <div class="bg-gradient-to-r from-rose-50 to-amber-50 border border-rose-200 rounded-xl p-4 space-y-2">
+            <div class="flex items-start space-x-3">
+              <span class="text-2xl flex-shrink-0">🔒</span>
+              <div>
+                <h4 class="font-bold text-slate-800 text-xs sm:text-sm">Controle de Bloqueio de Abas do Aluno (Em Tempo Real)</h4>
+                <p class="text-xs text-slate-600 leading-relaxed mt-0.5">
+                  Selecione quais abas ficarão <strong>bloqueadas</strong> para os alunos neste caso clínico. Quando bloqueada, o aluno não conseguirá acessar a etapa até que você a libere pelo banco de dados em nuvem.
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-rose-100">
+              <span class="text-[11px] font-semibold text-slate-700" id="admBlockedCountLabel">
+                0 abas bloqueadas neste caso
+              </span>
+              <div class="flex items-center space-x-2">
+                <button type="button" id="adminBlockAllTabsBtn" class="bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 cursor-pointer">
+                  <span>🔒</span> <span>Bloquear Todas</span>
+                </button>
+                <button type="button" id="adminUnblockAllTabsBtn" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 cursor-pointer">
+                  <span>🔓</span> <span>Liberar Todas</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRID DE CARDS DAS 9 ABAS -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="adminBlockedTabsList">
+            <!-- 1. Anamnese -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">👤</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">1. Anamnese</div>
+                  <div class="text-[10px] text-slate-500">História e queixa principal</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="anamnese">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 2. Antropometria -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">⚖️</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">2. Antropometria</div>
+                  <div class="text-[10px] text-slate-500">Peso, estatura, dobras e IMC</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="antropometria">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 3. Bioquímica -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🧪</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">3. Bioquímica</div>
+                  <div class="text-[10px] text-slate-500">Exames laboratoriais</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="bioquimica">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 4. Exame Físico -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🩺</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">4. Exame Físico</div>
+                  <div class="text-[10px] text-slate-500">Sinais clínicos e exame físico</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="examefisico">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 5. Consumo Alimentar (R24h) -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🍎</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">5. Consumo / R24h</div>
+                  <div class="text-[10px] text-slate-500">Recordatório e tabela TACO</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="consumo">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 6. Diagnóstico PES -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🎯</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">6. Diagnóstico PES</div>
+                  <div class="text-[10px] text-slate-500">Problema, Etiologia, Sinais</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="pes">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 7. Prescrição Dietética -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">💊</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">7. Prescrição Dietética</div>
+                  <div class="text-[10px] text-slate-500">VET, Macros dinâmicos e g/kg</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="prescricao">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 8. Cardápio -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">🍽️</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">8. Cardápio</div>
+                  <div class="text-[10px] text-slate-500">Preparações e tabela de metas</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="cardapio">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 9. Questões Avaliativas -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">❓</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">9. Questões Avaliativas</div>
+                  <div class="text-[10px] text-slate-500">Perguntas discursivas do caso</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="questoes">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+          </div>
+        </div>
+
       </div>
 
     </section>
@@ -2300,6 +2449,93 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
     </div>
   </div>
 
+  <!-- MODAL: ABA BLOQUEADA PELO PROFESSOR (ALUNO) -->
+  <div id="studentBlockedTabModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-amber-200 text-center space-y-4">
+      <div class="w-14 h-14 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
+        🔒
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg" id="blockedTabModalTitle">Etapa Bloqueada pelo Professor</h3>
+        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed" id="blockedTabModalMsg">
+          A aba <strong id="blockedTabModalTabName" class="text-amber-900">Bioquímica</strong> está temporariamente bloqueada para este caso clínico.
+        </p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-[11px] text-amber-900 text-left leading-relaxed">
+        💡 <strong>Dinâmica da Aula:</strong> O professor liberará o acesso a esta etapa no momento oportuno da discussão clínica. O seu simulador atualizará automaticamente em tempo real sem precisar recarregar a página.
+      </div>
+      <button type="button" id="closeBlockedTabModalBtn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs py-2.5 rounded-xl transition shadow cursor-pointer">
+        OK, Aguardar Liberação
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAÇÃO DO BANCO DE DADOS EM NUVEM (FIREBASE FIRESTORE) -->
+  <div id="firebaseConfigModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 flex items-center space-x-2">
+          <span class="text-xl">☁️</span>
+          <span>Configuração do Firebase (Banco de Dados em Nuvem)</span>
+        </h3>
+        <button type="button" id="closeFirebaseConfigModalBtn" class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1">✕</button>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1.5 leading-relaxed">
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-slate-800">Status da Nuvem:</span>
+          <span id="fbModalStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+            Chaves Pendentes
+          </span>
+        </div>
+        <p class="text-[11px]">
+          Para sincronizar em tempo real entre dispositivos diferentes (professor e alunos), você pode colar as credenciais abaixo ou inseri-las diretamente no arquivo <code class="bg-slate-200 px-1 py-0.5 rounded font-mono text-slate-800">js/firebase-config.js</code>.
+        </p>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-0.5">API Key (apiKey):</label>
+          <input type="text" id="fbInputApiKey" placeholder="AIzaSy..." class="w-full border rounded p-2 text-xs font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5">Project ID (projectId):</label>
+            <input type="text" id="fbInputProjectId" placeholder="dietocase-app" class="w-full border rounded p-2 text-xs font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5">Auth Domain (authDomain):</label>
+            <input type="text" id="fbInputAuthDomain" placeholder="dietocase-app.firebaseapp.com" class="w-full border rounded p-2 text-xs font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5">Storage Bucket:</label>
+            <input type="text" id="fbInputStorageBucket" placeholder="dietocase-app.appspot.com" class="w-full border rounded p-2 text-xs font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5">App ID (appId):</label>
+            <input type="text" id="fbInputAppId" placeholder="1:123456789:web:abcdef" class="w-full border rounded p-2 text-xs font-mono">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+        <button type="button" id="fbClearConfigBtn" class="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer">
+          Limpar Chaves Salvas
+        </button>
+        <div class="flex items-center space-x-2">
+          <button type="button" id="fbCancelConfigBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer">
+            Fechar
+          </button>
+          <button type="button" id="fbSaveConfigBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow transition cursor-pointer">
+            Salvar e Conectar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
@@ -2309,6 +2545,14 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
   <script src="js/chat-engine.js"></script>
   <script src="js/student-prontuario.js"></script>
   <script src="js/docx-generator.js"></script>
+  
+  <!-- GOOGLE FIREBASE FIRESTORE SDK (COMPAT CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/firebase-sync.js"></script>
+
   <script src="js/sync-engine.js"></script>
   <script src="js/admin-manager.js"></script>
   <script src="js/app.js"></script>

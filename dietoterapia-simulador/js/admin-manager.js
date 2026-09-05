@@ -53,6 +53,9 @@ class AdminManager {
       saveDisciplinas(this.disciplinas);
     }
     this.activeDisciplinaId = finalId;
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.saveDisciplina(nova);
+    }
     this.triggerServerSync();
     return nova;
   }
@@ -70,6 +73,9 @@ class AdminManager {
       };
       if (typeof saveDisciplinas === "function") {
         saveDisciplinas(this.disciplinas);
+      }
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+        firebaseSyncService.saveDisciplina(this.disciplinas[idx]);
       }
       this.triggerServerSync();
       return this.disciplinas[idx];
@@ -124,6 +130,9 @@ class AdminManager {
     if (this.activeDisciplinaId === id) {
       this.activeDisciplinaId = this.disciplinas[0].id;
     }
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.deleteDisciplina(id);
+    }
     this.triggerServerSync();
     return {
       success: true,
@@ -150,6 +159,9 @@ class AdminManager {
       ? ClinicalPortugueseReviser.reviewCase(caseData)
       : caseData;
 
+    reviewedCase.blockedTabs = Array.isArray(reviewedCase.blockedTabs) ? reviewedCase.blockedTabs : [];
+    reviewedCase.isLocked = reviewedCase.isLocked === true;
+
     const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
     if (existingIndex >= 0) {
       this.cases[existingIndex] = reviewedCase;
@@ -157,6 +169,9 @@ class AdminManager {
       this.cases.push(reviewedCase);
     }
     saveCases(this.cases);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.saveCase(reviewedCase);
+    }
     this.triggerServerSync();
     return reviewedCase;
   }
@@ -165,6 +180,9 @@ class AdminManager {
     this.refreshCases();
     this.cases = this.cases.filter(c => c.id !== id);
     saveCases(this.cases);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.deleteCase(id);
+    }
     this.triggerServerSync();
   }
 
@@ -175,9 +193,13 @@ class AdminManager {
     copy.id = "caso-" + Date.now();
     copy.title = `${copy.title} (Cópia)`;
     copy.isLocked = true; // Por padrão, novas cópias nascem travadas
+    copy.blockedTabs = Array.isArray(original.blockedTabs) ? [...original.blockedTabs] : [];
     copy.disciplinaId = original.disciplinaId || this.activeDisciplinaId || "dietoterapia";
     this.cases.push(copy);
     saveCases(this.cases);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.saveCase(copy);
+    }
     this.triggerServerSync();
     return copy;
   }
@@ -188,10 +210,47 @@ class AdminManager {
     if (c) {
       c.isLocked = !c.isLocked;
       saveCases(this.cases);
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+        firebaseSyncService.setCaseLock(id, c.isLocked);
+      }
       this.triggerServerSync();
       return c.isLocked;
     }
     return false;
+  }
+
+  // Alterna o bloqueio de uma aba específica para um caso clínico (Tempo Real)
+  toggleCaseTabBlock(id, tabId) {
+    this.refreshCases();
+    const c = this.cases.find(item => item.id === id);
+    if (!c) return false;
+    c.blockedTabs = Array.isArray(c.blockedTabs) ? c.blockedTabs : [];
+    const idx = c.blockedTabs.indexOf(tabId);
+    if (idx >= 0) {
+      c.blockedTabs.splice(idx, 1);
+    } else {
+      c.blockedTabs.push(tabId);
+    }
+    saveCases(this.cases);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs);
+    }
+    this.triggerServerSync();
+    return c.blockedTabs.includes(tabId);
+  }
+
+  // Define todas as abas bloqueadas de um caso clínico (Tempo Real)
+  setCaseBlockedTabs(id, blockedTabs) {
+    this.refreshCases();
+    const c = this.cases.find(item => item.id === id);
+    if (!c) return [];
+    c.blockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
+    saveCases(this.cases);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs);
+    }
+    this.triggerServerSync();
+    return c.blockedTabs;
   }
 
   // Dispara sincronização em segundo plano com o servidor central
@@ -273,6 +332,7 @@ class AdminManager {
       category: "Ambulatorial / Hospitalar",
       description: "Descrição breve dos objetivos e patologia do caso clínico.",
       isLocked: false,
+      blockedTabs: [],
       patient: {
         name: "Nome do Paciente",
         age: 45,
