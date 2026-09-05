@@ -19,7 +19,9 @@ const firebaseConfig = {
   appId: "1:380596633724:web:dc9948bbcb9b8f379989f9"
 };
 
-// Permite também carregar chaves salvas dinamicamente via painel do professor (localStorage)
+const FIREBASE_CONFIG = firebaseConfig;
+
+// Permite carregar chaves salvas dinamicamente via painel do professor (localStorage)
 (function initFirebaseConfig() {
   if (typeof window !== "undefined") {
     try {
@@ -27,12 +29,18 @@ const firebaseConfig = {
       if (storedConfig) {
         const parsed = JSON.parse(storedConfig);
         if (parsed && parsed.apiKey && parsed.projectId) {
+          Object.assign(firebaseConfig, parsed);
           Object.assign(FIREBASE_CONFIG, parsed);
         }
       }
     } catch (e) {
       console.warn("Erro ao ler configuração personalizada do Firebase:", e);
     }
+    window.firebaseConfig = firebaseConfig;
     window.FIREBASE_CONFIG = FIREBASE_CONFIG;
   }
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { firebaseConfig, FIREBASE_CONFIG };
+}
