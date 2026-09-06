@@ -6,7 +6,6 @@ class DietoterapiaDocxReport {
     const doc = new MiniDocx();
 
     const aluno = studentData.aluno || {};
-    const patient = clinicalCase.patient || {};
     const anamnese = studentData.anamnese || {};
     const antro = studentData.antropometria || {};
     const bio = studentData.bioquimica || {};
@@ -16,6 +15,17 @@ class DietoterapiaDocxReport {
     const presc = studentData.prescricaoDietoterapica || {};
     const plano = studentData.planejamentoAlimentar || [];
     const respostas = studentData.respostasQuestoes || {};
+
+    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const realPat = studentData.dadosPacienteReal || {};
+    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase.patient || {}) : (clinicalCase.patient || {});
+    const patName = isRealPatient ? (realPat.nome || "Paciente Real") : (patient.name || "Paciente");
+    const patAge = isRealPatient ? (realPat.idade ? `${realPat.idade} anos` : "--") : (patient.age ? `${patient.age} anos` : "--");
+    const patGender = isRealPatient ? (realPat.sexo || "--") : (patient.gender || "--");
+    const patOccupation = isRealPatient ? (realPat.ocupacao || patient.occupation || "Não informada") : (patient.occupation || "Não informada");
+
+    // Hipótese Diagnóstica / Diagnóstico Médico de Base
+    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase.hipoteseDiagnostica || clinicalCase.history?.hipoteseDiagnostica || "Não informada";
 
     // 1. CABEÇALHO INSTITUCIONAL
     doc.addParagraph("DIETOCASE - DISCIPLINA DE DIETOTERAPIA", {
@@ -37,32 +47,64 @@ class DietoterapiaDocxReport {
     });
 
     // 2. IDENTIFICAÇÃO DO ALUNO E CASO (TABELA RESUMO)
-    const dataFormatada = aluno.data ? aluno.data.split("-").reverse().join("/") : new Date().toLocaleDateString("pt-BR");
-    
+    const dataFormatada = (isRealPatient && realPat.dataAtendimento)
+      ? realPat.dataAtendimento.split("-").reverse().join("/")
+      : (aluno.data ? aluno.data.split("-").reverse().join("/") : new Date().toLocaleDateString("pt-BR"));
+
+    const identRows = [
+      ["Estudante de Nutrição:", aluno.nome || "Não informado"],
+      ["Matrícula / Turma:", aluno.matriculaTurma || "Não informado"],
+      ["Data do Atendimento:", dataFormatada],
+      ["Modalidade da Prática:", isRealPatient ? "Atendimento Presencial Real (Consulta Ambulatorial / Hospitalar)" : "Simulação Clínica Baseada em Casos"]
+    ];
+
+    if (!isRealPatient && clinicalCase.title) {
+      identRows.push(["Caso Clínico da Disciplina:", clinicalCase.title]);
+    }
+
+    identRows.push([isRealPatient ? "Paciente Real:" : "Paciente Simulado:", `${patName}, ${patAge}, ${patGender} (Ocupação: ${patOccupation})`]);
+    identRows.push(["Hipótese Diagnóstica / Diagnóstico Médico:", hipoteseDiagnostica]);
+
     doc.addTable(
       ["DADOS DA AVALIAÇÃO PRÁTICA", "INFORMAÇÕES"],
-      [
-        ["Estudante de Nutrição:", aluno.nome || "Não informado"],
-        ["Matrícula / Turma:", aluno.matriculaTurma || "Não informado"],
-        ["Data do Atendimento:", dataFormatada],
-        ["Caso Clínico Selecionado:", clinicalCase.title || "Caso Clínico"],
-        ["Paciente Simulado:", `${patient.name || 'Paciente'}, ${patient.age || '--'} anos, ${patient.gender || '--'}`]
-      ],
+      identRows,
       [3500, 5500]
     );
 
     // 3. SEÇÃO I: PRONTUÁRIO CLÍNICO-NUTRICIONAL CONSTRUÍDO
     doc.addHeading("1. PRONTUÁRIO CLÍNICO-NUTRICIONAL (ANAMNESE)", 1);
 
-    doc.addHeading("1.1. Queixa Principal e História da Doença Atual (HDA)", 2);
+    doc.addHeading("1.1. Diagnóstico Médico de Base & Queixa Principal", 2);
+    doc.addCallout("Hipótese Diagnóstica / Diagnóstico Médico:", hipoteseDiagnostica, "991b1b", "fef2f2");
     doc.addParagraph(anamnese.queixaPrincipal ? `Queixa Principal: ${anamnese.queixaPrincipal}` : "Queixa Principal: Não preenchida.");
-    doc.addParagraph(anamnese.historiaClinica ? `História da Doença Atual: ${anamnese.historiaClinica}` : "História Clínica: Não preenchida.");
+    doc.addParagraph(anamnese.historiaClinica ? `História da Doença Atual (HDA): ${anamnese.historiaClinica}` : "História Clínica: Não preenchida.");
 
     doc.addHeading("1.2. Antecedentes Patológicos, Medicamentos e Estilo de Vida", 2);
     doc.addParagraph(anamnese.antecedentesMedicamentos ? `Antecedentes e Medicamentos: ${anamnese.antecedentesMedicamentos}` : "Antecedentes e Medicamentos: Não preenchido.");
     doc.addParagraph(anamnese.habitosEstiloVida ? `Hábitos de Vida: ${anamnese.habitosEstiloVida}` : "Hábitos de Vida: Não preenchido.");
 
-    doc.addHeading("1.3. Avaliação Antropométrica e Estado Nutricional", 2);
+    // NOVO: 1.3. INTERAÇÕES DROGA-NUTRIENTE
+    doc.addHeading("1.3. Interações Droga-Nutriente & Farmacoterapia Aplicada", 2);
+    const interacoes = studentData.interacaoDrogaNutriente || [];
+    if (Array.isArray(interacoes) && interacoes.length > 0) {
+      const rowsInteracoes = interacoes.map(item => [
+        item.medicamento || "-",
+        item.nutrientes || "-",
+        item.conduta || "-"
+      ]);
+      doc.addTable(
+        ["Medicamento em Uso / Fármaco", "Nutrientes Afetados / Mecanismo", "Conduta Nutricional / Horário de Administração"],
+        rowsInteracoes,
+        [2500, 3200, 3300]
+      );
+    } else {
+      doc.addParagraph("Nenhuma interação droga-nutriente cadastrada nesta avaliação.");
+    }
+    if (studentData.observacoesFarmacoterapia) {
+      doc.addParagraph(`Observações Farmacoterapêuticas: ${studentData.observacoesFarmacoterapia}`);
+    }
+
+    doc.addHeading("1.4. Avaliação Antropométrica e Estado Nutricional", 2);
     const antroTableRows = [];
 
     // Peso real ou estimado
@@ -371,6 +413,7 @@ class DietoterapiaDocxReport {
       
       const tneRows = [
         ["Via de Nutrição", "Terapia Nutricional Enteral (TNE)", "Via especializada não-oral"],
+        ["Nome Comercial da Dieta Enteral", tne.nomeComercial || "Não informado", "Identificação comercial da fórmula"],
         ["Tipo de Dieta Enteral", tne.tipoDieta || "Não especificado", "Fórmula enteral padronizada"],
         ["Densidade Calórica", tne.densidadeCalorica || "Não informada", "Concentração calórica (kcal/mL)"],
         ["Fracionamento / Horários", tne.fracionamento || "Não informado", "Distribuição diária"],
@@ -394,6 +437,61 @@ class DietoterapiaDocxReport {
         [3200, 3000, 2800]
       );
 
+      if (tne.tabelaNutricionalManual) {
+        const man = tne.tabelaNutricionalManual;
+        const manualRows = [
+          ["Valor Energético Total (VET)", `${man.vet || '0'} kcal/dia`, "Aporte calórico diário da fórmula"],
+          ["Carboidratos (CHO)", `${man.cho || '0'} g/dia`, "4 kcal/g"],
+          ["Proteínas (PTN)", `${man.ptn || '0'} g/dia`, "4 kcal/g"],
+          ["Lipídios (LIP)", `${man.lip || '0'} g/dia`, "9 kcal/g"],
+          ["Fibras Alimentares", `${man.fibra || '0'} g/dia`, "Aporte de fibras solúveis/insolúveis"],
+          ["Sódio (Na)", `${man.sodio || '0'} mg/dia`, "Eletrólito"],
+          ["Potássio (K)", `${man.potassio || '0'} mg/dia`, "Eletrólito"],
+          ["Cálcio (Ca)", `${man.calcio || '0'} mg/dia`, "Mineral"],
+          ["Fósforo (P)", `${man.fosforo || '0'} mg/dia`, "Balanço fosfocálcico"]
+        ];
+        doc.addHeading("3.1. Tabela Nutricional Manual da Fórmula Enteral", 2);
+        doc.addTable(
+          ["Nutriente / Marcador", "Quantidade Total Diária", "Especificação Técnica"],
+          manualRows,
+          [3200, 2800, 3000]
+        );
+      }
+
+      const totaisTne = studentData.totaisCardapio;
+      if (totaisTne && (totaisTne.vetTotalKcal > 0 || (tne.tabelaNutricionalManual && tne.tabelaNutricionalManual.vet))) {
+        doc.addHeading("3.2. Consolidação Nutricional da TNE vs Metas Prescritas", 2);
+        const rowsTotaisTne = [
+          ["VET Fornecido pela TNE", `${totaisTne.vetTotalKcal || 0} kcal/dia`, `Meta Prescrita: ${presc.vetKcal || '--'} kcal`],
+          ["Adequação do VET da TNE", `${totaisTne.adequacaoVetPct ? totaisTne.adequacaoVetPct + '%' : '--'}`, `${totaisTne.classificacaoAdequacao || 'Adequação calórica da TNE'}`],
+          [
+            "Carboidratos da TNE", 
+            `${totaisTne.carboidratosG || 0} g (${totaisTne.carboidratosPct || 0}% do VET)`, 
+            totaisTne.statusMacros?.cho ? `Status: ${totaisTne.statusMacros.cho.label} (${presc.distribuicaoMacros?.cho?.minG || '--'}g a ${presc.distribuicaoMacros?.cho?.maxG || '--'}g)` : `Prescrito: ${presc.carboidratosG || '--'} g`
+          ],
+          [
+            "Proteínas da TNE", 
+            `${totaisTne.proteinasG || 0} g (${totaisTne.proteinasGKg ? totaisTne.proteinasGKg + ' g/kg' : '--'}, ${totaisTne.proteinasPct || 0}%)`, 
+            totaisTne.statusMacros?.ptn ? `Status: ${totaisTne.statusMacros.ptn.label} (${presc.distribuicaoMacros?.ptn?.minG || '--'}g a ${presc.distribuicaoMacros?.ptn?.maxG || '--'}g)` : `Prescrito: ${presc.proteinasG || '--'} g`
+          ],
+          [
+            "Lipídios da TNE", 
+            `${totaisTne.lipidiosG || 0} g (${totaisTne.lipidiosPct || 0}% do VET)`, 
+            totaisTne.statusMacros?.lip ? `Status: ${totaisTne.statusMacros.lip.label} (${presc.distribuicaoMacros?.lip?.minG || '--'}g a ${presc.distribuicaoMacros?.lip?.maxG || '--'}g)` : `Prescrito: ${presc.lipidiosG || '--'} g`
+          ],
+          ["Fibras Alimentares Totais", `${totaisTne.fibrasG || 0} g/dia`, "Composição da fórmula"],
+          ["Cálcio (Ca)", `${totaisTne.calcioMg || 0} mg/dia`, "Micronutriente"],
+          ["Sódio (Na)", `${totaisTne.sodioMg || 0} mg/dia`, "Micronutriente"],
+          ["Potássio (K)", `${totaisTne.potassioMg || 0} mg/dia`, "Micronutriente"],
+          ["Fósforo (P)", `${totaisTne.fosforoMg || 0} mg/dia`, "Balanço fosfocálcico na TNE"]
+        ];
+        doc.addTable(
+          ["Parâmetro Nutricional da TNE", "Aporte Obtido pela Fórmula", "Régua da Prescrição Dietética"],
+          rowsTotaisTne,
+          [3400, 2800, 2800]
+        );
+      }
+
       if (tne.moduloSuplementacaoProteica) {
         doc.addCallout(
           "MÓDULO DE SUPLEMENTAÇÃO PROTEICA:",
@@ -404,6 +502,8 @@ class DietoterapiaDocxReport {
       }
     } else {
       doc.addHeading("3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)", 1);
+      const consistenciaOral = studentData.consistenciaDietaOral || presc.consistencia || "Dieta Livre / Normal";
+      doc.addParagraph(`Tipo / Consistência da Dieta Oral Definida: ${consistenciaOral}`);
       
       const cardapioRows = [];
       plano.forEach(ref => {
@@ -495,7 +595,10 @@ class DietoterapiaDocxReport {
     doc.addParagraph(studentData.orientacoesNutricionais || "Nenhuma orientação nutricional específica registrada.");
 
     // 6. SEÇÃO IV: RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO
-    if (clinicalCase.habilitarQuestoesAvaliativas === false) {
+    if (isRealPatient) {
+      doc.addHeading("4. MODALIDADE PRÁTICA: ATENDIMENTO CLÍNICO PRESENCIAL REAL", 1);
+      doc.addParagraph("Prontuário dietoterápico ambulatorial/hospitalar preenchido livremente pelo acadêmico durante a consulta presencial com paciente real. Conduta dietoterápica avaliada diretamente pela preceptoria clínica docente.");
+    } else if (clinicalCase.habilitarQuestoesAvaliativas === false) {
       doc.addHeading("4. QUESTÕES AVALIATIVAS DO CASO CLÍNICO", 1);
       doc.addParagraph("Aba de questões avaliativas opcional desabilitada para este caso clínico pelo docente.");
     } else {
@@ -519,7 +622,9 @@ class DietoterapiaDocxReport {
     const doc = this.buildReportDocument(studentData, clinicalCase);
     const aluno = studentData.aluno || {};
     const cleanStudentName = (aluno.nome || "Estudante").replace(/[^a-zA-Z0-9]/g, "_");
-    const filename = `DietoCase_Relatorio_${cleanStudentName}_${clinicalCase.id || "caso"}.docx`;
+    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const caseTag = isRealPatient ? "Atendimento_Real" : (clinicalCase.id || "caso");
+    const filename = `DietoCase_Relatorio_${cleanStudentName}_${caseTag}.docx`;
     doc.download(filename);
     return doc;
   }

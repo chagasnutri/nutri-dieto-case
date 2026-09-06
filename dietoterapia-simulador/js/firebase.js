@@ -36,6 +36,8 @@ var firebaseSyncService = {
   async setCaseLock(id, lock) { return true; },
   async saveCase(c) { return true; },
   async deleteCase(id) { return true; },
+  async setCaseVisibility(id, vis) { return true; },
+  async saveAtendimentoReal(p) { return true; },
   async saveDisciplina(d) { return true; },
   async deleteDisciplina(id) { return true; },
   applyPhysicalTabLocks(caseData) {

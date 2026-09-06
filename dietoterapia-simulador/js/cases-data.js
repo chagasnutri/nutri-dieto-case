@@ -8,6 +8,7 @@ const DEFAULT_CASES = [
     title: "Caso 1: Paciente Adulto com DM2, HAS e Obesidade Grau I",
     category: "Ambulatorial / Doenças Crônicas Não Transmissíveis",
     description: "Atendimento ambulatorial de paciente de 54 anos com queixas de descontrole glicêmico e pressórico após mudança recente de rotina e ganho de peso.",
+    hipoteseDiagnostica: "Diabetes Mellitus Tipo 2 descompensado, Hipertensão Arterial Sistêmica estágio 1 e Obesidade Grau I com Dislipidemia mista",
     neeKcal: 1850,
     vetRecordatorioHabitual: 2750,
     isLocked: false,
@@ -24,6 +25,7 @@ const DEFAULT_CASES = [
       avatar: "👨"
     },
     history: {
+      hipoteseDiagnostica: "Diabetes Mellitus Tipo 2 descompensado, Hipertensão Arterial Sistêmica estágio 1 e Obesidade Grau I com Dislipidemia mista",
       queixaPrincipal: "Eu ando muito preocupado, doutor(a). Minha glicose e minha pressão subiram demais nas últimas semanas e o médico do posto disse que eu precisava de atendimento urgente com a nutricionista. Eu acordo sem fome nenhuma de manhã, tomo só um cafezinho adoçado correndo, mas de tarde no volante sinto uma fraqueza esquisita, uma boca seca danada e uma sede que não passa, tomo garrafas de refrigerante e água mas parece que não adianta. Além disso, tenho que parar o ônibus toda hora pra urinar e à noite acordo duas ou três vezes pra ir ao banheiro.",
       hda: "Paciente do sexo masculino, 54 anos, hipertenso há 10 anos e diabético há 6 anos, comparece ao ambulatório encaminhado pela Estratégia de Saúde da Família com quadro de descompensação metabólica e pressórica progressiva nos últimos 4 meses. Apresenta sintomas clássicos de síndrome hiperglicêmica caracterizados por polidipsia intensa, xerostomia, poliúria com noctúria (2 a 3 episódios por noite) e astenia vespertina incapacitante. O paciente associa o agravamento do quadro clínico à recente transição para a escala de turno vespertino/noturno como motorista de transporte público coletivo urbano, período no qual apresentou ganho ponderal involuntário de 8,0 kg em 2 anos secundário a padrão alimentar desordenado e ritmo circadiano irregular. Nega precordialgia, palpitações ou dispneia paroxística.",
       hpp: "Portador de Hipertensão Arterial Sistêmica diagnosticada há 10 anos, Diabetes Mellitus Tipo 2 diagnosticado há 6 anos e Dislipidemia mista identificada há 2 anos. Nega antecedentes cirúrgicos prévios, episódios de acidente vascular encefálico, infarto agudo do miocárdio ou histórico de internações hospitalares recentes.",
@@ -126,6 +128,7 @@ const DEFAULT_CASES = [
     title: "Caso 2: Paciente Idosa Hospitalizada com Desnutrição e DRC Conservadora (Estágio 4)",
     category: "Hospitalar / Geriatria / Nefrologia",
     description: "Paciente de 76 anos internada com fraqueza intensa, uremia sintomática, náuseas matinais e perda ponderal grave de 14.4% nos últimos 3 meses.",
+    hipoteseDiagnostica: "Doença Renal Crônica (DRC) Estágio 4 (Não-Dialítica) agudizada, Desnutrição Proteico-Calórica Grave e Sarcopenia da Senescência",
     neeKcal: 1500,
     vetRecordatorioHabitual: 920,
     isLocked: false,
@@ -142,6 +145,7 @@ const DEFAULT_CASES = [
       avatar: "👵"
     },
     history: {
+      hipoteseDiagnostica: "Doença Renal Crônica estágio 4 (não dialítica) com Síndrome Urêmica sintomática, Hipertensão Arterial Crônica e Desnutrição Energético-Proteica aguda",
       queixaPrincipal: "Eu não aguento mais essa fraqueza no corpo, minha filha que precisou me trazer. Já faz quase um mês que eu olho para a comida e não desce nada, sinto um enjoo muito ruim toda manhã, a boca fica amarga como se eu tivesse mastigando ferro ou moeda velha e as pernas parecem pesadas feito chumbo. Minhas roupas estão todas caindo e já perdi quase oito quilos sem querer.",
       hda: "Paciente idosa de 76 anos, portadora de Doença Renal Crônica em estágio 4 não dialítico (eTFG estimada em 21 mL/min/1,73m²) e hipertensão arterial crônica de longa data, admitida na enfermaria de clínica médica para compensação de síndrome urêmica sintomática e desnutrição energético-proteica aguda. Apresenta astenia incapacitante, hiporexia severa com recusa alimentar superior a 75% da ingestão habitual nas últimas 3 semanas, náuseas matinais diárias, xerostomia e queixa de disgeusia pronunciada ('gosto metálico'). A cuidadora familiar confirma redução ponderal involuntária progressiva de 7,8 kg no último trimestre (perda de 14,4% da massa corporal total), acompanhada de sonolência e fadiga aos mínimos esforços.",
       hpp: "Diagnóstico prévio de hipertensão arterial sistêmica há 25 anos em uso regular de medicação e doença renal crônica estágio 4 diagnosticada há 3 anos com declínio progressivo da filtração glomerular. Apresenta osteoartrite moderada em articulações de joelhos. Nega histórico de diabetes mellitus, tabagismo, etilismo ou cardiopatia isquêmica prévia.",
@@ -242,6 +246,7 @@ const DEFAULT_CASES = [
     title: "Caso 3: Paciente Pós-Gastrectomia Subtotal com Síndrome de Dumping",
     category: "Cirúrgico / Trato Gastrointestinal",
     description: "Paciente de 42 anos no 45º dia de pós-operatório de gastrectomia com queixas intensas de tontura, sudorese, taquicardia e diarreia explosiva pós-prandial.",
+    hipoteseDiagnostica: "Pós-operatório tardio de Gastrectomia Subtotal em Y de Roux, Síndrome de Dumping mista (precoce e tardia) com Sitofobia e Desnutrição Aguda Grave",
     neeKcal: 2150,
     vetRecordatorioHabitual: 1380,
     isLocked: false,
@@ -258,6 +263,7 @@ const DEFAULT_CASES = [
       avatar: "👨‍💻"
     },
     history: {
+      hipoteseDiagnostica: "Pós-operatório tardio de Gastrectomia Subtotal em Y de Roux com Síndrome de Dumping (fases precoce e tardia), Sitofobia e Desnutrição Aguda",
       queixaPrincipal: "Doutor(a), eu estou com um medo enorme de comer. Desde que eu passei pela cirurgia de retirada do estômago, cerca de vinte minutos depois que eu almoço ou quando como qualquer doce, meu coração começa a disparar forte no peito, eu começo a suar frio pela testa, as vistas escurecem de tontura e logo em seguida vem uma cólica desesperadora com diarreia que tenho que sair correndo pro banheiro. Depois de uma hora e meia ainda sinto minhas mãos tremerem como se eu fosse desmaiar.",
       hda: "Paciente masculino de 42 anos, no 45º dia de pós-operatório tardio de gastrectomia subtotal com reconstrução em Y de Roux secundária a complicação de úlcera péptica gástrica terebrante com displasia de alto grau. Evolui com quadro clínico típico de Síndrome de Dumping mista: fase precoce vasomotora e gastrointestinal aos 15 a 30 minutos pós-prandiais (plenitude precoce desconfortável, sudorese profusa, palpitações taquicárdicas e diarreia líquida motora explosiva secundária à sobrecarga osmótica hiperosmolar no jejuno) associada à fase tardia aos 90 a 120 minutos pós-prandiais (tremores de extremidades, diaforese e lipotimia decorrentes de hipoglicemia reativa hiperinsulinêmica). Paciente desenvolveu sitofobia (medo de se alimentar) que culminou em emagrecimento severo de 11,0 kg em 45 dias.",
       hpp: "Histórico pregresso de gastrite crônica e úlcera péptica associada a H. pylori erradicada no pré-operatório. Sem antecedentes de hipertensão arterial ou diabetes mellitus. Ex-tabagista (cessação há 6 meses após a indicação cirúrgica).",
@@ -415,14 +421,23 @@ function getCases() {
   }
   try {
     const parsed = JSON.parse(stored);
-    // Garante que isLocked, visivel, blockedTabs e disciplinaId existam com compatibilidade retroativa
-    return parsed.map(c => ({
-      ...c,
-      isLocked: c.isLocked === true,
-      visivel: c.visivel !== false,
-      blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
-      disciplinaId: c.disciplinaId || "dietoterapia"
-    }));
+    // Garante que isLocked, visivel, blockedTabs, hipoteseDiagnostica e disciplinaId existam com compatibilidade retroativa
+    return parsed.map(c => {
+      const def = DEFAULT_CASES.find(d => d.id === c.id);
+      const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
+      return {
+        ...c,
+        hipoteseDiagnostica: hip,
+        history: {
+          ...(c.history || {}),
+          hipoteseDiagnostica: hip
+        },
+        isLocked: c.isLocked === true,
+        visivel: c.visivel !== false,
+        blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
+        disciplinaId: c.disciplinaId || "dietoterapia"
+      };
+    });
   } catch (e) {
     console.error("Erro ao carregar casos do localStorage, recarregando padrões:", e);
     return DEFAULT_CASES;

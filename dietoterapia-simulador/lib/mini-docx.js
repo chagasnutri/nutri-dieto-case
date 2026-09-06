@@ -265,6 +265,11 @@ class MiniDocx {
     };
   }
 
+  // Retorna a string OpenXML completa do documento principal (/word/document.xml)
+  generateDocumentXml() {
+    return this.buildXmlFiles()["word/document.xml"] || "";
+  }
+
   // Cria pacote binário ZIP (Método Store 0)
   generateBlob() {
     const xmlMap = this.buildXmlFiles();

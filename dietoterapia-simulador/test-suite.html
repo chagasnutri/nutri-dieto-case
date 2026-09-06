@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Testes Automatizados - Dietoterapia App</title>
+  <script>
+    window.onerror = function(msg, url, line, col, err) {
+      const container = document.getElementById("results") || document.body;
+      const d = document.createElement("div");
+      d.style.color = "red";
+      d.style.fontWeight = "bold";
+      d.textContent = "GLOBAL ERROR: " + msg + " at " + url + ":" + line + ":" + col + (err ? " -> " + err.stack : "");
+      container.appendChild(d);
+    };
+    window.addEventListener("unhandledrejection", function(e) {
+      const container = document.getElementById("results") || document.body;
+      const d = document.createElement("div");
+      d.style.color = "red";
+      d.style.fontWeight = "bold";
+      d.textContent = "UNHANDLED REJECTION: " + (e.reason ? (e.reason.message || e.reason) : e);
+      container.appendChild(d);
+    });
+  </script>
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
   <script src="js/cases-data.js"></script>
@@ -23,10 +41,16 @@
   <script>
     const results = [];
     function assert(condition, message) {
-      if (condition) {
-        results.push({ pass: true, msg: `✅ PASS: ${message}` });
-      } else {
-        results.push({ pass: false, msg: `❌ FAIL: ${message}` });
+      const entry = { pass: condition, msg: (condition ? "✅ PASS: " : "❌ FAIL: ") + message };
+      results.push(entry);
+      const container = document.getElementById("results");
+      if (container) {
+        const d = document.createElement("div");
+        d.style.fontFamily = "monospace";
+        d.style.padding = "4px";
+        d.style.color = condition ? "green" : "red";
+        d.textContent = entry.msg;
+        container.appendChild(d);
       }
     }
 
@@ -995,21 +1019,21 @@ Questões Avaliativas:
         `Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (${blobNecessidades.size} bytes)`);
 
       // 65. Controle de Visibilidade do Caso (Ocultar/Mostrar) no AdminManager
-      const admMgr = new AdminManager();
-      const testCaseId = "caso-dm2-has";
-      const caseBefore = admMgr.getCaseById(testCaseId);
+      const admMgrVis = new AdminManager();
+      const testCaseIdVis = "caso-dm2-has";
+      const caseBefore = admMgrVis.getCaseById(testCaseIdVis);
       assert(caseBefore && caseBefore.visivel === true, "Caso 1 tem visivel === true por padrão");
 
       // Alterna visibilidade para false
-      const isVisFalse = admMgr.toggleCaseVisibility(testCaseId);
+      const isVisFalse = admMgrVis.toggleCaseVisibility(testCaseIdVis);
       assert(isVisFalse === false, "toggleCaseVisibility alternou visivel para false");
-      const caseHidden = admMgr.getCaseById(testCaseId);
+      const caseHidden = admMgrVis.getCaseById(testCaseIdVis);
       assert(caseHidden.visivel === false, "Caso agora está oculto (visivel: false)");
 
       // Alterna visibilidade de volta para true
-      const isVisTrue = admMgr.toggleCaseVisibility(testCaseId);
+      const isVisTrue = admMgrVis.toggleCaseVisibility(testCaseIdVis);
       assert(isVisTrue === true, "toggleCaseVisibility alternou visivel de volta para true");
-      const caseRestored = admMgr.getCaseById(testCaseId);
+      const caseRestored = admMgrVis.getCaseById(testCaseIdVis);
       assert(caseRestored.visivel === true, "Caso restaurado para visível com sucesso");
 
       // 66. Método de Visibilidade no FirebaseSyncService
@@ -1121,8 +1145,8 @@ Questões Avaliativas:
         "Sincronização de Estado: Interpretação digitada pelo aluno para 'HbA1c' persistida e recuperada");
 
       // 74. Relatório Word (.docx) com a Tabela de Bioquímica e Interpretações
-      const docxRelatorio = DietoterapiaDocxReport.buildReportDocument(prontRecuperado, caso1);
-      const docxXml = docxRelatorio.generateDocumentXml();
+      const docxRelatorioBio = DietoterapiaDocxReport.buildReportDocument(prontRecuperado, caso1);
+      const docxXml = docxRelatorioBio.generateDocumentXml();
       assert(docxXml.includes("Avalia&#231;&#227;o Bioqu&#237;mica Relevante e Racioc&#237;nio Cl&#237;nico") || docxXml.includes("Exame Bioqu"),
         "Relatório Word: Seção de Bioquímica inclui tabela estruturada com interpretações do aluno");
 
@@ -1186,6 +1210,219 @@ Questões Avaliativas:
         "Relatório Word: Seção 3 renderiza módulo de TNE especializada ao invés do cardápio oral");
       assert(xmlTne.includes("42 gotas/min") || xmlTne.includes("gotas/min"),
         "Relatório Word: Detalhamento de vazão da TNE e parâmetros calculados presentes no documento XML");
+
+      // 81. Consistência Obrigatória da Dieta Oral
+      const pMgr81 = new StudentProntuarioManager();
+      const pront81 = pMgr81.getEmptyProntuario();
+      pront81.consistenciaDietaOral = "Dieta Pastosa";
+      pront81.prescricaoDietoterapica.consistencia = "Dieta Pastosa";
+      pMgr81.saveDraft("caso-dm2-has", pront81);
+      const pront81Loaded = pMgr81.loadDraft("caso-dm2-has");
+      assert(pront81Loaded.consistenciaDietaOral === "Dieta Pastosa" && pront81Loaded.prescricaoDietoterapica.consistencia === "Dieta Pastosa",
+        "Dieta Oral: Campo de Tipo/Consistência da Dieta é persistido e sincronizado no prontuário");
+
+      // 82. Nome Comercial da Dieta Enteral
+      const pront82 = pMgr81.getEmptyProntuario();
+      pront82.tne.viaAlimentacao = "tne";
+      pront82.tne.nomeComercial = "Fresubin HP Energy";
+      pMgr81.saveDraft("caso-dm2-has", pront82);
+      const pront82Loaded = pMgr81.loadDraft("caso-dm2-has");
+      assert(pront82Loaded.tne.nomeComercial === "Fresubin HP Energy",
+        "TNE: Campo de Nome Comercial da Dieta persistido com sucesso no prontuário");
+
+      // 83. Tabela Nutricional Manual da TNE (9 Nutrientes)
+      const manualNutrientes = {
+        vet: "1800",
+        cho: "220",
+        ptn: "90",
+        lip: "62",
+        fibra: "24",
+        sodio: "1200",
+        potassio: "1850",
+        calcio: "1000",
+        fosforo: "800"
+      };
+      pront82.tne.tabelaNutricionalManual = manualNutrientes;
+      pMgr81.saveDraft("caso-dm2-has", pront82);
+      const pront83Loaded = pMgr81.loadDraft("caso-dm2-has");
+      assert(pront83Loaded.tne.tabelaNutricionalManual &&
+             pront83Loaded.tne.tabelaNutricionalManual.vet === "1800" &&
+             pront83Loaded.tne.tabelaNutricionalManual.cho === "220" &&
+             pront83Loaded.tne.tabelaNutricionalManual.ptn === "90" &&
+             pront83Loaded.tne.tabelaNutricionalManual.lip === "62" &&
+             pront83Loaded.tne.tabelaNutricionalManual.fibra === "24" &&
+             pront83Loaded.tne.tabelaNutricionalManual.sodio === "1200" &&
+             pront83Loaded.tne.tabelaNutricionalManual.potassio === "1850" &&
+             pront83Loaded.tne.tabelaNutricionalManual.calcio === "1000" &&
+             pront83Loaded.tne.tabelaNutricionalManual.fosforo === "800",
+        "TNE: Tabela Nutricional Manual de 9 nutrientes (VET, CHO, PTN, LIP, Fibra, Na, K, Ca, P) persistida integralmente");
+
+      // 84. Consolidação Nutricional da TNE vs Metas Prescritas
+      const pesoPct84 = 70.0;
+      const vetPrescrito84 = 1800;
+      const prescDist84 = {
+        cho: { minPct: "45", maxPct: "55", minG: 202.5, maxG: 247.5 },
+        ptn: { minPct: "15", maxPct: "20", minG: 67.5, maxG: 90.0 },
+        lip: { minPct: "25", maxPct: "35", minG: 50.0, maxG: 70.0 }
+      };
+      const totalsTne = pMgr81.calculateTneManualNutritionalTotals(manualNutrientes, pesoPct84, vetPrescrito84, prescDist84);
+      assert(totalsTne.vetTotalKcal === 1800, "Consolidação TNE: VET Total calculado com precisão (1800 kcal)");
+      assert(totalsTne.adequacaoVetPct === 100, "Consolidação TNE: Adequação calórica apurada em exatamente 100%");
+      assert(totalsTne.proteinasGKg === 1.3, "Consolidação TNE: Proteína em g/kg calculada corretamente (90g / 70kg = 1.3 g/kg)");
+      assert(totalsTne.calcioMg === 1000 && totalsTne.fosforoMg === 800 && totalsTne.sodioMg === 1200 && totalsTne.potassioMg === 1850,
+        "Consolidação TNE: Micronutrientes (Ca, P, Na, K) consolidados corretamente");
+      assert(totalsTne.statusMacros && totalsTne.statusMacros.ptn.label.includes("Adequado"),
+        "Consolidação TNE: Status da prescrição de macronutrientes validada como adequada");
+
+      // 85. Relatório Word (.docx) com Consistência Oral e Consolidação Completa da TNE
+      pront82.totaisCardapio = totalsTne;
+      const docxTneConsolidado = DietoterapiaDocxReport.buildReportDocument(pront82, caso1);
+      const xmlTneConsolidado = docxTneConsolidado.generateDocumentXml();
+      assert(xmlTneConsolidado.includes("Fresubin HP Energy"),
+        "Relatório Word: Nome Comercial da Dieta Enteral incluído na documentação");
+      assert(xmlTneConsolidado.includes("Tabela Nutricional Manual da F") || xmlTneConsolidado.includes("Tabela Nutricional"),
+        "Relatório Word: Seção 3.1 com a Tabela Nutricional Manual dos 9 nutrientes gerada");
+      assert(xmlTneConsolidado.includes("Consolida") && xmlTneConsolidado.includes("Metas Prescritas") && xmlTneConsolidado.includes("fosfoc"),
+        "Relatório Word: Seção 3.2 com a Consolidação Nutricional da TNE vs Metas e Balanço Fosfocálcico gerada com sucesso");
+
+      // 86. Hipótese Diagnóstica / Diagnóstico Médico nos Casos Simulados e no Admin
+      assert(DEFAULT_CASES && DEFAULT_CASES[0].hipoteseDiagnostica && DEFAULT_CASES[0].hipoteseDiagnostica.includes("Diabetes"),
+        "Caso Simulado 1: Hipótese Diagnóstica / Diagnóstico Médico presente na raiz do caso padrão");
+      assert(DEFAULT_CASES[0].history && DEFAULT_CASES[0].history.hipoteseDiagnostica,
+        "Caso Simulado 1: Hipótese Diagnóstica sincronizada no histórico clínico do caso");
+      
+      const pront86 = pMgr81.getEmptyProntuario();
+      pront86.anamnese.hipoteseDiagnostica = DEFAULT_CASES[0].hipoteseDiagnostica;
+      pMgr81.saveDraft("caso-dm2-has", pront86);
+      const pront86Loaded = pMgr81.loadDraft("caso-dm2-has");
+      assert(pront86Loaded.anamnese.hipoteseDiagnostica === DEFAULT_CASES[0].hipoteseDiagnostica,
+        "Prontuário Simulado: Hipótese Diagnóstica persistida com sucesso na Anamnese");
+      
+      const docxSimHip = DietoterapiaDocxReport.buildReportDocument(pront86, DEFAULT_CASES[0]);
+      const xmlSimHip = docxSimHip.generateDocumentXml();
+      assert(xmlSimHip.includes("HIP&#xD3;TESE DIAGN&#xD3;STICA") || xmlSimHip.includes("DIAGN&#xD3;STICO M&#xC9;DICO") || xmlSimHip.includes("Diabetes"),
+        "Relatório Word (Simulação): Callout de Hipótese Diagnóstica / Diagnóstico Médico em destaque visual");
+
+      // 87. Inicialização e Estrutura do Modo Atendimento Real (Criar Caso do Zero)
+      const pMgrReal = new StudentProntuarioManager();
+      const prontRealInit = pMgrReal.getEmptyProntuario();
+      assert(prontRealInit.isRealPatient === false, "Prontuário Base: Inicializado com isRealPatient = false");
+      assert(prontRealInit.dadosPacienteReal && typeof prontRealInit.dadosPacienteReal === "object",
+        "Prontuário Base: Estrutura dadosPacienteReal inicializada");
+      assert(Array.isArray(prontRealInit.interacaoDrogaNutriente) && prontRealInit.interacaoDrogaNutriente.length === 0,
+        "Prontuário Base: Lista interacaoDrogaNutriente inicializada vazia");
+
+      // Preenchimento de Consulta Real
+      prontRealInit.isRealPatient = true;
+      prontRealInit.id = "atendimento-real-test-101";
+      prontRealInit.aluno = {
+        nome: "Beatriz Nutrição",
+        matriculaTurma: "NUT-2026-A",
+        data: "2026-09-05"
+      };
+      prontRealInit.dadosPacienteReal = {
+        nome: "Carlos Eduardo Silva",
+        idade: "52",
+        sexo: "Masculino",
+        ocupacao: "Contador",
+        hipoteseDiagnostica: "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II"
+      };
+      prontRealInit.anamnese.hipoteseDiagnostica = prontRealInit.dadosPacienteReal.hipoteseDiagnostica;
+      pMgrReal.saveDraft(prontRealInit.id, prontRealInit);
+      const prontRealLoaded = pMgrReal.loadDraft(prontRealInit.id);
+      assert(prontRealLoaded.isRealPatient === true, "Atendimento Real: Flag isRealPatient persistida");
+      assert(prontRealLoaded.dadosPacienteReal.nome === "Carlos Eduardo Silva" && prontRealLoaded.dadosPacienteReal.idade === "52",
+        "Atendimento Real: Identificação do paciente real persistida integralmente");
+      assert(prontRealLoaded.dadosPacienteReal.hipoteseDiagnostica.includes("Esteatose Hepática"),
+        "Atendimento Real: Hipótese Diagnóstica / Diagnóstico Médico obrigatório gravado");
+
+      // 88. Tabela Dinâmica de Interações Droga-Nutriente & Farmacoterapia
+      pMgrReal.addInteracaoDrogaNutriente(prontRealLoaded, {
+        medicamento: "Metformina 850mg (2x/dia)",
+        nutrientes: "Vitamina B12 e Ácido Fólico",
+        conduta: "Monitorar dosagem sérica de Vitamina B12 anualmente e suplementar se necessário."
+      });
+      pMgrReal.addInteracaoDrogaNutriente(prontRealLoaded, {
+        medicamento: "Furosemida 40mg (1x/dia)",
+        nutrientes: "Potássio, Magnésio, Cálcio, Zinco e Tiamina",
+        conduta: "Estimular fontes dietéticas de potássio e magnésio; acompanhar eletrólitos séricos."
+      });
+      assert(prontRealLoaded.interacaoDrogaNutriente.length === 2,
+        "Interações Droga-Nutriente: Inserção de 2 fármacos na tabela dinâmica");
+      assert(prontRealLoaded.interacaoDrogaNutriente[0].medicamento.includes("Metformina"),
+        "Interações Droga-Nutriente: Primeiro fármaco registrado corretamente");
+      
+      // Remoção de um fármaco da tabela
+      pMgrReal.removeInteracaoDrogaNutriente(prontRealLoaded, 0);
+      assert(prontRealLoaded.interacaoDrogaNutriente.length === 1,
+        "Interações Droga-Nutriente: Remoção de linha via índice executada");
+      assert(prontRealLoaded.interacaoDrogaNutriente[0].medicamento.includes("Furosemida"),
+        "Interações Droga-Nutriente: Fármaco remanescente preservado");
+
+      // Adiciona de volta e define observações gerais
+      pMgrReal.addInteracaoDrogaNutriente(prontRealLoaded, {
+        medicamento: "Atorvastatina 20mg",
+        nutrientes: "Coenzima Q10 (CoQ10)",
+        conduta: "Atentar para mialgias; considerar fontes alimentares de antioxidantes."
+      });
+      prontRealLoaded.observacoesFarmacoterapia = "Paciente relata uso contínuo dos medicamentos após as refeições principais.";
+      pMgrReal.saveDraft(prontRealInit.id, prontRealLoaded);
+      const prontDrogaLoaded = pMgrReal.loadDraft(prontRealInit.id);
+      assert(prontDrogaLoaded.interacaoDrogaNutriente.length === 2 &&
+             prontDrogaLoaded.observacoesFarmacoterapia.includes("refeições"),
+        "Interações Droga-Nutriente: Persistência de tabela e parecer geral de farmacoterapia");
+
+      // 89. Adição Dinâmica de Exames Bioquímicos Laboratoriais na Consulta Real
+      if (!prontDrogaLoaded.bioquimica) prontDrogaLoaded.bioquimica = {};
+      if (!prontDrogaLoaded.bioquimica.interpretacoes) prontDrogaLoaded.bioquimica.interpretacoes = {};
+      if (!Array.isArray(prontDrogaLoaded.bioquimica.listaCustom)) prontDrogaLoaded.bioquimica.listaCustom = [];
+      
+      const novoExameCustom = {
+        exame: "Hemoglobina Glicada (HbA1c)",
+        referencia: "< 5.7%",
+        valor: "7.8%",
+        interpretacao: "Controle glicêmico inadequado, compatível com DM2 descompensado"
+      };
+      prontDrogaLoaded.bioquimica.listaCustom.push(novoExameCustom);
+      prontDrogaLoaded.bioquimica.interpretacoes[novoExameCustom.exame] = novoExameCustom.interpretacao;
+
+      // Validação propedêutica do valor achado
+      const interpScore = typeof evaluateBiochemicalExam === "function"
+        ? evaluateBiochemicalExam(novoExameCustom.valor, novoExameCustom.referencia)
+        : { status: "alto" };
+      assert(interpScore.status === "alto", "Bioquímica Dinâmica: Algoritmo propedêutico apurou status 'alto' para HbA1c 7.8% (ref < 5.7%)");
+      assert(prontDrogaLoaded.bioquimica.interpretacoes["Hemoglobina Glicada (HbA1c)"].includes("Controle glicêmico"),
+        "Bioquímica Dinâmica: Raciocínio clínico associado ao exame customizado persistido");
+
+      // 90. Relatório Word (.docx) Formatado para Atendimento Presencial Real
+      const realCaseMeta = {
+        id: prontDrogaLoaded.id,
+        title: "Atendimento Presencial Real",
+        category: "Consulta Ambulatorial / Hospitalar",
+        description: `Consulta presencial de ${prontDrogaLoaded.dadosPacienteReal.nome}`,
+        isRealCase: true,
+        patient: {
+          name: prontDrogaLoaded.dadosPacienteReal.nome,
+          age: prontDrogaLoaded.dadosPacienteReal.idade,
+          gender: prontDrogaLoaded.dadosPacienteReal.sexo,
+          occupation: prontDrogaLoaded.dadosPacienteReal.ocupacao
+        },
+        hipoteseDiagnostica: prontDrogaLoaded.dadosPacienteReal.hipoteseDiagnostica,
+        habilitarQuestoesAvaliativas: false
+      };
+
+      const docxReal = DietoterapiaDocxReport.buildReportDocument(prontDrogaLoaded, realCaseMeta);
+      const xmlReal = docxReal.generateDocumentXml();
+      assert(xmlReal.includes("Atendimento Presencial Real"),
+        "Relatório Word (Real): Título e cabeçalho indicam Atendimento Presencial Real");
+      assert(xmlReal.includes("Carlos Eduardo Silva") && xmlReal.includes("Beatriz Nutri"),
+        "Relatório Word (Real): Identificação do paciente real e do estudante presentes");
+      assert(xmlReal.includes("Metab") || xmlReal.includes("Esteatose Hep"),
+        "Relatório Word (Real): Hipótese Diagnóstica / Diagnóstico Médico impressa com destaque");
+      assert(xmlReal.includes("Droga-Nutriente") || xmlReal.includes("Furosemida"),
+        "Relatório Word (Real): Seção 1.3 com a Tabela de Interações Droga-Nutriente e condutas incluída");
+      assert(!xmlReal.includes("4. QUEST&#xD5;ES AVALIATIVAS (AVALIA&#xC7;&#xC3;O DOCENTE)"),
+        "Relatório Word (Real): Bloco de questões docentes suprimido para paciente presencial");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

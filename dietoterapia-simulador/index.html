@@ -98,6 +98,75 @@
     <!-- 1. VITRINE / CATÁLOGO DE CASOS CLÍNICOS DO ALUNO -->
     <section id="studentCatalogSection" class="space-y-4">
       
+      <!-- BIFURCAÇÃO INICIAL: SELEÇÃO DE MODO DE ATUAÇÃO (MODO SIMULAÇÃO VS MODO ATENDIMENTO REAL) -->
+      <div id="studentPortalModeSelection" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <div class="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-1">
+              <span>🩺</span>
+              <span>Portal Acadêmico do Estudante</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">Escolha o seu Modo de Prática Clínica</h2>
+            <p class="text-xs text-slate-500">Selecione se deseja realizar um caso clínico simulado da disciplina ou iniciar o prontuário em branco de um atendimento presencial real.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="activeWorkflowModeBadge" class="badge-clinical bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px]">
+              Modo Atual: 🎓 Simulação
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- CARD 1: MODO SIMULAÇÃO CLÍNICA -->
+          <div id="selectModeSimulationBtn" class="group relative bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-white hover:from-emerald-100/80 hover:to-teal-50 border-2 border-emerald-300 hover:border-emerald-500 rounded-2xl p-5 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between">
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
+                  🎓
+                </div>
+                <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-emerald-200">
+                  Casos da Disciplina
+                </span>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">Modo Simulação Clínica</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Acesse os casos clínicos pré-configurados pelo professor, pratique anamnese interativa via chat com o paciente e equipe multiprofissional, e construa a conduta dietoterápica orientada.
+                </p>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-800">
+              <span>Acessar Disciplinas & Casos Simulados</span>
+              <span class="transform group-hover:translate-x-1.5 transition-transform">➔</span>
+            </div>
+          </div>
+
+          <!-- CARD 2: MODO ATENDIMENTO REAL -->
+          <div id="selectModeRealBtn" class="group relative bg-gradient-to-br from-sky-50/70 via-indigo-50/40 to-white hover:from-sky-100/80 hover:to-indigo-50 border-2 border-sky-300 hover:border-sky-500 rounded-2xl p-5 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between">
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
+                  🩺
+                </div>
+                <span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-sky-200">
+                  Prontuário em Branco
+                </span>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-900 group-hover:text-sky-900 transition-colors">Modo Atendimento Real</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Registre uma consulta presencial real (ambulatorial ou hospitalar). Todas as etapas clínicas 100% liberadas, identificação do paciente, cálculo automático de IMC, tabela de interação droga-nutriente e emissão de relatório oficial Word.
+                </p>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-sky-200/60 flex items-center justify-between text-xs font-bold text-sky-700 group-hover:text-sky-800">
+              <span>Iniciar Novo Atendimento Real</span>
+              <span class="transform group-hover:translate-x-1.5 transition-transform">➔</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- VISÃO A: PORTAL DE DISCIPLINAS DO ALUNO (Visível inicialmente - Casos NÃO aparecem aqui) -->
       <div id="studentDisciplinePortalSection" class="space-y-4">
         <!-- HERO BANNER DAS DISCIPLINAS -->
@@ -216,17 +285,33 @@
               <h2 id="casePatientNameHeader" class="font-bold text-slate-900 text-sm sm:text-base">Carregando caso...</h2>
               <span id="caseCategoryHeader" class="badge-clinical bg-slate-100 text-slate-700">Ambulatorial</span>
             </div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hipótese Diagnóstica:</span>
+              <span id="caseHipoteseDiagnosticaHeader" class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                🩺 Carregando diagnóstico...
+              </span>
+            </div>
             <p id="caseDescHeader" class="text-xs text-slate-500 line-clamp-1">Descrição breve do caso clínico e patologia em estudo.</p>
           </div>
         </div>
 
-        <!-- Seletor Rápido e Salvamento Local -->
+        <!-- Seletor Rápido e Salvamento Local / Ações de Atendimento Real -->
         <div class="flex items-center space-x-2 text-xs text-slate-500">
-          <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1">
+          <div id="simCaseSelectWrapper" class="flex items-center space-x-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1">
             <span class="text-[11px] font-semibold text-slate-600 hidden sm:inline">Trocar caso:</span>
             <select id="caseSelectDropdown" class="bg-transparent text-xs font-medium text-slate-800 focus:outline-none cursor-pointer max-w-[180px] truncate">
               <!-- Populado via JavaScript -->
             </select>
+          </div>
+          <div id="realPatientActionsWrapper" class="hidden flex items-center space-x-1.5">
+            <button id="realSaveTopBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition flex items-center space-x-1 shadow-2xs">
+              <span>💾</span>
+              <span>Salvar Atendimento</span>
+            </button>
+            <button id="realExportDocxTopBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition flex items-center space-x-1 shadow-2xs">
+              <span>📄</span>
+              <span>Gerar Relatório (.docx)</span>
+            </button>
           </div>
           <span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded border border-emerald-200 font-medium text-[11px] hidden sm:inline-flex items-center space-x-1">
             <span>💾</span> <span>Auto-salvamento ativo</span>
@@ -353,6 +438,54 @@
               </button>
             </div>
           </div>
+          <!-- IDENTIFICAÇÃO DO ATENDIMENTO REAL (CAMPOS DO PACIENTE E DIAGNÓSTICO MÉDICO OBRIGATÓRIO) -->
+          <div id="realPatientHeaderCard" class="hidden bg-gradient-to-r from-sky-50 via-indigo-50/40 to-white border-b-2 border-sky-300 p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="text-base">🩺</span>
+                <span class="font-black text-slate-800 text-xs uppercase tracking-wide">Identificação do Paciente Real & Diagnóstico de Base</span>
+              </div>
+              <span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-sky-300">
+                Atendimento Ambulatorial / Hospitalar
+              </span>
+            </div>
+
+            <!-- DADOS BÁSICOS DO PACIENTE REAL -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Nome / Iniciais do Paciente: *</label>
+                <input type="text" id="realPatName" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: M. S. A. ou Maria da Silva">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Idade: *</label>
+                <input type="number" id="realPatAge" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: 48">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Sexo / Gênero: *</label>
+                <select id="realPatGender" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium">
+                  <option value="Feminino">Feminino</option>
+                  <option value="Masculino">Masculino</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Ocupação / Trabalho:</label>
+                <input type="text" id="realPatOccupation" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: Auxiliar administrativo">
+              </div>
+            </div>
+
+            <!-- HIPÓTESE DIAGNÓSTICA / DIAGNÓSTICO MÉDICO OBRIGATÓRIO -->
+            <div class="bg-rose-50/90 border border-rose-200 rounded-xl p-2.5">
+              <label class="block font-bold text-rose-950 text-xs mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span>🩺</span>
+                  <span>Hipótese Diagnóstica / Diagnóstico Médico: *</span>
+                </span>
+                <span class="text-[10px] text-rose-800 bg-rose-100 px-2 py-0.2 rounded font-semibold">Obrigatório</span>
+              </label>
+              <input type="text" id="realPatHipoteseDiagnostica" class="w-full border-2 border-rose-300 focus:border-rose-600 rounded-lg px-2.5 py-1.5 text-xs bg-white font-bold text-slate-800" placeholder="Ex: Diabetes Mellitus tipo 2 descompensado, Esteatose Hepática Grau II, Hipertensão Arterial Sistêmica...">
+              <p class="text-[10px] text-rose-800/80 mt-1">Todo atendimento dietoterápico deve partir da hipótese diagnóstica ou diagnóstico médico confirmado.</p>
+            </div>
+          </div>
 
           <!-- IDENTIFICAÇÃO DO ALUNO (CAMPOS COMPACTOS) -->
           <div class="bg-slate-50 border-b border-slate-200 p-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
@@ -384,6 +517,9 @@
             <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="examefisico">
               <span>🩺</span> <span>Exame Físico</span>
             </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="droganutriente">
+              <span>💊</span> <span>Interação Droga-Nutriente</span>
+            </button>
             <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="consumo">
               <span>🍎</span> <span>Consumo</span>
             </button>
@@ -410,6 +546,20 @@
             <!-- ABA 1: ANAMNESE -->
             <div id="tab-content-anamnese" class="student-tab-content space-y-3">
               <h4 class="font-bold text-slate-800 text-sm border-b pb-1">História Clínica e Anamnese Geral</h4>
+              
+              <!-- HIPÓTESE DIAGNÓSTICA / DIAGNÓSTICO MÉDICO DE BASE -->
+              <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-3 space-y-1 shadow-2xs">
+                <label class="block font-bold text-rose-950 text-xs flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span>🩺</span>
+                    <span>Hipótese Diagnóstica / Diagnóstico Médico:</span>
+                  </span>
+                  <span class="text-[10px] text-rose-700 font-semibold bg-rose-100 px-2 py-0.5 rounded border border-rose-200">Diagnóstico de Base</span>
+                </label>
+                <input type="text" id="prontHipoteseDiagnostica" class="w-full border border-rose-300 focus:border-rose-500 rounded-lg p-2 text-xs bg-white font-bold text-slate-800 shadow-2xs" placeholder="Ex: Diabetes Mellitus tipo 2 descompensado, Hipertensão Arterial Sistêmica...">
+                <p class="text-[10px] text-rose-800/80">Diagnóstico médico de base que orienta a linha de cuidado e o raciocínio dietoterápico.</p>
+              </div>
+
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Queixa Principal (relatada pelo paciente):</label>
                 <input type="text" id="prontQueixaPrincipal" class="w-full border border-slate-300 rounded p-2" placeholder="Descreva a queixa que trouxe o paciente à consulta">
@@ -619,17 +769,23 @@
                   </h4>
                   <p class="text-xs text-slate-500">Exames laboratoriais do paciente com avaliação propedêutica automática e raciocínio clínico individual.</p>
                 </div>
-                <div class="flex items-center space-x-2 text-[11px] font-semibold">
-                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Adequado</span>
-                  </span>
-                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                    <span>Alto ↑</span>
-                  </span>
-                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    <span>Baixo ↓</span>
-                  </span>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <div class="flex items-center space-x-2 text-[11px] font-semibold">
+                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>Adequado</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span>Alto ↑</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      <span>Baixo ↓</span>
+                    </span>
+                  </div>
+                  <button id="studentAddCustomBioExamBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-2xs transition flex items-center space-x-1 cursor-pointer">
+                    <span>➕</span>
+                    <span>Adicionar Exame</span>
+                  </button>
                 </div>
               </div>
 
@@ -677,6 +833,71 @@
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Condições Orais, Trato Gastrointestinal e Edemas:</label>
                 <textarea id="prontTGIEdemas" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Mastigação, deglutição, dentição/prótese, náuseas, vômitos, edema periférico, ascite..."></textarea>
+              </div>
+            </div>
+
+            <!-- ABA: INTERAÇÃO DROGA-NUTRIENTE -->
+            <div id="tab-content-droganutriente" class="student-tab-content hidden space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>💊</span>
+                    <span>Interações Droga-Nutriente & Farmacoterapia Aplicada</span>
+                  </h4>
+                  <p class="text-xs text-slate-500">Mapeamento dos medicamentos em uso pelo paciente, nutrientes espoliados ou com absorção alterada e conduta nutricional preventiva.</p>
+                </div>
+                <button type="button" id="addDrugInteractionBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer">
+                  <span>➕</span>
+                  <span>Adicionar Fármaco / Interação</span>
+                </button>
+              </div>
+
+              <!-- SUGESTÕES RÁPIDAS DE INTERAÇÕES COMUNS -->
+              <div class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-3 space-y-2">
+                <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider block">Sugestões Rápidas de Interações Farmacológicas Comuns:</span>
+                <div class="flex flex-wrap gap-1.5 text-[11px]" id="drugInteractionChips">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Metformina (850mg)" data-nutr="Depleção crônica de Vitamina B12 e Ácido Fólico" data-cond="Monitorar níveis séricos anuais de Vitamina B12 e suplementar se limítrofe (< 300 pg/mL). Administrar junto às principais refeições.">
+                    💊 Metformina &rarr; Vitamina B12
+                  </button>
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Furosemida (40mg)" data-nutr="Espoliação urinária de Potássio (K), Magnésio (Mg), Cálcio e Tiamina" data-cond="Aumentar ingestão de fontes alimentares de potássio (banana, água de coco, batata) e magnésio. Monitorar eletrólitos séricos.">
+                    💊 Furosemida &rarr; K, Mg e Ca
+                  </button>
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Varfarina Sódica" data-nutr="Antagonismo competitivo com Vitamina K (fatores de coagulação dependentes)" data-cond="Manter consumo dietético rigorosamente constante de vegetais verde-escuros (evitar oscilações bruscas). Não suspender nem concentrar.">
+                    💊 Varfarina &rarr; Vitamina K
+                  </button>
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Omeprazol / IBPs (40mg)" data-nutr="Hipocloridria reduz absorção de Vitamina B12, Ferro não-heme, Cálcio e Magnésio" data-cond="Administrar 30 a 60 minutos antes do café da manhã em jejum. Priorizar citrato de cálcio e fontes heme de ferro se necessário.">
+                    💊 Omeprazol &rarr; B12, Fe, Ca
+                  </button>
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Levotiroxina Sódica" data-nutr="Quelação e inibição da absorção ileal por Cálcio, Ferro, Soja e Fibras alimentares" data-cond="Administrar em jejum absoluto com água, aguardar 30 a 60 min para alimentar-se. Separar suplementos de Ca e Fe por pelo menos 4 horas.">
+                    💊 Levotiroxina &rarr; Ca, Fe, Fibras
+                  </button>
+                </div>
+              </div>
+
+              <!-- TABELA DINÂMICA DE INTERAÇÕES DROGA-NUTRIENTE -->
+              <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs bg-white">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-xs" id="drugNutrientTable">
+                  <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                      <th scope="col" class="py-3 px-3 w-1/4">Medicamento em Uso / Fármaco</th>
+                      <th scope="col" class="py-3 px-3 w-1/3">Nutrientes Afetados / Mecanismo</th>
+                      <th scope="col" class="py-3 px-3 w-1/3">Conduta Nutricional / Horário</th>
+                      <th scope="col" class="py-3 px-2 text-center w-16">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="drugNutrientTableBody" class="divide-y divide-slate-100">
+                    <!-- Linhas injetadas dinamicamente via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Campo livre de Observações Farmacoterápicas -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+                <label for="prontObsFarmacoterapia" class="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                  <span>📝 Parecer e Observações Gerais da Farmacoterapia:</span>
+                  <span class="text-[10px] text-slate-400 font-normal">Ajustes posológicos e interações com horários das refeições</span>
+                </label>
+                <textarea id="prontObsFarmacoterapia" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" rows="2" placeholder="Observações sobre tolerância aos medicamentos, polifarmácia ou recomendações conjuntas com a equipe médica..."></textarea>
               </div>
             </div>
 
@@ -1422,6 +1643,31 @@
                   </button>
                 </div>
 
+                <!-- CAMPO OBRIGATÓRIO: TIPO / CONSISTÊNCIA DA DIETA ORAL -->
+                <div class="bg-white border-2 border-emerald-500/80 rounded-xl p-3.5 shadow-2xs space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label for="prontCardapioConsistencia" class="block font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                      <span class="text-base">🥣</span>
+                      <span>Tipo / Consistência da Dieta Oral:</span>
+                      <span class="text-rose-500 font-bold ml-1 text-sm">*</span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 ml-1">Obrigatório</span>
+                    </label>
+                    <span class="text-[11px] text-slate-500">Defina a consistência prescrita para nortear os alimentos da TACO</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <select id="prontCardapioConsistencia" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-800">
+                      <option value="Dieta Livre / Normal">Dieta Livre / Geral / Normal</option>
+                      <option value="Dieta Branda">Dieta Branda</option>
+                      <option value="Dieta Pastosa">Dieta Pastosa</option>
+                      <option value="Dieta Semilíquida / Líquida-Pastosa">Dieta Semilíquida / Líquida-Pastosa</option>
+                      <option value="Dieta Líquida Completa">Dieta Líquida Completa</option>
+                      <option value="Dieta Líquida Restrita / Clara">Dieta Líquida Restrita / Clara</option>
+                      <option value="Personalizada">Outra / Personalizada (especificar ao lado)</option>
+                    </select>
+                    <input type="text" id="prontCardapioConsistenciaCustom" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500" placeholder="Especificação complementar da consistência (ex: pastosa batida sem resíduos)">
+                  </div>
+                </div>
+
               <!-- CARD INFORMATIVO OFICIAL: BASE TACO + REGRA DE TRÊS + MEDIDA CASEIRA LIVRE -->
               <div class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
                 <div class="flex items-center justify-between">
@@ -1457,134 +1703,6 @@
                 <tbody id="cardapioTableBody"></tbody>
               </table>
 
-              <!-- PAINEL CONSOLIDADO DE TOTAIS DO CARDÁPIO VS META PRESCRITA -->
-              <div id="cardapioTotalsPanel" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 space-y-3 shadow-md">
-                <div class="flex flex-wrap items-center justify-between border-b border-slate-700/80 pb-2">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-base">📊</span>
-                    <h5 class="font-bold text-xs uppercase tracking-wider text-emerald-400">Consolidação Nutricional do Cardápio vs Metas Prescritas</h5>
-                  </div>
-                  <span id="dispCardapioVetStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
-                    Aguardando Itens
-                  </span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <!-- Card VET -->
-                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">VET do Cardápio:</span>
-                    <div class="flex items-baseline space-x-1">
-                      <strong id="dispCardapioVetTotal" class="text-lg font-black text-emerald-400">0</strong>
-                      <span class="text-[10px] text-slate-400 font-bold">kcal</span>
-                    </div>
-                    <div class="text-[10px] text-slate-300 flex justify-between">
-                      <span>Meta: <strong id="dispCardapioMetaVet">--</strong> kcal</span>
-                      <span class="text-emerald-400 font-bold" id="dispCardapioVetAdeq">--%</span>
-                    </div>
-                  </div>
-
-                  <!-- Card Carboidratos -->
-                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[10px] uppercase font-bold text-slate-400">Carboidratos:</span>
-                      <span id="dispCardapioChoStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
-                    </div>
-                    <div class="flex items-baseline space-x-1">
-                      <strong id="dispCardapioChoTotalG" class="text-lg font-black text-amber-400">0</strong>
-                      <span class="text-[10px] text-slate-400 font-bold">g</span>
-                      <span class="text-[10px] text-amber-300 font-bold">(<span id="dispCardapioChoTotalPct">0</span>%)</span>
-                    </div>
-                    <div class="text-[10px] text-slate-300">
-                      <span>Meta: <strong id="dispCardapioMetaCho">--</strong></span>
-                    </div>
-                  </div>
-
-                  <!-- Card Proteínas -->
-                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[10px] uppercase font-bold text-slate-400">Proteínas:</span>
-                      <span id="dispCardapioPtnStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
-                    </div>
-                    <div class="flex items-baseline space-x-1">
-                      <strong id="dispCardapioPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
-                      <span class="text-[10px] text-slate-400 font-bold">g</span>
-                      <span class="text-[10px] text-sky-300 font-bold">(<span id="dispCardapioPtnTotalPct">0</span>%)</span>
-                    </div>
-                    <div class="text-[10px] text-slate-300 flex justify-between">
-                      <span>Meta: <strong id="dispCardapioMetaPtn">--</strong></span>
-                      <span class="text-sky-300 font-semibold" id="dispCardapioPtnGKg">0 g/kg</span>
-                    </div>
-                  </div>
-
-                  <!-- Card Lipídios -->
-                  <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[10px] uppercase font-bold text-slate-400">Lipídios:</span>
-                      <span id="dispCardapioLipStatusBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
-                    </div>
-                    <div class="flex items-baseline space-x-1">
-                      <strong id="dispCardapioLipTotalG" class="text-lg font-black text-rose-400">0</strong>
-                      <span class="text-[10px] text-slate-400 font-bold">g</span>
-                      <span class="text-[10px] text-rose-300 font-bold">(<span id="dispCardapioLipTotalPct">0</span>%)</span>
-                    </div>
-                    <div class="text-[10px] text-slate-300">
-                      <span>Meta: <strong id="dispCardapioMetaLip">--</strong></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- LINHA INFORMATIVA DE FIBRAS E BALANÇO -->
-                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
-                  <span>🌾 Fibras Alimentares Totais apuradas no Cardápio: <strong id="dispCardapioFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
-                  <span id="dispCardapioBalancoMsg" class="text-slate-400 italic">Preencha os alimentos para confrontar com a prescrição</span>
-                </div>
-
-                <!-- SEÇÃO CONSOLIDADA DE MICRONUTRIENTES PRIORITÁRIOS DA TACO NO CARDÁPIO -->
-                <div class="bg-slate-800/50 border border-emerald-700/40 rounded-lg p-3 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[11px] uppercase font-bold text-emerald-300 flex items-center space-x-1">
-                      <span>🧪</span>
-                      <span>Micronutrientes Prioritários no Cardápio (TACO):</span>
-                    </span>
-                    <span class="text-[10px] text-slate-400">Soma de todas as refeições planejadas</span>
-                  </div>
-
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <!-- Cálcio -->
-                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
-                      <span class="text-[10px] font-semibold text-slate-400 block">🥛 Cálcio (Ca):</span>
-                      <div class="flex items-baseline space-x-1 mt-0.5">
-                        <strong id="dispCardapioCalcioTotal" class="text-base font-black text-white">0</strong>
-                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
-                      </div>
-                    </div>
-                    <!-- Ferro -->
-                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
-                      <span class="text-[10px] font-semibold text-slate-400 block">🥩 Ferro (Fe):</span>
-                      <div class="flex items-baseline space-x-1 mt-0.5">
-                        <strong id="dispCardapioFerroTotal" class="text-base font-black text-white">0</strong>
-                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
-                      </div>
-                    </div>
-                    <!-- Sódio -->
-                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
-                      <span class="text-[10px] font-semibold text-slate-400 block">🧂 Sódio (Na):</span>
-                      <div class="flex items-baseline space-x-1 mt-0.5">
-                        <strong id="dispCardapioSodioTotal" class="text-base font-black text-white">0</strong>
-                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
-                      </div>
-                    </div>
-                    <!-- Potássio -->
-                    <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
-                      <span class="text-[10px] font-semibold text-slate-400 block">🍌 Potássio (K):</span>
-                      <div class="flex items-baseline space-x-1 mt-0.5">
-                        <strong id="dispCardapioPotassioTotal" class="text-base font-black text-white">0</strong>
-                        <span class="text-[10px] text-slate-400 font-medium">mg</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
               <!-- FIM DO CONTAINER DE DIETA ORAL -->
             </div>
 
@@ -1597,6 +1715,87 @@
                     <h4 class="font-bold text-slate-800 text-xs sm:text-sm">Prescrição de Terapia Nutricional Enteral (TNE)</h4>
                     <p class="text-[11px] text-slate-600">Preencha os parâmetros da fórmula enteral, cálculo de taxas de infusão e módulo proteico conforme raciocínio clínico.</p>
                   </div>
+                </div>
+              </div>
+
+              <!-- IDENTIFICAÇÃO E TABELA NUTRICIONAL MANUAL DA DIETA ENTERAL -->
+              <div class="bg-white border-2 border-sky-500/70 rounded-xl p-4 shadow-2xs space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-2">
+                  <h5 class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                    <span class="text-base">🏷️</span>
+                    <span>Identificação Comercial & Tabela Nutricional da Dieta Enteral</span>
+                  </h5>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">Preenchimento Quantitativo Manual</span>
+                </div>
+
+                <!-- NOME COMERCIAL DA DIETA -->
+                <div>
+                  <label for="tneNomeComercial" class="block font-semibold text-slate-700 mb-1 flex items-center space-x-1">
+                    <span>Nome Comercial da Dieta Enteral:</span>
+                    <span class="text-rose-500 font-bold">*</span>
+                  </label>
+                  <input type="text" id="tneNomeComercial" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-sky-500 text-slate-800 font-medium" placeholder="Ex: Fresubin HP Energy, Diben 1.5 kcal, Nutren 1.0, Novasource GI Control, Trophic Basic...">
+                  <p class="text-[11px] text-slate-500 mt-1">Informe a marca comercial ou especificação da fórmula prescrita para consulta de sua rotulagem/composição.</p>
+                </div>
+
+                <!-- TABELA NUTRICIONAL DE PREENCHIMENTO MANUAL -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-xs text-slate-800 flex items-center space-x-1">
+                      <span>📊</span>
+                      <span>Tabela Nutricional Manual (Totais Fornecidos ao Dia pela Fórmula):</span>
+                    </strong>
+                    <span class="text-[10px] text-slate-500 italic">Preencha os valores totais calculados para o volume prescrito</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 text-xs">
+                    <!-- VET -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">VET Total (kcal):</label>
+                      <input type="number" step="0.1" id="tneManualVet" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold text-emerald-600 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- CHO -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Carboidratos - CHO (g):</label>
+                      <input type="number" step="0.1" id="tneManualCho" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold text-amber-600 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- PTN -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Proteínas - PTN (g):</label>
+                      <input type="number" step="0.1" id="tneManualPtn" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold text-sky-600 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- LIP -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Lipídios - LIP (g):</label>
+                      <input type="number" step="0.1" id="tneManualLip" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold text-rose-600 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- Fibras -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Fibras (g):</label>
+                      <input type="number" step="0.1" id="tneManualFibra" class="w-full border border-slate-300 rounded p-1.5 text-xs font-bold text-emerald-700 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- Sódio -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Sódio - Na (mg):</label>
+                      <input type="number" step="0.1" id="tneManualSodio" class="w-full border border-slate-300 rounded p-1.5 text-xs font-medium text-slate-800 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- Potássio -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Potássio - K (mg):</label>
+                      <input type="number" step="0.1" id="tneManualPotassio" class="w-full border border-slate-300 rounded p-1.5 text-xs font-medium text-slate-800 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- Cálcio -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Cálcio - Ca (mg):</label>
+                      <input type="number" step="0.1" id="tneManualCalcio" class="w-full border border-slate-300 rounded p-1.5 text-xs font-medium text-slate-800 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                    <!-- Fósforo -->
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
+                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Fósforo - P (mg):</label>
+                      <input type="number" step="0.1" id="tneManualFosforo" class="w-full border border-slate-300 rounded p-1.5 text-xs font-medium text-slate-800 focus:ring-1 focus:ring-sky-500" placeholder="0">
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-500 italic">💡 Os valores digitados aqui são integrados instantaneamente ao painel de Consolidação Nutricional logo abaixo para conferência de adequação às metas prescritas.</p>
                 </div>
               </div>
 
@@ -1696,6 +1895,143 @@
               </div>
             </div>
             <!-- FIM DO CONTAINER DE TNE -->
+
+            <!-- PAINEL CONSOLIDADO DE TOTAIS (CARDÁPIO ORAL / TNE VS METAS PRESCRITAS) -->
+            <div id="cardapioTotalsPanel" class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 space-y-3 shadow-md">
+              <div class="flex flex-wrap items-center justify-between border-b border-slate-700/80 pb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">📊</span>
+                  <h5 id="dispCardapioTotalsTitle" class="font-bold text-xs uppercase tracking-wider text-emerald-400">Consolidação Nutricional do Cardápio vs Metas Prescritas</h5>
+                </div>
+                <span id="dispCardapioVetStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                  Aguardando Itens
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <!-- Card VET -->
+                <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">VET Fornecido:</span>
+                  <div class="flex items-baseline space-x-1">
+                    <strong id="dispCardapioVetTotal" class="text-lg font-black text-emerald-400">0</strong>
+                    <span class="text-[10px] text-slate-400 font-bold">kcal</span>
+                  </div>
+                  <div class="text-[10px] text-slate-300 flex justify-between">
+                    <span>Meta: <strong id="dispCardapioMetaVet">--</strong> kcal</span>
+                    <span class="text-emerald-400 font-bold" id="dispCardapioVetAdeq">--%</span>
+                  </div>
+                </div>
+
+                <!-- Card Carboidratos -->
+                <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                  <div class="flex flex-wrap items-center justify-between gap-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Carboidratos:</span>
+                    <span id="dispCardapioChoStatusBadge" class="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                  </div>
+                  <div class="flex items-baseline space-x-1">
+                    <strong id="dispCardapioChoTotalG" class="text-lg font-black text-amber-400">0</strong>
+                    <span class="text-[10px] text-slate-400 font-bold">g</span>
+                    <span class="text-[10px] text-amber-300 font-bold">(<span id="dispCardapioChoTotalPct">0</span>%)</span>
+                  </div>
+                  <div class="text-[10px] text-slate-300">
+                    <span>Meta: <strong id="dispCardapioMetaCho">--</strong></span>
+                  </div>
+                </div>
+
+                <!-- Card Proteínas -->
+                <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                  <div class="flex flex-wrap items-center justify-between gap-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Proteínas:</span>
+                    <span id="dispCardapioPtnStatusBadge" class="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                  </div>
+                  <div class="flex items-baseline space-x-1">
+                    <strong id="dispCardapioPtnTotalG" class="text-lg font-black text-sky-400">0</strong>
+                    <span class="text-[10px] text-slate-400 font-bold">g</span>
+                    <span class="text-[10px] text-sky-300 font-bold">(<span id="dispCardapioPtnTotalPct">0</span>%)</span>
+                  </div>
+                  <div class="text-[10px] text-slate-300 flex justify-between">
+                    <span>Meta: <strong id="dispCardapioMetaPtn">--</strong></span>
+                    <span class="text-sky-300 font-semibold" id="dispCardapioPtnGKg">0 g/kg</span>
+                  </div>
+                </div>
+
+                <!-- Card Lipídios -->
+                <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-lg space-y-1">
+                  <div class="flex flex-wrap items-center justify-between gap-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Lipídios:</span>
+                    <span id="dispCardapioLipStatusBadge" class="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-slate-700 text-slate-300 border-slate-600">--</span>
+                  </div>
+                  <div class="flex items-baseline space-x-1">
+                    <strong id="dispCardapioLipTotalG" class="text-lg font-black text-rose-400">0</strong>
+                    <span class="text-[10px] text-slate-400 font-bold">g</span>
+                    <span class="text-[10px] text-rose-300 font-bold">(<span id="dispCardapioLipTotalPct">0</span>%)</span>
+                  </div>
+                  <div class="text-[10px] text-slate-300">
+                    <span>Meta: <strong id="dispCardapioMetaLip">--</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LINHA INFORMATIVA DE FIBRAS E BALANÇO -->
+              <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
+                <span>🌾 Fibras Alimentares Totais apuradas: <strong id="dispCardapioFibraTotal" class="text-emerald-400 font-bold">0.0</strong> g/dia</span>
+                <span id="dispCardapioBalancoMsg" class="text-slate-400 italic">Preencha os dados quantitativos para confrontar com a prescrição</span>
+              </div>
+
+              <!-- SEÇÃO CONSOLIDADA DE MICRONUTRIENTES PRIORITÁRIOS -->
+              <div class="bg-slate-800/50 border border-emerald-700/40 rounded-lg p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] uppercase font-bold text-emerald-300 flex items-center space-x-1">
+                    <span>🧪</span>
+                    <span>Micronutrientes Prioritários Consolidados:</span>
+                  </span>
+                  <span class="text-[10px] text-slate-400">Soma diária total apurada</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+                  <!-- Cálcio -->
+                  <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                    <span class="text-[10px] font-semibold text-slate-400 block">🥛 Cálcio (Ca):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <strong id="dispCardapioCalcioTotal" class="text-base font-black text-white">0</strong>
+                      <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                    </div>
+                  </div>
+                  <!-- Ferro -->
+                  <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                    <span class="text-[10px] font-semibold text-slate-400 block">🥩 Ferro (Fe):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <strong id="dispCardapioFerroTotal" class="text-base font-black text-white">0</strong>
+                      <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                    </div>
+                  </div>
+                  <!-- Sódio -->
+                  <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                    <span class="text-[10px] font-semibold text-slate-400 block">🧂 Sódio (Na):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <strong id="dispCardapioSodioTotal" class="text-base font-black text-white">0</strong>
+                      <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                    </div>
+                  </div>
+                  <!-- Potássio -->
+                  <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                    <span class="text-[10px] font-semibold text-slate-400 block">🍌 Potássio (K):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <strong id="dispCardapioPotassioTotal" class="text-base font-black text-white">0</strong>
+                      <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                    </div>
+                  </div>
+                  <!-- Fósforo -->
+                  <div class="bg-slate-900/80 p-2 rounded border border-slate-700">
+                    <span class="text-[10px] font-semibold text-slate-400 block">🦴 Fósforo (P):</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                      <strong id="dispCardapioFosforoTotal" class="text-base font-black text-white">0</strong>
+                      <span class="text-[10px] text-slate-400 font-medium">mg</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- ORIENTAÇÕES E RECOMENDAÇÕES NUTRICIONAIS -->
               <div class="pt-1">
@@ -2121,6 +2457,16 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
               <label class="block font-semibold text-slate-600 mb-1">Residência:</label>
               <input type="text" id="admPatResidence" class="w-full border rounded p-1.5 text-xs">
             </div>
+          </div>
+
+          <!-- HIPÓTESE DIAGNÓSTICA / DIAGNÓSTICO MÉDICO DO PROFESSOR -->
+          <div class="bg-rose-50/80 border border-rose-200 rounded-xl p-3 shadow-2xs">
+            <label class="block font-bold text-rose-950 mb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5 text-xs">🩺 Hipótese Diagnóstica / Diagnóstico Médico:</span>
+              <span class="text-[10px] text-rose-700 font-semibold uppercase tracking-wider">Diagnóstico de Base do Paciente</span>
+            </label>
+            <input type="text" id="admHipoteseDiagnostica" class="w-full border border-rose-300 rounded p-2 text-xs bg-white text-slate-800 font-medium focus:border-rose-500" placeholder="Ex: Diabetes Mellitus tipo 2 descompensado, Hipertensão Arterial Sistêmica...">
+            <p class="text-[11px] text-rose-700/80 mt-1">Essa informação norteará o raciocínio clínico do aluno e constará com destaque na anamnese e no relatório final Word.</p>
           </div>
 
           <div>

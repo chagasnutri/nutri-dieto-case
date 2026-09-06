@@ -396,6 +396,53 @@ class FirebaseSyncService {
     return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteDisciplina", disciplinaId: discId });
   }
 
+  // Salva atendimento presencial real na coleção dedicada 'atendimentos_reais'
+  async saveAtendimentoReal(atendimentoData) {
+    const id = atendimentoData.id || ("atendimento-real-" + Date.now());
+    const storageKey = "dietocase_atendimentos_reais_v1";
+
+    // 1. Persistência local imediata em localStorage para redundância e modo offline
+    try {
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      const idx = list.findIndex(item => item.id === id);
+      const payload = {
+        ...atendimentoData,
+        id: id,
+        updatedAt: new Date().toISOString()
+      };
+      if (idx >= 0) {
+        list[idx] = payload;
+      } else {
+        list.push(payload);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+      localStorage.setItem("dietocase_atendimento_real_current", JSON.stringify(payload));
+    } catch (e) {
+      console.warn("Aviso ao salvar atendimento real no localStorage:", e);
+    }
+
+    // 2. Persistência em nuvem no Cloud Firestore v9 Modular
+    if (!this.db || !this.isConfigured()) {
+      console.log("☁️ Atendimento real salvo em cache local (Firestore offline ou não inicializado).");
+      return true;
+    }
+
+    try {
+      const atendimentoRef = doc(this.db, "atendimentos_reais", id);
+      await setDoc(atendimentoRef, {
+        ...atendimentoData,
+        id: id,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      console.log(`☁️ [Firebase v9] Atendimento real salvo na coleção 'atendimentos_reais/${id}' com sucesso!`);
+      return true;
+    } catch (err) {
+      console.error("❌ Erro ao salvar atendimento real no Cloud Firestore:", err);
+      return false;
+    }
+  }
+
   // Leitura direta sob demanda do documento configuracoes/estado_atual
   async fetchRemoteData() {
     if (!this.db) return null;

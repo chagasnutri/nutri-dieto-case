@@ -1,4 +1,4 @@
-{
+﻿{
     "app":  "DietoCase",
     "version":  2,
     "updatedAt":  "2026-09-04T15:31:48.5143627-03:00",
@@ -7,21 +7,21 @@
                             "id":  "dietoterapia",
                             "nome":  "Dietoterapia",
                             "codigo":  "NUT-301",
-                            "icone":  "🥗",
-                            "descricao":  "Manejo dietoterápico..."
+                            "icone":  "ðŸ¥—",
+                            "descricao":  "Manejo dietoterÃ¡pico..."
                         },
                         {
                             "id":  "estagios",
-                            "nome":  "Estágios Curriculares",
+                            "nome":  "EstÃ¡gios Curriculares",
                             "codigo":  "NUT-EST",
-                            "icone":  "🏥",
-                            "descricao":  "Supervisão..."
+                            "icone":  "ðŸ¥",
+                            "descricao":  "SupervisÃ£o..."
                         },
                         {
                             "id":  "materno-infantil",
-                            "nome":  "Nutrição Materno-Infantil",
+                            "nome":  "NutriÃ§Ã£o Materno-Infantil",
                             "codigo":  "NUT-502",
-                            "icone":  "👶",
+                            "icone":  "ðŸ‘¶",
                             "descricao":  "Gestantes e pediatria."
                         }
                     ],
@@ -30,29 +30,31 @@
                       "id":  "caso-dm2-has",
                       "disciplinaId":  "dietoterapia",
                       "title":  "Caso 1: Paciente Adulto com DM2, HAS e Obesidade Grau I",
-                      "category":  "Ambulatorial / Doenças Crônicas Não Transmissíveis",
-                      "description":  "Atendimento ambulatorial de paciente de 54 anos com queixas de descontrole glicêmico e pressórico após mudança recente de rotina e ganho de peso.",
-                      "neeKcal": 1850,
+                      "category":  "Ambulatorial / DoenÃ§as CrÃ´nicas NÃ£o TransmissÃ­veis",
+                      "description":  "Atendimento ambulatorial de paciente de 54 anos com queixas de descontrole glicÃªmico e pressÃ³rico apÃ³s mudanÃ§a recente de rotina e ganho de peso.",
+                      "hipoteseDiagnostica":  "Diabetes Mellitus Tipo 2 descompensado, HipertensÃ£o Arterial SistÃªmica estÃ¡gio 1 e Obesidade Grau I com Dislipidemia mista",
+                      "neeKcal":  1850,
                       "isLocked":  false,
-                      "visivel": true,
-                      "habilitarQuestoesAvaliativas": true,
+                      "visivel":  true,
+                      "habilitarQuestoesAvaliativas":  true,
                       "patient":  {
                                       "name":  "Carlos Alberto da Silva",
                                       "age":  54,
                                       "gender":  "Masculino",
-                                      "occupation":  "Motorista de ônibus urbano",
+                                      "occupation":  "Motorista de Ã´nibus urbano",
                                       "maritalStatus":  "Casado",
-                                      "residence":  "São Paulo - SP",
-                                      "avatar":  "👨"
+                                      "residence":  "SÃ£o Paulo - SP",
+                                      "avatar":  "ðŸ‘¨"
                                   },
                       "history":  {
-                                      "queixaPrincipal":  "Eu ando muito preocupado, doutor(a). Minha glicose e minha pressão subiram demais nas últimas semanas e o médico do posto disse que eu precisava de atendimento urgente com a nutricionista. Eu acordo sem fome nenhuma de manhã, tomo só um cafezinho adoçado correndo, mas de tarde no volante sinto uma fraqueza esquisita, uma boca seca danada e uma sede que não passa, tomo garrafas de refrigerante e água mas parece que não adianta. Além disso, tenho que parar o ônibus toda hora pra urinar e à noite acordo duas ou três vezes pra ir ao banheiro.",
-                                      "hda":  "Paciente do sexo masculino, 54 anos, hipertenso há 10 anos e diabético há 6 anos, comparece ao ambulatório encaminhado pela Estratégia de Saúde da Família com quadro de descompensação metabólica e pressórica progressiva nos últimos 4 meses. Apresenta sintomas clássicos de síndrome hiperglicêmica caracterizados por polidipsia intensa, xerostomia, poliúria com noctúria (2 a 3 episódios por noite) e astenia vespertina incapacitante. O paciente associa o agravamento do quadro clínico à recente transição para a escala de turno vespertino/noturno como motorista de transporte público coletivo urbano, período no qual apresentou ganho ponderal involuntário de 8,0 kg em 2 anos secundário a padrão alimentar desordenado e ritmo circadiano irregular. Nega precordialgia, palpitações ou dispneia paroxística.",
-                                      "hpp":  "Portador de Hipertensão Arterial Sistêmica diagnosticada há 10 anos, Diabetes Mellitus Tipo 2 diagnosticado há 6 anos e Dislipidemia mista identificada há 2 anos. Nega antecedentes cirúrgicos prévios, episódios de acidente vascular encefálico, infarto agudo do miocárdio ou histórico de internações hospitalares recentes.",
-                                      "historiaFamiliar":  "Histórico familiar positivo para eventos cardiovasculares precoces: pai falecido aos 62 anos por Infarto Agudo do Miocárdio (IAM). Mãe viva com 78 anos, portadora crônica de Diabetes Mellitus Tipo 2 e Hipertensão Arterial Sistêmica. Irmão consanguíneo mais velho portador de hipertensão arterial e sobrepeso.",
-                                      "medicamentos":  "Metformina 850mg (1 comprimido após o almoço e 1 comprimido após o jantar); Losartana Potássica 50mg (1 comprimido pela manhã); Sinvastatina 20mg (1 comprimido à noite antes de dormir). Paciente relata omissões posológicas ocasionais durante jornadas de trabalho em regime de dobra ou atrasos de linha.",
-                                      "habitosVida":  "Etilismo social com consumo de cerveja aos finais de semana (cerca de 3 a 4 latas por ocasião). Nega tabagismo pregressa ou atualmente. Nega prática de atividade física estruturada ou lazer ativo, referindo escassez de tempo disponível, sonolência diurna e exaustão osteomuscular decorrentes da rotina ao volante.",
-                                      "funcaoIntestinalDiurese":  "Hábito intestinal preservado com evacuações diárias de consistência normal (Escala de Bristol tipo 4), sem dor, esforço evacuatório ou hematoquezia. Diurese clara, aumentada expressivamente em volume e frequência diurna e noturna (poliúria e noctúria)."
+                                      "queixaPrincipal":  "Eu ando muito preocupado, doutor(a). Minha glicose e minha pressÃ£o subiram demais nas Ãºltimas semanas e o mÃ©dico do posto disse que eu precisava de atendimento urgente com a nutricionista. Eu acordo sem fome nenhuma de manhÃ£, tomo sÃ³ um cafezinho adoÃ§ado correndo, mas de tarde no volante sinto uma fraqueza esquisita, uma boca seca danada e uma sede que nÃ£o passa, tomo garrafas de refrigerante e Ã¡gua mas parece que nÃ£o adianta. AlÃ©m disso, tenho que parar o Ã´nibus toda hora pra urinar e Ã  noite acordo duas ou trÃªs vezes pra ir ao banheiro.",
+                                      "hda":  "Paciente do sexo masculino, 54 anos, hipertenso hÃ¡ 10 anos e diabÃ©tico hÃ¡ 6 anos, comparece ao ambulatÃ³rio encaminhado pela EstratÃ©gia de SaÃºde da FamÃ­lia com quadro de descompensaÃ§Ã£o metabÃ³lica e pressÃ³rica progressiva nos Ãºltimos 4 meses. Apresenta sintomas clÃ¡ssicos de sÃ­ndrome hiperglicÃªmica caracterizados por polidipsia intensa, xerostomia, poliÃºria com noctÃºria (2 a 3 episÃ³dios por noite) e astenia vespertina incapacitante. O paciente associa o agravamento do quadro clÃ­nico Ã  recente transiÃ§Ã£o para a escala de turno vespertino/noturno como motorista de transporte pÃºblico coletivo urbano, perÃ­odo no qual apresentou ganho ponderal involuntÃ¡rio de 8,0 kg em 2 anos secundÃ¡rio a padrÃ£o alimentar desordenado e ritmo circadiano irregular. Nega precordialgia, palpitaÃ§Ãµes ou dispneia paroxÃ­stica.",
+                                      "hpp":  "Portador de HipertensÃ£o Arterial SistÃªmica diagnosticada hÃ¡ 10 anos, Diabetes Mellitus Tipo 2 diagnosticado hÃ¡ 6 anos e Dislipidemia mista identificada hÃ¡ 2 anos. Nega antecedentes cirÃºrgicos prÃ©vios, episÃ³dios de acidente vascular encefÃ¡lico, infarto agudo do miocÃ¡rdio ou histÃ³rico de internaÃ§Ãµes hospitalares recentes.",
+                                      "historiaFamiliar":  "HistÃ³rico familiar positivo para eventos cardiovasculares precoces: pai falecido aos 62 anos por Infarto Agudo do MiocÃ¡rdio (IAM). MÃ£e viva com 78 anos, portadora crÃ´nica de Diabetes Mellitus Tipo 2 e HipertensÃ£o Arterial SistÃªmica. IrmÃ£o consanguÃ­neo mais velho portador de hipertensÃ£o arterial e sobrepeso.",
+                                      "medicamentos":  "Metformina 850mg (1 comprimido apÃ³s o almoÃ§o e 1 comprimido apÃ³s o jantar); Losartana PotÃ¡ssica 50mg (1 comprimido pela manhÃ£); Sinvastatina 20mg (1 comprimido Ã  noite antes de dormir). Paciente relata omissÃµes posolÃ³gicas ocasionais durante jornadas de trabalho em regime de dobra ou atrasos de linha.",
+                                      "habitosVida":  "Etilismo social com consumo de cerveja aos finais de semana (cerca de 3 a 4 latas por ocasiÃ£o). Nega tabagismo pregressa ou atualmente. Nega prÃ¡tica de atividade fÃ­sica estruturada ou lazer ativo, referindo escassez de tempo disponÃ­vel, sonolÃªncia diurna e exaustÃ£o osteomuscular decorrentes da rotina ao volante.",
+                                      "funcaoIntestinalDiurese":  "HÃ¡bito intestinal preservado com evacuaÃ§Ãµes diÃ¡rias de consistÃªncia normal (Escala de Bristol tipo 4), sem dor, esforÃ§o evacuatÃ³rio ou hematoquezia. Diurese clara, aumentada expressivamente em volume e frequÃªncia diurna e noturna (poliÃºria e noctÃºria).",
+                                      "hipoteseDiagnostica":  "Diabetes Mellitus Tipo 2 descompensado, HipertensÃ£o Arterial SistÃªmica estÃ¡gio 1 e Obesidade Grau I com Dislipidemia mista"
                                   },
                       "antropometria":  {
                                             "pesoAtual":  92.5,
@@ -67,8 +69,8 @@
                                             "dobraSubescapular":  26,
                                             "dobraSuprailiaca":  28,
                                             "dobraAbdominal":  32,
-                                            "demaisAvaliacoes":  "Circunferência do quadril: 108 cm (RCQ: 0.96, indicando risco cardiovascular muito aumentado); Dobra subescapular: 26 mm; Dobra suprailíaca: 28 mm; Dobra abdominal: 32 mm.",
-                                            "historicoPerdaPonderal":  "Sem perda de peso; na verdade ganhou 8 kg nos últimos 2 anos de forma progressiva (ganho ponderal involuntário associado à rotina)."
+                                            "demaisAvaliacoes":  "CircunferÃªncia do quadril: 108 cm (RCQ: 0.96, indicando risco cardiovascular muito aumentado); Dobra subescapular: 26 mm; Dobra suprailÃ­aca: 28 mm; Dobra abdominal: 32 mm.",
+                                            "historicoPerdaPonderal":  "Sem perda de peso; na verdade ganhou 8 kg nos Ãºltimos 2 anos de forma progressiva (ganho ponderal involuntÃ¡rio associado Ã  rotina)."
                                         },
                       "bioquimica":  [
                                          {
@@ -81,7 +83,7 @@
                                              "exame":  "Hemoglobina Glicada (HbA1c)",
                                              "valor":  "8.9 %",
                                              "referencia":  "\u003c 5.7 % (meta \u003c 7.0%)",
-                                             "interpretacao":  "Mau controle glicêmico crônico"
+                                             "interpretacao":  "Mau controle glicÃªmico crÃ´nico"
                                          },
                                          {
                                              "exame":  "Colesterol Total",
@@ -102,25 +104,25 @@
                                              "interpretacao":  "Aumentado"
                                          },
                                          {
-                                             "exame":  "Triglicerídeos",
+                                             "exame":  "TriglicerÃ­deos",
                                              "valor":  "260 mg/dL",
                                              "referencia":  "\u003c 150 mg/dL",
                                              "interpretacao":  "Hipertrigliceridemia moderada"
                                          },
                                          {
-                                             "exame":  "Creatinina Sérica",
+                                             "exame":  "Creatinina SÃ©rica",
                                              "valor":  "0.95 mg/dL",
                                              "referencia":  "0.7 - 1.2 mg/dL",
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Ureia Sérica",
+                                             "exame":  "Ureia SÃ©rica",
                                              "valor":  "34 mg/dL",
                                              "referencia":  "15 - 45 mg/dL",
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Ácido Úrico",
+                                             "exame":  "Ãcido Ãšrico",
                                              "valor":  "6.8 mg/dL",
                                              "referencia":  "3.5 - 7.2 mg/dL",
                                              "interpretacao":  "Normal alto"
@@ -138,39 +140,39 @@
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Sódio Sérico (Na+)",
+                                             "exame":  "SÃ³dio SÃ©rico (Na+)",
                                              "valor":  "140 mEq/L",
                                              "referencia":  "135 - 145 mEq/L",
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Potássio Sérico (K+)",
+                                             "exame":  "PotÃ¡ssio SÃ©rico (K+)",
                                              "valor":  "4.4 mEq/L",
                                              "referencia":  "3.5 - 5.0 mEq/L",
                                              "interpretacao":  "Normal"
                                          }
                                      ],
                       "exameFisico":  {
-                                          "estadoGeral":  "Bom estado geral, lúcido, comunicativo, corado, hidratado, acianótico, anictérico.",
-                                          "sinaisEspecificos":  "Presença de acantose nigricans visível na região posterior e lateral do pescoço (sinal clínico de resistência periférica grave à insulina). Sem lesões em membros inferiores; sensibilidade tátil dos pés preservada ao teste de monofilamento.",
-                                          "edema":  "Ausência de edema em membros inferiores (+0/4). Pulsos pediosos e tibiais posteriores cheios e simétricos.",
-                                          "cavidadeOral":  "Dentição própria inferior preservada e prótese parcial superior em ótimo estado. Mastigação eficiente, sem queixas de dor ou dificuldade de deglutição.",
-                                          "tgi":  "Abdome globoso à custa de panículo adiposo e adiposidade visceral, flácido, indolor à palpação, sem visceromegalias palpáveis. Ruídos hidroaéreos normais. Sem queixas de pirose, náuseas ou vômitos."
+                                          "estadoGeral":  "Bom estado geral, lÃºcido, comunicativo, corado, hidratado, acianÃ³tico, anictÃ©rico.",
+                                          "sinaisEspecificos":  "PresenÃ§a de acantose nigricans visÃ­vel na regiÃ£o posterior e lateral do pescoÃ§o (sinal clÃ­nico de resistÃªncia perifÃ©rica grave Ã  insulina). Sem lesÃµes em membros inferiores; sensibilidade tÃ¡til dos pÃ©s preservada ao teste de monofilamento.",
+                                          "edema":  "AusÃªncia de edema em membros inferiores (+0/4). Pulsos pediosos e tibiais posteriores cheios e simÃ©tricos.",
+                                          "cavidadeOral":  "DentiÃ§Ã£o prÃ³pria inferior preservada e prÃ³tese parcial superior em Ã³timo estado. MastigaÃ§Ã£o eficiente, sem queixas de dor ou dificuldade de deglutiÃ§Ã£o.",
+                                          "tgi":  "Abdome globoso Ã  custa de panÃ­culo adiposo e adiposidade visceral, flÃ¡cido, indolor Ã  palpaÃ§Ã£o, sem visceromegalias palpÃ¡veis. RuÃ­dos hidroaÃ©reos normais. Sem queixas de pirose, nÃ¡useas ou vÃ´mitos."
                                       },
                       "consumoAlimentar":  {
-                                               "padraoDiario":  "Alimentação irregular, rica em carboidratos simples, gorduras saturadas, frituras e ultraprocessados. Longos períodos de jejum seguidos de grandes volumes.",
+                                               "padraoDiario":  "AlimentaÃ§Ã£o irregular, rica em carboidratos simples, gorduras saturadas, frituras e ultraprocessados. Longos perÃ­odos de jejum seguidos de grandes volumes.",
                                                "recordatorio24h":  [
                                                                        {
-                                                                           "refeicao":  "Café da manhã (05:30)",
-                                                                           "alimentos":  "2 pães franceses com bastante margarina, 1 caneca grande (300mL) de café com leite integral e 3 colheres de chá cheias de açúcar refinado."
+                                                                           "refeicao":  "CafÃ© da manhÃ£ (05:30)",
+                                                                           "alimentos":  "2 pÃ£es franceses com bastante margarina, 1 caneca grande (300mL) de cafÃ© com leite integral e 3 colheres de chÃ¡ cheias de aÃ§Ãºcar refinado."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Colação no ponto de ônibus (09:00)",
-                                                                           "alimentos":  "1 lata de refrigerante comum (350mL) ou café açucarado de garrafa térmica + 1 pacote pequeno de biscoito doce."
+                                                                           "refeicao":  "ColaÃ§Ã£o no ponto de Ã´nibus (09:00)",
+                                                                           "alimentos":  "1 lata de refrigerante comum (350mL) ou cafÃ© aÃ§ucarado de garrafa tÃ©rmica + 1 pacote pequeno de biscoito doce."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Almoço comercial (12:30)",
-                                                                           "alimentos":  "Marmitex: 5 colheres de servir cheias de arroz branco, 1 concha de feijão, 2 pedaços médios de bife frito ou linguiça toscana, 2 rodelas de tomate (pouca ou nenhuma verdura). 1 copo grande de refrigerante de cola."
+                                                                           "refeicao":  "AlmoÃ§o comercial (12:30)",
+                                                                           "alimentos":  "Marmitex: 5 colheres de servir cheias de arroz branco, 1 concha de feijÃ£o, 2 pedaÃ§os mÃ©dios de bife frito ou linguiÃ§a toscana, 2 rodelas de tomate (pouca ou nenhuma verdura). 1 copo grande de refrigerante de cola."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Lanche da tarde no terminal (16:30)",
@@ -178,80 +180,82 @@
                                                                        },
                                                                        {
                                                                            "refeicao":  "Jantar em casa (20:30)",
-                                                                           "alimentos":  "Repete a comida do almoço em grande quantidade, ou come 3 a 4 fatias de pizza de calabresa ou 3 pães franceses com mortadela/presunto e queijo prato + refrigerante."
+                                                                           "alimentos":  "Repete a comida do almoÃ§o em grande quantidade, ou come 3 a 4 fatias de pizza de calabresa ou 3 pÃ£es franceses com mortadela/presunto e queijo prato + refrigerante."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Ceia antes de deitar (23:00)",
-                                                                           "alimentos":  "4 a 5 biscoitos recheados com 1 copo de leite integral com achocolatado açucarado."
+                                                                           "alimentos":  "4 a 5 biscoitos recheados com 1 copo de leite integral com achocolatado aÃ§ucarado."
                                                                        }
                                                                    ],
-                                               "ingestaoHidrica":  "Baixa ingestão de água pura (aproximadamente 600 a 800 mL/dia). Ingere cerca de 1 a 1.5 litros de refrigerantes comuns e café açucarado diariamente.",
-                                               "preferencias":  "Carnes vermelhas bem passadas, churrasco, massas, pães, refrigerantes, sobremesas doces.",
-                                               "aversoesIntolerancias":  "Não gosta de legumes cozidos folhosos amargos (rúcula, jiló, quiabo). Nega qualquer tipo de alergia ou intolerância alimentar diagnosticada.",
-                                               "quemPrepara":  "A esposa prepara as refeições da noite e finais de semana. Durante a jornada de trabalho, consome refeições em bares e lanchonetes de terminal rodoviário."
+                                               "ingestaoHidrica":  "Baixa ingestÃ£o de Ã¡gua pura (aproximadamente 600 a 800 mL/dia). Ingere cerca de 1 a 1.5 litros de refrigerantes comuns e cafÃ© aÃ§ucarado diariamente.",
+                                               "preferencias":  "Carnes vermelhas bem passadas, churrasco, massas, pÃ£es, refrigerantes, sobremesas doces.",
+                                               "aversoesIntolerancias":  "NÃ£o gosta de legumes cozidos folhosos amargos (rÃºcula, jilÃ³, quiabo). Nega qualquer tipo de alergia ou intolerÃ¢ncia alimentar diagnosticada.",
+                                               "quemPrepara":  "A esposa prepara as refeiÃ§Ãµes da noite e finais de semana. Durante a jornada de trabalho, consome refeiÃ§Ãµes em bares e lanchonetes de terminal rodoviÃ¡rio."
                                            },
                       "equipeMultiprofissional":  {
-                                                      "medico":  "Paciente admitido no ambulatório com descontrole metabólico evidente: HbA1c 8.9% e PA sistólica elevada (145x92 mmHg). Risco cardiovascular alto conforme escore global. Solicito suporte nutricional intensivo com foco em perda ponderal de 5% a 10% em 6 meses, redução de sacarose e carboidratos refinados, controle da ingestão de sódio (\u003c 2000mg/dia) e gordura saturada (\u003c 7% do VET). Mantidas as medicações atuais com reavaliação laboratorial em 90 dias.",
-                                                      "enfermagem":  "Aferição de sinais vitais na triagem: PA = 146 x 92 mmHg; FC = 78 bpm; FR = 16 irpm; Temperatura axilar = 36.4 ºC. Glicemia capilar pontual às 14h: 214 mg/dL. Paciente foi orientado quanto ao horário correto das medicações prescritas, pois admitiu esquecimentos frequentes.",
-                                                      "fonoaudiologia":  "Paciente não apresenta sinais de disfagia, tosse ou engasgos. Funções de mastigação e deglutição orofaríngea plenamente preservadas. Sem necessidade de intervenção fonoaudiológica no momento.",
-                                                      "psicologiaSocial":  "Paciente expressa preocupação com o risco de complicações que viu em colegas de trabalho (amputações, problemas visuais), porém relata grande estresse pela rotina de trânsito e dificuldade logística para levar marmita fresca no ônibus."
+                                                      "medico":  "Paciente admitido no ambulatÃ³rio com descontrole metabÃ³lico evidente: HbA1c 8.9% e PA sistÃ³lica elevada (145x92 mmHg). Risco cardiovascular alto conforme escore global. Solicito suporte nutricional intensivo com foco em perda ponderal de 5% a 10% em 6 meses, reduÃ§Ã£o de sacarose e carboidratos refinados, controle da ingestÃ£o de sÃ³dio (\u003c 2000mg/dia) e gordura saturada (\u003c 7% do VET). Mantidas as medicaÃ§Ãµes atuais com reavaliaÃ§Ã£o laboratorial em 90 dias.",
+                                                      "enfermagem":  "AferiÃ§Ã£o de sinais vitais na triagem: PA = 146 x 92 mmHg; FC = 78 bpm; FR = 16 irpm; Temperatura axilar = 36.4 ÂºC. Glicemia capilar pontual Ã s 14h: 214 mg/dL. Paciente foi orientado quanto ao horÃ¡rio correto das medicaÃ§Ãµes prescritas, pois admitiu esquecimentos frequentes.",
+                                                      "fonoaudiologia":  "Paciente nÃ£o apresenta sinais de disfagia, tosse ou engasgos. FunÃ§Ãµes de mastigaÃ§Ã£o e deglutiÃ§Ã£o orofarÃ­ngea plenamente preservadas. Sem necessidade de intervenÃ§Ã£o fonoaudiolÃ³gica no momento.",
+                                                      "psicologiaSocial":  "Paciente expressa preocupaÃ§Ã£o com o risco de complicaÃ§Ãµes que viu em colegas de trabalho (amputaÃ§Ãµes, problemas visuais), porÃ©m relata grande estresse pela rotina de trÃ¢nsito e dificuldade logÃ­stica para levar marmita fresca no Ã´nibus."
                                                   },
                       "questoesAvaliativas":  [
                                                   {
                                                       "id":  "q1",
-                                                      "pergunta":  "1. Formule o Diagnóstico em Nutrição prioritário para este paciente utilizando a terminologia padronizada e a metodologia PES (Problema, Etiologia e Sinais/Sintomas).",
+                                                      "pergunta":  "1. Formule o DiagnÃ³stico em NutriÃ§Ã£o prioritÃ¡rio para este paciente utilizando a terminologia padronizada e a metodologia PES (Problema, Etiologia e Sinais/Sintomas).",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q2",
-                                                      "pergunta":  "2. Calcule o Valor Energético Total (VET) estimado para o paciente, justificando a fórmula ou regra de bolso escolhida (especifique o peso de referência utilizado: atual, ideal ou ajustado) e a meta de perda ponderal.",
+                                                      "pergunta":  "2. Calcule o Valor EnergÃ©tico Total (VET) estimado para o paciente, justificando a fÃ³rmula ou regra de bolso escolhida (especifique o peso de referÃªncia utilizado: atual, ideal ou ajustado) e a meta de perda ponderal.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q3",
-                                                      "pergunta":  "3. Estabeleça a distribuição de macronutrientes recomendada para este caso (em percentual do VET e em g/kg de peso), detalhando as recomendações específicas quanto ao tipo de carboidrato (índice e carga glicêmica, sacarose), fibras alimentares e perfil lipídico (saturados, poli-insaturados e monoinsaturados).",
+                                                      "pergunta":  "3. EstabeleÃ§a a distribuiÃ§Ã£o de macronutrientes recomendada para este caso (em percentual do VET e em g/kg de peso), detalhando as recomendaÃ§Ãµes especÃ­ficas quanto ao tipo de carboidrato (Ã­ndice e carga glicÃªmica, sacarose), fibras alimentares e perfil lipÃ­dico (saturados, poli-insaturados e monoinsaturados).",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q4",
-                                                      "pergunta":  "4. Diante da rotina de motorista de ônibus urbano (turnos e alimentação em terminais), quais estratégias práticas de planejamento alimentar e orientações dietoterápicas você prescreveria para viabilizar a adesão do paciente?",
+                                                      "pergunta":  "4. Diante da rotina de motorista de Ã´nibus urbano (turnos e alimentaÃ§Ã£o em terminais), quais estratÃ©gias prÃ¡ticas de planejamento alimentar e orientaÃ§Ãµes dietoterÃ¡picas vocÃª prescreveria para viabilizar a adesÃ£o do paciente?",
                                                       "tipo":  "discursiva"
                                                   }
                                               ],
                       "resolucaoGabarito":  {
-                                                "diagnosticoNutricional":  "Ingestão excessiva de carboidratos simples e gorduras (P) relacionada a escolhas alimentares inadequadas associadas à rotina ocupacional e falta de planejamento (E), evidenciada por HbA1c de 8.9%, glicemia de jejum de 188 mg/dL, triglicerídeos de 260 mg/dL e IMC de 31.27 kg/m² caracterizando Obesidade Grau I (S).",
-                                                "calculoEnergetico":  "Peso ideal para IMC 24.9 kg/m² = ~73.6 kg; Peso ajustado = 73.6 + 0.25*(92.5 - 73.6) = ~78.3 kg. Utilizando regra de bolso para perda de peso em paciente obeso com DM: 20 a 25 kcal/kg de peso atual (ou 25 a 30 kcal/kg peso ajustado) -\u003e VET estimado entre 1800 e 1950 kcal/dia (déficit diário de 500 a 700 kcal).",
-                                                "distribuicaoMacronutrientes":  "Carboidratos: 45% a 50% do VET (ênfase em carboidratos complexos ricos em fibras solúveis e insolúveis; sacarose \u003c 5% do VET; fibras \u003e 30g/dia); Proteínas: 15% a 20% do VET (1.0 a 1.2 g/kg de peso ideal/ajustado); Lipídios: 30% a 35% do VET (gordura saturada \u003c 7%, poli-insaturados até 10%, monoinsaturados 15-20%, gordura trans zero). Sódio: restrição a \u003c 2000 mg de sódio/dia (5g de sal de cozinha).",
-                                                "condutaPlanejamento":  "Fracionamento em 5 a 6 refeições; eliminação de bebidas açucaradas (refrigerantes e sucos de pacote), substituindo por água e infusões sem açúcar; substituição de cereais refinados por integrais; lanches práticos para o ônibus (frutas com casca, castanhas/oleaginosas, iogurte desnatado, sanduíche natural em pão integral); inclusão de saladas cruas e legumes no almoço e jantar."
+                                                "diagnosticoNutricional":  "IngestÃ£o excessiva de carboidratos simples e gorduras (P) relacionada a escolhas alimentares inadequadas associadas Ã  rotina ocupacional e falta de planejamento (E), evidenciada por HbA1c de 8.9%, glicemia de jejum de 188 mg/dL, triglicerÃ­deos de 260 mg/dL e IMC de 31.27 kg/mÂ² caracterizando Obesidade Grau I (S).",
+                                                "calculoEnergetico":  "Peso ideal para IMC 24.9 kg/mÂ² = ~73.6 kg; Peso ajustado = 73.6 + 0.25*(92.5 - 73.6) = ~78.3 kg. Utilizando regra de bolso para perda de peso em paciente obeso com DM: 20 a 25 kcal/kg de peso atual (ou 25 a 30 kcal/kg peso ajustado) -\u003e VET estimado entre 1800 e 1950 kcal/dia (dÃ©ficit diÃ¡rio de 500 a 700 kcal).",
+                                                "distribuicaoMacronutrientes":  "Carboidratos: 45% a 50% do VET (Ãªnfase em carboidratos complexos ricos em fibras solÃºveis e insolÃºveis; sacarose \u003c 5% do VET; fibras \u003e 30g/dia); ProteÃ­nas: 15% a 20% do VET (1.0 a 1.2 g/kg de peso ideal/ajustado); LipÃ­dios: 30% a 35% do VET (gordura saturada \u003c 7%, poli-insaturados atÃ© 10%, monoinsaturados 15-20%, gordura trans zero). SÃ³dio: restriÃ§Ã£o a \u003c 2000 mg de sÃ³dio/dia (5g de sal de cozinha).",
+                                                "condutaPlanejamento":  "Fracionamento em 5 a 6 refeiÃ§Ãµes; eliminaÃ§Ã£o de bebidas aÃ§ucaradas (refrigerantes e sucos de pacote), substituindo por Ã¡gua e infusÃµes sem aÃ§Ãºcar; substituiÃ§Ã£o de cereais refinados por integrais; lanches prÃ¡ticos para o Ã´nibus (frutas com casca, castanhas/oleaginosas, iogurte desnatado, sanduÃ­che natural em pÃ£o integral); inclusÃ£o de saladas cruas e legumes no almoÃ§o e jantar."
                                             }
                   },
                   {
                       "id":  "caso-drc-idoso",
                       "disciplinaId":  "dietoterapia",
-                      "title":  "Caso 2: Paciente Idosa Hospitalizada com Desnutrição e DRC Conservadora (Estágio 4)",
+                      "title":  "Caso 2: Paciente Idosa Hospitalizada com DesnutriÃ§Ã£o e DRC Conservadora (EstÃ¡gio 4)",
                       "category":  "Hospitalar / Geriatria / Nefrologia",
-                      "description":  "Paciente de 76 anos internada com fraqueza intensa, uremia sintomática, náuseas matinais e perda ponderal grave de 14.4% nos últimos 3 meses.",
-                      "neeKcal": 1500,
+                      "description":  "Paciente de 76 anos internada com fraqueza intensa, uremia sintomÃ¡tica, nÃ¡useas matinais e perda ponderal grave de 14.4% nos Ãºltimos 3 meses.",
+                      "hipoteseDiagnostica":  "DoenÃ§a Renal CrÃ´nica (DRC) EstÃ¡gio 4 (NÃ£o-DialÃ­tica) agudizada, DesnutriÃ§Ã£o Proteico-CalÃ³rica Grave e Sarcopenia da SenescÃªncia",
+                      "neeKcal":  1500,
                       "isLocked":  false,
-                      "visivel": true,
-                      "habilitarQuestoesAvaliativas": true,
+                      "visivel":  true,
+                      "habilitarQuestoesAvaliativas":  true,
                       "patient":  {
                                       "name":  "Lourdes Maria de Oliveira",
                                       "age":  76,
                                       "gender":  "Feminino",
                                       "occupation":  "Aposentada (ex-costureira)",
-                                      "maritalStatus":  "Viúva",
+                                      "maritalStatus":  "ViÃºva",
                                       "residence":  "Campinas - SP",
-                                      "avatar":  "👵"
+                                      "avatar":  "ðŸ‘µ"
                                   },
                       "history":  {
-                                      "queixaPrincipal":  "Eu não aguento mais essa fraqueza no corpo, minha filha que precisou me trazer. Já faz quase um mês que eu olho para a comida e não desce nada, sinto um enjoo muito ruim toda manhã, a boca fica amarga como se eu tivesse mastigando ferro ou moeda velha e as pernas parecem pesadas feito chumbo. Minhas roupas estão todas caindo e já perdi quase oito quilos sem querer.",
-                                      "hda":  "Paciente idosa de 76 anos, portadora de Doença Renal Crônica em estágio 4 não dialítico (eTFG estimada em 21 mL/min/1,73m²) e hipertensão arterial crônica de longa data, admitida na enfermaria de clínica médica para compensação de síndrome urêmica sintomática e desnutrição energético-proteica aguda. Apresenta astenia incapacitante, hiporexia severa com recusa alimentar superior a 75% da ingestão habitual nas últimas 3 semanas, náuseas matinais diárias, xerostomia e queixa de disgeusia pronunciada ('gosto metálico'). A cuidadora familiar confirma redução ponderal involuntária progressiva de 7,8 kg no último trimestre (perda de 14,4% da massa corporal total), acompanhada de sonolência e fadiga aos mínimos esforços.",
-                                      "hpp":  "Diagnóstico prévio de hipertensão arterial sistêmica há 25 anos em uso regular de medicação e doença renal crônica estágio 4 diagnosticada há 3 anos com declínio progressivo da filtração glomerular. Apresenta osteoartrite moderada em articulações de joelhos. Nega histórico de diabetes mellitus, tabagismo, etilismo ou cardiopatia isquêmica prévia.",
-                                      "historiaFamiliar":  "Histórico paterno de falecimento por complicações decorrentes de nefropatia aos 70 anos. Histórico materno positivo para hipertensão arterial crônica e demência senil.",
-                                      "medicamentos":  "Enalapril 10mg (1 comprimido via oral pela manhã); Furosemida 40mg (1 comprimido pela manhã); Carbonato de Cálcio 500mg (1 comprimido junto às refeições de almoço e jantar prescrito como quelante intestinal de fósforo); Ondansetrona 8mg se náuseas ou êmese.",
-                                      "habitosVida":  "Quadro de sedentarismo extremo condicionado pela senescência e limitação álgica articular, permanecendo a maior parte do dia em repouso no leito ou em poltrona. Reside com a filha que desempenha o papel de cuidadora primária.",
-                                      "funcaoIntestinalDiurese":  "Hábito intestinal caracterizado por constipação crônica agravada no período de internação (evacuações a cada 4 ou 5 dias com fezes ressecadas tipo Bristol 1 ou 2). Diurese espontânea oligúrica em 24h (~700 mL/dia), límpida a moderadamente concentrada, sem hematúria macroscópica."
+                                      "queixaPrincipal":  "Eu nÃ£o aguento mais essa fraqueza no corpo, minha filha que precisou me trazer. JÃ¡ faz quase um mÃªs que eu olho para a comida e nÃ£o desce nada, sinto um enjoo muito ruim toda manhÃ£, a boca fica amarga como se eu tivesse mastigando ferro ou moeda velha e as pernas parecem pesadas feito chumbo. Minhas roupas estÃ£o todas caindo e jÃ¡ perdi quase oito quilos sem querer.",
+                                      "hda":  "Paciente idosa de 76 anos, portadora de DoenÃ§a Renal CrÃ´nica em estÃ¡gio 4 nÃ£o dialÃ­tico (eTFG estimada em 21 mL/min/1,73mÂ²) e hipertensÃ£o arterial crÃ´nica de longa data, admitida na enfermaria de clÃ­nica mÃ©dica para compensaÃ§Ã£o de sÃ­ndrome urÃªmica sintomÃ¡tica e desnutriÃ§Ã£o energÃ©tico-proteica aguda. Apresenta astenia incapacitante, hiporexia severa com recusa alimentar superior a 75% da ingestÃ£o habitual nas Ãºltimas 3 semanas, nÃ¡useas matinais diÃ¡rias, xerostomia e queixa de disgeusia pronunciada (\u0027gosto metÃ¡lico\u0027). A cuidadora familiar confirma reduÃ§Ã£o ponderal involuntÃ¡ria progressiva de 7,8 kg no Ãºltimo trimestre (perda de 14,4% da massa corporal total), acompanhada de sonolÃªncia e fadiga aos mÃ­nimos esforÃ§os.",
+                                      "hpp":  "DiagnÃ³stico prÃ©vio de hipertensÃ£o arterial sistÃªmica hÃ¡ 25 anos em uso regular de medicaÃ§Ã£o e doenÃ§a renal crÃ´nica estÃ¡gio 4 diagnosticada hÃ¡ 3 anos com declÃ­nio progressivo da filtraÃ§Ã£o glomerular. Apresenta osteoartrite moderada em articulaÃ§Ãµes de joelhos. Nega histÃ³rico de diabetes mellitus, tabagismo, etilismo ou cardiopatia isquÃªmica prÃ©via.",
+                                      "historiaFamiliar":  "HistÃ³rico paterno de falecimento por complicaÃ§Ãµes decorrentes de nefropatia aos 70 anos. HistÃ³rico materno positivo para hipertensÃ£o arterial crÃ´nica e demÃªncia senil.",
+                                      "medicamentos":  "Enalapril 10mg (1 comprimido via oral pela manhÃ£); Furosemida 40mg (1 comprimido pela manhÃ£); Carbonato de CÃ¡lcio 500mg (1 comprimido junto Ã s refeiÃ§Ãµes de almoÃ§o e jantar prescrito como quelante intestinal de fÃ³sforo); Ondansetrona 8mg se nÃ¡useas ou Ãªmese.",
+                                      "habitosVida":  "Quadro de sedentarismo extremo condicionado pela senescÃªncia e limitaÃ§Ã£o Ã¡lgica articular, permanecendo a maior parte do dia em repouso no leito ou em poltrona. Reside com a filha que desempenha o papel de cuidadora primÃ¡ria.",
+                                      "funcaoIntestinalDiurese":  "HÃ¡bito intestinal caracterizado por constipaÃ§Ã£o crÃ´nica agravada no perÃ­odo de internaÃ§Ã£o (evacuaÃ§Ãµes a cada 4 ou 5 dias com fezes ressecadas tipo Bristol 1 ou 2). Diurese espontÃ¢nea oligÃºrica em 24h (~700 mL/dia), lÃ­mpida a moderadamente concentrada, sem hematÃºria macroscÃ³pica.",
+                                      "hipoteseDiagnostica":  "DoenÃ§a Renal CrÃ´nica (DRC) EstÃ¡gio 4 (NÃ£o-DialÃ­tica) agudizada, DesnutriÃ§Ã£o Proteico-CalÃ³rica Grave e Sarcopenia da SenescÃªncia"
                                   },
                       "antropometria":  {
                                             "pesoAtual":  46.2,
@@ -266,69 +270,69 @@
                                             "dobraSubescapular":  7.5,
                                             "dobraSuprailiaca":  9,
                                             "dobraAbdominal":  10,
-                                            "demaisAvaliacoes":  "Circunferência do quadril: 88 cm (RCQ: 0.81); Dobra subescapular: 7.5 mm; CMB: 18.9 cm (\u003c percentil 5 - depleção muscular grave); Altura do Joelho aferida no leito: 48.5 cm (estimativa de estatura de Chumlea: 1.55 m).",
-                                            "historicoPerdaPonderal":  "Perda involuntária de 7.8 kg em 3 meses (redução de 14.4% do peso corporal, classificada como perda grave e aguda no idoso)."
+                                            "demaisAvaliacoes":  "CircunferÃªncia do quadril: 88 cm (RCQ: 0.81); Dobra subescapular: 7.5 mm; CMB: 18.9 cm (\u003c percentil 5 - depleÃ§Ã£o muscular grave); Altura do Joelho aferida no leito: 48.5 cm (estimativa de estatura de Chumlea: 1.55 m).",
+                                            "historicoPerdaPonderal":  "Perda involuntÃ¡ria de 7.8 kg em 3 meses (reduÃ§Ã£o de 14.4% do peso corporal, classificada como perda grave e aguda no idoso)."
                                         },
                       "bioquimica":  [
                                          {
-                                             "exame":  "Creatinina Sérica",
+                                             "exame":  "Creatinina SÃ©rica",
                                              "valor":  "2.9 mg/dL",
                                              "referencia":  "0.5 - 1.0 mg/dL",
-                                             "interpretacao":  "Insuficiência renal avançada"
+                                             "interpretacao":  "InsuficiÃªncia renal avanÃ§ada"
                                          },
                                          {
-                                             "exame":  "Ureia Sérica",
+                                             "exame":  "Ureia SÃ©rica",
                                              "valor":  "118 mg/dL",
                                              "referencia":  "15 - 45 mg/dL",
-                                             "interpretacao":  "Uremia acentuada (causa das náuseas e disgeusia)"
+                                             "interpretacao":  "Uremia acentuada (causa das nÃ¡useas e disgeusia)"
                                          },
                                          {
-                                             "exame":  "Taxa de Filtração Glomerular (eTFG)",
-                                             "valor":  "21 mL/min/1.73m²",
+                                             "exame":  "Taxa de FiltraÃ§Ã£o Glomerular (eTFG)",
+                                             "valor":  "21 mL/min/1.73mÂ²",
                                              "referencia":  "\u003e 60 mL/min",
-                                             "interpretacao":  "DRC Estágio 4 (pré-dialítico grave)"
+                                             "interpretacao":  "DRC EstÃ¡gio 4 (prÃ©-dialÃ­tico grave)"
                                          },
                                          {
-                                             "exame":  "Potássio Sérico (K+)",
+                                             "exame":  "PotÃ¡ssio SÃ©rico (K+)",
                                              "valor":  "5.4 mEq/L",
                                              "referencia":  "3.5 - 5.0 mEq/L",
                                              "interpretacao":  "Hipercalemia leve a moderada"
                                          },
                                          {
-                                             "exame":  "Fósforo Sérico (P)",
+                                             "exame":  "FÃ³sforo SÃ©rico (P)",
                                              "valor":  "5.8 mg/dL",
                                              "referencia":  "2.5 - 4.5 mg/dL",
                                              "interpretacao":  "Hiperfosfatemia relevante"
                                          },
                                          {
-                                             "exame":  "Cálcio Sérico Total",
+                                             "exame":  "CÃ¡lcio SÃ©rico Total",
                                              "valor":  "8.6 mg/dL",
                                              "referencia":  "8.5 - 10.2 mg/dL",
                                              "interpretacao":  "Normal baixo"
                                          },
                                          {
-                                             "exame":  "Albumina Sérica",
+                                             "exame":  "Albumina SÃ©rica",
                                              "valor":  "2.9 g/dL",
                                              "referencia":  "3.5 - 5.0 g/dL",
-                                             "interpretacao":  "Hipoalbuminemia importante (desnutrição/inflamação)"
+                                             "interpretacao":  "Hipoalbuminemia importante (desnutriÃ§Ã£o/inflamaÃ§Ã£o)"
                                          },
                                          {
                                              "exame":  "Hemoglobina (Hb)",
                                              "valor":  "9.4 g/dL",
                                              "referencia":  "12.0 - 15.5 g/dL",
-                                             "interpretacao":  "Anemia normocítica/normocrômica da doença renal"
+                                             "interpretacao":  "Anemia normocÃ­tica/normocrÃ´mica da doenÃ§a renal"
                                          },
                                          {
-                                             "exame":  "Hematócrito (Ht)",
+                                             "exame":  "HematÃ³crito (Ht)",
                                              "valor":  "29.0 %",
                                              "referencia":  "36.0 - 46.0 %",
                                              "interpretacao":  "Reduzido"
                                          },
                                          {
-                                             "exame":  "Bicarbonato Sérico",
+                                             "exame":  "Bicarbonato SÃ©rico",
                                              "valor":  "19 mEq/L",
                                              "referencia":  "22 - 28 mEq/L",
-                                             "interpretacao":  "Acidose metabólica leve"
+                                             "interpretacao":  "Acidose metabÃ³lica leve"
                                          },
                                          {
                                              "exame":  "Glicemia de Jejum",
@@ -338,107 +342,109 @@
                                          }
                                      ],
                       "exameFisico":  {
-                                          "estadoGeral":  "Estado geral comprometido, emagrecida, hipocorada 2+/4+, discretamente desidratada 1+/4+, anictérica, sonolenta mas responde prontamente quando chamada.",
-                                          "sinaisEspecificos":  "Perda severa e visível de massa muscular temporal bilateral (fossa temporal escavada), clavículas e costelas proeminentes, adelgaçamento evidente da musculatura de quadríceps e panturrilha (CP de 28.5 cm indica sarcopenia). Bola gordurosa de Bichat deprimida.",
+                                          "estadoGeral":  "Estado geral comprometido, emagrecida, hipocorada 2+/4+, discretamente desidratada 1+/4+, anictÃ©rica, sonolenta mas responde prontamente quando chamada.",
+                                          "sinaisEspecificos":  "Perda severa e visÃ­vel de massa muscular temporal bilateral (fossa temporal escavada), clavÃ­culas e costelas proeminentes, adelgaÃ§amento evidente da musculatura de quadrÃ­ceps e panturrilha (CP de 28.5 cm indica sarcopenia). Bola gordurosa de Bichat deprimida.",
                                           "edema":  "Discreto edema perimaleolar bilateral (+1/4) com cacifo moderado. Pele fina, seca e descamativa.",
-                                          "cavidadeOral":  "Hálito urêmico característico (odor amoniacal leve). Mucosa oral ressecada (xerostomia). Prótese total superior e inferior bem ajustadas, porém relata cansaço e fadiga rápida ao mastigar carnes e alimentos secos.",
-                                          "tgi":  "Abdome escavado, ruídos hidroaéreos diminuídos, indolor à palpação superficial e profunda. Sem visceromegalias. Náuseas frequentes ao sentir cheiro forte de comida quente."
+                                          "cavidadeOral":  "HÃ¡lito urÃªmico caracterÃ­stico (odor amoniacal leve). Mucosa oral ressecada (xerostomia). PrÃ³tese total superior e inferior bem ajustadas, porÃ©m relata cansaÃ§o e fadiga rÃ¡pida ao mastigar carnes e alimentos secos.",
+                                          "tgi":  "Abdome escavado, ruÃ­dos hidroaÃ©reos diminuÃ­dos, indolor Ã  palpaÃ§Ã£o superficial e profunda. Sem visceromegalias. NÃ¡useas frequentes ao sentir cheiro forte de comida quente."
                                       },
                       "consumoAlimentar":  {
-                                                "padraoDiario":  "Ingestão calórico-proteica gravemente deficitária com consumo energético habitual inferior a 700 kcal/dia nas últimas semanas. Observa-se aversão acentuada a carnes vermelhas, aves e caldos concentrados secundária à disgeusia urêmica, associada à recusa sistemática de preparações sólidas e quentes devido a náuseas desencadeadas por estímulos olfativos.",
-                                                "recordatorio24h":  [
+                                               "padraoDiario":  "IngestÃ£o calÃ³rico-proteica gravemente deficitÃ¡ria com consumo energÃ©tico habitual inferior a 700 kcal/dia nas Ãºltimas semanas. Observa-se aversÃ£o acentuada a carnes vermelhas, aves e caldos concentrados secundÃ¡ria Ã  disgeusia urÃªmica, associada Ã  recusa sistemÃ¡tica de preparaÃ§Ãµes sÃ³lidas e quentes devido a nÃ¡useas desencadeadas por estÃ­mulos olfativos.",
+                                               "recordatorio24h":  [
                                                                        {
-                                                                           "refeicao":  "Café da manhã no hospital (08:00)",
-                                                                           "alimentos":  "1 fatia fina de pão de forma com manteiga (deixou a casca) + 1/2 xícara de chá de erva-doce morno com 1 colherzinha de açúcar."
+                                                                           "refeicao":  "CafÃ© da manhÃ£ no hospital (08:00)",
+                                                                           "alimentos":  "1 fatia fina de pÃ£o de forma com manteiga (deixou a casca) + 1/2 xÃ­cara de chÃ¡ de erva-doce morno com 1 colherzinha de aÃ§Ãºcar."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Colação (10:00)",
-                                                                           "alimentos":  "Recusou a fruta oferecida (alegou náusea)."
+                                                                           "refeicao":  "ColaÃ§Ã£o (10:00)",
+                                                                           "alimentos":  "Recusou a fruta oferecida (alegou nÃ¡usea)."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Almoço (12:00)",
-                                                                           "alimentos":  "2 colheres de sopa de purê de batata inglesa e 1 garfada de peito de frango desfiado (rejeitou todo o restante da bandeja por enjoo e odor)."
+                                                                           "refeicao":  "AlmoÃ§o (12:00)",
+                                                                           "alimentos":  "2 colheres de sopa de purÃª de batata inglesa e 1 garfada de peito de frango desfiado (rejeitou todo o restante da bandeja por enjoo e odor)."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Lanche da tarde (15:30)",
-                                                                           "alimentos":  "1/2 copo pequeno de suco de maçã diluído."
+                                                                           "alimentos":  "1/2 copo pequeno de suco de maÃ§Ã£ diluÃ­do."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Jantar (18:30)",
-                                                                           "alimentos":  "1 concha pequena de sopa rala de fubá com abobrinha. Não aceitou carne nem sobremesa."
+                                                                           "alimentos":  "1 concha pequena de sopa rala de fubÃ¡ com abobrinha. NÃ£o aceitou carne nem sobremesa."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Ceia (21:00)",
-                                                                           "alimentos":  "Recusou alimentação."
+                                                                           "alimentos":  "Recusou alimentaÃ§Ã£o."
                                                                        }
                                                                    ],
-                                               "ingestaoHidrica":  "Aproximadamente 500 mL de líquidos/dia (água e chás fracos), restrita pelo desânimo e recomendação anterior.",
-                                               "preferencias":  "Preparações cremosas, frias ou mornas, purês, compotas caseiras de frutas de baixo potássio (maçã, pera cozida).",
-                                               "aversoesIntolerancias":  "Aversão intensa a carnes vermelhas (gosto amargo/metálico), café preto, preparações com cheiro forte de alho e cebola refogados.",
-                                               "quemPrepara":  "No hospital, a dieta da copa; em casa, a filha prepara tudo, mas tinha muitas dúvidas sobre o que a mãe podia comer."
+                                               "ingestaoHidrica":  "Aproximadamente 500 mL de lÃ­quidos/dia (Ã¡gua e chÃ¡s fracos), restrita pelo desÃ¢nimo e recomendaÃ§Ã£o anterior.",
+                                               "preferencias":  "PreparaÃ§Ãµes cremosas, frias ou mornas, purÃªs, compotas caseiras de frutas de baixo potÃ¡ssio (maÃ§Ã£, pera cozida).",
+                                               "aversoesIntolerancias":  "AversÃ£o intensa a carnes vermelhas (gosto amargo/metÃ¡lico), cafÃ© preto, preparaÃ§Ãµes com cheiro forte de alho e cebola refogados.",
+                                               "quemPrepara":  "No hospital, a dieta da copa; em casa, a filha prepara tudo, mas tinha muitas dÃºvidas sobre o que a mÃ£e podia comer."
                                            },
                       "equipeMultiprofissional":  {
-                                                      "medico":  "Paciente idosa com DRC estágio 4 agudizada sobre crônica e uremia sintomática gerando hiporexia severa e perda ponderal grave. Não tem indicação de hemodiálise de urgência no momento, porém a TFG é de 21 mL/min. Conduta médica: controle estrito da proteinúria e retenção de escórias nitrogenadas com dieta hipoproteica equilibrada (0.6 a 0.8 g/kg/dia se tolerado, sem desnutrir ainda mais), controle de potássio (\u003c 50 mEq/dia) e restrição de fósforo sérico (\u003c 800-1000 mg/dia) com uso obrigatório do carbonato de cálcio junto às principais refeições. Hidratação cuidadosa pelo risco de edema.",
-                                                      "enfermagem":  "Sinais vitais: PA = 132 x 82 mmHg; FC = 74 bpm; FR = 18 irpm; Afebril (36.2ºC). Peso matinal de 46.2 kg. Diurese aferida de 720 mL nas últimas 24h. Edema em membros inferiores +1/4. Constipação ativa há 4 dias (sem evacuações desde a admissão).",
-                                                      "fonoaudiologia":  "Avaliação fonoaudiológica clínica da deglutição: Ausência de disfagia mecânica, tosse ou engasgos com líquidos ou pastosos. Constatada lentidão e fadiga dos músculos mastigatórios ao mastigar sólidos rígidos. Recomendação fonoaudiológica: dieta de consistência branda a pastosa macia para diminuir o gasto energético na mastigação e favorecer a ingestão voluntária.",
-                                                      "psicologiaSocial":  "Acompanhante (filha) muito fragilizada emocionalmente, com medo de perder a mãe e sentindo culpa por não conseguir fazê-la comer em casa. Necessita de suporte e orientações práticas de preparo culinário para alta hospitalar."
+                                                      "medico":  "Paciente idosa com DRC estÃ¡gio 4 agudizada sobre crÃ´nica e uremia sintomÃ¡tica gerando hiporexia severa e perda ponderal grave. NÃ£o tem indicaÃ§Ã£o de hemodiÃ¡lise de urgÃªncia no momento, porÃ©m a TFG Ã© de 21 mL/min. Conduta mÃ©dica: controle estrito da proteinÃºria e retenÃ§Ã£o de escÃ³rias nitrogenadas com dieta hipoproteica equilibrada (0.6 a 0.8 g/kg/dia se tolerado, sem desnutrir ainda mais), controle de potÃ¡ssio (\u003c 50 mEq/dia) e restriÃ§Ã£o de fÃ³sforo sÃ©rico (\u003c 800-1000 mg/dia) com uso obrigatÃ³rio do carbonato de cÃ¡lcio junto Ã s principais refeiÃ§Ãµes. HidrataÃ§Ã£o cuidadosa pelo risco de edema.",
+                                                      "enfermagem":  "Sinais vitais: PA = 132 x 82 mmHg; FC = 74 bpm; FR = 18 irpm; Afebril (36.2ÂºC). Peso matinal de 46.2 kg. Diurese aferida de 720 mL nas Ãºltimas 24h. Edema em membros inferiores +1/4. ConstipaÃ§Ã£o ativa hÃ¡ 4 dias (sem evacuaÃ§Ãµes desde a admissÃ£o).",
+                                                      "fonoaudiologia":  "AvaliaÃ§Ã£o fonoaudiolÃ³gica clÃ­nica da deglutiÃ§Ã£o: AusÃªncia de disfagia mecÃ¢nica, tosse ou engasgos com lÃ­quidos ou pastosos. Constatada lentidÃ£o e fadiga dos mÃºsculos mastigatÃ³rios ao mastigar sÃ³lidos rÃ­gidos. RecomendaÃ§Ã£o fonoaudiolÃ³gica: dieta de consistÃªncia branda a pastosa macia para diminuir o gasto energÃ©tico na mastigaÃ§Ã£o e favorecer a ingestÃ£o voluntÃ¡ria.",
+                                                      "psicologiaSocial":  "Acompanhante (filha) muito fragilizada emocionalmente, com medo de perder a mÃ£e e sentindo culpa por nÃ£o conseguir fazÃª-la comer em casa. Necessita de suporte e orientaÃ§Ãµes prÃ¡ticas de preparo culinÃ¡rio para alta hospitalar."
                                                   },
                       "questoesAvaliativas":  [
                                                   {
                                                       "id":  "q1",
-                                                      "pergunta":  "1. Formule o Diagnóstico em Nutrição (PES) considerando a faixa etária idosa, a perda de peso acelerada, a desnutrição proteico-calórica e a DRC em estágio 4.",
+                                                      "pergunta":  "1. Formule o DiagnÃ³stico em NutriÃ§Ã£o (PES) considerando a faixa etÃ¡ria idosa, a perda de peso acelerada, a desnutriÃ§Ã£o proteico-calÃ³rica e a DRC em estÃ¡gio 4.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q2",
-                                                      "pergunta":  "2. Como deve ser a recomendação proteica (em g de proteína/kg de peso/dia) para este paciente em tratamento conservador de DRC estágio 4 versus a necessidade premente de recuperação do estado nutricional? Justifique o dilema clínico e a prescrição adotada.",
+                                                      "pergunta":  "2. Como deve ser a recomendaÃ§Ã£o proteica (em g de proteÃ­na/kg de peso/dia) para este paciente em tratamento conservador de DRC estÃ¡gio 4 versus a necessidade premente de recuperaÃ§Ã£o do estado nutricional? Justifique o dilema clÃ­nico e a prescriÃ§Ã£o adotada.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q3",
-                                                      "pergunta":  "3. Quais as condutas dietoterápicas obrigatórias quanto ao controle de fósforo, potássio e sódio na dieta da paciente, considerando os exames de K+ (5.4 mEq/L) e P (5.8 mg/dL)? Descreva as técnicas dietéticas de preparo (ex: remolho e cocção de vegetais).",
+                                                      "pergunta":  "3. Quais as condutas dietoterÃ¡picas obrigatÃ³rias quanto ao controle de fÃ³sforo, potÃ¡ssio e sÃ³dio na dieta da paciente, considerando os exames de K+ (5.4 mEq/L) e P (5.8 mg/dL)? Descreva as tÃ©cnicas dietÃ©ticas de preparo (ex: remolho e cocÃ§Ã£o de vegetais).",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q4",
-                                                      "pergunta":  "4. Diante do quadro de uremia, xerostomia, hipogeusia (gosto metálico) e cansaço mastigatório apontado pela fonoaudiologia, quais estratégias sensoriais, de consistência e de fracionamento você prescreveria no planejamento alimentar?",
+                                                      "pergunta":  "4. Diante do quadro de uremia, xerostomia, hipogeusia (gosto metÃ¡lico) e cansaÃ§o mastigatÃ³rio apontado pela fonoaudiologia, quais estratÃ©gias sensoriais, de consistÃªncia e de fracionamento vocÃª prescreveria no planejamento alimentar?",
                                                       "tipo":  "discursiva"
                                                   }
                                               ],
                       "resolucaoGabarito":  {
-                                                "diagnosticoNutricional":  "Desnutrição proteico-calórica grave (P) relacionada à baixa ingestão alimentar secundária à síndrome urêmica (hiporexia, náuseas e disgeusia) e restrições dietéticas prévias (E), evidenciada por perda de peso involuntária de 14.4% em 3 meses, IMC de 19.23 kg/m², hipoalbuminemia de 2.9 g/dL e sinais evidentes de atrofia muscular e subcutânea (S).",
-                                                "calculoEnergetico":  "VET: 30 a 35 kcal/kg de peso/dia (para garantir balanço nitrogenado neutro ou positivo e evitar autocanibalismo muscular/catabolismo que aumentaria a ureia). Considerando peso de 46.2 kg -\u003e ~1400 a 1600 kcal/dia. Proteína: 0.6 a 0.8 g/kg/dia (cerca de 28 a 37 g/dia), sendo pelo menos 50% de alto valor biológico (ovo, laticínios pobres em fósforo, peixe/frango). Evitar dietas excessivamente restritivas (\u003c 0.55g/kg) sem cetodietas pelo alto risco de morte por desnutrição.",
-                                                "distribuicaoMacronutrientes":  "Carboidratos: 55 a 65% do VET (fornecendo calorias não-proteicas para poupar proteína); Lipídios: 25 a 30% do VET (ênfase em azeite de oliva e fontes mono/poli-insaturadas). Potássio: restringir a \u003c 2000-2400 mg/dia (técnica de dupla cocção em água abundante com descarte da água para hortaliças e tubérculos). Fósforo: limitar a \u003c 800 mg/dia (evitar carnes processadas com aditivos fosfatados inorgânicos de alta biodisponibilidade e orientar quelante carbonato de cálcio junto às refeições). Sódio: 1500 a 2000 mg/dia.",
-                                                "condutaPlanejamento":  "Dieta fracionada em 6 pequenas refeições ao dia em consistência pastosa ou branda/macia (purês enriquecidos, papas, suflês macios); preparações servidas frias ou em temperatura ambiente para diminuir a exalação de vapores aromáticos que deflagram náuseas; higienização bucal frequente antes das refeições com água gelada ou gotas de limão para combater a boca amarga/metálica."
+                                                "diagnosticoNutricional":  "DesnutriÃ§Ã£o proteico-calÃ³rica grave (P) relacionada Ã  baixa ingestÃ£o alimentar secundÃ¡ria Ã  sÃ­ndrome urÃªmica (hiporexia, nÃ¡useas e disgeusia) e restriÃ§Ãµes dietÃ©ticas prÃ©vias (E), evidenciada por perda de peso involuntÃ¡ria de 14.4% em 3 meses, IMC de 19.23 kg/mÂ², hipoalbuminemia de 2.9 g/dL e sinais evidentes de atrofia muscular e subcutÃ¢nea (S).",
+                                                "calculoEnergetico":  "VET: 30 a 35 kcal/kg de peso/dia (para garantir balanÃ§o nitrogenado neutro ou positivo e evitar autocanibalismo muscular/catabolismo que aumentaria a ureia). Considerando peso de 46.2 kg -\u003e ~1400 a 1600 kcal/dia. ProteÃ­na: 0.6 a 0.8 g/kg/dia (cerca de 28 a 37 g/dia), sendo pelo menos 50% de alto valor biolÃ³gico (ovo, laticÃ­nios pobres em fÃ³sforo, peixe/frango). Evitar dietas excessivamente restritivas (\u003c 0.55g/kg) sem cetodietas pelo alto risco de morte por desnutriÃ§Ã£o.",
+                                                "distribuicaoMacronutrientes":  "Carboidratos: 55 a 65% do VET (fornecendo calorias nÃ£o-proteicas para poupar proteÃ­na); LipÃ­dios: 25 a 30% do VET (Ãªnfase em azeite de oliva e fontes mono/poli-insaturadas). PotÃ¡ssio: restringir a \u003c 2000-2400 mg/dia (tÃ©cnica de dupla cocÃ§Ã£o em Ã¡gua abundante com descarte da Ã¡gua para hortaliÃ§as e tubÃ©rculos). FÃ³sforo: limitar a \u003c 800 mg/dia (evitar carnes processadas com aditivos fosfatados inorgÃ¢nicos de alta biodisponibilidade e orientar quelante carbonato de cÃ¡lcio junto Ã s refeiÃ§Ãµes). SÃ³dio: 1500 a 2000 mg/dia.",
+                                                "condutaPlanejamento":  "Dieta fracionada em 6 pequenas refeiÃ§Ãµes ao dia em consistÃªncia pastosa ou branda/macia (purÃªs enriquecidos, papas, suflÃªs macios); preparaÃ§Ãµes servidas frias ou em temperatura ambiente para diminuir a exalaÃ§Ã£o de vapores aromÃ¡ticos que deflagram nÃ¡useas; higienizaÃ§Ã£o bucal frequente antes das refeiÃ§Ãµes com Ã¡gua gelada ou gotas de limÃ£o para combater a boca amarga/metÃ¡lica."
                                             }
                   },
                   {
                       "id":  "caso-gastrectomia-dumping",
                       "disciplinaId":  "dietoterapia",
-                      "title":  "Caso 3: Paciente Pós-Gastrectomia Subtotal com Síndrome de Dumping",
-                      "category":  "Cirúrgico / Trato Gastrointestinal",
-                      "description":  "Paciente de 42 anos no 45º dia de pós-operatório de gastrectomia com queixas intensas de tontura, sudorese, taquicardia e diarreia explosiva pós-prandial.",
-                      "neeKcal": 2150,
+                      "title":  "Caso 3: Paciente PÃ³s-Gastrectomia Subtotal com SÃ­ndrome de Dumping",
+                      "category":  "CirÃºrgico / Trato Gastrointestinal",
+                      "description":  "Paciente de 42 anos no 45Âº dia de pÃ³s-operatÃ³rio de gastrectomia com queixas intensas de tontura, sudorese, taquicardia e diarreia explosiva pÃ³s-prandial.",
+                      "hipoteseDiagnostica":  "PÃ³s-operatÃ³rio tardio de Gastrectomia Subtotal em Y de Roux, SÃ­ndrome de Dumping mista (precoce e tardia) com Sitofobia e DesnutriÃ§Ã£o Aguda Grave",
+                      "neeKcal":  2150,
                       "isLocked":  false,
-                      "visivel": true,
-                      "habilitarQuestoesAvaliativas": true,
+                      "visivel":  true,
+                      "habilitarQuestoesAvaliativas":  true,
                       "patient":  {
                                       "name":  "Roberto Silveira Santos",
                                       "age":  42,
                                       "gender":  "Masculino",
-                                      "occupation":  "Técnico em Manutenção de Informática",
+                                      "occupation":  "TÃ©cnico em ManutenÃ§Ã£o de InformÃ¡tica",
                                       "maritalStatus":  "Casado",
-                                      "residence":  "Ribeirão Preto - SP",
-                                      "avatar":  "👨‍💻"
+                                      "residence":  "RibeirÃ£o Preto - SP",
+                                      "avatar":  "ðŸ‘¨â€ðŸ’»"
                                   },
                       "history":  {
-                                      "queixaPrincipal":  "Doutor(a), eu estou com um medo enorme de comer. Desde que eu passei pela cirurgia de retirada do estômago, cerca de vinte minutos depois que eu almoço ou quando como qualquer doce, meu coração começa a disparar forte no peito, eu começo a suar frio pela testa, as vistas escurecem de tontura e logo em seguida vem uma cólica desesperadora com diarreia que tenho que sair correndo pro banheiro. Depois de uma hora e meia ainda sinto minhas mãos tremerem como se eu fosse desmaiar.",
-                                      "hda":  "Paciente masculino de 42 anos, no 45º dia de pós-operatório tardio de gastrectomia subtotal com reconstrução em Y de Roux secundária a complicação de úlcera péptica gástrica terebrante com displasia de alto grau. Evolui com quadro clínico típico de Síndrome de Dumping mista: fase precoce vasomotora e gastrointestinal aos 15 a 30 minutos pós-prandiais (plenitude precoce desconfortável, sudorese profusa, palpitações taquicárdicas e diarreia líquida motora explosiva secundária à sobrecarga osmótica hiperosmolar no jejuno) associada à fase tardia aos 90 a 120 minutos pós-prandiais (tremores de extremidades, diaforese e lipotimia decorrentes de hipoglicemia reativa hiperinsulinêmica). Paciente desenvolveu sitofobia (medo de se alimentar) que culminou em emagrecimento severo de 11,0 kg em 45 dias.",
-                                      "hpp":  "Histórico pregresso de gastrite crônica e úlcera péptica associada a H. pylori erradicada no pré-operatório. Sem antecedentes de hipertensão arterial ou diabetes mellitus. Ex-tabagista (cessação há 6 meses após a indicação cirúrgica).",
-                                      "historiaFamiliar":  "Histórico materno de neoplasia gástrica aos 65 anos. Histórico paterno de hipertensão arterial sistêmica.",
-                                      "medicamentos":  "Omeprazol 40mg (1 comprimido em jejum pela manhã); suplemento polivitamínico e mineral por via oral (1 comprimido ao dia); Dimeticona em gotas se meteorismo ou distensão abdominal.",
-                                      "habitosVida":  "Atividade profissional desempenhada predominantemente sentado em bancada técnica de testes computacionais. Atualmente em benefício temporário de auxílio-doença pelo INSS em decorrência da incapacidade funcional gerada pelos sintomas pós-prandiais.",
-                                      "funcaoIntestinalDiurese":  "Evacuações diarreicas explosivas de padrão motor e osmótico (fezes líquidas Bristol 7) cerca de 2 a 3 vezes ao dia, tipicamente 20 a 40 minutos após o almoço ou jantar. Diurese fisiológica preservada em volume e coloração."
+                                      "queixaPrincipal":  "Doutor(a), eu estou com um medo enorme de comer. Desde que eu passei pela cirurgia de retirada do estÃ´mago, cerca de vinte minutos depois que eu almoÃ§o ou quando como qualquer doce, meu coraÃ§Ã£o comeÃ§a a disparar forte no peito, eu comeÃ§o a suar frio pela testa, as vistas escurecem de tontura e logo em seguida vem uma cÃ³lica desesperadora com diarreia que tenho que sair correndo pro banheiro. Depois de uma hora e meia ainda sinto minhas mÃ£os tremerem como se eu fosse desmaiar.",
+                                      "hda":  "Paciente masculino de 42 anos, no 45Âº dia de pÃ³s-operatÃ³rio tardio de gastrectomia subtotal com reconstruÃ§Ã£o em Y de Roux secundÃ¡ria a complicaÃ§Ã£o de Ãºlcera pÃ©ptica gÃ¡strica terebrante com displasia de alto grau. Evolui com quadro clÃ­nico tÃ­pico de SÃ­ndrome de Dumping mista: fase precoce vasomotora e gastrointestinal aos 15 a 30 minutos pÃ³s-prandiais (plenitude precoce desconfortÃ¡vel, sudorese profusa, palpitaÃ§Ãµes taquicÃ¡rdicas e diarreia lÃ­quida motora explosiva secundÃ¡ria Ã  sobrecarga osmÃ³tica hiperosmolar no jejuno) associada Ã  fase tardia aos 90 a 120 minutos pÃ³s-prandiais (tremores de extremidades, diaforese e lipotimia decorrentes de hipoglicemia reativa hiperinsulinÃªmica). Paciente desenvolveu sitofobia (medo de se alimentar) que culminou em emagrecimento severo de 11,0 kg em 45 dias.",
+                                      "hpp":  "HistÃ³rico pregresso de gastrite crÃ´nica e Ãºlcera pÃ©ptica associada a H. pylori erradicada no prÃ©-operatÃ³rio. Sem antecedentes de hipertensÃ£o arterial ou diabetes mellitus. Ex-tabagista (cessaÃ§Ã£o hÃ¡ 6 meses apÃ³s a indicaÃ§Ã£o cirÃºrgica).",
+                                      "historiaFamiliar":  "HistÃ³rico materno de neoplasia gÃ¡strica aos 65 anos. HistÃ³rico paterno de hipertensÃ£o arterial sistÃªmica.",
+                                      "medicamentos":  "Omeprazol 40mg (1 comprimido em jejum pela manhÃ£); suplemento polivitamÃ­nico e mineral por via oral (1 comprimido ao dia); Dimeticona em gotas se meteorismo ou distensÃ£o abdominal.",
+                                      "habitosVida":  "Atividade profissional desempenhada predominantemente sentado em bancada tÃ©cnica de testes computacionais. Atualmente em benefÃ­cio temporÃ¡rio de auxÃ­lio-doenÃ§a pelo INSS em decorrÃªncia da incapacidade funcional gerada pelos sintomas pÃ³s-prandiais.",
+                                      "funcaoIntestinalDiurese":  "EvacuaÃ§Ãµes diarreicas explosivas de padrÃ£o motor e osmÃ³tico (fezes lÃ­quidas Bristol 7) cerca de 2 a 3 vezes ao dia, tipicamente 20 a 40 minutos apÃ³s o almoÃ§o ou jantar. Diurese fisiolÃ³gica preservada em volume e coloraÃ§Ã£o.",
+                                      "hipoteseDiagnostica":  "PÃ³s-operatÃ³rio tardio de Gastrectomia Subtotal em Y de Roux, SÃ­ndrome de Dumping mista (precoce e tardia) com Sitofobia e DesnutriÃ§Ã£o Aguda Grave"
                                   },
                       "antropometria":  {
                                             "pesoAtual":  67,
@@ -453,8 +459,8 @@
                                             "dobraSubescapular":  13,
                                             "dobraSuprailiaca":  14,
                                             "dobraAbdominal":  16,
-                                            "demaisAvaliacoes":  "Circunferência do quadril: 92 cm (RCQ: 0.86); Dobra subescapular: 13 mm; Dobra suprailíaca: 14 mm; Dobra abdominal: 16 mm.",
-                                            "historicoPerdaPonderal":  "Perda ponderal de 11.0 kg em 45 dias (redução de 14.1% do peso pré-cirúrgico, configurando perda severa aguda pós-operatória)."
+                                            "demaisAvaliacoes":  "CircunferÃªncia do quadril: 92 cm (RCQ: 0.86); Dobra subescapular: 13 mm; Dobra suprailÃ­aca: 14 mm; Dobra abdominal: 16 mm.",
+                                            "historicoPerdaPonderal":  "Perda ponderal de 11.0 kg em 45 dias (reduÃ§Ã£o de 14.1% do peso prÃ©-cirÃºrgico, configurando perda severa aguda pÃ³s-operatÃ³ria)."
                                         },
                       "bioquimica":  [
                                          {
@@ -464,22 +470,22 @@
                                              "interpretacao":  "Anemia leve"
                                          },
                                          {
-                                             "exame":  "Hematócrito (Ht)",
+                                             "exame":  "HematÃ³crito (Ht)",
                                              "valor":  "34.5 %",
                                              "referencia":  "40.0 - 52.0 %",
                                              "interpretacao":  "Reduzido"
                                          },
                                          {
-                                             "exame":  "Ferritina Sérica",
+                                             "exame":  "Ferritina SÃ©rica",
                                              "valor":  "18 ng/mL",
                                              "referencia":  "30 - 400 ng/mL",
-                                             "interpretacao":  "Depleção de estoques de ferro (risco de anemia ferropriva pós-gastrectomia)"
+                                             "interpretacao":  "DepleÃ§Ã£o de estoques de ferro (risco de anemia ferropriva pÃ³s-gastrectomia)"
                                          },
                                          {
                                              "exame":  "Vitamina B12",
                                              "valor":  "195 pg/mL",
                                              "referencia":  "200 - 900 pg/mL",
-                                             "interpretacao":  "Deficiência de B12 incipiente (perda de fator intrínseco e bypass duodenal)"
+                                             "interpretacao":  "DeficiÃªncia de B12 incipiente (perda de fator intrÃ­nseco e bypass duodenal)"
                                          },
                                          {
                                              "exame":  "Glicemia de Jejum",
@@ -488,57 +494,57 @@
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Glicemia Pós-Prandial (90 min)",
+                                             "exame":  "Glicemia PÃ³s-Prandial (90 min)",
                                              "valor":  "54 mg/dL",
                                              "referencia":  "\u003e 70 mg/dL",
                                              "interpretacao":  "Hipoglicemia reativa importante (Dumping tardio)"
                                          },
                                          {
-                                             "exame":  "Albumina Sérica",
+                                             "exame":  "Albumina SÃ©rica",
                                              "valor":  "3.6 g/dL",
                                              "referencia":  "3.5 - 5.0 g/dL",
-                                             "interpretacao":  "Normal limítrofe inferior"
+                                             "interpretacao":  "Normal limÃ­trofe inferior"
                                          },
                                          {
-                                             "exame":  "Proteínas Totais",
+                                             "exame":  "ProteÃ­nas Totais",
                                              "valor":  "6.2 g/dL",
                                              "referencia":  "6.0 - 8.0 g/dL",
                                              "interpretacao":  "Normal baixo"
                                          },
                                          {
-                                             "exame":  "Sódio Sérico (Na+)",
+                                             "exame":  "SÃ³dio SÃ©rico (Na+)",
                                              "valor":  "139 mEq/L",
                                              "referencia":  "135 - 145 mEq/L",
                                              "interpretacao":  "Normal"
                                          },
                                          {
-                                             "exame":  "Potássio Sérico (K+)",
+                                             "exame":  "PotÃ¡ssio SÃ©rico (K+)",
                                              "valor":  "4.1 mEq/L",
                                              "referencia":  "3.5 - 5.0 mEq/L",
                                              "interpretacao":  "Normal"
                                          }
                                      ],
                       "exameFisico":  {
-                                          "estadoGeral":  "Lúcido, orientado, fáceis de ansiedade e apreensão evidente em relação ao ato de se alimentar, corado 1+/4+, hidratado, acianótico, anictérico.",
-                                          "sinaisEspecificos":  "Cicatriz cirúrgica mediana supraumbilical com boa coaptação e aspecto fisiológico, sem sinais flogísticos ou hérnias incisionais. Pele e mucosas sem lesões.",
-                                          "edema":  "Ausência de edema periférico.",
-                                          "cavidadeOral":  "Dentição íntegra e completa. Mastigação muito rápida e ansiosa (costuma mastigar poucas vezes e engolir depressa).",
-                                          "tgi":  "Abdome plano, ruídos hidroaéreos acentuados e audíveis à ausculta em mesogástrio imediatamente após a ingestão de água e alimentos. Timpanismo difuso aumentado. Desconforto à palpação profunda pós-prandial."
+                                          "estadoGeral":  "LÃºcido, orientado, fÃ¡ceis de ansiedade e apreensÃ£o evidente em relaÃ§Ã£o ao ato de se alimentar, corado 1+/4+, hidratado, acianÃ³tico, anictÃ©rico.",
+                                          "sinaisEspecificos":  "Cicatriz cirÃºrgica mediana supraumbilical com boa coaptaÃ§Ã£o e aspecto fisiolÃ³gico, sem sinais flogÃ­sticos ou hÃ©rnias incisionais. Pele e mucosas sem lesÃµes.",
+                                          "edema":  "AusÃªncia de edema perifÃ©rico.",
+                                          "cavidadeOral":  "DentiÃ§Ã£o Ã­ntegra e completa. MastigaÃ§Ã£o muito rÃ¡pida e ansiosa (costuma mastigar poucas vezes e engolir depressa).",
+                                          "tgi":  "Abdome plano, ruÃ­dos hidroaÃ©reos acentuados e audÃ­veis Ã  ausculta em mesogÃ¡strio imediatamente apÃ³s a ingestÃ£o de Ã¡gua e alimentos. Timpanismo difuso aumentado. Desconforto Ã  palpaÃ§Ã£o profunda pÃ³s-prandial."
                                       },
                       "consumoAlimentar":  {
-                                                "padraoDiario":  "Padrão dietético transgressor e inadequado ao pós-operatório gástrico: realiza refeições excessivamente volumosas em apenas 3 momentos ao dia, ingere grandes volumes hídricos durante as refeições principais e consome preparações hiperosmolares ricas em sacarose na tentativa equivocada de estancar a perda de peso, desencadeando esvaziamento gástrico precipitado.",
-                                                "recordatorio24h":  [
+                                               "padraoDiario":  "PadrÃ£o dietÃ©tico transgressor e inadequado ao pÃ³s-operatÃ³rio gÃ¡strico: realiza refeiÃ§Ãµes excessivamente volumosas em apenas 3 momentos ao dia, ingere grandes volumes hÃ­dricos durante as refeiÃ§Ãµes principais e consome preparaÃ§Ãµes hiperosmolares ricas em sacarose na tentativa equivocada de estancar a perda de peso, desencadeando esvaziamento gÃ¡strico precipitado.",
+                                               "recordatorio24h":  [
                                                                        {
-                                                                           "refeicao":  "Café da manhã (07:30)",
-                                                                           "alimentos":  "1 xícara grande de café com leite e 2 colheres cheias de açúcar + 2 fatias de bolo caseiro açucarado."
+                                                                           "refeicao":  "CafÃ© da manhÃ£ (07:30)",
+                                                                           "alimentos":  "1 xÃ­cara grande de cafÃ© com leite e 2 colheres cheias de aÃ§Ãºcar + 2 fatias de bolo caseiro aÃ§ucarado."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Colação (10:00)",
-                                                                           "alimentos":  "Não costuma comer nada no meio da manhã."
+                                                                           "refeicao":  "ColaÃ§Ã£o (10:00)",
+                                                                           "alimentos":  "NÃ£o costuma comer nada no meio da manhÃ£."
                                                                        },
                                                                        {
-                                                                           "refeicao":  "Almoço (12:30)",
-                                                                           "alimentos":  "Prato grande com arroz branco, feijão com caldo, carne cozida picada e 1 copo grande (300mL) de suco de laranja bem adoçado ingerido junto com a comida. 20 min depois relata taquicardia e diarreia."
+                                                                           "refeicao":  "AlmoÃ§o (12:30)",
+                                                                           "alimentos":  "Prato grande com arroz branco, feijÃ£o com caldo, carne cozida picada e 1 copo grande (300mL) de suco de laranja bem adoÃ§ado ingerido junto com a comida. 20 min depois relata taquicardia e diarreia."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Lanche da tarde (16:00)",
@@ -546,51 +552,51 @@
                                                                        },
                                                                        {
                                                                            "refeicao":  "Jantar (19:30)",
-                                                                           "alimentos":  "1 prato fundo de sopa de legumes com macarrão e carne + 1 copo de refrigerante. Seguido de náusea e distensão abdominal."
+                                                                           "alimentos":  "1 prato fundo de sopa de legumes com macarrÃ£o e carne + 1 copo de refrigerante. Seguido de nÃ¡usea e distensÃ£o abdominal."
                                                                        },
                                                                        {
                                                                            "refeicao":  "Ceia (22:00)",
-                                                                           "alimentos":  "Não consome por medo de passar mal deitado."
+                                                                           "alimentos":  "NÃ£o consome por medo de passar mal deitado."
                                                                        }
                                                                    ],
-                                               "ingestaoHidrica":  "Ingere cerca de 1.8 L de líquidos por dia, mas concentra quase metade desse volume concomitantemente com as grandes refeições de almoço e jantar.",
-                                               "preferencias":  "Gosta de massas, pães doces, sobremesas, caldos e sucos de frutas.",
-                                               "aversoesIntolerancias":  "Relata que leite puro causa gases e distensão (provável intolerância secundária transitória à lactose por trânsito acelerado).",
-                                               "quemPrepara":  "A esposa prepara as refeições, mas ambos desconheciam as regras de separação de sólidos e líquidos pós-gastrectomia."
+                                               "ingestaoHidrica":  "Ingere cerca de 1.8 L de lÃ­quidos por dia, mas concentra quase metade desse volume concomitantemente com as grandes refeiÃ§Ãµes de almoÃ§o e jantar.",
+                                               "preferencias":  "Gosta de massas, pÃ£es doces, sobremesas, caldos e sucos de frutas.",
+                                               "aversoesIntolerancias":  "Relata que leite puro causa gases e distensÃ£o (provÃ¡vel intolerÃ¢ncia secundÃ¡ria transitÃ³ria Ã  lactose por trÃ¢nsito acelerado).",
+                                               "quemPrepara":  "A esposa prepara as refeiÃ§Ãµes, mas ambos desconheciam as regras de separaÃ§Ã£o de sÃ³lidos e lÃ­quidos pÃ³s-gastrectomia."
                                            },
                       "equipeMultiprofissional":  {
-                                                      "medico":  "Paciente no 45º DPO de gastrectomia subtotal com reconstrução em Y de Roux. Apresenta quadro fisiopatológico clássico de Síndrome de Dumping mista (fase precoce osmótica com hipotensão/taquicardia/diarreia aos 20-30 min e fase tardia com hipoglicemia reativa aos 90-120 min). Perda de peso acelerada de 11 kg. Antes de qualquer tentativa farmacológica com análogos de somatostatina (octreotida) ou acarbose, a intervenção prioritária e resolutiva é o ajuste dietoterápico rigoroso. Solicito intervenção da nutrição.",
-                                                      "enfermagem":  "Aferição pós-prandial durante observação: logo após ingerir suco açucarado no almoço, paciente apresentou PA transitória de 95x60 mmHg com FC de 112 bpm e sudorese fria em fronte, melhorando após deitar-se em decúbito dorsal por 30 minutos.",
-                                                      "fonoaudiologia":  "Sem alterações na musculatura faríngea ou deglutição. Observada mastigação extremamente acelerada, recomendando orientação de mastigação lenta e pausas entre bocados.",
-                                                      "psicologiaSocial":  "Paciente encontra-se altamente angustiado, referindo \u0027medo de comer\u0027 e sensação de que a cirurgia deu errado, necessitando de acolhimento e explicação clara de que seus sintomas são de origem alimentar e totalmente controláveis com a dieta correta."
+                                                      "medico":  "Paciente no 45Âº DPO de gastrectomia subtotal com reconstruÃ§Ã£o em Y de Roux. Apresenta quadro fisiopatolÃ³gico clÃ¡ssico de SÃ­ndrome de Dumping mista (fase precoce osmÃ³tica com hipotensÃ£o/taquicardia/diarreia aos 20-30 min e fase tardia com hipoglicemia reativa aos 90-120 min). Perda de peso acelerada de 11 kg. Antes de qualquer tentativa farmacolÃ³gica com anÃ¡logos de somatostatina (octreotida) ou acarbose, a intervenÃ§Ã£o prioritÃ¡ria e resolutiva Ã© o ajuste dietoterÃ¡pico rigoroso. Solicito intervenÃ§Ã£o da nutriÃ§Ã£o.",
+                                                      "enfermagem":  "AferiÃ§Ã£o pÃ³s-prandial durante observaÃ§Ã£o: logo apÃ³s ingerir suco aÃ§ucarado no almoÃ§o, paciente apresentou PA transitÃ³ria de 95x60 mmHg com FC de 112 bpm e sudorese fria em fronte, melhorando apÃ³s deitar-se em decÃºbito dorsal por 30 minutos.",
+                                                      "fonoaudiologia":  "Sem alteraÃ§Ãµes na musculatura farÃ­ngea ou deglutiÃ§Ã£o. Observada mastigaÃ§Ã£o extremamente acelerada, recomendando orientaÃ§Ã£o de mastigaÃ§Ã£o lenta e pausas entre bocados.",
+                                                      "psicologiaSocial":  "Paciente encontra-se altamente angustiado, referindo \u0027medo de comer\u0027 e sensaÃ§Ã£o de que a cirurgia deu errado, necessitando de acolhimento e explicaÃ§Ã£o clara de que seus sintomas sÃ£o de origem alimentar e totalmente controlÃ¡veis com a dieta correta."
                                                   },
                       "questoesAvaliativas":  [
                                                   {
                                                       "id":  "q1",
-                                                      "pergunta":  "1. Formule o Diagnóstico em Nutrição prioritário (PES) para este paciente considerando a Síndrome de Dumping e a perda de peso acelerada.",
+                                                      "pergunta":  "1. Formule o DiagnÃ³stico em NutriÃ§Ã£o prioritÃ¡rio (PES) para este paciente considerando a SÃ­ndrome de Dumping e a perda de peso acelerada.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q2",
-                                                      "pergunta":  "2. Explique a fisiopatologia que diferencia a Síndrome de Dumping Precoce da Síndrome de Dumping Tardia demonstradas no caso, correlacionando-as com as queixas do paciente.",
+                                                      "pergunta":  "2. Explique a fisiopatologia que diferencia a SÃ­ndrome de Dumping Precoce da SÃ­ndrome de Dumping Tardia demonstradas no caso, correlacionando-as com as queixas do paciente.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q3",
-                                                      "pergunta":  "3. Elabore a prescrição dietoterápica detalhada para a prevenção do Dumping: volume por refeição, número de refeições diárias (fracionamento), consistência, temperatura dos alimentos e a regra essencial de ingestão de líquidos.",
+                                                      "pergunta":  "3. Elabore a prescriÃ§Ã£o dietoterÃ¡pica detalhada para a prevenÃ§Ã£o do Dumping: volume por refeiÃ§Ã£o, nÃºmero de refeiÃ§Ãµes diÃ¡rias (fracionamento), consistÃªncia, temperatura dos alimentos e a regra essencial de ingestÃ£o de lÃ­quidos.",
                                                       "tipo":  "discursiva"
                                                   },
                                                   {
                                                       "id":  "q4",
-                                                      "pergunta":  "4. Quais nutrientes e vitaminas devem ser monitorados e suplementados a médio e longo prazo neste paciente gastrectomizado e por quais razões anatômicas/absortivas?",
+                                                      "pergunta":  "4. Quais nutrientes e vitaminas devem ser monitorados e suplementados a mÃ©dio e longo prazo neste paciente gastrectomizado e por quais razÃµes anatÃ´micas/absortivas?",
                                                       "tipo":  "discursiva"
                                                   }
                                               ],
                       "resolucaoGabarito":  {
-                                                "diagnosticoNutricional":  "Alteração da função gastrointestinal (P) relacionada à perda do reservatório gástrico e do esfíncter pilórico pós-gastrectomia com ingestão alimentar inadequada de carboidratos simples e líquidos com as refeições (E), evidenciada por sintomas clássicos de Síndrome de Dumping precoce (taquicardia, sudorese, diarreia explosiva) e tardia (hipoglicemia de 54 mg/dL) e perda ponderal de 14.1% em 45 dias (S).",
-                                                "calculoEnergetico":  "VET hipercalórico/normocalórico e hiperproteico para recuperação de peso: 30 a 35 kcal/kg de peso atual (2000 a 2300 kcal/dia). Proteínas: 1.2 a 1.5 g/kg de peso atual (80 a 100g de proteína/dia) para suporte cicatricial e recuperação de massa magra; Carboidratos: 40 a 45% do VET (complexos, ricos em fibras solúveis como pectina/goma guar para retardar o esvaziamento; rigorosa exclusão de sacarose, frutose e doces concentrados); Lipídios: 30 a 35% do VET para garantir aporte calórico em baixo volume.",
-                                                "distribuicaoMacronutrientes":  "Fracionamento rigoroso em 6 a 8 pequenas refeições diárias (volumes reduzidos de 150 a 200 mL por vez); separação obrigatória entre sólidos e líquidos (não ingerir líquidos durante as refeições, consumindo-os 45 a 60 minutos antes ou após); temperatura morna a ambiente (evitar extremos de temperatura que estimulam peristaltismo); orientar repouso em decúbito dorsal por 20 a 30 minutos após as refeições principais se necessário para lentificar o trânsito.",
-                                                "condutaPlanejamento":  "Monitoramento e suplementação de Vitamina B12 por via parenteral/sublingual (devido à perda de células parietais produtoras de fator intrínseco), Ferro elementar (perda da acidez gástrica que reduz Fe3+ a Fe2+ e bypass duodenal), Cálcio e Vitamina D (prevenção de osteomalácia), e monitoramento de folato e zinco."
+                                                "diagnosticoNutricional":  "AlteraÃ§Ã£o da funÃ§Ã£o gastrointestinal (P) relacionada Ã  perda do reservatÃ³rio gÃ¡strico e do esfÃ­ncter pilÃ³rico pÃ³s-gastrectomia com ingestÃ£o alimentar inadequada de carboidratos simples e lÃ­quidos com as refeiÃ§Ãµes (E), evidenciada por sintomas clÃ¡ssicos de SÃ­ndrome de Dumping precoce (taquicardia, sudorese, diarreia explosiva) e tardia (hipoglicemia de 54 mg/dL) e perda ponderal de 14.1% em 45 dias (S).",
+                                                "calculoEnergetico":  "VET hipercalÃ³rico/normocalÃ³rico e hiperproteico para recuperaÃ§Ã£o de peso: 30 a 35 kcal/kg de peso atual (2000 a 2300 kcal/dia). ProteÃ­nas: 1.2 a 1.5 g/kg de peso atual (80 a 100g de proteÃ­na/dia) para suporte cicatricial e recuperaÃ§Ã£o de massa magra; Carboidratos: 40 a 45% do VET (complexos, ricos em fibras solÃºveis como pectina/goma guar para retardar o esvaziamento; rigorosa exclusÃ£o de sacarose, frutose e doces concentrados); LipÃ­dios: 30 a 35% do VET para garantir aporte calÃ³rico em baixo volume.",
+                                                "distribuicaoMacronutrientes":  "Fracionamento rigoroso em 6 a 8 pequenas refeiÃ§Ãµes diÃ¡rias (volumes reduzidos de 150 a 200 mL por vez); separaÃ§Ã£o obrigatÃ³ria entre sÃ³lidos e lÃ­quidos (nÃ£o ingerir lÃ­quidos durante as refeiÃ§Ãµes, consumindo-os 45 a 60 minutos antes ou apÃ³s); temperatura morna a ambiente (evitar extremos de temperatura que estimulam peristaltismo); orientar repouso em decÃºbito dorsal por 20 a 30 minutos apÃ³s as refeiÃ§Ãµes principais se necessÃ¡rio para lentificar o trÃ¢nsito.",
+                                                "condutaPlanejamento":  "Monitoramento e suplementaÃ§Ã£o de Vitamina B12 por via parenteral/sublingual (devido Ã  perda de cÃ©lulas parietais produtoras de fator intrÃ­nseco), Ferro elementar (perda da acidez gÃ¡strica que reduz Fe3+ a Fe2+ e bypass duodenal), CÃ¡lcio e Vitamina D (prevenÃ§Ã£o de osteomalÃ¡cia), e monitoramento de folato e zinco."
                                             }
                   },
                   {

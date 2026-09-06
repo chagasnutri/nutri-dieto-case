@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Estado da aplicação
   let appState = {
     mode: "student", // 'student' ou 'admin'
+    workflowMode: "simulation", // 'simulation' ou 'real'
     currentCaseId: null,
     currentCase: null,
     activeInterlocutor: "paciente",
@@ -170,7 +171,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const requestedView = urlParams.get("view");
-    if (requestedView === "simulation") {
+    if (requestedView === "real" || urlParams.get("demo") === "real-patient") {
+      startRealPatientSession();
+      if (appState.currentProntuario) {
+        appState.currentProntuario.aluno = {
+          nome: "Mariana Aluna",
+          matriculaTurma: "NUT-2026-A",
+          data: "2026-09-05"
+        };
+        appState.currentProntuario.dadosPacienteReal = {
+          nome: "Carlos Eduardo Silva",
+          idade: "52",
+          sexo: "Masculino",
+          ocupacao: "Contador",
+          hipoteseDiagnostica: "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II"
+        };
+        appState.currentProntuario.anamnese.hipoteseDiagnostica = "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II";
+        appState.currentProntuario.interacaoDrogaNutriente = [
+          {
+            medicamento: "Metformina 850mg (2x/dia)",
+            nutrientes: "Vitamina B12 e Ácido Fólico",
+            conduta: "Monitorar dosagem sérica de Vitamina B12 anualmente e suplementar se necessário."
+          },
+          {
+            medicamento: "Furosemida 40mg (1x/dia)",
+            nutrientes: "Potássio, Magnésio, Cálcio, Zinco e Tiamina",
+            conduta: "Estimular fontes dietéticas de potássio e magnésio; acompanhar eletrólitos séricos."
+          },
+          {
+            medicamento: "Atorvastatina 20mg",
+            nutrientes: "Coenzima Q10 (CoQ10)",
+            conduta: "Atentar para queixas de mialgias; prescrever fontes de antioxidantes na dieta."
+          }
+        ];
+        appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+      }
+      populateProntuarioForm();
+      renderDrugNutrientTable();
+    } else if (requestedView === "simulation") {
       showStudentSimulation("caso-dm2-has");
     } else if (requestedView === "password") {
       showTeacherPanel();
@@ -507,6 +545,85 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           populateProntuarioForm();
         }
+        if (urlParams.get("demo") === "cardapio-oral-consistencia") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.consistenciaDietaOral = "Dieta Branda";
+            if (appState.currentProntuario.tne) appState.currentProntuario.tne.viaAlimentacao = "oral";
+          }
+          populateProntuarioForm();
+          setNutritionRouteSelection("oral");
+        }
+        if (urlParams.get("demo") === "tne-quantitativo") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.tne = {
+              viaAlimentacao: "tne",
+              nomeComercial: "Fresubin HP Energy (Fresenius)",
+              tipoDieta: "Polimérica normocalórica e hiperproteica com fibras",
+              densidadeCalorica: "1.5 kcal/mL",
+              fracionamento: "Contínuo em 20 horas/dia",
+              viaAdministracao: "bomba",
+              gravitacional: { volumePorRefeicao: "", quantidadeFrascosEtapas: "", metaVazaoGotasMin: "" },
+              bombaInfusao: { tempoInfusaoHoras: "20 horas/dia", metaVazaoMlHora: "65 mL/h (Volume: 1300 mL)" },
+              tabelaNutricionalManual: {
+                vet: "1950",
+                cho: "234",
+                ptn: "97.5",
+                lip: "65",
+                fibra: "24",
+                sodio: "1250",
+                potassio: "1850",
+                calcio: "1000",
+                fosforo: "800"
+              },
+              moduloSuplementacaoProteica: "Módulo proteico isolado (1 dose de 15g de Whey) para atingir meta de 1.4 g/kg/dia."
+            };
+          }
+          populateProntuarioForm();
+          setNutritionRouteSelection("tne");
+          updateCardapioTotalsDisplay();
+        }
+        if (urlParams.get("demo") === "real-patient" || urlParams.get("view") === "real") {
+          startRealPatientSession();
+          if (appState.currentProntuario) {
+            appState.currentProntuario.aluno = {
+              nome: "Mariana Aluna",
+              matriculaTurma: "NUT-2026-A",
+              data: "2026-09-05"
+            };
+            appState.currentProntuario.dadosPacienteReal = {
+              nome: "Carlos Eduardo Silva",
+              idade: "52",
+              sexo: "Masculino",
+              ocupacao: "Contador",
+              hipoteseDiagnostica: "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II"
+            };
+            appState.currentProntuario.anamnese.hipoteseDiagnostica = "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II";
+            appState.currentProntuario.interacaoDrogaNutriente = [
+              {
+                medicamento: "Metformina 850mg (2x/dia)",
+                nutrientes: "Vitamina B12 e Ácido Fólico",
+                conduta: "Monitorar dosagem sérica de Vitamina B12 anualmente e suplementar se necessário."
+              },
+              {
+                medicamento: "Furosemida 40mg (1x/dia)",
+                nutrientes: "Potássio, Magnésio, Cálcio, Zinco e Tiamina",
+                conduta: "Estimular fontes dietéticas de potássio e magnésio; acompanhar eletrólitos séricos."
+              },
+              {
+                medicamento: "Atorvastatina 20mg",
+                nutrientes: "Coenzima Q10 (CoQ10)",
+                conduta: "Atentar para queixas de mialgias; prescrever fontes de antioxidantes na dieta."
+              }
+            ];
+            appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+          }
+          populateProntuarioForm();
+          renderDrugNutrientTable();
+          if (requestedTab) {
+            const tBtn = document.querySelector(`.student-tab-btn[data-tab="${requestedTab}"]`);
+            if (tBtn) tBtn.click();
+          }
+        }
         if (urlParams.get("scroll") === "totals") {
           setTimeout(() => {
             const panel = document.getElementById("cardapioTotalsPanel");
@@ -617,6 +734,328 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Alterna o modo de trabalho do aluno (Simulação vs Atendimento Real)
+  function setStudentWorkflowMode(mode) {
+    appState.workflowMode = mode;
+    const badge = document.getElementById("activeWorkflowModeBadge");
+    if (badge) {
+      if (mode === "real") {
+        badge.textContent = "Modo Atual: 🩺 Atendimento Real";
+        badge.className = "badge-clinical bg-sky-50 text-sky-700 border border-sky-300 text-[11px]";
+      } else {
+        badge.textContent = "Modo Atual: 🎓 Simulação";
+        badge.className = "badge-clinical bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px]";
+      }
+    }
+  }
+
+  // Inicia uma nova sessão de Atendimento Presencial Real (Prontuário em Branco)
+  function startRealPatientSession() {
+    setStudentWorkflowMode("real");
+    appState.mode = "student-real";
+    appState.currentCaseId = "atendimento-real";
+    
+    // Tenta carregar rascunho de atendimento real do localStorage
+    let p = null;
+    try {
+      const saved = localStorage.getItem("dietocase_atendimento_real_current");
+      if (saved) {
+        p = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn("Aviso ao carregar rascunho de atendimento real:", e);
+    }
+    
+    if (!p) {
+      p = prontuarioManager.getEmptyProntuario("atendimento-real");
+      p.isRealPatient = true;
+    } else {
+      p.isRealPatient = true;
+    }
+
+    appState.currentProntuario = p;
+
+    // Constrói objeto de caso clínico virtual para o atendimento real
+    appState.currentCase = {
+      id: "atendimento-real",
+      title: "Atendimento Presencial Real",
+      category: "Consulta Ambulatorial / Hospitalar",
+      description: "Prontuário de atendimento presencial clínico-nutricional registrado pelo estudante.",
+      isRealCase: true,
+      habilitarQuestoesAvaliativas: false,
+      blockedTabs: [],
+      patient: {
+        name: p.dadosPacienteReal?.nome || "Paciente Real",
+        age: p.dadosPacienteReal?.idade || "--",
+        gender: p.dadosPacienteReal?.sexo || "Feminino",
+        avatar: "🩺"
+      },
+      hipoteseDiagnostica: p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "",
+      bioquimica: Array.isArray(p.bioquimica?.listaCustom) ? p.bioquimica.listaCustom : []
+    };
+
+    // Ajusta layout visual para Modo Atendimento Real
+    studentView.classList.remove("hidden");
+    adminView.classList.add("hidden");
+    if (studentCatalogSection) studentCatalogSection.classList.add("hidden");
+    if (studentSimulationContainer) studentSimulationContainer.classList.remove("hidden");
+
+    // Oculta a coluna do chat e expande o prontuário para 12 colunas
+    const chatColumn = document.querySelector("#studentSimulationContent > section:first-child");
+    const prontColumn = document.querySelector("#studentSimulationContent > section:last-child");
+    if (chatColumn) {
+      chatColumn.classList.add("hidden");
+      chatColumn.style.display = "none";
+    }
+    if (prontColumn) {
+      prontColumn.classList.remove("lg:col-span-7");
+      prontColumn.classList.add("lg:col-span-12");
+      prontColumn.style.gridColumn = "span 12 / span 12";
+    }
+
+    // Exibe o card de identificação do paciente real
+    const realHeaderCard = document.getElementById("realPatientHeaderCard");
+    if (realHeaderCard) {
+      realHeaderCard.classList.remove("hidden");
+      realHeaderCard.style.display = "block";
+    }
+
+    // Ajusta controles no cabeçalho
+    const simWrapper = document.getElementById("simCaseSelectWrapper");
+    const realWrapper = document.getElementById("realPatientActionsWrapper");
+    if (simWrapper) {
+      simWrapper.classList.add("hidden");
+      simWrapper.style.display = "none";
+    }
+    if (realWrapper) {
+      realWrapper.classList.remove("hidden");
+      realWrapper.style.display = "flex";
+    }
+
+    // Oculta aba de questões avaliativas (não se aplica para consulta real)
+    const questoesTabBtn = document.querySelector('.student-tab-btn[data-tab="questoes"]');
+    if (questoesTabBtn) {
+      questoesTabBtn.classList.add("hidden");
+      questoesTabBtn.style.display = "none";
+    }
+
+    // Atualiza badges do cabeçalho
+    document.getElementById("casePatientNameHeader").textContent = p.dadosPacienteReal?.nome || "Novo Atendimento Presencial";
+    document.getElementById("caseCategoryHeader").textContent = "Atendimento Real";
+    document.getElementById("caseCategoryHeader").className = "badge-clinical bg-sky-100 text-sky-800 border border-sky-300";
+    document.getElementById("caseDescHeader").textContent = "Preencha os dados da consulta, avaliação antropométrica, interações droga-nutriente, exames e conduta.";
+    
+    const hipBadge = document.getElementById("caseHipoteseDiagnosticaHeader");
+    if (hipBadge) {
+      const hip = p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "";
+      hipBadge.textContent = hip ? `🩺 ${hip}` : "🩺 Definir Diagnóstico Médico";
+      hipBadge.title = hip;
+    }
+
+    modeBadge.textContent = "ATENDIMENTO REAL";
+    modeBadge.className = "badge-clinical bg-sky-100 text-sky-800 border border-sky-300";
+
+    // Garante que todas as etapas clínicas fiquem liberadas
+    applyStudentTabBlockingState(appState.currentCase);
+
+    // Preenche o formulário do prontuário
+    populateProntuarioForm();
+
+    // Renderiza a tabela de exames com a lista customizada
+    renderStudentBioTable(appState.currentCase.bioquimica, p.bioquimica?.interpretacoes);
+
+    // Renderiza a tabela de interações droga-nutriente
+    renderDrugNutrientTable();
+
+    // Seleciona a aba Anamnese inicialmente
+    const anamneseBtn = document.querySelector('.student-tab-btn[data-tab="anamnese"]');
+    if (anamneseBtn) anamneseBtn.click();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast("🩺 Modo Atendimento Real iniciado! Preencha a identificação e o diagnóstico médico.", "info");
+  }
+
+  // Salva atendimento presencial real
+  async function saveRealPatientSession(showFeedback = true) {
+    const p = readProntuarioFromForm();
+    if (!p) return;
+    p.isRealPatient = true;
+    p.updatedAt = new Date().toISOString();
+
+    // 1. Salva no localStorage
+    localStorage.setItem("dietocase_atendimento_real_current", JSON.stringify(p));
+
+    // 2. Salva no Firestore se configurado
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveAtendimentoReal === "function") {
+      await firebaseSyncService.saveAtendimentoReal(p);
+    }
+
+    if (showFeedback) {
+      showToast("💾 Prontuário de Atendimento Real salvo com sucesso!", "success");
+    }
+  }
+
+  // Exporta documento Word (.docx) do Atendimento Real
+  function exportRealPatientDocx() {
+    const p = readProntuarioFromForm();
+    if (!p) return;
+    
+    if (!p.aluno.nome) {
+      showToast("Por favor, preencha o Nome do Estudante antes de gerar o relatório.", "warning");
+      const alunoInput = document.getElementById("alunoNome");
+      if (alunoInput) alunoInput.focus();
+      return;
+    }
+
+    const hip = p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica;
+    if (!hip) {
+      showToast("A Hipótese Diagnóstica / Diagnóstico Médico é obrigatória para gerar o relatório.", "warning");
+      const hipInput = document.getElementById("realPatHipoteseDiagnostica") || document.getElementById("prontHipoteseDiagnostica");
+      if (hipInput) hipInput.focus();
+      return;
+    }
+
+    const realCase = {
+      id: p.id || ("atendimento-real-" + Date.now()),
+      title: "Atendimento Presencial Real",
+      category: "Consulta Ambulatorial / Hospitalar",
+      description: `Consulta presencial de ${p.dadosPacienteReal?.nome || "Paciente Real"}`,
+      isRealCase: true,
+      patient: {
+        name: p.dadosPacienteReal?.nome || "Paciente Real",
+        age: p.dadosPacienteReal?.idade || "--",
+        gender: p.dadosPacienteReal?.sexo || "--",
+        occupation: p.dadosPacienteReal?.ocupacao || ""
+      },
+      hipoteseDiagnostica: hip,
+      habilitarQuestoesAvaliativas: false
+    };
+
+    DietoterapiaDocxReport.generateReport(p, realCase);
+    saveRealPatientSession(false);
+    showToast("📄 Relatório Word (.docx) do Atendimento Real gerado com sucesso!", "success");
+  }
+
+  // Renderiza a Tabela Dinâmica de Interações Droga-Nutriente
+  function renderDrugNutrientTable() {
+    const tbody = document.getElementById("drugNutrientTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const p = appState.currentProntuario;
+    if (!p) return;
+    if (!Array.isArray(p.interacaoDrogaNutriente)) {
+      p.interacaoDrogaNutriente = [];
+    }
+
+    if (p.interacaoDrogaNutriente.length === 0) {
+      tbody.innerHTML = `
+        <tr id="drugNutrientEmptyRow">
+          <td colspan="4" class="py-6 text-center text-slate-400 text-xs italic">
+            Nenhuma interação medicamentosa registrada. Clique em "Adicionar Fármaco / Interação" acima ou selecione uma das sugestões rápidas.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    p.interacaoDrogaNutriente.forEach((item, index) => {
+      const tr = document.createElement("tr");
+      tr.className = index % 2 === 0 ? "bg-white hover:bg-slate-50/60 transition" : "bg-slate-50/30 hover:bg-slate-50/80 transition";
+      tr.innerHTML = `
+        <td class="p-2.5 align-top">
+          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500" data-idx="${index}" placeholder="Ex: Metformina 850mg" value="${escapeHtml(item.medicamento || '')}">
+        </td>
+        <td class="p-2.5 align-top">
+          <textarea class="drug-item-nutr w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" rows="2" data-idx="${index}" placeholder="Nutrientes afetados / mecanismo (ex: depleção de Vit B12)...">${escapeHtml(item.nutrientes || '')}</textarea>
+        </td>
+        <td class="p-2.5 align-top">
+          <textarea class="drug-item-cond w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" rows="2" data-idx="${index}" placeholder="Conduta nutricional / horário (ex: monitorar B12 sérica)...">${escapeHtml(item.conduta || '')}</textarea>
+        </td>
+        <td class="p-2.5 text-center align-middle">
+          <button type="button" class="remove-drug-btn text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${index}" title="Remover este fármaco">
+            🗑️
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll(".drug-item-med").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].medicamento = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".drug-item-nutr").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].nutrientes = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".drug-item-cond").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].conduta = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".remove-drug-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const idx = parseInt(e.currentTarget.dataset.idx);
+        prontuarioManager.removeInteracaoDrogaNutriente(p, idx);
+        renderDrugNutrientTable();
+      });
+    });
+  }
+
+  // Adiciona novo exame laboratorial na tabela de bioquímica
+  function handleAddCustomBioExam() {
+    const nome = prompt("Nome do Exame Laboratorial (ex: Glicemia de Jejum, Hemoglobina Glicada, Triglicerídeos, Ureia):");
+    if (!nome || !nome.trim()) return;
+    const ref = prompt("Valor de Referência (ex: 70 - 99 mg/dL ou < 150 mg/dL):", "Normal");
+    const valor = prompt("Valor Achado do Paciente (ex: 110 mg/dL):", "");
+    const interp = prompt("Interpretação Clínica Preliminar (opcional):", "");
+
+    if (!appState.currentCase) return;
+    if (!Array.isArray(appState.currentCase.bioquimica)) {
+      appState.currentCase.bioquimica = [];
+    }
+
+    const novoExame = {
+      exame: nome.trim(),
+      referencia: (ref || "-").trim(),
+      valor: (valor || "-").trim(),
+      interpretacao: (interp || "").trim()
+    };
+
+    appState.currentCase.bioquimica.push(novoExame);
+
+    if (appState.currentProntuario) {
+      if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
+      if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
+      if (interp) {
+        appState.currentProntuario.bioquimica.interpretacoes[novoExame.exame] = interp;
+      }
+      if (!Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
+        appState.currentProntuario.bioquimica.listaCustom = [];
+      }
+      appState.currentProntuario.bioquimica.listaCustom.push(novoExame);
+    }
+
+    renderStudentBioTable(appState.currentCase.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
+    syncBioquimicaExamesRelevantesText();
+    showToast(`Exame "${novoExame.exame}" adicionado à tabela com sucesso!`, "success");
   }
 
   // Exibe o Template 2: Painel do Professor / Administrador (requer senha Nutri2@26)
@@ -1084,6 +1523,11 @@ document.addEventListener("DOMContentLoaded", () => {
       caseSelectDropdown.appendChild(opt);
     });
 
+    // Se o modo ativo for Atendimento Real, não sobrescreve com um caso simulado
+    if (appState.workflowMode === "real" || appState.currentCaseId === "atendimento-real") {
+      return;
+    }
+
     // Se o caso atual for nulo ou não estiver liberado, seleciona o primeiro disponível
     if (!appState.currentCaseId || !availableCases.some(c => c.id === appState.currentCaseId)) {
       selectCase(availableCases[0].id);
@@ -1146,7 +1590,14 @@ document.addEventListener("DOMContentLoaded", () => {
         renderStudentCatalog();
       }
     }
-    loadCasesIntoDropdown();
+    // Se estiver em modo Atendimento Real, não sobrescreve com dados de caso simulado
+    if (appState.workflowMode === "real" || appState.currentCaseId === "atendimento-real") {
+      renderAdminDisciplineTabs();
+      renderAdminCasesList();
+      updateAdminMetrics();
+      populateDisciplineDropdowns();
+      return;
+    }
 
     // Se o aluno estiver dentro da simulação e o caso ativo foi atualizado
     const activeCaseId = appState.currentCaseId || (appState.currentCase ? appState.currentCase.id : null) || document.getElementById("caseSelectDropdown")?.value;
@@ -1211,6 +1662,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Seleciona caso clínico ativo
   function selectCase(caseId) {
+    setStudentWorkflowMode("simulation");
     const found = adminManager.getCaseById(caseId);
     if (!found) return;
 
@@ -1218,13 +1670,56 @@ document.addEventListener("DOMContentLoaded", () => {
     appState.currentCase = found;
     caseSelectDropdown.value = caseId;
 
+    // Restaura layout de 5 colunas para o chat e 7 colunas para o prontuário
+    const chatColumn = document.querySelector("#studentSimulationContent > section:first-child");
+    const prontColumn = document.querySelector("#studentSimulationContent > section:last-child");
+    if (chatColumn) {
+      chatColumn.classList.remove("hidden");
+      chatColumn.style.display = "";
+    }
+    if (prontColumn) {
+      prontColumn.classList.remove("lg:col-span-12");
+      prontColumn.classList.add("lg:col-span-7");
+      prontColumn.style.gridColumn = "";
+    }
+
+    // Oculta cabeçalho de atendimento real
+    const realHeaderCard = document.getElementById("realPatientHeaderCard");
+    if (realHeaderCard) {
+      realHeaderCard.classList.add("hidden");
+      realHeaderCard.style.display = "none";
+    }
+
+    // Restaura controles do topo
+    const simWrapper = document.getElementById("simCaseSelectWrapper");
+    const realWrapper = document.getElementById("realPatientActionsWrapper");
+    if (simWrapper) {
+      simWrapper.classList.remove("hidden");
+      simWrapper.style.display = "";
+    }
+    if (realWrapper) {
+      realWrapper.classList.add("hidden");
+      realWrapper.style.display = "none";
+    }
+
     // Carrega prontuário do aluno (ou rascunho salvo)
     appState.currentProntuario = prontuarioManager.loadDraft(caseId);
+    if (appState.currentProntuario) {
+      appState.currentProntuario.isRealPatient = false;
+    }
 
     // Atualiza cabeçalho do caso
     document.getElementById("casePatientNameHeader").textContent = found.patient.name;
     document.getElementById("caseCategoryHeader").textContent = found.category;
+    document.getElementById("caseCategoryHeader").className = "badge-clinical bg-slate-100 text-slate-700";
     document.getElementById("caseDescHeader").textContent = found.description;
+
+    const hipBadge = document.getElementById("caseHipoteseDiagnosticaHeader");
+    if (hipBadge) {
+      const hip = found.hipoteseDiagnostica || found.history?.hipoteseDiagnostica || "";
+      hipBadge.textContent = hip ? `🩺 ${hip}` : "🩺 Não informada";
+      hipBadge.title = hip;
+    }
 
     // Atualiza lista dinâmica de interlocutores do caso no chat
     updateInterlocutorDropdown(found);
@@ -1240,6 +1735,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Renderiza abas dinâmicas (exames laboratoriais, questões avaliativas)
     renderCaseLabExamsBadge();
+    renderStudentBioTable();
+    renderDrugNutrientTable();
     renderStudentEvaluationQuestions();
 
     // Aplica bloqueio de abas configurado para este caso
@@ -1438,6 +1935,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isTne) containerTne.classList.remove("hidden");
       else containerTne.classList.add("hidden");
     }
+
+    if (typeof updateCardapioTotalsDisplay === "function") {
+      updateCardapioTotalsDisplay();
+    }
   }
   window.setNutritionRouteSelection = setNutritionRouteSelection;
 
@@ -1469,11 +1970,34 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("alunoMatricula").value = p.aluno.matriculaTurma || "";
     document.getElementById("alunoData").value = p.aluno.data || new Date().toISOString().split("T")[0];
 
-    // Anamnese
+    // Atendimento Real: Campos do Paciente Real
+    if (p.isRealPatient || appState.workflowMode === "real") {
+      const rp = p.dadosPacienteReal || {};
+      if (document.getElementById("realPatName")) document.getElementById("realPatName").value = rp.nome || "";
+      if (document.getElementById("realPatAge")) document.getElementById("realPatAge").value = rp.idade || "";
+      if (document.getElementById("realPatGender")) document.getElementById("realPatGender").value = rp.sexo || "Feminino";
+      if (document.getElementById("realPatOccupation")) document.getElementById("realPatOccupation").value = rp.ocupacao || "";
+      if (document.getElementById("realPatHipoteseDiagnostica")) {
+        document.getElementById("realPatHipoteseDiagnostica").value = rp.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "";
+      }
+    }
+
+    // Anamnese & Hipótese Diagnóstica
+    if (document.getElementById("prontHipoteseDiagnostica")) {
+      const hip = p.anamnese?.hipoteseDiagnostica || p.dadosPacienteReal?.hipoteseDiagnostica || appState.currentCase?.hipoteseDiagnostica || appState.currentCase?.history?.hipoteseDiagnostica || "";
+      document.getElementById("prontHipoteseDiagnostica").value = hip;
+      if (p.anamnese) p.anamnese.hipoteseDiagnostica = hip;
+    }
     document.getElementById("prontQueixaPrincipal").value = p.anamnese.queixaPrincipal || "";
     document.getElementById("prontHistoriaClinica").value = p.anamnese.historiaClinica || "";
     document.getElementById("prontAntecedentesMed").value = p.anamnese.antecedentesMedicamentos || "";
     document.getElementById("prontHabitosEstiloVida").value = p.anamnese.habitosEstiloVida || "";
+
+    // Interações Droga-Nutriente
+    renderDrugNutrientTable();
+    if (document.getElementById("prontObsFarmacoterapia")) {
+      document.getElementById("prontObsFarmacoterapia").value = p.observacoesFarmacoterapia || "";
+    }
 
     // Antropometria
     document.getElementById("prontPesoAtual").value = p.antropometria.pesoAtual || "";
@@ -1633,21 +2157,39 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontFibrasMicronutrientes").value = p.prescricaoDietoterapica.fibrasMicronutrientes || "";
     document.getElementById("prontJustificativa").value = p.prescricaoDietoterapica.justificativaFisiopatologica || "";
 
+    // Consistência da Dieta Oral no Cardápio
+    const oralCons = p.consistenciaDietaOral || p.prescricaoDietoterapica.consistencia || "Dieta Livre / Normal";
+    const selectOralCons = document.getElementById("prontCardapioConsistencia");
+    const customOralCons = document.getElementById("prontCardapioConsistenciaCustom");
+    if (selectOralCons) {
+      const existsInSelect = Array.from(selectOralCons.options).some(o => o.value === oralCons);
+      if (existsInSelect) {
+        selectOralCons.value = oralCons;
+        if (customOralCons) customOralCons.value = "";
+      } else {
+        selectOralCons.value = "Personalizada";
+        if (customOralCons) customOralCons.value = oralCons;
+      }
+    }
+
     // Planejamento Alimentar (Cardápio Oral & TNE)
     renderCardapioTable();
 
     const tne = p.tne || {
       viaAlimentacao: "oral",
+      nomeComercial: "",
       tipoDieta: "",
       densidadeCalorica: "",
       fracionamento: "",
       viaAdministracao: "gravitacional",
       gravitacional: { volumePorRefeicao: "", quantidadeFrascosEtapas: "", metaVazaoGotasMin: "" },
       bombaInfusao: { tempoInfusaoHoras: "", metaVazaoMlHora: "" },
+      tabelaNutricionalManual: { vet: "", cho: "", ptn: "", lip: "", fibra: "", sodio: "", potassio: "", calcio: "", fosforo: "" },
       moduloSuplementacaoProteica: ""
     };
     p.tne = tne;
     setNutritionRouteSelection(tne.viaAlimentacao || "oral");
+    if (document.getElementById("tneNomeComercial")) document.getElementById("tneNomeComercial").value = tne.nomeComercial || "";
     if (document.getElementById("tneTipoDieta")) document.getElementById("tneTipoDieta").value = tne.tipoDieta || "";
     if (document.getElementById("tneDensidadeCalorica")) document.getElementById("tneDensidadeCalorica").value = tne.densidadeCalorica || "";
     if (document.getElementById("tneFracionamento")) document.getElementById("tneFracionamento").value = tne.fracionamento || "";
@@ -1661,6 +2203,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("tneBombaTempoInfusao")) document.getElementById("tneBombaTempoInfusao").value = tne.bombaInfusao?.tempoInfusaoHoras || "";
     if (document.getElementById("tneBombaMetaVazao")) document.getElementById("tneBombaMetaVazao").value = tne.bombaInfusao?.metaVazaoMlHora || "";
     if (document.getElementById("tneModuloProteico")) document.getElementById("tneModuloProteico").value = tne.moduloSuplementacaoProteica || "";
+
+    // Tabela Nutricional Manual da TNE
+    const manTne = tne.tabelaNutricionalManual || {};
+    if (document.getElementById("tneManualVet")) document.getElementById("tneManualVet").value = manTne.vet ?? "";
+    if (document.getElementById("tneManualCho")) document.getElementById("tneManualCho").value = manTne.cho ?? "";
+    if (document.getElementById("tneManualPtn")) document.getElementById("tneManualPtn").value = manTne.ptn ?? "";
+    if (document.getElementById("tneManualLip")) document.getElementById("tneManualLip").value = manTne.lip ?? "";
+    if (document.getElementById("tneManualFibra")) document.getElementById("tneManualFibra").value = manTne.fibra ?? "";
+    if (document.getElementById("tneManualSodio")) document.getElementById("tneManualSodio").value = manTne.sodio ?? "";
+    if (document.getElementById("tneManualPotassio")) document.getElementById("tneManualPotassio").value = manTne.potassio ?? "";
+    if (document.getElementById("tneManualCalcio")) document.getElementById("tneManualCalcio").value = manTne.calcio ?? "";
+    if (document.getElementById("tneManualFosforo")) document.getElementById("tneManualFosforo").value = manTne.fosforo ?? "";
 
     // Orientações Nutricionais
     document.getElementById("prontOrientacoesGerais").value = p.orientacoesNutricionais || "";
@@ -1676,11 +2230,46 @@ document.addEventListener("DOMContentLoaded", () => {
     p.aluno.matriculaTurma = document.getElementById("alunoMatricula").value.trim();
     p.aluno.data = document.getElementById("alunoData").value;
 
-    // Anamnese
+    // Atendimento Real: Coleta dadosPacienteReal
+    if (p.isRealPatient || appState.workflowMode === "real") {
+      if (!p.dadosPacienteReal) p.dadosPacienteReal = {};
+      p.dadosPacienteReal.nome = document.getElementById("realPatName") ? document.getElementById("realPatName").value.trim() : "";
+      p.dadosPacienteReal.idade = document.getElementById("realPatAge") ? document.getElementById("realPatAge").value.trim() : "";
+      p.dadosPacienteReal.sexo = document.getElementById("realPatGender") ? document.getElementById("realPatGender").value : "Feminino";
+      p.dadosPacienteReal.ocupacao = document.getElementById("realPatOccupation") ? document.getElementById("realPatOccupation").value.trim() : "";
+      p.dadosPacienteReal.hipoteseDiagnostica = document.getElementById("realPatHipoteseDiagnostica") ? document.getElementById("realPatHipoteseDiagnostica").value.trim() : "";
+    }
+
+    // Anamnese & Hipótese Diagnóstica
+    const hip = (document.getElementById("prontHipoteseDiagnostica") ? document.getElementById("prontHipoteseDiagnostica").value.trim() : "") ||
+                (document.getElementById("realPatHipoteseDiagnostica") ? document.getElementById("realPatHipoteseDiagnostica").value.trim() : "");
+    if (p.anamnese) {
+      p.anamnese.hipoteseDiagnostica = hip;
+    }
+    if (p.isRealPatient && p.dadosPacienteReal && !p.dadosPacienteReal.hipoteseDiagnostica) {
+      p.dadosPacienteReal.hipoteseDiagnostica = hip;
+    }
     p.anamnese.queixaPrincipal = document.getElementById("prontQueixaPrincipal").value.trim();
     p.anamnese.historiaClinica = document.getElementById("prontHistoriaClinica").value.trim();
     p.anamnese.antecedentesMedicamentos = document.getElementById("prontAntecedentesMed").value.trim();
     p.anamnese.habitosEstiloVida = document.getElementById("prontHabitosEstiloVida").value.trim();
+
+    // Interações Droga-Nutriente & Farmacoterapia
+    if (document.getElementById("prontObsFarmacoterapia")) {
+      p.observacoesFarmacoterapia = document.getElementById("prontObsFarmacoterapia").value.trim();
+    }
+    const drugRows = document.querySelectorAll("#drugNutrientTableBody tr:not(#drugNutrientEmptyRow)");
+    if (drugRows.length > 0) {
+      p.interacaoDrogaNutriente = [];
+      drugRows.forEach(row => {
+        const med = row.querySelector(".drug-item-med")?.value.trim() || "";
+        const nutr = row.querySelector(".drug-item-nutr")?.value.trim() || "";
+        const cond = row.querySelector(".drug-item-cond")?.value.trim() || "";
+        if (med || nutr || cond) {
+          p.interacaoDrogaNutriente.push({ medicamento: med, nutrientes: nutr, conduta: cond });
+        }
+      });
+    }
 
     // Antropometria
     p.antropometria.pesoAtual = document.getElementById("prontPesoAtual").value.trim();
@@ -1801,7 +2390,11 @@ document.addEventListener("DOMContentLoaded", () => {
     p.prescricaoDietoterapica.proteinasPct = document.getElementById("prontPtnPct")?.value.trim() || "";
     p.prescricaoDietoterapica.lipidiosG = document.getElementById("prontLipG")?.value.trim() || "";
     p.prescricaoDietoterapica.lipidiosPct = document.getElementById("prontLipPct")?.value.trim() || "";
-    p.prescricaoDietoterapica.consistencia = document.getElementById("prontConsistencia").value;
+    const selectOralCons = document.getElementById("prontCardapioConsistencia")?.value || "";
+    const customOralCons = document.getElementById("prontCardapioConsistenciaCustom")?.value.trim() || "";
+    const finalOralCons = selectOralCons === "Personalizada" && customOralCons ? customOralCons : (selectOralCons || document.getElementById("prontConsistencia")?.value || "Dieta Livre / Normal");
+    p.consistenciaDietaOral = finalOralCons;
+    p.prescricaoDietoterapica.consistencia = finalOralCons;
     p.prescricaoDietoterapica.fracionamento = document.getElementById("prontFracionamento").value;
     p.prescricaoDietoterapica.fibrasMicronutrientes = document.getElementById("prontFibrasMicronutrientes").value.trim();
     p.prescricaoDietoterapica.justificativaFisiopatologica = document.getElementById("prontJustificativa").value.trim();
@@ -1813,6 +2406,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viaAlimentacao = document.querySelector('input[name="prontViaAlimentacao"]:checked')?.value || "oral";
     p.tne = {
       viaAlimentacao: viaAlimentacao,
+      nomeComercial: document.getElementById("tneNomeComercial")?.value.trim() || "",
       tipoDieta: document.getElementById("tneTipoDieta")?.value.trim() || "",
       densidadeCalorica: document.getElementById("tneDensidadeCalorica")?.value.trim() || "",
       fracionamento: document.getElementById("tneFracionamento")?.value.trim() || "",
@@ -1825,6 +2419,17 @@ document.addEventListener("DOMContentLoaded", () => {
       bombaInfusao: {
         tempoInfusaoHoras: document.getElementById("tneBombaTempoInfusao")?.value.trim() || "",
         metaVazaoMlHora: document.getElementById("tneBombaMetaVazao")?.value.trim() || ""
+      },
+      tabelaNutricionalManual: {
+        vet: document.getElementById("tneManualVet")?.value.trim() || "",
+        cho: document.getElementById("tneManualCho")?.value.trim() || "",
+        ptn: document.getElementById("tneManualPtn")?.value.trim() || "",
+        lip: document.getElementById("tneManualLip")?.value.trim() || "",
+        fibra: document.getElementById("tneManualFibra")?.value.trim() || "",
+        sodio: document.getElementById("tneManualSodio")?.value.trim() || "",
+        potassio: document.getElementById("tneManualPotassio")?.value.trim() || "",
+        calcio: document.getElementById("tneManualCalcio")?.value.trim() || "",
+        fosforo: document.getElementById("tneManualFosforo")?.value.trim() || ""
       },
       moduloSuplementacaoProteica: document.getElementById("tneModuloProteico")?.value.trim() || ""
     };
@@ -2697,9 +3302,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Atualiza em tempo real o painel consolidado do cardápio vs metas prescritas
+  // Atualiza em tempo real o painel consolidado do cardápio/TNE vs metas prescritas
   function updateCardapioTotalsDisplay() {
-    const list = appState.currentProntuario?.planejamentoAlimentar || [];
+    const viaAlimentacao = document.querySelector('input[name="prontViaAlimentacao"]:checked')?.value || appState.currentProntuario?.tne?.viaAlimentacao || "oral";
+    const isTne = viaAlimentacao === "tne";
     const pesoPaciente = getEffectivePatientWeight();
 
     const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
@@ -2707,7 +3313,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
 
     const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
-    const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+
+    const dispTitle = document.getElementById("dispCardapioTotalsTitle");
+    let totals;
+
+    if (isTne) {
+      if (dispTitle) dispTitle.textContent = "Consolidação Nutricional da TNE & Suplementação vs Metas Prescritas";
+      const manualData = {
+        vet: document.getElementById("tneManualVet")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.vet ?? "",
+        cho: document.getElementById("tneManualCho")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.cho ?? "",
+        ptn: document.getElementById("tneManualPtn")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.ptn ?? "",
+        lip: document.getElementById("tneManualLip")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.lip ?? "",
+        fibra: document.getElementById("tneManualFibra")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.fibra ?? "",
+        sodio: document.getElementById("tneManualSodio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.sodio ?? "",
+        potassio: document.getElementById("tneManualPotassio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.potassio ?? "",
+        calcio: document.getElementById("tneManualCalcio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.calcio ?? "",
+        fosforo: document.getElementById("tneManualFosforo")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.fosforo ?? ""
+      };
+      totals = prontuarioManager.calculateTneManualNutritionalTotals(manualData, pesoPaciente, prescVet, prescDist);
+    } else {
+      if (dispTitle) dispTitle.textContent = "Consolidação Nutricional do Cardápio Oral vs Metas Prescritas";
+      const list = appState.currentProntuario?.planejamentoAlimentar || [];
+      totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+    }
+
     if (appState.currentProntuario) {
       appState.currentProntuario.totaisCardapio = totals;
     }
@@ -2797,23 +3426,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dispFibra) dispFibra.textContent = (totals.fibrasG || 0).toFixed(1);
 
-    // Micronutrientes do Cardápio
+    // Micronutrientes Consolidados
     const dispCalcio = document.getElementById("dispCardapioCalcioTotal");
     const dispFerro = document.getElementById("dispCardapioFerroTotal");
     const dispSodio = document.getElementById("dispCardapioSodioTotal");
     const dispPotassio = document.getElementById("dispCardapioPotassioTotal");
+    const dispFosforo = document.getElementById("dispCardapioFosforoTotal");
     if (dispCalcio) dispCalcio.textContent = totals.calcioMg || 0;
-    if (dispFerro) dispFerro.textContent = totals.ferroMg || 0;
+    if (dispFerro) dispFerro.textContent = isTne ? "--" : (totals.ferroMg || 0);
     if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
     if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
+    if (dispFosforo) dispFosforo.textContent = totals.fosforoMg ?? (isTne ? 0 : "--");
 
     if (dispBalancoMsg) {
       if (totals.vetTotalKcal === 0) {
-        dispBalancoMsg.textContent = "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
+        dispBalancoMsg.textContent = isTne
+          ? "Preencha a Tabela Nutricional Manual da TNE para confrontar os totais com a prescrição."
+          : "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
       } else if (prescVet) {
-        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta de ${prescVet} kcal).`;
+        dispBalancoMsg.textContent = `${isTne ? 'TNE' : 'Cardápio'} consolidado com ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta de ${prescVet} kcal).`;
       } else {
-        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal. Defina o VET na aba Prescrição para o cálculo de adequação.`;
+        dispBalancoMsg.textContent = `${isTne ? 'TNE' : 'Cardápio'} consolidado com ${totals.vetTotalKcal} kcal. Defina o VET na aba Prescrição para o cálculo de adequação.`;
       }
     }
   }
@@ -3809,6 +4442,41 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Recálculo da consolidação nutricional para inputs da TNE manual
+    const tneManualInputIds = [
+      "tneManualVet", "tneManualCho", "tneManualPtn", "tneManualLip", 
+      "tneManualFibra", "tneManualSodio", "tneManualPotassio", "tneManualCalcio", "tneManualFosforo"
+    ];
+    tneManualInputIds.forEach(id => {
+      document.getElementById(id)?.addEventListener("input", () => {
+        updateCardapioTotalsDisplay();
+      });
+    });
+
+    // Sincronização e listener de consistência do cardápio oral
+    document.getElementById("prontCardapioConsistencia")?.addEventListener("change", (e) => {
+      const val = e.target.value;
+      const customInput = document.getElementById("prontCardapioConsistenciaCustom");
+      if (val === "Personalizada") {
+        if (customInput) {
+          customInput.focus();
+        }
+      }
+      const pCons = document.getElementById("prontConsistencia");
+      if (pCons && val !== "Personalizada") {
+        pCons.value = val;
+      }
+      triggerProntuarioAutoSave();
+    });
+
+    document.getElementById("prontCardapioConsistenciaCustom")?.addEventListener("input", (e) => {
+      const pCons = document.getElementById("prontConsistencia");
+      if (pCons && e.target.value.trim()) {
+        pCons.value = e.target.value.trim();
+      }
+      triggerProntuarioAutoSave();
+    });
+
     // Auto-salvamento debounced do prontuário
     let studentAutoSaveTimer = null;
     function triggerProntuarioAutoSave() {
@@ -3858,7 +4526,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 2. Salva o rascunho dos campos da aba atual antes de alternar
         readProntuarioFromForm();
-        if (appState.currentCaseId && appState.currentProntuario) {
+        if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+          saveRealPatientSession(false);
+        } else if (appState.currentCaseId && appState.currentProntuario) {
           prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
         }
 
@@ -3878,6 +4548,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Salvar rascunho
     saveDraftBtn.addEventListener("click", () => {
+      if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+        saveRealPatientSession(true);
+        return;
+      }
       readProntuarioFromForm();
       prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
       showToast("Rascunho salvo com sucesso no navegador!");
@@ -3885,6 +4559,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Finalizar caso e gerar Word (.docx)
     finalizeAndExportDocxBtn.addEventListener("click", () => {
+      if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+        exportRealPatientDocx();
+        return;
+      }
       const data = readProntuarioFromForm();
       if (!data) return;
 
@@ -3911,6 +4589,99 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("modalCaseTitle").textContent = appState.currentCase.title;
       submissionConfirmModal.classList.remove("hidden");
     });
+
+    // ==========================================
+    // MODO ATENDIMENTO REAL & DROGA-NUTRIENTE
+    // ==========================================
+
+    // Bifurcação: Modo Simulação
+    const selModeSimBtn = document.getElementById("selectModeSimulationBtn");
+    if (selModeSimBtn) {
+      selModeSimBtn.addEventListener("click", () => {
+        setStudentWorkflowMode("simulation");
+        const catalogSection = document.getElementById("studentCatalogSection");
+        if (catalogSection && !catalogSection.classList.contains("hidden")) {
+          catalogSection.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    }
+
+    // Bifurcação: Modo Atendimento Real
+    const selModeRealBtn = document.getElementById("selectModeRealBtn");
+    if (selModeRealBtn) {
+      selModeRealBtn.addEventListener("click", () => {
+        startRealPatientSession();
+      });
+    }
+
+    // Botão Salvar Prontuário no Topo do Atendimento Real
+    const realSaveTopBtn = document.getElementById("realSaveTopBtn");
+    if (realSaveTopBtn) {
+      realSaveTopBtn.addEventListener("click", () => {
+        saveRealPatientSession(true);
+      });
+    }
+
+    // Botão Gerar Relatório Word (.docx) no Topo do Atendimento Real
+    const realExportTopBtn = document.getElementById("realExportDocxTopBtn");
+    if (realExportTopBtn) {
+      realExportTopBtn.addEventListener("click", () => {
+        exportRealPatientDocx();
+      });
+    }
+
+    // Botão Adicionar Exame Dinâmico na Bioquímica
+    const studentAddBioBtn = document.getElementById("studentAddCustomBioExamBtn");
+    if (studentAddBioBtn) {
+      studentAddBioBtn.addEventListener("click", () => {
+        handleAddCustomBioExam();
+      });
+    }
+
+    // Botão Adicionar Fármaco / Interação na Aba Interação Droga-Nutriente
+    const addDrugBtn = document.getElementById("addDrugInteractionBtn");
+    if (addDrugBtn) {
+      addDrugBtn.addEventListener("click", () => {
+        const p = appState.currentProntuario;
+        if (!p) return;
+        prontuarioManager.addInteracaoDrogaNutriente(p, {
+          medicamento: "",
+          nutrientes: "",
+          conduta: ""
+        });
+        renderDrugNutrientTable();
+      });
+    }
+
+    // Chips de Sugestão Rápida de Interações Farmacológicas
+    document.querySelectorAll(".drug-chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        const p = appState.currentProntuario;
+        if (!p) return;
+        const med = chip.dataset.med || chip.textContent.trim();
+        const nutr = chip.dataset.nutr || "";
+        const cond = chip.dataset.cond || "";
+        prontuarioManager.addInteracaoDrogaNutriente(p, {
+          medicamento: med,
+          nutrientes: nutr,
+          conduta: cond
+        });
+        renderDrugNutrientTable();
+        showToast(`Interação com "${med}" inserida na tabela!`, "success");
+      });
+    });
+
+    // Sincronização em tempo real da Hipótese Diagnóstica entre o Card e a Anamnese
+    const realHip = document.getElementById("realPatHipoteseDiagnostica");
+    const prontHip = document.getElementById("prontHipoteseDiagnostica");
+    if (realHip && prontHip) {
+      realHip.addEventListener("input", (e) => {
+        prontHip.value = e.target.value;
+      });
+      prontHip.addEventListener("input", (e) => {
+        realHip.value = e.target.value;
+      });
+    }
 
     closeSubmissionModalBtn.addEventListener("click", () => {
       submissionConfirmModal.classList.add("hidden");
@@ -4657,6 +5428,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bioquimica: "3. Bioquímica e Exames Laboratoriais",
     examefisico: "4. Exame Físico e Sinais Clínicos",
     consumo: "5. Avaliação do Consumo Alimentar (R24h)",
+    droganutriente: "Interações Droga-Nutriente",
     pes: "6. Diagnóstico Nutricional (PES)",
     necessidades: "7. Cálculos de Necessidades",
     prescricao: "8. Prescrição Dietética",
@@ -4667,6 +5439,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Verifica se uma aba está bloqueada para o aluno neste caso clínico
   function isStudentTabBlocked(tabId) {
     if (isTeacherAuthenticated) return false; // Professor tem acesso completo
+    if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) return false; // Modo Atendimento Real é totalmente livre
     const btn = document.querySelector(`.student-tab-btn[data-tab="${tabId}"]`);
     if (btn && btn.dataset.isBlocked === "true") return true;
     const currentCase = appState.currentCase;
@@ -4677,6 +5450,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Aplica classes visuais de bloqueio nos botões das abas do aluno e controla exibição de questões
   function applyStudentTabBlockingState(caseData) {
+    // No Atendimento Real, todas as abas clínicas ficam desimpedidas e a de questões avaliativas fica oculta
+    if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+      const questionsTabBtn = document.querySelector('.student-tab-btn[data-tab="questoes"]');
+      if (questionsTabBtn) questionsTabBtn.classList.add("hidden");
+      document.querySelectorAll(".student-tab-btn").forEach(btn => {
+        btn.classList.remove("opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        delete btn.dataset.isBlocked;
+        btn.removeAttribute("title");
+        const lockSpan = btn.querySelector(".tab-lock-indicator");
+        if (lockSpan) lockSpan.remove();
+      });
+      return;
+    }
+
     if (!caseData) return;
     const blockedTabs = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
     const questionsEnabled = caseData.habilitarQuestoesAvaliativas !== false;
@@ -4721,7 +5508,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Se o aluno estiver atualmente em uma aba bloqueada, redireciona para a primeira desimpedida
     if (!isTeacherAuthenticated && appState.activeStudentTab && blockedTabs.includes(appState.activeStudentTab)) {
-      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "necessidades", "prescricao", "cardapio"];
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "droganutriente", "pes", "necessidades", "prescricao", "cardapio"];
       if (questionsEnabled) allTabs.push("questoes");
       const firstAvailable = allTabs.find(t => !blockedTabs.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
@@ -5197,6 +5984,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("admPatMarital").value = c.patient?.maritalStatus || "";
     document.getElementById("admPatResidence").value = c.patient?.residence || "";
     document.getElementById("admPatAvatar").value = c.patient?.avatar || "👤";
+    if (document.getElementById("admHipoteseDiagnostica")) {
+      document.getElementById("admHipoteseDiagnostica").value = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || "";
+    }
 
     // História Clínica
     document.getElementById("admHistQP").value = c.history?.queixaPrincipal || "";
@@ -5522,7 +6312,9 @@ document.addEventListener("DOMContentLoaded", () => {
         residence: document.getElementById("admPatResidence").value.trim(),
         avatar: document.getElementById("admPatAvatar").value.trim() || "👤"
       },
+      hipoteseDiagnostica: document.getElementById("admHipoteseDiagnostica") ? document.getElementById("admHipoteseDiagnostica").value.trim() : "",
       history: {
+        hipoteseDiagnostica: document.getElementById("admHipoteseDiagnostica") ? document.getElementById("admHipoteseDiagnostica").value.trim() : "",
         queixaPrincipal: document.getElementById("admHistQP").value.trim(),
         hda: document.getElementById("admHistHDA").value.trim(),
         hpp: document.getElementById("admHistHPP").value.trim(),
