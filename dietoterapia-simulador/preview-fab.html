@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Preview FAB Preceptor IA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-8 font-sans">
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+      <div>
+        <h1 class="text-xl font-black text-slate-800 flex items-center gap-2">
+          <span>&#129658;</span>
+          <span>DietoCase &#8226; Atendimento Nutricional Cl&iacute;nico</span>
+        </h1>
+        <p class="text-xs text-slate-500">Prontu&aacute;rio eletr&ocirc;nico do paciente integrado ao Preceptor IA</p>
+      </div>
+      <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+        Modo Simula&ccedil;&atilde;o &amp; Atendimento Real
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 text-xs text-slate-600 mb-6">
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <strong class="block text-slate-800 text-sm mb-1">Paciente em Atendimento:</strong>
+        <p>Carlos Alberto da Silva, 54 anos</p>
+        <p class="text-indigo-900 font-semibold mt-1">DM2 descompensado, HAS e Obesidade Grau I</p>
+      </div>
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <strong class="block text-slate-800 text-sm mb-1">Status Proped&ecirc;utico:</strong>
+        <p>Antropometria aferida &#8226; Exames bioqu&iacute;micos mapeados</p>
+        <p class="text-emerald-700 font-semibold mt-1">Prontu&aacute;rio sincronizado em tempo real</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTAO FLUTUANTE (FAB) -->
+  <div class="fixed bottom-6 right-6 z-40">
+    <button type="button" class="flex items-center space-x-2.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white font-bold py-3.5 px-5 rounded-full shadow-2xl hover:shadow-purple-500/30 border border-purple-400/40 cursor-pointer">
+      <span class="relative flex h-3.5 w-3.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-purple-800"></span>
+      </span>
+      <span class="text-xl">&#129504;</span>
+      <span class="text-sm tracking-wide font-semibold">Preceptor IA</span>
+    </button>
+  </div>
+</body>
+</html>

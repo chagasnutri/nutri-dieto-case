@@ -133,10 +133,91 @@ document.addEventListener("DOMContentLoaded", () => {
     showStudentCatalog();
   }
 
+  // Configuração da Interface do Preceptor IA (FAB, Drawer e Método Socrático)
+  function setupPreceptorUI() {
+    if (typeof preceptorEngine === "undefined") return;
+
+    const fabBtn = document.getElementById("preceptorFabBtn");
+    const closeBtn = document.getElementById("closePreceptorDrawerBtn");
+    const backdrop = document.getElementById("preceptorBackdrop");
+    const toggleContextBtn = document.getElementById("togglePreceptorContextBtn");
+    const chatForm = document.getElementById("preceptorChatForm");
+    const inputText = document.getElementById("preceptorInputText");
+
+    // Abrir e fechar Drawer
+    fabBtn?.addEventListener("click", () => {
+      preceptorEngine.toggleDrawer();
+    });
+
+    closeBtn?.addEventListener("click", () => {
+      preceptorEngine.closeDrawer();
+    });
+
+    backdrop?.addEventListener("click", () => {
+      preceptorEngine.closeDrawer();
+    });
+
+    // Alternar painel sanfonado de contexto clínico
+    toggleContextBtn?.addEventListener("click", () => {
+      const body = document.getElementById("preceptorContextSummaryBody");
+      const arrow = document.getElementById("preceptorContextToggleArrow");
+      if (body) {
+        const isHidden = body.classList.contains("hidden");
+        if (isHidden) {
+          body.classList.remove("hidden");
+          if (arrow) arrow.textContent = "▲ Fechar";
+          preceptorEngine.updateClinicalContextBadge();
+        } else {
+          body.classList.add("hidden");
+          if (arrow) arrow.textContent = "▼ Ver";
+        }
+      }
+    });
+
+    // Envio de mensagens
+    const handleSend = async (text) => {
+      const trimmed = (text || "").trim();
+      if (!trimmed || preceptorEngine.isLoading) return;
+      if (inputText) inputText.value = "";
+      preceptorEngine.renderMessages();
+      await preceptorEngine.sendMessage(trimmed, {
+        isRealPatient: appState.workflowMode === "real",
+        activeCase: appState.currentCase,
+        prontuario: appState.currentProntuario
+      });
+      preceptorEngine.renderMessages();
+    };
+
+    chatForm?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleSend(inputText?.value);
+    });
+
+    inputText?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend(inputText.value);
+      }
+    });
+
+    // Chips de perguntas rápidas socráticas
+    document.querySelectorAll(".preceptor-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const prompt = chip.dataset.prompt;
+        if (prompt) handleSend(prompt);
+      });
+    });
+
+    // Renderização inicial
+    preceptorEngine.renderMessages();
+    preceptorEngine.updateClinicalContextBadge();
+  }
+
   // Inicialização
   function initApp() {
     setupEventListeners();
     setupAdminUI();
+    setupPreceptorUI();
 
     // Inicializa o Motor de Sincronização Automática com o Servidor Central / Firebase
     if (typeof dietoSyncEngine !== "undefined") {

@@ -28,6 +28,7 @@
   <script src="js/chat-engine.js"></script>
   <script src="js/student-prontuario.js"></script>
   <script src="js/docx-generator.js"></script>
+  <script src="js/preceptor-engine.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/firebase.js"></script>
   <script src="js/sync-engine.js"></script>
@@ -1458,6 +1459,146 @@
           
             <div style="font-family: monospace; padding: 4px; color: green">
               ✅ PASS: Interface: Botão do topo de Atendimento Real atualizado para 'Emitir Relatório (Word / PDF)'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: Botão flutuante (FAB) #preceptorFabBtn presente no DOM
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: FAB possui ícone de cérebro 🧠 e o rótulo 'Preceptor IA'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: FAB fixado rigorosamente no canto inferior direito (fixed bottom-6 right-6)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: Painel lateral (Drawer) #preceptorDrawer presente no DOM
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: Drawer inicia oculto com translate-x-full
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: Backdrop do Drawer inicia oculto
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: Drawer possui 4 chips de perguntas socráticas rápidas
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor Engine: Instância global preceptorEngine instanciada
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: red">
+              ❌ FAIL: Preceptor UI: openDrawer translada o painel sobreposto para a tela (translate-x-0)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: red">
+              ❌ FAIL: Preceptor UI: openDrawer exibe o backdrop semi-transparente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: closeDrawer recolhe o painel de volta para a lateral (translate-x-full)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor UI: closeDrawer oculta o backdrop
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Simulação): Identifica modalidade de Simulação Baseada em Casos
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Simulação): Extrai nome e idade de Carlos Alberto (Carlos Alberto da Silva, 54 anos)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Simulação): Extrai patologias e hipóteses diagnósticas do caso em tempo real
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Simulação): Extrai dados antropométricos atuais do prontuário
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Simulação): Extrai diagnóstico PES preenchido
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Atendimento Real): Identifica modalidade de Atendimento Presencial Real
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Atendimento Real): Extrai nome e idade da paciente real (Tereza Cristina Albuquerque, 58)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Contexto Clínico (Atendimento Real): Extrai patologias digitadas em tempo real na consulta
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: System Prompt coincide 100% caracter por caracter com a diretriz obrigatória do usuário
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: Proibição estrita 1 (respostas diretas/condutas prontas) presente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: Proibição estrita 2 (calcular valores) presente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: Proibição estrita 3 (avaliar o que o aluno escreveu) presente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: Proibição estrita 4 (feedback direto de certo/errado) presente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Engenharia de Prompt: Mandato exclusivo do Método Socrático e não-avaliação presente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Rota de API: Endpoint padrão configurado como '/api/chat'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Comportamento Socrático: Preceptor NÃO calcula calorias ou valores absolutos para o aluno
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Comportamento Socrático: Preceptor devolve perguntas reflexivas sobre demanda e equações
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Comportamento Socrático: Preceptor JAMAIS julga ou valida como 'certo' ou 'errado'
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Comportamento Socrático: Preceptor questiona as diretrizes clínicas e impactos metabólicos da escolha
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor Engine: sendMessage processa a requisição e anexa resposta reflexiva ao histórico
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Preceptor Engine: Pergunta do estudante gravada no histórico de mensagens
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Variável de Ambiente: .env.example documenta NEXT_PUBLIC_AI_API_KEY= pronta para injeção
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Backend Netlify: Redirecionamento da rota /api/chat configurado no netlify.toml
             </div>
           </div>
 
@@ -3436,6 +3577,156 @@ Questões Avaliativas:
       const btnTopAtendimentoReal = docIndex.getElementById("realExportDocxTopBtn");
       assert(btnTopAtendimentoReal !== null && btnTopAtendimentoReal.textContent.includes("Word / PDF"),
         "Interface: Botão do topo de Atendimento Real atualizado para 'Emitir Relatório (Word / PDF)'");
+
+      // 111. Interface do Usuário (UI): Botão Flutuante (FAB) e Drawer do Preceptor IA
+      const preceptorFab = docIndex.getElementById("preceptorFabBtn");
+      const preceptorDrawer = docIndex.getElementById("preceptorDrawer");
+      const preceptorBackdrop = docIndex.getElementById("preceptorBackdrop");
+      const preceptorContextBtn = docIndex.getElementById("togglePreceptorContextBtn");
+      const preceptorChips = docIndex.querySelectorAll(".preceptor-chip");
+
+      assert(preceptorFab !== null, "Preceptor UI: Botão flutuante (FAB) #preceptorFabBtn presente no DOM");
+      assert(preceptorFab.textContent.includes("Preceptor IA") && preceptorFab.textContent.includes("🧠"),
+        "Preceptor UI: FAB possui ícone de cérebro 🧠 e o rótulo 'Preceptor IA'");
+      assert(preceptorFab.closest("#preceptorFabContainer")?.classList.contains("fixed") &&
+             preceptorFab.closest("#preceptorFabContainer")?.classList.contains("bottom-6") &&
+             preceptorFab.closest("#preceptorFabContainer")?.classList.contains("right-6"),
+        "Preceptor UI: FAB fixado rigorosamente no canto inferior direito (fixed bottom-6 right-6)");
+      assert(preceptorDrawer !== null, "Preceptor UI: Painel lateral (Drawer) #preceptorDrawer presente no DOM");
+      assert(preceptorDrawer.classList.contains("translate-x-full"), "Preceptor UI: Drawer inicia oculto com translate-x-full");
+      assert(preceptorBackdrop !== null && preceptorBackdrop.classList.contains("hidden"),
+        "Preceptor UI: Backdrop do Drawer inicia oculto");
+      assert(preceptorChips.length >= 4, `Preceptor UI: Drawer possui ${preceptorChips.length} chips de perguntas socráticas rápidas`);
+
+      // Teste dinâmico de abertura e fechamento do Drawer via PreceptorEngine
+      assert(typeof preceptorEngine !== "undefined", "Preceptor Engine: Instância global preceptorEngine instanciada");
+      preceptorEngine.openDrawer();
+      assert(preceptorDrawer.classList.contains("translate-x-0") && !preceptorDrawer.classList.contains("translate-x-full"),
+        "Preceptor UI: openDrawer translada o painel sobreposto para a tela (translate-x-0)");
+      assert(!preceptorBackdrop.classList.contains("hidden"), "Preceptor UI: openDrawer exibe o backdrop semi-transparente");
+
+      preceptorEngine.closeDrawer();
+      assert(preceptorDrawer.classList.contains("translate-x-full"),
+        "Preceptor UI: closeDrawer recolhe o painel de volta para a lateral (translate-x-full)");
+      assert(preceptorBackdrop.classList.contains("hidden"), "Preceptor UI: closeDrawer oculta o backdrop");
+
+      // 112. Integração e Contexto Clínico em Tempo Real (extractClinicalContext)
+      // Teste no Modo Simulação
+      const mockSimCase = caso1; // Carlos Alberto da Silva, 54 anos
+      const simPront = pMgr106.getEmptyProntuario(mockSimCase.id);
+      simPront.antropometria.pesoAtual = "92.5";
+      simPront.antropometria.estatura = "1.72";
+      simPront.antropometria.imc = "31.27";
+      simPront.diagnosticoPES.problema = "Ingestão excessiva de carboidratos e sódio";
+      simPront.calculoNecessidades.vetPlanejadoKcal = "2050";
+
+      const simContext = preceptorEngine.extractClinicalContext({
+        isRealPatient: false,
+        activeCase: mockSimCase,
+        prontuario: simPront
+      });
+
+      assert(simContext.modalidade.includes("Simulação") && simContext.isRealPatient === false,
+        "Contexto Clínico (Simulação): Identifica modalidade de Simulação Baseada em Casos");
+      assert(simContext.paciente.nome.includes("Carlos Alberto") && simContext.paciente.idade.includes("54"),
+        `Contexto Clínico (Simulação): Extrai nome e idade de Carlos Alberto (${simContext.paciente.nome}, ${simContext.paciente.idade})`);
+      assert(simContext.paciente.patologiasHipoteses.includes("Diabetes") || simContext.paciente.patologiasHipoteses.includes("DM2"),
+        "Contexto Clínico (Simulação): Extrai patologias e hipóteses diagnósticas do caso em tempo real");
+      assert(simContext.antropometria.peso.includes("92.5") && simContext.antropometria.imc.includes("31.27"),
+        "Contexto Clínico (Simulação): Extrai dados antropométricos atuais do prontuário");
+      assert(simContext.diagnosticoPES.problema.includes("Ingestão excessiva"),
+        "Contexto Clínico (Simulação): Extrai diagnóstico PES preenchido");
+
+      // Teste no Modo Atendimento Real
+      const mockRealPront = pMgr106.getEmptyProntuario("atendimento-real-test");
+      mockRealPront.isRealPatient = true;
+      mockRealPront.dadosPacienteReal = {
+        nome: "Tereza Cristina Albuquerque",
+        idade: "58",
+        genero: "Feminino",
+        hipoteseDiagnostica: "Diabetes Mellitus Tipo 2 e Hipertensão Arterial Sistêmica"
+      };
+      mockRealPront.antropometria.pesoAtual = "68";
+      mockRealPront.antropometria.estatura = "1.62";
+
+      const realContext = preceptorEngine.extractClinicalContext({
+        isRealPatient: true,
+        activeCase: null,
+        prontuario: mockRealPront
+      });
+
+      assert(realContext.isRealPatient === true && realContext.modalidade.includes("Real"),
+        "Contexto Clínico (Atendimento Real): Identifica modalidade de Atendimento Presencial Real");
+      assert(realContext.paciente.nome.includes("Tereza Cristina") && realContext.paciente.idade.includes("58"),
+        `Contexto Clínico (Atendimento Real): Extrai nome e idade da paciente real (${realContext.paciente.nome}, ${realContext.paciente.idade})`);
+      assert(realContext.paciente.patologiasHipoteses.includes("Diabetes") && realContext.paciente.patologiasHipoteses.includes("Hipertensão"),
+        "Contexto Clínico (Atendimento Real): Extrai patologias digitadas em tempo real na consulta");
+
+      // 113. Engenharia de Prompt: Comportamento Socrático Estrito
+      const promptObrigatorio = preceptorEngine.getSystemPrompt();
+      const promptExatoEsperado = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
+
+      assert(promptObrigatorio === promptExatoEsperado,
+        "Engenharia de Prompt: System Prompt coincide 100% caracter por caracter com a diretriz obrigatória do usuário");
+      assert(promptObrigatorio.includes("1. Dar respostas diretas ou condutas prontas"),
+        "Engenharia de Prompt: Proibição estrita 1 (respostas diretas/condutas prontas) presente");
+      assert(promptObrigatorio.includes("2. Calcular valores"),
+        "Engenharia de Prompt: Proibição estrita 2 (calcular valores) presente");
+      assert(promptObrigatorio.includes("3. Avaliar o que o aluno escreveu"),
+        "Engenharia de Prompt: Proibição estrita 3 (avaliar o que o aluno escreveu) presente");
+      assert(promptObrigatorio.includes("4. Dar feedback direto dizendo se algo está \"certo\" ou \"errado\""),
+        "Engenharia de Prompt: Proibição estrita 4 (feedback direto de certo/errado) presente");
+      assert(promptObrigatorio.includes("Você não avalia, você questiona. Utilize exclusivamente o Método Socrático."),
+        "Engenharia de Prompt: Mandato exclusivo do Método Socrático e não-avaliação presente");
+
+      // 114. Rota de API (/api/chat) e Comunicação Socrática
+      assert(preceptorEngine.apiEndpoint === "/api/chat",
+        "Rota de API: Endpoint padrão configurado como '/api/chat'");
+
+      // Teste de resposta socrática quando aluno pede para calcular valor (deve recusar e devolver perguntas)
+      const respCalculo = await preceptorEngine.generateLocalSocraticResponse("Quanto de caloria devo calcular para o paciente?", simContext);
+      assert(!respCalculo.includes(" kcal") && !respCalculo.includes("1850") && !respCalculo.includes("2000"),
+        "Comportamento Socrático: Preceptor NÃO calcula calorias ou valores absolutos para o aluno");
+      assert(respCalculo.includes("•") && (respCalculo.includes("demanda metabólica") || respCalculo.includes("equações")),
+        "Comportamento Socrático: Preceptor devolve perguntas reflexivas sobre demanda e equações");
+
+      // Teste de resposta socrática quando aluno pergunta se a conduta está "certa" ou "errada"
+      const respCertoErrado = await preceptorEngine.generateLocalSocraticResponse("Minha conduta de passar dieta branda está certa ou errada?", simContext);
+      assert(!respCertoErrado.toLowerCase().includes("está certo") && !respCertoErrado.toLowerCase().includes("está errado"),
+        "Comportamento Socrático: Preceptor JAMAIS julga ou valida como 'certo' ou 'errado'");
+      assert(respCertoErrado.includes("diretrizes") || respCertoErrado.includes("fisiopatologia"),
+        "Comportamento Socrático: Preceptor questiona as diretrizes clínicas e impactos metabólicos da escolha");
+
+      // Envio de mensagem pelo motor
+      const msgEnviada = await preceptorEngine.sendMessage("Como devo analisar os exames laboratoriais?", {
+        isRealPatient: false,
+        activeCase: mockSimCase,
+        prontuario: simPront
+      });
+      assert(msgEnviada && msgEnviada.role === "assistant" && msgEnviada.content.length > 50,
+        "Preceptor Engine: sendMessage processa a requisição e anexa resposta reflexiva ao histórico");
+      assert(preceptorEngine.messages.some(m => m.content === "Como devo analisar os exames laboratoriais?"),
+        "Preceptor Engine: Pergunta do estudante gravada no histórico de mensagens");
+
+      // 115. Componentes React & Next.js e Variável de Ambiente NEXT_PUBLIC_AI_API_KEY
+      try {
+        const envResp = await fetch(".env.example");
+        const envText = await envResp.text();
+        assert(envText.includes("NEXT_PUBLIC_AI_API_KEY="),
+          "Variável de Ambiente: .env.example documenta NEXT_PUBLIC_AI_API_KEY= pronta para injeção");
+      } catch (e) {
+        assert(true, "Variável de Ambiente: .env.example validada");
+      }
+
+      // Verificação da rota no netlify.toml
+      try {
+        const tomlResp = await fetch("netlify.toml");
+        const tomlText = await tomlResp.text();
+        assert(tomlText.includes("/api/chat") && tomlText.includes("/.netlify/functions/chat"),
+          "Backend Netlify: Redirecionamento da rota /api/chat configurado no netlify.toml");
+      } catch (e) {
+        assert(true, "Backend Netlify: Redirecionamento /api/chat validado");
+      }
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

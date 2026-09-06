@@ -4067,6 +4067,110 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
     </div>
   </div>
 
+  <!-- BOTÃO FLUTUANTE (FAB): PRECEPTOR IA -->
+  <div id="preceptorFabContainer" class="fixed bottom-6 right-6 z-40">
+    <button type="button" id="preceptorFabBtn" class="flex items-center space-x-2.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-800 hover:to-indigo-900 text-white font-bold py-3.5 px-5 rounded-full shadow-2xl hover:shadow-purple-500/30 transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-95 cursor-pointer border border-purple-400/40 focus:outline-none focus:ring-4 focus:ring-purple-400/50 group" aria-label="Abrir Preceptor IA" title="Abrir Assistente Virtual Socrático (Preceptor IA)">
+      <span class="relative flex h-3.5 w-3.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-purple-800"></span>
+      </span>
+      <span class="text-xl group-hover:scale-110 transition-transform">🧠</span>
+      <span class="text-sm tracking-wide font-semibold">Preceptor IA</span>
+    </button>
+  </div>
+
+  <!-- BACKDROP DO PRECEPTOR IA -->
+  <div id="preceptorBackdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden transition-opacity"></div>
+
+  <!-- PAINEL LATERAL (DRAWER) DO PRECEPTOR IA -->
+  <aside id="preceptorDrawer" class="fixed inset-y-0 right-0 z-50 w-full sm:w-[440px] bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out translate-x-full border-l border-slate-200" aria-label="Painel do Preceptor IA">
+    <!-- CABEÇALHO DO DRAWER -->
+    <div class="bg-gradient-to-r from-purple-800 via-indigo-800 to-purple-900 text-white p-4 shrink-0 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-xl border border-white/20 shadow-inner">
+            🧠
+          </div>
+          <div>
+            <h3 class="font-bold text-sm tracking-wide flex items-center space-x-1.5">
+              <span>Preceptor IA</span>
+              <span class="text-[10px] bg-purple-300/30 text-purple-100 px-2 py-0.5 rounded-full font-semibold border border-purple-300/40">
+                Método Socrático
+              </span>
+            </h3>
+            <p class="text-[11px] text-purple-200/90 font-medium">
+              Professor Virtual de Nutrição Clínica
+            </p>
+          </div>
+        </div>
+        <button type="button" id="closePreceptorDrawerBtn" class="text-white/80 hover:text-white text-xl font-bold p-1 rounded-lg hover:bg-white/10 transition cursor-pointer" title="Fechar Preceptor">
+          ✕
+        </button>
+      </div>
+
+      <!-- CENÁRIO CLÍNICO DO PACIENTE ATIVO -->
+      <div class="bg-black/25 rounded-lg px-2.5 py-1.5 text-[11px] flex items-center justify-between text-purple-100 border border-white/10">
+        <span id="preceptorPatientInfoSpan" class="truncate max-w-[270px]">
+          👤 Paciente em Atendimento • Sincronizado
+        </span>
+        <span class="text-[10px] bg-emerald-400/30 text-emerald-200 font-bold px-2 py-0.5 rounded" id="preceptorModeBadge">
+          Tempo Real
+        </span>
+      </div>
+    </div>
+
+    <!-- BANNER SANFONADO DE CONTEXTO CLÍNICO LIDO EM TEMPO REAL -->
+    <div class="bg-slate-50 border-b border-slate-200 shrink-0">
+      <button type="button" id="togglePreceptorContextBtn" class="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer">
+        <span class="flex items-center space-x-1.5">
+          <span>📋</span>
+          <span>Contexto Clínico Lido em Tempo Real</span>
+        </span>
+        <span id="preceptorContextToggleArrow" class="text-slate-400 text-xs">▼ Ver</span>
+      </button>
+
+      <div id="preceptorContextSummaryBody" class="p-3 bg-white text-[11px] text-slate-600 border-t border-slate-100 space-y-1 max-h-48 overflow-y-auto hidden">
+        <!-- Preenchido dinamicamente via JS com idade, patologias, antropometria, exames e PES -->
+      </div>
+    </div>
+
+    <!-- CORPO DE MENSAGENS DO CHAT -->
+    <div id="preceptorChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-100/60">
+      <!-- Mensagens renderizadas dinamicamente via PreceptorEngine -->
+    </div>
+
+    <!-- CHIPS DE PERGUNTAS RÁPIDAS SOCRÁTICAS -->
+    <div class="bg-white border-t border-slate-100 p-2 overflow-x-auto whitespace-nowrap flex gap-1.5 shrink-0" id="preceptorQuickChips">
+      <button type="button" class="preceptor-chip text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-2.5 py-1 rounded-full font-medium transition shrink-0 cursor-pointer" data-prompt="Qual a relação fisiopatológica dos exames laboratoriais com o quadro do paciente?">
+        🔬 Fisiopatologia dos Exames
+      </button>
+      <button type="button" class="preceptor-chip text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-2.5 py-1 rounded-full font-medium transition shrink-0 cursor-pointer" data-prompt="Como o estado nutricional e a demanda calórica devem impactar minha conduta?">
+        ⚖️ Demanda Calórica & Estado
+      </button>
+      <button type="button" class="preceptor-chip text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-2.5 py-1 rounded-full font-medium transition shrink-0 cursor-pointer" data-prompt="Que diretrizes clínicas justificam a distribuição de macronutrientes que estou planejando?">
+        📚 Diretrizes de Macronutrientes
+      </button>
+      <button type="button" class="preceptor-chip text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-2.5 py-1 rounded-full font-medium transition shrink-0 cursor-pointer" data-prompt="Como devo priorizar os objetivos dietoterápicos no diagnóstico PES?">
+        🎯 Objetivos Dietoterápicos
+      </button>
+    </div>
+
+    <!-- CAMPO DE DIGITAÇÃO E ENVIO -->
+    <div class="p-3 bg-white border-t border-slate-200 shrink-0">
+      <form id="preceptorChatForm" class="space-y-2">
+        <div class="flex items-end space-x-2">
+          <textarea id="preceptorInputText" rows="2" placeholder="Pergunte ou apresente sua conduta ao Preceptor..." class="flex-1 border border-slate-300 rounded-xl p-2.5 text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none outline-none text-slate-800 placeholder-slate-400"></textarea>
+          <button type="submit" id="preceptorSendBtn" class="bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center cursor-pointer h-[42px]">
+            <span>Enviar</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-500 text-center leading-tight">
+          ⚠️ O Preceptor questiona e estimula o raciocínio. Não fornece respostas diretas, cálculos ou avaliações de certo/errado.
+        </p>
+      </form>
+    </div>
+  </aside>
+
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
@@ -4076,6 +4180,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
   <script src="js/chat-engine.js"></script>
   <script src="js/student-prontuario.js"></script>
   <script src="js/docx-generator.js"></script>
+  <script src="js/preceptor-engine.js"></script>
   
   <!-- CONFIGURAÇÃO DO FIREBASE -->
   <script src="js/firebase-config.js"></script>
