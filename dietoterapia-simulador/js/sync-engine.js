@@ -49,7 +49,7 @@ class DietoSyncEngine {
   }
 
   // Inicializa o motor conectando diretamente ao Firebase Firestore
-  async init() {
+  async init(startListener = true) {
     if (typeof firebaseSyncService !== "undefined") {
       firebaseSyncService.onStatusChange((fbStatus, detail) => {
         if (fbStatus === "online") {
@@ -67,9 +67,12 @@ class DietoSyncEngine {
         this.notifyDataListeners({ disciplinas, cases, isInitial: false, isRemote: true });
       });
 
-      const fbStarted = await firebaseSyncService.init();
+      const fbStarted = await firebaseSyncService.init(startListener);
       if (fbStarted) {
         console.log("☁️ DietoSyncEngine conectado ao Firebase Firestore com sucesso!");
+        if (startListener && typeof firebaseSyncService.startRealtimeListener === "function") {
+          firebaseSyncService.startRealtimeListener();
+        }
         return true;
       }
     }
@@ -78,6 +81,13 @@ class DietoSyncEngine {
     this.setStatus("local");
     this.notifyDataListenersFromStorage();
     return false;
+  }
+
+  // Aciona lazy loading dos casos da simulação no Firestore
+  ensureSimulationDataLoaded() {
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.startRealtimeListener === "function") {
+      firebaseSyncService.startRealtimeListener();
+    }
   }
 
   onDataUpdated(callback) {

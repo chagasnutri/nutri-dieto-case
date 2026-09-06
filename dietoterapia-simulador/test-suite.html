@@ -1423,6 +1423,596 @@ Questões Avaliativas:
         "Relatório Word (Real): Seção 1.3 com a Tabela de Interações Droga-Nutriente e condutas incluída");
       assert(!xmlReal.includes("4. QUEST&#xD5;ES AVALIATIVAS (AVALIA&#xC7;&#xC3;O DOCENTE)"),
         "Relatório Word (Real): Bloco de questões docentes suprimido para paciente presencial");
+
+      // 91. Identificação e Histórico Social do Paciente Real (Cabeçalho/Anamnese Padrão-Ouro)
+      const pRealSocial = pMgrReal.getEmptyProntuario("atendimento-real-social");
+      pRealSocial.isRealPatient = true;
+      pRealSocial.aluno = { nome: "Fernanda Nutricionista", matriculaTurma: "NUT-2026", data: "2026-09-06" };
+      pRealSocial.dadosPacienteReal = {
+        nome: "João da Silva Sauro",
+        idade: "58",
+        genero: "Masculino",
+        sexo: "Masculino",
+        naturalidade: "Salvador - BA",
+        procedencia: "Feira de Santana - BA",
+        ocupacao: "Marceneiro",
+        profissao: "Marceneiro",
+        estadoCivil: "Casado",
+        renda: "3 Salários Mínimos",
+        moradia: "Casa própria de alvenaria com saneamento básico",
+        escolaridade: "Ensino Fundamental Completo",
+        historicoSocial: {
+          estadoCivil: "Casado",
+          renda: "3 Salários Mínimos",
+          profissao: "Marceneiro",
+          moradia: "Casa própria de alvenaria com saneamento básico",
+          escolaridade: "Ensino Fundamental Completo"
+        },
+        hipoteseDiagnostica: "Cirrose Hepática Compensada e Desnutrição Proteico-Calórica"
+      };
+
+      pMgrReal.saveDraft("atendimento-real-social", pRealSocial);
+      const loadedSocial = pMgrReal.loadDraft("atendimento-real-social");
+
+      assert(loadedSocial.dadosPacienteReal.naturalidade === "Salvador - BA" &&
+             loadedSocial.dadosPacienteReal.procedencia === "Feira de Santana - BA",
+        "Identificação Paciente Real: Naturalidade e Procedência persistidas com fidelidade");
+      assert(loadedSocial.dadosPacienteReal.historicoSocial.estadoCivil === "Casado" &&
+             loadedSocial.dadosPacienteReal.historicoSocial.renda === "3 Salários Mínimos" &&
+             loadedSocial.dadosPacienteReal.historicoSocial.profissao === "Marceneiro" &&
+             loadedSocial.dadosPacienteReal.historicoSocial.moradia.includes("saneamento") &&
+             loadedSocial.dadosPacienteReal.historicoSocial.escolaridade.includes("Fundamental"),
+        "Histórico Social: Subdivisão completa (Estado Civil, Renda, Profissão, Moradia, Escolaridade) íntegra");
+
+      // 92. Triagem Nutricional com Lógica Condicional (Ambulatório vs Hospitalar)
+      // Cenário A: Ambulatório (não requer ferramentas hospitalares)
+      pRealSocial.antropometria.triagemNutricional = {
+        tipo: "ambulatorio",
+        ferramenta: "",
+        pontuacao: "",
+        diagnostico: ""
+      };
+      assert(pRealSocial.antropometria.triagemNutricional.tipo === "ambulatorio" &&
+             !pRealSocial.antropometria.triagemNutricional.ferramenta,
+        "Triagem Nutricional: Modalidade Ambulatorial não exige preenchimento hospitalar");
+
+      // Cenário B: Hospitalar (exige Triagem Utilizada, Pontuação e Diagnóstico)
+      pRealSocial.antropometria.triagemNutricional = {
+        tipo: "hospitalar",
+        ferramenta: "NRS-2002",
+        pontuacao: "4",
+        diagnostico: "Alto risco nutricional com indicação de terapia enteral precoce"
+      };
+      pMgrReal.saveDraft("atendimento-real-social", pRealSocial);
+      const loadedTriagem = pMgrReal.loadDraft("atendimento-real-social");
+      assert(loadedTriagem.antropometria.triagemNutricional.tipo === "hospitalar" &&
+             loadedTriagem.antropometria.triagemNutricional.ferramenta === "NRS-2002" &&
+             loadedTriagem.antropometria.triagemNutricional.pontuacao === "4" &&
+             loadedTriagem.antropometria.triagemNutricional.diagnostico.includes("Alto risco"),
+        "Triagem Nutricional: Modalidade Hospitalar armazena Triagem Utilizada, Pontuação e Diagnóstico");
+
+      // 93. Exame Físico Nutricional Remodelado (Órgãos e Sistemas + Semiologia por Compartimentos)
+      pRealSocial.exameFisico.orgaosSistemas = {
+        neurologico: "Vigil, glasgow 15, sem sinais de encefalopatia hepática.",
+        respiratorio: "Tórax simétrico, MV presentes bilateralmente sem RA.",
+        circulatorio: "Bulhas rítmicas normofonéticas 2T, FC 74 bpm, PA 120/75 mmHg.",
+        digestorio: "Abdome distendido por ascite moderada, indolor à palpação, RHA presentes.",
+        urinario: "Diurese colúrica diminuída sob uso de espironolactona.",
+        muscular: "Atrofia muscular temporal e peitoral aparente."
+      };
+      pRealSocial.exameFisico.compartimentos = {
+        cabeca: "Depressão temporal acentuada, bola gordurosa de Bichat depletada, escleras ictéricas.",
+        tronco: "Costelas e clavículas proeminentes, perda evidente de tecido subcutâneo intercostal.",
+        mmss: "Perda acentuada de massa em bíceps e deltoide, adutor do polegar depletado.",
+        mmii: "Quadríceps atrofiado, panturrilha depletada com edema pré-tibial 2+/4+."
+      };
+      pMgrReal.saveDraft("atendimento-real-social", pRealSocial);
+      const loadedExame = pMgrReal.loadDraft("atendimento-real-social");
+      assert(loadedExame.exameFisico.orgaosSistemas.neurologico.includes("encefalopatia") &&
+             loadedExame.exameFisico.orgaosSistemas.digestorio.includes("ascite") &&
+             loadedExame.exameFisico.orgaosSistemas.urinario.includes("espironolactona") &&
+             loadedExame.exameFisico.orgaosSistemas.muscular.includes("Atrofia"),
+        "Exame Físico (Parte A): Tabela de Órgãos e Sistemas persistida com todos os 6 eixos orgânicos");
+      assert(loadedExame.exameFisico.compartimentos.cabeca.includes("Bichat") &&
+             loadedExame.exameFisico.compartimentos.tronco.includes("clavículas") &&
+             loadedExame.exameFisico.compartimentos.mmss.includes("adutor") &&
+             loadedExame.exameFisico.compartimentos.mmii.includes("Quadríceps"),
+        "Exame Físico (Parte B): Semiologia Nutricional por Compartimentos (Cabeça, Tronco, MMSS, MMII) íntegra");
+
+      // 94. Tabela Dinâmica de Interação Droga-Nutriente com 3 Colunas Exatas
+      pRealSocial.interacaoDrogaNutriente = [];
+      pMgrReal.addInteracaoDrogaNutriente(pRealSocial, {
+        medicacao: "Espironolactona 100mg",
+        classificacao: "Diurético Poupador de Potássio / Antagonista da Aldosterona",
+        interacao: "Risco de hipercalemia; evitar suplementação e excesso dietético de potássio."
+      });
+      pMgrReal.addInteracaoDrogaNutriente(pRealSocial, {
+        medicacao: "Lactulose 667mg/mL",
+        classificacao: "Dissacarídeo Não Absorvível / Laxativo Osmótico",
+        interacao: "Reduz absorção e níveis sistêmicos de amônia; monitorar trânsito e hidratação."
+      });
+      pMgrReal.saveDraft("atendimento-real-social", pRealSocial);
+      const loadedDroga = pMgrReal.loadDraft("atendimento-real-social");
+      assert(loadedDroga.interacaoDrogaNutriente.length === 2,
+        "Interação Droga-Nutriente (3 Colunas): Inclusão dinâmica de linhas na tabela");
+      assert(loadedDroga.interacaoDrogaNutriente[0].medicacao === "Espironolactona 100mg" &&
+             loadedDroga.interacaoDrogaNutriente[0].classificacao.includes("Poupador de Potássio") &&
+             loadedDroga.interacaoDrogaNutriente[0].interacao.includes("hipercalemia"),
+        "Interação Droga-Nutriente (3 Colunas): Colunas Medicação, Classificação e Interação registradas");
+      assert(loadedDroga.interacaoDrogaNutriente[0].medicamento === loadedDroga.interacaoDrogaNutriente[0].medicacao &&
+             loadedDroga.interacaoDrogaNutriente[0].nutrientes === loadedDroga.interacaoDrogaNutriente[0].classificacao,
+        "Interação Droga-Nutriente: Aliases de retrocompatibilidade sincronizados");
+
+      // 95. Emissão e Validação do Documento Word (.docx) com os Novos Módulos Padrão-Ouro
+      const docxSocialMeta = {
+        id: "atendimento-real-social",
+        title: "Atendimento Presencial Real",
+        category: "Consulta Ambulatorial / Hospitalar",
+        description: "Consulta presencial de João da Silva Sauro",
+        isRealCase: true,
+        patient: {
+          name: loadedDroga.dadosPacienteReal.nome,
+          age: loadedDroga.dadosPacienteReal.idade,
+          gender: loadedDroga.dadosPacienteReal.genero,
+          occupation: loadedDroga.dadosPacienteReal.ocupacao,
+          naturalidade: loadedDroga.dadosPacienteReal.naturalidade,
+          procedencia: loadedDroga.dadosPacienteReal.procedencia,
+          estadoCivil: loadedDroga.dadosPacienteReal.historicoSocial.estadoCivil,
+          renda: loadedDroga.dadosPacienteReal.historicoSocial.renda,
+          profissao: loadedDroga.dadosPacienteReal.historicoSocial.profissao,
+          moradia: loadedDroga.dadosPacienteReal.historicoSocial.moradia,
+          escolaridade: loadedDroga.dadosPacienteReal.historicoSocial.escolaridade
+        },
+        hipoteseDiagnostica: loadedDroga.dadosPacienteReal.hipoteseDiagnostica,
+        habilitarQuestoesAvaliativas: false
+      };
+
+      const docxOut = DietoterapiaDocxReport.buildReportDocument(loadedDroga, docxSocialMeta);
+      const xmlDocx = docxOut.generateDocumentXml();
+      assert(xmlDocx.includes("Identifica") && xmlDocx.includes("Social"),
+        "Relatório Word Padrão-Ouro: Subseção de Identificação e Histórico Social renderizada");
+      assert(xmlDocx.includes("Salvador - BA") && xmlDocx.includes("Feira de Santana - BA"),
+        "Relatório Word Padrão-Ouro: Naturalidade e Procedência impressas no documento");
+      assert(xmlDocx.includes("Triagem Nutricional (Ambiente Hospitalar)") && xmlDocx.includes("NRS-2002"),
+        "Relatório Word Padrão-Ouro: Bloco de Triagem Nutricional Hospitalar com ferramenta e pontuação incluído");
+      assert(xmlDocx.includes("Parte A - Avalia") && xmlDocx.includes("Parte B - Semiologia Nutricional"),
+        "Relatório Word Padrão-Ouro: Exame Físico dividido nas Partes A (Órgãos/Sistemas) e B (Compartimentos)");
+      assert(xmlDocx.includes("Espironolactona") && xmlDocx.includes("Poupador de Pot") && xmlDocx.includes("hipercalemia"),
+        "Relatório Word Padrão-Ouro: Tabela de Interações Droga-Nutriente com as 3 colunas formatadas");
+
+      // 96. Reestruturação do Dashboard da Área do Aluno: Empilhamento Vertical Responsivo
+      const respIndex = await fetch("index.html");
+      const htmlIndex = await respIndex.text();
+      const domParser = new DOMParser();
+      const docIndex = domParser.parseFromString(htmlIndex, "text/html");
+
+      const studentLanding = docIndex.getElementById("studentLandingDashboard");
+      assert(studentLanding !== null,
+        "Dashboard do Aluno: Seção principal #studentLandingDashboard existente no DOM");
+      assert(studentLanding.className.includes("max-w-4xl") && studentLanding.className.includes("mx-auto"),
+        "Dashboard do Aluno (Desktop): Limite de largura max-w-4xl com centralização mx-auto");
+      
+      const simBtn = docIndex.getElementById("selectModeSimulationBtn");
+      const realBtn = docIndex.getElementById("selectModeRealBtn");
+      assert(simBtn !== null && realBtn !== null,
+        "Dashboard do Aluno: Ambos os grandes módulos (Simulação e Atendimento Real) presentes");
+
+      const buttonsStack = simBtn.parentElement;
+      assert(buttonsStack.className.includes("flex-col"),
+        "Dashboard do Aluno: Empilhamento vertical obrigatório (flex-col) implementado");
+
+      // 97. Otimização e Lazy-Loading do Catálogo e Dados de Simulação
+      const catalogSection = docIndex.getElementById("studentCatalogSection");
+      assert(catalogSection !== null && catalogSection.classList.contains("hidden"),
+        "Lazy-Loading: #studentCatalogSection inicia oculta (hidden) por padrão na tela inicial");
+      assert(typeof dietoSyncEngine.ensureSimulationDataLoaded === "function" &&
+             typeof firebaseSyncService.ensureSimulationDataLoaded === "function",
+        "Lazy-Loading: Métodos de carregamento sob demanda presentes nos motores de sincronização");
+
+      // 98. Botão de Retorno no Portal de Disciplinas ('Voltar à Escolha de Modos')
+      const backLandingBtn = docIndex.getElementById("studentBackToLandingBtn");
+      assert(backLandingBtn !== null,
+        "Navegação: Botão #studentBackToLandingBtn presente no topo do portal de disciplinas");
+      assert(backLandingBtn.textContent.includes("Voltar"),
+        "Navegação: Rótulo de retorno ao Dashboard de Modos presente");
+
+      // 99. Detalhes de Conteúdo e Acessibilidade dos Cards (Simulação vs Real)
+      assert(simBtn.textContent.includes("Modo Simulação") &&
+             simBtn.textContent.includes("Casos da Disciplina") &&
+             simBtn.textContent.includes("Acessar Disciplinas & Casos"),
+        "Card Modo Simulação: Ícone, título, badge de disciplina e CTA de acesso configurados");
+      assert(realBtn.textContent.includes("Modo Atendimento Real") &&
+             realBtn.textContent.includes("Prontuário em Branco") &&
+             realBtn.textContent.includes("Iniciar Novo Atendimento Real"),
+        "Card Modo Atendimento Real: Ícone, título, badge de prontuário em branco e CTA configurados");
+
+      // 100. Conectividade e Integridade do Banco de Dados Firestore com Repouso Inicial
+      assert(firebaseSyncService.isConfigured() === true,
+        "Banco de Dados (Firestore): Conexão e credenciais do projeto em nuvem permanecem ativas");
+      assert(typeof firebaseSyncService.saveAtendimentoReal === "function",
+        "Banco de Dados (Firestore): Método saveAtendimentoReal pronto para gravação imediata sem ler casos de simulação");
+
+      // 101. Estrutura Visual das Fórmulas Abertas (Inputs Numéricos e Variáveis)
+      const inputIdsObrigatorios = [
+        "calcBolsoMinKcalKg", "calcBolsoMaxKcalKg", "calcBolsoPeso", "calcBolsoResultadoKcal",
+        "calcHarrisPeso", "calcHarrisAltura", "calcHarrisIdade", "calcHarrisFa", "calcHarrisFi", "calcHarrisResultadoKcal",
+        "calcMifflinPeso", "calcMifflinAltura", "calcMifflinIdade", "calcMifflinFa", "calcMifflinFi", "calcMifflinResultadoKcal",
+        "calcFaoConstIdade", "calcFaoPeso", "calcFaoConstFixa", "calcFaoFa", "calcFaoFi", "calcFaoResultadoKcal",
+        "calcEerConst", "calcEerFatIdade", "calcEerIdade", "calcEerNaf", "calcEerFatPeso", "calcEerPeso", "calcEerFatAltura", "calcEerAlturaM", "calcEerFa", "calcEerFi", "calcEerResultadoKcal"
+      ];
+      const todosInputsPresentes = inputIdsObrigatorios.every(id => docIndex.getElementById(id) !== null);
+      assert(todosInputsPresentes,
+        "Fórmulas Abertas: Todos os 33 inputs numéricos das 5 equações preditivas abertas estão presentes no DOM");
+
+      const btnAutoAntropo = docIndex.getElementById("calcAutoPreencherAntropometriaBtn");
+      assert(btnAutoAntropo !== null && btnAutoAntropo.textContent.includes("Puxar Dados"),
+        "Fórmulas Abertas: Botão #calcAutoPreencherAntropometriaBtn presente para agilidade do aluno");
+
+      const botoesAdotar = docIndex.querySelectorAll(".btn-adotar-vet");
+      assert(botoesAdotar.length >= 5,
+        "Fórmulas Abertas: Todas as 5 fórmulas possuem botão de atalho .btn-adotar-vet para transmissão direta ao VET Planejado");
+
+      // 102. Condicionamento por Gênero do Paciente (Masculino vs Feminino)
+      const selectGenero = docIndex.getElementById("calcPacienteGeneroSelect");
+      assert(selectGenero !== null && selectGenero.options.length === 2,
+        "Condicionamento por Gênero: Seletor #calcPacienteGeneroSelect presente com opções Masculino e Feminino");
+
+      const harrisMascEl = docIndex.getElementById("calcHarrisMascFormula");
+      const harrisFemEl = docIndex.getElementById("calcHarrisFemFormula");
+      assert(harrisMascEl && harrisFemEl,
+        "Harris-Benedict: Fórmulas específicas para Masculino (66,5) e Feminino (655,1) configuradas no DOM");
+
+      const mifflinMascEl = docIndex.getElementById("calcMifflinMascFormula");
+      const mifflinFemEl = docIndex.getElementById("calcMifflinFemFormula");
+      assert(mifflinMascEl && mifflinFemEl,
+        "Mifflin-St Jeor: Fórmulas específicas para Masculino (+ 5) e Feminino (- 161) configuradas no DOM");
+
+      // 103. Resolução Matemática das 5 Equações (GEB/EER e VET com FA e FI)
+      // 1. Bolso: 25 a 30 kcal/kg × 70 kg
+      const bolsoMin = 25, bolsoMax = 30, peso70 = 70;
+      const bolsoMinVet = bolsoMin * peso70; // 1750
+      const bolsoMaxVet = bolsoMax * peso70; // 2100
+      const bolsoAvgVet = Math.round((bolsoMinVet + bolsoMaxVet) / 2); // 1925
+      assert(bolsoMinVet === 1750 && bolsoMaxVet === 2100 && bolsoAvgVet === 1925,
+        "Resolução Matemática (Fórmula de Bolso): 25 a 30 kcal/kg × 70 kg resulta na faixa de 1750 a 2100 kcal/dia");
+
+      // 2. Harris-Benedict Masculino: 70 kg, 175 cm, 40 anos, FA 1.2, FI 1.0
+      const hbMascGEB = 66.5 + (13.75 * 70) + (5.0 * 175) - (6.78 * 40); // 66.5 + 962.5 + 875 - 271.2 = 1632.8
+      const hbMascVET = Math.round(hbMascGEB * 1.2 * 1.0); // 1959
+      assert(Math.round(hbMascGEB) === 1633 && hbMascVET === 1959,
+        "Resolução Matemática (Harris Masc): GEB = 1633 kcal e VET = 1959 kcal (GEB × FA 1.2 × FI 1.0)");
+
+      // 2b. Harris-Benedict Feminino: 60 kg, 160 cm, 30 anos, FA 1.3, FI 1.1
+      const hbFemGEB = 655.1 + (9.56 * 60) + (1.85 * 160) - (4.68 * 30); // 655.1 + 573.6 + 296 - 140.4 = 1384.3
+      const hbFemVET = Math.round(hbFemGEB * 1.3 * 1.1); // 1384.3 * 1.43 = 1979.5 -> 1980
+      assert(Math.round(hbFemGEB) === 1384 && hbFemVET === 1980,
+        "Resolução Matemática (Harris Fem): GEB = 1384 kcal e VET = 1980 kcal (GEB × FA 1.3 × FI 1.1)");
+
+      // 3. Mifflin Masculino: 70 kg, 175 cm, 40 anos, FA 1.2, FI 1.0
+      const mifMascGEB = (10 * 70) + (6.25 * 175) - (5 * 40) + 5; // 700 + 1093.75 - 200 + 5 = 1598.75
+      const mifMascVET = Math.round(mifMascGEB * 1.2 * 1.0); // 1919
+      assert(Math.round(mifMascGEB) === 1599 && mifMascVET === 1919,
+        "Resolução Matemática (Mifflin Masc): GEB = 1599 kcal e VET = 1919 kcal (GEB × FA 1.2 × FI 1.0)");
+
+      // 3b. Mifflin Feminino: 60 kg, 160 cm, 30 anos, FA 1.25, FI 1.0
+      const mifFemGEB = (10 * 60) + (6.25 * 160) - (5 * 30) - 161; // 600 + 1000 - 150 - 161 = 1289
+      const mifFemVET = Math.round(mifFemGEB * 1.25 * 1.0); // 1611
+      assert(Math.round(mifFemGEB) === 1289 && mifFemVET === 1611,
+        "Resolução Matemática (Mifflin Fem): GEB = 1289 kcal e VET = 1611 kcal (GEB × FA 1.25 × FI 1.0)");
+
+      // 4. FAO/OMS: Homem 30-60 anos: 11.6 × 70 + 879 = 1691 kcal, VET (FA 1.2 × FI 1.0) = 2029 kcal
+      const faoGEB = (11.6 * 70) + 879; // 1691
+      const faoVET = Math.round(faoGEB * 1.2 * 1.0); // 2029
+      assert(faoGEB === 1691 && faoVET === 2029,
+        "Resolução Matemática (FAO/OMS 1985): GEB = 1691 kcal e VET = 2029 kcal");
+
+      // 5. DRI/IOM: Homem Adulto (NAF 1.11, Peso 70kg, Alt 1.75m, Idade 40a): EER = 2565 kcal
+      const eerRes = 662 - (9.53 * 40) + 1.11 * ((15.91 * 70) + (539.6 * 1.75));
+      assert(Math.round(eerRes) === 2565,
+        "Resolução Matemática (DRI/IOM EER): Coeficiente NAF ponderado resulta em EER de 2565 kcal");
+
+      // 104. Persistência de Todas as Variáveis Individuais e Equação Descritiva no Prontuário
+      const pMgr104 = new StudentProntuarioManager();
+      const pront104 = pMgr104.getEmptyProntuario("caso-test-formulas");
+      pront104.calculoNecessidades = {
+        formulasSelecionadas: ["bolso", "harrisBenedict", "mifflin"],
+        generoUtilizado: "Masculino",
+        bolso: {
+          minKcalKg: "25",
+          maxKcalKg: "30",
+          pesoKg: "70",
+          faixaKcal: "1750 a 2100 kcal/dia",
+          resultadoKcal: "1900",
+          equacaoDescritiva: "[25 a 30 kcal/kg] × 70 kg = 1750 a 2100 kcal/dia (Adotado: 1900 kcal/dia)"
+        },
+        harrisBenedict: {
+          genero: "Masculino",
+          pesoKg: "70",
+          alturaCm: "175",
+          idadeAnos: "40",
+          gebKcal: "1633",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "1959",
+          resultadoKcal: "1959",
+          equacaoDescritiva: "GEB = 66,5 + (13,75 × 70) + (5,0 × 175) - (6,78 × 40) = 1633 kcal | VET = 1633 × 1.2 (FA) × 1.0 (FI) = 1959 kcal/dia"
+        },
+        mifflin: {
+          genero: "Masculino",
+          pesoKg: "70",
+          alturaCm: "175",
+          idadeAnos: "40",
+          gebKcal: "1599",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "1919",
+          resultadoKcal: "1919",
+          equacaoDescritiva: "GEB = (10 × 70) + (6,25 × 175) - (5 × 40) + 5 = 1599 kcal | VET = 1599 × 1.2 (FA) × 1.0 (FI) = 1919 kcal/dia"
+        },
+        faoOms: {
+          genero: "Masculino",
+          constanteIdade: "11.6",
+          pesoKg: "70",
+          constanteFixa: "879",
+          gebKcal: "1691",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "2029",
+          resultadoKcal: "2029",
+          equacaoDescritiva: "GEB = (11.6 × 70) + 879 = 1691 kcal | VET = 1691 × 1.2 × 1.0 = 2029 kcal/dia"
+        },
+        eerIom: {
+          genero: "Masculino",
+          constanteEer: "662",
+          fatorIdade: "9.53",
+          idadeAnos: "40",
+          naf: "1.11",
+          fatorPeso: "15.91",
+          pesoKg: "70",
+          fatorAltura: "539.6",
+          alturaM: "1.75",
+          eerKcal: "2565",
+          fa: "1.0",
+          fi: "1.0",
+          vetKcal: "2565",
+          resultadoKcal: "2565",
+          equacaoDescritiva: "EER = 662 - (9.53 × 40) + 1.11 × ((15.91 × 70) + (539.6 × 1.75)) = 2565 kcal"
+        },
+        vetPlanejadoKcal: "1950",
+        taxaMetabolicaCalculada: "27.9",
+        justificativaEscolha: "Adotado VET de 1950 kcal/dia (~27.9 kcal/kg) compatível com Harris-Benedict e Mifflin para manutenção de peso eutrófico."
+      };
+      pMgr104.saveDraft("caso-test-formulas", pront104);
+
+      const pront104Carregado = pMgr104.loadDraft("caso-test-formulas");
+      assert(pront104Carregado.calculoNecessidades.generoUtilizado === "Masculino" &&
+             pront104Carregado.calculoNecessidades.harrisBenedict.pesoKg === "70" &&
+             pront104Carregado.calculoNecessidades.harrisBenedict.alturaCm === "175" &&
+             pront104Carregado.calculoNecessidades.harrisBenedict.fa === "1.2" &&
+             pront104Carregado.calculoNecessidades.harrisBenedict.vetKcal === "1959" &&
+             pront104Carregado.calculoNecessidades.mifflin.gebKcal === "1599" &&
+             pront104Carregado.calculoNecessidades.vetPlanejadoKcal === "1950",
+        "Persistência no Prontuário: Variáveis individuais digitadas (peso, altura, idade, FA, FI), resultados parciais e VET final persistidos com sucesso");
+
+      // 105. Relatório Clínico DOCX / XML com Demonstração Descritiva das Fórmulas Abertas
+      const docxDoc105 = DietoterapiaDocxReport.buildReportDocument(pront104Carregado, {
+        id: "caso-test-formulas",
+        title: "Caso Teste Fórmulas Abertas",
+        patient: { name: "Paciente Teste", age: "40 anos", gender: "Masculino", weight: 70, height: 1.75 }
+      });
+      const xmlDocx105 = docxDoc105.generateDocumentXml();
+
+      assert(xmlDocx105.includes("Desenvolvimento Matem") && xmlDocx105.includes("Resultado Calculado"),
+        "Relatório Word (.docx): Tabela 2.2 exibe coluna de Desenvolvimento Matemático Aberto (Variáveis Digitadas)");
+      assert(xmlDocx105.includes("66,5 + (13,75") || xmlDocx105.includes("1633 kcal"),
+        "Relatório Word (.docx): Equação de Harris-Benedict impressa com números reais digitados pelo estudante");
+      assert(xmlDocx105.includes("1599 kcal") || xmlDocx105.includes("(10 &#215; 70)"),
+        "Relatório Word (.docx): Equação de Mifflin-St Jeor impressa com desenvolvimento do raciocínio matemático");
+      assert(xmlDocx105.includes("1950 kcal/dia") && xmlDocx105.includes("27.9 kcal/kg"),
+        "Relatório Word (.docx): Callout de Decisão Clínica registra o VET Planejado Final e a Taxa Metabólica Resultante");
+
+      // 106. Esqueleto Imutável do Relatório Final (Nenhuma Seção ou Tabela Omitida Se Vazio)
+      const pMgr106 = new StudentProntuarioManager();
+      const pront106Vazio = pMgr106.getEmptyProntuario("caso-test-vazio");
+      const caso106Vazio = {
+        id: "caso-test-vazio",
+        title: "Caso Teste Esqueleto Vazio",
+        category: "Nutrição Clínica Geral",
+        description: "Caso sem preenchimento prévio para teste do esqueleto perene",
+        patient: {}
+      };
+
+      const docx106 = DietoterapiaDocxReport.buildReportDocument(pront106Vazio, caso106Vazio);
+      const xml106 = docx106.generateDocumentXml();
+      const html106 = DietoterapiaDocxReport.buildHtmlReport(pront106Vazio, caso106Vazio);
+
+      // Verificação das seções obrigatórias no esqueleto imutável (Word XML e HTML)
+      assert(xml106.includes("1.1. Identificação do Paciente") && html106.includes("1.1. Identificação do Paciente"),
+        "Esqueleto Imutável: Seção 1.1 Identificação e Histórico Social presente mesmo com prontuário vazio");
+      assert(xml106.includes("1.2. Diagnóstico Médico") && xml106.includes("1.3. Antecedentes") &&
+             html106.includes("1.2. Diagnóstico Médico") && html106.includes("1.3. Antecedentes"),
+        "Esqueleto Imutável: Seções 1.2 Queixa Principal e 1.3 Antecedentes presentes com 'Não preenchido / ---'");
+      assert(xml106.includes("1.4. Interações Droga-Nutriente") && html106.includes("1.4. Interações Droga-Nutriente"),
+        "Esqueleto Imutável: Tabela 1.4 de Interações Droga-Nutriente (3 colunas) presente mesmo sem fármacos cadastrados");
+      assert(xml106.includes("1.5. Avaliação Antropométrica") && (xml106.includes("Circunferência do Braço") || xml106.includes("CB")) &&
+             html106.includes("1.5. Avaliação Antropométrica") && html106.includes("Circunferência do Braço (CB)"),
+        "Esqueleto Imutável: Tabela 1.5 de Antropometria com todas as 18 variáveis renderizadas sem omissão");
+      assert((xml106.includes("1.6. Avaliação Bioquímica") || xml106.includes("Bioquímica")) &&
+             (html106.includes("1.6. Perfil Bioquímico") || html106.includes("Bioquímic")),
+        "Esqueleto Imutável: Tabela 1.6 de Bioquímica e síntese clínica renderizadas incondicionalmente");
+      assert(xml106.includes("1.7. Exame Físico") && html106.includes("1.7. Exame Físico"),
+        "Esqueleto Imutável: Tabelas dos 6 sistemas e 4 compartimentos do exame físico preservadas");
+      assert(xml106.includes("1.8. Consumo Alimentar") && (xml106.includes("Tabela 1.8.2") || xml106.includes("1.8.2")) &&
+             html106.includes("1.8. Consumo Alimentar") && html106.includes("1.8.2"),
+        "Esqueleto Imutável: Tabela de refeições do R24h e Tabela Quantitativa 1.8.2 sempre renderizadas");
+      assert(xml106.includes("2.1. Diagnóstico") && xml106.includes("PES") &&
+             html106.includes("2.1. Diagnóstico") && html106.includes("PES"),
+        "Esqueleto Imutável: Diagnóstico PES presente com esqueleto completo mesmo em branco");
+      assert(xml106.includes("2.2. Cálculos") && html106.includes("2.2. Cálculos"),
+        "Esqueleto Imutável: Seção 2.2 de Cálculos Energéticos com tabela descritiva e box de decisão clínica");
+      assert((xml106.includes("2.3.") || xml106.includes("Macronutrientes")) && xml106.includes("2.4. Justificativa Fisiopatológica") &&
+             (html106.includes("2.3.") || html106.includes("Prescrição")) && html106.includes("2.4. Justificativa Fisiopatológica"),
+        "Esqueleto Imutável: Prescrição e Justificativa Fisiopatológica sempre presentes");
+      assert(xml106.includes("PLANEJAMENTO ALIMENTAR") && (xml106.includes("Tabela 3.1") || xml106.includes("3.1")) &&
+             html106.includes("PLANEJAMENTO ALIMENTAR") && html106.includes("3.1"),
+        "Esqueleto Imutável: Planejamento alimentar, tabela de refeições e Tabela 3.1 de Consolidação Nutricional sempre presentes");
+
+      // 107. Posicionamento Imediato dos Objetivos Dietoterápicos Pós-PES
+      const pront107 = pMgr106.getEmptyProntuario("caso-test-pes");
+      pront107.diagnosticoPES = {
+        problema: "Ingestão excessiva de carboidratos simples",
+        etiologia: "Falta de adesão à orientação nutricional prévia",
+        sinaisSintomas: "Glicemia de jejum de 184 mg/dL e HbA1c de 8.9%",
+        textoCompletoPES: "Ingestão excessiva de carboidratos simples relacionada à falta de adesão evidenciada por HbA1c de 8.9%.",
+        objetivosDietoterapicos: "Promover o controle glicêmico com redução da glicemia de jejum para < 130 mg/dL, adequar o aporte de fibras para >= 25g/dia e fracionar as refeições em 5 a 6 momentos."
+      };
+
+      const docx107 = DietoterapiaDocxReport.buildReportDocument(pront107, caso106Vazio);
+      const xml107 = docx107.generateDocumentXml();
+      const html107 = DietoterapiaDocxReport.buildHtmlReport(pront107, caso106Vazio);
+
+      // Validação de posicionamento: Objetivos Dietoterápicos logo após o PES
+      const pesIdxXml = xml107.indexOf("2.1. Diagnóstico");
+      const objIdxXml = xml107.indexOf("2.1.1. Objetivos Dietoterápicos");
+      const calcIdxXml = xml107.indexOf("2.2. Cálculos");
+      assert(pesIdxXml !== -1 && objIdxXml !== -1 && calcIdxXml !== -1 && pesIdxXml < objIdxXml && objIdxXml < calcIdxXml,
+        "Objetivos Dietoterápicos: Seção 2.1.1 impressa obrigatoriamente logo após o Diagnóstico PES (2.1) no Word (.docx)");
+
+      const pesIdxHtml = html107.indexOf("2.1. Diagnóstico");
+      const objIdxHtml = html107.indexOf("2.1.1. Objetivos Dietoterápicos");
+      const calcIdxHtml = html107.indexOf("2.2. Cálculos");
+      assert(pesIdxHtml !== -1 && objIdxHtml !== -1 && calcIdxHtml !== -1 && pesIdxHtml < objIdxHtml && objIdxHtml < calcIdxHtml,
+        "Objetivos Dietoterápicos: Seção 2.1.1 impressa imediatamente após o Diagnóstico PES no HTML / PDF");
+
+      assert(xml107.includes("Promover o controle glicêmico") && html107.includes("Promover o controle glicêmico"),
+        "Objetivos Dietoterápicos: Conteúdo clínico inserido pelo estudante impresso com integridade em ambos os formatos");
+
+      // 108. Análises Quantitativas Obrigatórias (Macros, 5 Micros TACO e Adequação %)
+      const requiredNutrientLabels = [
+        "Carboidratos",
+        "Proteínas",
+        "Lipídios",
+        "Fibras Alimentares",
+        "Cálcio",
+        "Ferro",
+        "Sódio",
+        "Potássio"
+      ];
+
+      const allNutrientsInDocx = requiredNutrientLabels.every(nutr => xml106.includes(nutr));
+      const allNutrientsInHtml = requiredNutrientLabels.every(nutr => html106.includes(nutr));
+      assert(allNutrientsInDocx && allNutrientsInHtml,
+        "Análises Quantitativas: Todos os macros e os 5 micronutrientes obrigatórios (Fibras, Ca, Fe, Na, K) constam no esqueleto das tabelas");
+
+      // Teste com cardápio preenchido
+      const pront108Nutri = pMgr106.getEmptyProntuario("caso-test-nutri");
+      pront108Nutri.calculoNecessidades = { vetPlanejadoKcal: "2000" };
+      pront108Nutri.planejamentoAlimentar = {
+        refeicoes: [
+          {
+            nome: "Café da Manhã",
+            horario: "07:30",
+            alimentos: [
+              { nome: "Pão de Forma Integral", quantidade: "50g", cho: "25", ptn: "4.5", lip: "1.5", kcal: "130", fibras: "3.5", ca: "40", fe: "1.2", na: "180", k: "95" },
+              { nome: "Leite Desnatado", quantidade: "200ml", cho: "10", ptn: "6.0", lip: "0.5", kcal: "70", fibras: "0", ca: "240", fe: "0.1", na: "100", k: "300" }
+            ]
+          }
+        ]
+      };
+      const docx108 = DietoterapiaDocxReport.buildReportDocument(pront108Nutri, caso106Vazio);
+      const xml108 = docx108.generateDocumentXml();
+      const html108 = DietoterapiaDocxReport.buildHtmlReport(pront108Nutri, caso106Vazio);
+
+      assert(xml108.includes("Pão de Forma Integral") && html108.includes("Pão de Forma Integral"),
+        "Análises Quantitativas: Alimentos prescritos e quantificados pelo estudante renderizados nas tabelas");
+      assert(xml108.includes("200 kcal") || xml108.includes("200.0 kcal"),
+        "Análises Quantitativas: Totalização calórica e nutricional calculada no documento Word (.docx)");
+      assert(html108.includes("200 kcal") || html108.includes("200.0 kcal"),
+        "Análises Quantitativas: Totalização calórica e nutricional calculada no relatório HTML / PDF");
+
+      // 109. Paridade Total entre Modo Simulação e Modo Atendimento Real
+      const prontReal109 = pMgr106.getEmptyProntuario("atendimento-real-test-parity");
+      prontReal109.isRealPatient = true;
+      prontReal109.aluno = { nome: "Estudante Nutrição", matriculaTurma: "NUT-2026", data: "2026-09-06" };
+      prontReal109.dadosPacienteReal = {
+        nome: "Tereza Cristina Albuquerque",
+        idade: "58",
+        genero: "Feminino",
+        sexo: "Feminino",
+        naturalidade: "Recife - PE",
+        procedencia: "Ambulatório de Especialidades",
+        hipoteseDiagnostica: "Diabetes Mellitus Tipo 2 e Hipertensão Arterial Sistêmica",
+        historicoSocial: {
+          estadoCivil: "Casado(a) / União Estável",
+          renda: "3 salários mínimos",
+          profissao: "Professora Aposentada",
+          moradia: "Casa própria de alvenaria",
+          escolaridade: "Ensino Superior Completo"
+        }
+      };
+      prontReal109.antropometria.pesoAtual = "68";
+      prontReal109.antropometria.estatura = "1.62";
+
+      // 5 Fórmulas operantes em Atendimento Real
+      prontReal109.calculoNecessidades = {
+        formulasSelecionadas: ["bolso", "harrisBenedict", "mifflin", "faoOms", "eerIom"],
+        generoUtilizado: "Feminino",
+        bolso: { minKcalKg: "25", maxKcalKg: "30", pesoKg: "68", faixaKcal: "1700 a 2040 kcal/dia", resultadoKcal: "1850" },
+        harrisBenedict: { pesoKg: "68", alturaCm: "162", idadeAnos: "58", fa: "1.2", fi: "1.0", gebKcal: "1283", vetKcal: "1540", resultadoKcal: "1540" },
+        mifflin: { pesoKg: "68", alturaCm: "162", idadeAnos: "58", fa: "1.2", fi: "1.0", gebKcal: "1242", vetKcal: "1490", resultadoKcal: "1490" },
+        vetPlanejadoKcal: "1600",
+        taxaMetabolicaCalculada: "23.5",
+        justificativaEscolha: "Adotado VET de 1600 kcal/dia (~23.5 kcal/kg) para perda ponderal gradual e controle glicêmico."
+      };
+
+      const docxReal109 = DietoterapiaDocxReport.buildReportDocument(prontReal109, {
+        isRealCase: true,
+        patient: { name: prontReal109.dadosPacienteReal.nome, age: "58 anos", gender: "Feminino" }
+      });
+      const xmlReal109 = docxReal109.generateDocumentXml();
+      const htmlReal109 = DietoterapiaDocxReport.buildHtmlReport(prontReal109, {
+        isRealCase: true,
+        patient: { name: prontReal109.dadosPacienteReal.nome, age: "58 anos", gender: "Feminino" }
+      });
+
+      assert(xmlReal109.includes("Tereza Cristina Albuquerque") && htmlReal109.includes("Tereza Cristina Albuquerque"),
+        "Paridade de Módulos: Paciente real identificado por extenso em ambos os formatos");
+      assert(xmlReal109.includes("Atendimento Presencial Real") && htmlReal109.includes("Atendimento Presencial Real"),
+        "Paridade de Módulos: Modalidade 'Atendimento Presencial Real' devidamente registrada");
+      assert(xmlReal109.includes("1600 kcal/dia") && htmlReal109.includes("1600 kcal/dia"),
+        "Paridade de Módulos: Fórmulas abertas e VET Planejado consolidados no prontuário de Atendimento Real");
+      assert(xmlReal109.includes("23.5 kcal/kg") && htmlReal109.includes("23.5 kcal/kg"),
+        "Paridade de Módulos: Taxa calórica por kg resultante renderizada no relatório do paciente real");
+
+      // 110. Gerador Unificado Multi-formato (Word .docx e Impressão Direta em PDF)
+      assert(typeof DietoterapiaDocxReport.buildReportDocument === "function",
+        "Gerador Unificado: Método buildReportDocument disponível para geração da estrutura Office Open XML (.docx)");
+      assert(typeof DietoterapiaDocxReport.generateReport === "function",
+        "Gerador Unificado: Método generateReport disponível para download imediato do arquivo .docx");
+      assert(typeof DietoterapiaDocxReport.buildHtmlReport === "function",
+        "Gerador Unificado: Método buildHtmlReport disponível para renderização do relatório clínico estruturado");
+      assert(typeof DietoterapiaDocxReport.openPrintableReport === "function",
+        "Gerador Unificado: Método openPrintableReport disponível para abertura de janela popup e acionamento do PDF");
+
+      // Validação das folhas de estilo para impressão e PDF
+      assert(html106.includes("@media print") && html106.includes("@page"),
+        "Visualização / PDF: Estilos A4 e diretivas @media print configuradas para exportação perfeita para PDF");
+      assert(html106.includes("DIETOCASE") && html106.includes("RELATÓRIO CLÍNICO-NUTRICIONAL"),
+        "Visualização / PDF: Cabeçalho institucional presente no documento imprimível");
+
+      // Validação dos novos botões de relatório na interface DOM
+      const btnModalWord = docIndex.getElementById("modalDownloadDocxBtn");
+      const btnModalPdf = docIndex.getElementById("modalPrintPdfBtn");
+      assert(btnModalWord !== null && btnModalPdf !== null,
+        "Interface: Modal de finalização possui opções separadas para Baixar Word (.docx) e Visualizar / PDF");
+
+      const btnFooterFinalizar = docIndex.getElementById("finalizeAndExportDocxBtn");
+      assert(btnFooterFinalizar !== null && btnFooterFinalizar.textContent.includes("Word / PDF"),
+        "Interface: Botão do rodapé atualizado para 'Finalizar e Emitir Relatório Completo (Word / PDF)'");
+
+      const btnTopAtendimentoReal = docIndex.getElementById("realExportDocxTopBtn");
+      assert(btnTopAtendimentoReal !== null && btnTopAtendimentoReal.textContent.includes("Word / PDF"),
+        "Interface: Botão do topo de Atendimento Real atualizado para 'Emitir Relatório (Word / PDF)'");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

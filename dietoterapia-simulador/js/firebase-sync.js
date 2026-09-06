@@ -33,8 +33,9 @@ class FirebaseSyncService {
     this.dataListeners = [];
     this.unsubscribeSnapshot = null;
     this.isApplyingRemote = false;
+    this.isListenerActive = false;
 
-    this.init();
+    this.init(false); // Inicializa conexão com Firestore em repouso (lazy-loading: sem carregar casos simulados na tela inicial)
   }
 
   isConfigured() {
@@ -65,20 +66,24 @@ class FirebaseSyncService {
     });
   }
 
-  init() {
+  init(startListener = false) {
     if (!this.isConfigured()) {
       this.setStatus("unconfigured_firebase");
       return false;
     }
 
     try {
-      this.app = initializeApp(this.config);
-      this.db = getFirestore(this.app);
+      if (!this.app) {
+        this.app = initializeApp(this.config);
+        this.db = getFirestore(this.app);
+      }
       this.setStatus("online_firebase");
       console.log("☁️ [Firebase v9 Modular] Firestore conectado com sucesso para o projeto:", this.config.projectId);
 
-      // Inicia a escuta em tempo real do documento estado_atual
-      this.startRealtimeListener();
+      // Inicia a escuta em tempo real somente se explicitamente solicitado (Lazy-loading)
+      if (startListener) {
+        this.startRealtimeListener();
+      }
       return true;
     } catch (err) {
       console.error("❌ Erro ao inicializar Firebase v9 Modular:", err);
@@ -87,9 +92,20 @@ class FirebaseSyncService {
     }
   }
 
+  // Ativação sob demanda da escuta de disciplinas e casos do professor
+  ensureSimulationDataLoaded() {
+    return this.startRealtimeListener();
+  }
+
   // Escuta em tempo real no documento: configuracoes/estado_atual
   startRealtimeListener() {
-    if (!this.db) return;
+    if (!this.db) {
+      this.init(true);
+      return;
+    }
+    if (this.isListenerActive) return;
+    this.isListenerActive = true;
+
     if (this.unsubscribeSnapshot) {
       this.unsubscribeSnapshot();
     }

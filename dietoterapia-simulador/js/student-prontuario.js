@@ -47,7 +47,18 @@ class StudentProntuarioManager {
         nome: "",
         idade: "",
         sexo: "Feminino",
+        genero: "Feminino",
         ocupacao: "",
+        profissao: "",
+        naturalidade: "",
+        procedencia: "",
+        historicoSocial: {
+          estadoCivil: "",
+          renda: "",
+          profissao: "",
+          moradia: "",
+          escolaridade: ""
+        },
         hipoteseDiagnostica: "",
         dataAtendimento: new Date().toISOString().split("T")[0]
       },
@@ -64,6 +75,12 @@ class StudentProntuarioManager {
         habitosEstiloVida: ""
       },
       antropometria: {
+        triagemNutricional: {
+          tipo: "ambulatorio", // "ambulatorio" | "hospitalar"
+          ferramenta: "",
+          pontuacao: "",
+          diagnostico: ""
+        },
         pesoAtual: "",
         pesoHabitual: "",
         estatura: "",
@@ -99,6 +116,20 @@ class StudentProntuarioManager {
       },
       interacaoDrogaNutriente: [],
       exameFisico: {
+        orgaosSistemas: {
+          neurologico: "",
+          respiratorio: "",
+          circulatorio: "",
+          digestorio: "",
+          urinario: "",
+          muscular: ""
+        },
+        compartimentos: {
+          cabeca: "",
+          tronco: "",
+          mmss: "",
+          mmii: ""
+        },
         sinaisClinicos: "",
         massaMuscularAdiposa: "",
         condicoesTGIeEdemas: ""
@@ -121,22 +152,67 @@ class StudentProntuarioManager {
       },
       calculoNecessidades: {
         formulasSelecionadas: [],
+        generoUtilizado: "Masculino",
         bolso: {
           minKcalKg: "",
           maxKcalKg: "",
-          resultadoKcal: ""
+          pesoKg: "",
+          faixaKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         harrisBenedict: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          pesoKg: "",
+          alturaCm: "",
+          idadeAnos: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         mifflin: {
-          resultadoKcal: ""
-        },
-        eerIom: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          pesoKg: "",
+          alturaCm: "",
+          idadeAnos: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         faoOms: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          constanteIdade: "",
+          pesoKg: "",
+          constanteFixa: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
+        },
+        eerIom: {
+          genero: "Masculino",
+          constanteEer: "",
+          fatorIdade: "",
+          idadeAnos: "",
+          naf: "1.0",
+          fatorPeso: "",
+          pesoKg: "",
+          fatorAltura: "",
+          alturaM: "",
+          eerKcal: "",
+          fa: "1.0",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         vetPlanejadoKcal: "",
         taxaMetabolicaCalculada: "",
@@ -865,10 +941,18 @@ class StudentProntuarioManager {
     if (!Array.isArray(prontuario.interacaoDrogaNutriente)) {
       prontuario.interacaoDrogaNutriente = [];
     }
+    const med = (item.medicacao || item.medicamento || "").trim();
+    const classe = (item.classificacao || item.classe || item.nutrientes || "").trim();
+    const inter = (item.interacao || item.conduta || "").trim();
+
     prontuario.interacaoDrogaNutriente.push({
-      medicamento: item.medicamento || "",
-      nutrientes: item.nutrientes || "",
-      conduta: item.conduta || ""
+      medicacao: med,
+      classificacao: classe,
+      interacao: inter,
+      // Compatibilidade com propriedades legadas:
+      medicamento: med,
+      nutrientes: item.nutrientes || classe,
+      conduta: item.conduta || inter
     });
     return prontuario.interacaoDrogaNutriente;
   }

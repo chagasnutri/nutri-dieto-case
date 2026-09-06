@@ -95,80 +95,95 @@
   <!-- CONTEÚDO PRINCIPAL: PAINEL DO ALUNO -->
   <main id="studentView" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
     
-    <!-- 1. VITRINE / CATÁLOGO DE CASOS CLÍNICOS DO ALUNO -->
-    <section id="studentCatalogSection" class="space-y-4">
+    <!-- 0. DASHBOARD INICIAL DO ALUNO: SELEÇÃO DE MODOS (VERTICAL RESPONSIVO & LIMPO) -->
+    <section id="studentLandingDashboard" class="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col space-y-6">
       
-      <!-- BIFURCAÇÃO INICIAL: SELEÇÃO DE MODO DE ATUAÇÃO (MODO SIMULAÇÃO VS MODO ATENDIMENTO REAL) -->
-      <div id="studentPortalModeSelection" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <div class="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-1">
-              <span>🩺</span>
-              <span>Portal Acadêmico do Estudante</span>
+      <!-- CABEÇALHO DO DASHBOARD -->
+      <div class="text-center sm:text-left border-b border-slate-200 pb-5">
+        <div class="inline-flex items-center space-x-2 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full mb-2">
+          <span>🩺</span>
+          <span>Portal Acadêmico do Estudante</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Escolha o seu Modo de Prática Clínica</h1>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-2xl leading-relaxed">
+          Selecione uma das opções abaixo para iniciar sua sessão clínica. Pratique com casos virtuais tutelados pelo docente ou registre um atendimento presencial real com prontuário clínico completo.
+        </p>
+      </div>
+
+      <!-- EMPILHAMENTO VERTICAL OBRIGATÓRIO (FLEX-COL) -->
+      <div class="flex flex-col space-y-4 sm:space-y-5 w-full">
+        
+        <!-- CARD 1: MODO SIMULAÇÃO CLÍNICA -->
+        <div id="selectModeSimulationBtn" class="group relative bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white hover:from-emerald-100/80 hover:via-teal-100/60 hover:to-white border-2 border-emerald-300 hover:border-emerald-500 rounded-2xl p-5 sm:p-6 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start space-x-4">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-600 text-white flex-shrink-0 flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 transition-transform">
+              🎓
             </div>
-            <h2 class="text-lg font-black text-slate-900 tracking-tight">Escolha o seu Modo de Prática Clínica</h2>
-            <p class="text-xs text-slate-500">Selecione se deseja realizar um caso clínico simulado da disciplina ou iniciar o prontuário em branco de um atendimento presencial real.</p>
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">Modo Simulação Clínica</h2>
+                <span class="bg-emerald-100 text-emerald-800 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200">
+                  Casos da Disciplina & Pacientes Virtuais
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
+                Acesse as disciplinas e casos clínicos formulados pelo professor. Pratique anamnese interativa via chat com o paciente simulado e equipe multiprofissional, acompanhe exames bioquímicos e construa a conduta dietoterápica orientada.
+              </p>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <span id="activeWorkflowModeBadge" class="badge-clinical bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px]">
-              Modo Atual: 🎓 Simulação
+          <div class="w-full sm:w-auto flex-shrink-0 pt-2 sm:pt-0">
+            <span class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-emerald-600 group-hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-xs transition transform group-hover:translate-x-1">
+              <span>Acessar Disciplinas & Casos</span>
+              <span>➔</span>
             </span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- CARD 1: MODO SIMULAÇÃO CLÍNICA -->
-          <div id="selectModeSimulationBtn" class="group relative bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-white hover:from-emerald-100/80 hover:to-teal-50 border-2 border-emerald-300 hover:border-emerald-500 rounded-2xl p-5 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between">
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
-                  🎓
-                </div>
-                <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-emerald-200">
-                  Casos da Disciplina
-                </span>
-              </div>
-              <div>
-                <h3 class="text-base font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">Modo Simulação Clínica</h3>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Acesse os casos clínicos pré-configurados pelo professor, pratique anamnese interativa via chat com o paciente e equipe multiprofissional, e construa a conduta dietoterápica orientada.
-                </p>
-              </div>
+        <!-- CARD 2: MODO ATENDIMENTO REAL -->
+        <div id="selectModeRealBtn" class="group relative bg-gradient-to-r from-sky-50 via-indigo-50/50 to-white hover:from-sky-100/80 hover:via-indigo-100/60 hover:to-white border-2 border-sky-300 hover:border-sky-500 rounded-2xl p-5 sm:p-6 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-start space-x-4">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-sky-600 text-white flex-shrink-0 flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 transition-transform">
+              🩺
             </div>
-            <div class="mt-4 pt-3 border-t border-emerald-200/60 flex items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-800">
-              <span>Acessar Disciplinas & Casos Simulados</span>
-              <span class="transform group-hover:translate-x-1.5 transition-transform">➔</span>
-            </div>
-          </div>
-
-          <!-- CARD 2: MODO ATENDIMENTO REAL -->
-          <div id="selectModeRealBtn" class="group relative bg-gradient-to-br from-sky-50/70 via-indigo-50/40 to-white hover:from-sky-100/80 hover:to-indigo-50 border-2 border-sky-300 hover:border-sky-500 rounded-2xl p-5 cursor-pointer transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between">
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div class="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
-                  🩺
-                </div>
-                <span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-sky-200">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-bold text-slate-900 group-hover:text-sky-900 transition-colors">Modo Atendimento Real</h2>
+                <span class="bg-sky-100 text-sky-800 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-sky-200">
                   Prontuário em Branco
                 </span>
               </div>
-              <div>
-                <h3 class="text-base font-bold text-slate-900 group-hover:text-sky-900 transition-colors">Modo Atendimento Real</h3>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Registre uma consulta presencial real (ambulatorial ou hospitalar). Todas as etapas clínicas 100% liberadas, identificação do paciente, cálculo automático de IMC, tabela de interação droga-nutriente e emissão de relatório oficial Word.
-                </p>
-              </div>
-            </div>
-            <div class="mt-4 pt-3 border-t border-sky-200/60 flex items-center justify-between text-xs font-bold text-sky-700 group-hover:text-sky-800">
-              <span>Iniciar Novo Atendimento Real</span>
-              <span class="transform group-hover:translate-x-1.5 transition-transform">➔</span>
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
+                Registre uma consulta presencial real (ambulatorial ou hospitalar). Interface direta com prontuário clínico completo, identificação detalhada, histórico social, triagem nutricional condicional, exame físico estruturado, tabela de interação droga-nutriente e emissão de relatório oficial Word (.docx).
+              </p>
             </div>
           </div>
+          <div class="w-full sm:w-auto flex-shrink-0 pt-2 sm:pt-0">
+            <span class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-sky-600 group-hover:bg-sky-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-xs transition transform group-hover:translate-x-1">
+              <span>Iniciar Novo Atendimento Real</span>
+              <span>➔</span>
+            </span>
+          </div>
         </div>
-      </div>
 
-      <!-- VISÃO A: PORTAL DE DISCIPLINAS DO ALUNO (Visível inicialmente - Casos NÃO aparecem aqui) -->
+      </div>
+    </section>
+
+    <!-- 1. VITRINE / CATÁLOGO DE CASOS CLÍNICOS DO ALUNO (OCULTO INICIALMENTE - CARREGADO SOB DEMANDA) -->
+    <section id="studentCatalogSection" class="hidden space-y-4">
+      
+      <!-- VISÃO A: PORTAL DE DISCIPLINAS DO ALUNO (Visível após escolher Modo Simulação) -->
       <div id="studentDisciplinePortalSection" class="space-y-4">
+        
+        <!-- BARRA DE RETORNO AO DASHBOARD DE MODOS -->
+        <div class="flex items-center justify-between">
+          <button id="studentBackToLandingBtn" class="bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-300 transition flex items-center space-x-1.5 cursor-pointer shadow-2xs">
+            <span>⬅</span>
+            <span>Voltar à Escolha de Modos</span>
+          </button>
+          <span class="text-xs font-semibold text-slate-500 hidden sm:inline-block">
+            Modo Selecionado: <strong class="text-emerald-700">🎓 Simulação Clínica</strong>
+          </span>
+        </div>
         <!-- HERO BANNER DAS DISCIPLINAS -->
         <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="max-w-2xl">
@@ -310,7 +325,7 @@
             </button>
             <button id="realExportDocxTopBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition flex items-center space-x-1 shadow-2xs">
               <span>📄</span>
-              <span>Gerar Relatório (.docx)</span>
+              <span>Emitir Relatório (Word / PDF)</span>
             </button>
           </div>
           <span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded border border-emerald-200 font-medium text-[11px] hidden sm:inline-flex items-center space-x-1">
@@ -439,37 +454,95 @@
             </div>
           </div>
           <!-- IDENTIFICAÇÃO DO ATENDIMENTO REAL (CAMPOS DO PACIENTE E DIAGNÓSTICO MÉDICO OBRIGATÓRIO) -->
-          <div id="realPatientHeaderCard" class="hidden bg-gradient-to-r from-sky-50 via-indigo-50/40 to-white border-b-2 border-sky-300 p-3.5 space-y-2.5">
-            <div class="flex items-center justify-between">
+          <div id="realPatientHeaderCard" class="hidden bg-gradient-to-r from-sky-50 via-indigo-50/40 to-white border-b-2 border-sky-300 p-3.5 space-y-3 shadow-xs">
+            <div class="flex items-center justify-between border-b border-sky-200/80 pb-2">
               <div class="flex items-center space-x-2">
                 <span class="text-base">🩺</span>
-                <span class="font-black text-slate-800 text-xs uppercase tracking-wide">Identificação do Paciente Real & Diagnóstico de Base</span>
+                <span class="font-black text-slate-800 text-xs uppercase tracking-wide">Identificação do Paciente Real & Caracterização Clínica</span>
               </div>
               <span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-sky-300">
                 Atendimento Ambulatorial / Hospitalar
               </span>
             </div>
 
-            <!-- DADOS BÁSICOS DO PACIENTE REAL -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              <div>
-                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Nome / Iniciais do Paciente: *</label>
-                <input type="text" id="realPatName" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: M. S. A. ou Maria da Silva">
+            <!-- SUBDIVISÃO 1: IDENTIFICAÇÃO -->
+            <div class="bg-white/95 border border-slate-200 rounded-xl p-3 space-y-2">
+              <div class="flex items-center space-x-1.5 text-slate-700 font-bold text-xs">
+                <span>👤</span>
+                <span>1. Identificação do Paciente</span>
               </div>
-              <div>
-                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Idade: *</label>
-                <input type="number" id="realPatAge" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: 48">
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div class="col-span-2 sm:col-span-1">
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Nome / Iniciais: *</label>
+                  <input type="text" id="realPatName" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: M. S. A. ou Maria da Silva">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Idade: *</label>
+                  <input type="number" id="realPatAge" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium" placeholder="Ex: 48">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Gênero / Sexo: *</label>
+                  <select id="realPatGender" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium">
+                    <option value="Feminino">Feminino</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Naturalidade:</label>
+                  <input type="text" id="realPatNaturalidade" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: São Paulo - SP">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Procedência:</label>
+                  <input type="text" id="realPatProcedencia" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: Ambulatório Central / UBS">
+                </div>
               </div>
-              <div>
-                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Sexo / Gênero: *</label>
-                <select id="realPatGender" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium">
-                  <option value="Feminino">Feminino</option>
-                  <option value="Masculino">Masculino</option>
-                </select>
+            </div>
+
+            <!-- SUBDIVISÃO 2: HISTÓRICO SOCIAL -->
+            <div class="bg-white/95 border border-slate-200 rounded-xl p-3 space-y-2">
+              <div class="flex items-center space-x-1.5 text-slate-700 font-bold text-xs">
+                <span>🏠</span>
+                <span>2. Histórico Social & Ocupacional</span>
               </div>
-              <div>
-                <label class="block font-semibold text-slate-700 text-[10px] uppercase">Ocupação / Trabalho:</label>
-                <input type="text" id="realPatOccupation" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: Auxiliar administrativo">
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Estado Civil:</label>
+                  <select id="realPatEstadoCivil" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white">
+                    <option value="">Selecione...</option>
+                    <option value="Solteiro(a)">Solteiro(a)</option>
+                    <option value="Casado(a) / União Estável">Casado(a) / União Estável</option>
+                    <option value="Divorciado(a) / Separado(a)">Divorciado(a) / Separado(a)</option>
+                    <option value="Viúvo(a)">Viúvo(a)</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Renda Familiar:</label>
+                  <input type="text" id="realPatRenda" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: 2 salários mínimos">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Profissão / Ocupação:</label>
+                  <input type="text" id="realPatProfissao" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: Contador / Autônomo">
+                  <input type="hidden" id="realPatOccupation" value="">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Moradia:</label>
+                  <input type="text" id="realPatMoradia" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: Alvenaria, saneamento">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 text-[10px] uppercase">Escolaridade:</label>
+                  <select id="realPatEscolaridade" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white">
+                    <option value="">Selecione...</option>
+                    <option value="Ensino Fundamental Incompleto">Fundamental Incompleto</option>
+                    <option value="Ensino Fundamental Completo">Fundamental Completo</option>
+                    <option value="Ensino Médio Incompleto">Médio Incompleto</option>
+                    <option value="Ensino Médio Completo">Médio Completo</option>
+                    <option value="Ensino Superior Incompleto">Superior Incompleto</option>
+                    <option value="Ensino Superior Completo">Superior Completo</option>
+                    <option value="Pós-graduação">Pós-graduação</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -560,6 +633,51 @@
                 <p class="text-[10px] text-rose-800/80">Diagnóstico médico de base que orienta a linha de cuidado e o raciocínio dietoterápico.</p>
               </div>
 
+              <!-- CARACTERIZAÇÃO E HISTÓRICO SOCIAL NO PRONTUÁRIO -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <span>📋</span> <span>Caracterização do Paciente & Histórico Social</span>
+                  </span>
+                  <span class="text-[10px] text-slate-500">Dados demográficos e ocupacionais</span>
+                </div>
+                
+                <!-- Identificação e Histórico Social -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Naturalidade:</label>
+                    <input type="text" id="prontIdentNaturalidade" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Cidade / Estado natal">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Procedência:</label>
+                    <input type="text" id="prontIdentProcedencia" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Origem / Encaminhamento">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Estado Civil:</label>
+                    <input type="text" id="prontSocialEstadoCivil" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Solteiro, casado, etc.">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Renda Familiar:</label>
+                    <input type="text" id="prontSocialRenda" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Ex: 2 salários mínimos">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Profissão / Ocupação:</label>
+                    <input type="text" id="prontSocialProfissao" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Atividade profissional">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Moradia e Saneamento:</label>
+                    <input type="text" id="prontSocialMoradia" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Tipo de habitação / infraestrutura">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[10px] uppercase">Escolaridade:</label>
+                    <input type="text" id="prontSocialEscolaridade" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white" placeholder="Grau de instrução">
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Queixa Principal (relatada pelo paciente):</label>
                 <input type="text" id="prontQueixaPrincipal" class="w-full border border-slate-300 rounded p-2" placeholder="Descreva a queixa que trouxe o paciente à consulta">
@@ -583,6 +701,71 @@
               <div class="flex items-center justify-between border-b pb-1">
                 <h4 class="font-bold text-slate-800 text-sm">Avaliação Antropométrica e Estado Nutricional</h4>
                 <span class="text-[11px] text-slate-500">Manejo Convencional ou Alternativo (Chumlea)</span>
+              </div>
+              
+              <!-- SUBSEÇÃO NO TOPO: TRIAGEM NUTRICIONAL -->
+              <div id="triagemNutricionalSection" class="bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white border border-amber-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">📋</span>
+                    <div>
+                      <h5 class="font-bold text-slate-800 text-xs uppercase tracking-wide">Triagem Nutricional de Admissão</h5>
+                      <p class="text-[10px] text-slate-500">Classificação inicial do risco nutricional no momento do atendimento</p>
+                    </div>
+                  </div>
+                  
+                  <!-- SELETOR AMBULATÓRIO VS HOSPITALAR -->
+                  <div class="flex items-center space-x-3 bg-white border border-amber-300 rounded-lg p-1 text-xs shadow-2xs">
+                    <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-0.5 rounded font-bold text-slate-700 hover:text-amber-800">
+                      <input type="radio" name="prontTriagemTipoRadio" value="ambulatorio" id="prontTriagemTipoAmb" class="text-amber-600 focus:ring-amber-500" checked>
+                      <span>Ambulatório</span>
+                    </label>
+                    <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-0.5 rounded font-bold text-slate-700 hover:text-amber-800">
+                      <input type="radio" name="prontTriagemTipoRadio" value="hospitalar" id="prontTriagemTipoHosp" class="text-amber-600 focus:ring-amber-500">
+                      <span>Hospitalar</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- NOTA AMBULATÓRIO -->
+                <div id="triagemAmbulatorialMsg" class="text-[11px] text-slate-600 bg-amber-50/60 border border-amber-100 rounded-lg p-2 flex items-center space-x-2">
+                  <span>ℹ️</span>
+                  <span><strong>Modalidade Ambulatorial:</strong> Triagem de risco nutricional hospitalar dispensada. Prossiga com a avaliação antropométrica direta ou estimativas indiretas abaixo.</span>
+                </div>
+
+                <!-- BLOCO CONDICIONAL HOSPITALAR (EXIBIDO SOMENTE SE HOSPITALAR) -->
+                <div id="triagemHospitalarContainer" class="hidden bg-white border border-amber-300 rounded-xl p-3 space-y-2.5 shadow-2xs">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <span>🏥</span>
+                      <span>Triagem Nutricional Hospitalar (Campos Obrigatórios):</span>
+                    </span>
+                    <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-300">
+                      Obrigatório para Paciente Hospitalar
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label class="block font-semibold text-slate-700 text-xs mb-1">
+                        Triagem Utilizada: * <span class="text-[10px] text-slate-400 font-normal">(ex: NRS-2002, MUST, etc.)</span>
+                      </label>
+                      <input type="text" id="prontTriagemFerramenta" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-amber-600 focus:ring-1 focus:ring-amber-600" placeholder="Ex: NRS-2002 ou MUST">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 text-xs mb-1">
+                        Pontuação: * <span class="text-[10px] text-slate-400 font-normal">(Escore numérico)</span>
+                      </label>
+                      <input type="number" inputmode="numeric" id="prontTriagemPontuacao" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-amber-600 focus:ring-1 focus:ring-amber-600" placeholder="Ex: 3">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-700 text-xs mb-1">
+                        Diagnóstico da Triagem: * <span class="text-[10px] text-slate-400 font-normal">(Texto livre)</span>
+                      </label>
+                      <input type="text" id="prontTriagemDiagnostico" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-amber-600 focus:ring-1 focus:ring-amber-600" placeholder="Ex: Em Risco Nutricional Alto">
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <!-- SEÇÃO 1: ANTROPOMETRIA CONVENCIONAL (NÃO OBRIGATÓRIA) -->
@@ -820,20 +1003,143 @@
             </div>
 
             <!-- ABA 4: EXAME FÍSICO -->
-            <div id="tab-content-examefisico" class="student-tab-content hidden space-y-3">
-              <h4 class="font-bold text-slate-800 text-sm border-b pb-1">Exame Físico Nutricional e Sinais Clínicos</h4>
-              <div>
-                <label class="block font-semibold text-slate-700 mb-1">Sinais Clínicos de Carência ou Toxicidade Nutricional:</label>
-                <input type="text" id="prontSinaisClinicos" class="w-full border border-slate-300 rounded p-2" placeholder="Pele, cabelos, unhas, acantose nigricans, integridade de mucosas...">
+            <div id="tab-content-examefisico" class="student-tab-content hidden space-y-4">
+              <div class="border-b pb-1">
+                <h4 class="font-bold text-slate-800 text-sm">Exame Físico Nutricional e Sinais Clínicos</h4>
+                <p class="text-[11px] text-slate-500">Semiologia clínica nutricional estruturada por órgãos/sistemas e compartimentos corporais.</p>
               </div>
-              <div>
-                <label class="block font-semibold text-slate-700 mb-1">Avaliação da Massa Muscular e Tecido Adiposo:</label>
-                <textarea id="prontMassaMuscular" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Fossa temporal, clavículas, escápulas, quadríceps, bola de Bichat..."></textarea>
+
+              <!-- PARTE A - AVALIAÇÃO DOS ÓRGÃOS E SISTEMAS -->
+              <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">🫀</span>
+                    <h5 class="font-bold text-slate-800 text-xs uppercase tracking-wide">Parte A - Avaliação dos Órgãos e Sistemas</h5>
+                  </div>
+                  <span class="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded">6 Sistemas Clínicos</span>
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                  <table class="min-w-full divide-y divide-slate-200 text-xs">
+                    <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th scope="col" class="py-2.5 px-3 w-1/4">Sistema / Aparelho</th>
+                        <th scope="col" class="py-2.5 px-3 w-3/4">Achados Clínico-Nutricionais (Texto Livre)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>🧠</span> <span>Neurológico</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Consciência, orientação, deglutição</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameNeurologico" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Consciente, orientado no tempo e espaço, deglutição preservada, sem déficits focais...">
+                        </td>
+                      </tr>
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>🫁</span> <span>Respiratório</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Padrão ventilatório, murmúrios, O2</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameRespiratorio" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Eupneico em ar ambiente, tórax simétrico, murmúrios vesiculares presentes sem ruídos adventícios...">
+                        </td>
+                      </tr>
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>❤️</span> <span>Circulatório</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Pressão arterial, pulso, perfusão</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameCirculatorio" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Normotenso (PA 120/80 mmHg), normocárdico (FC 72 bpm), boa perfusão periférica, pulsos palpáveis...">
+                        </td>
+                      </tr>
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>🥣</span> <span>Digestório</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Abdome, ruídos hidroaéreos, evacuação</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameDigestorio" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Abdome flácido e indolor, RHA normoativos, hábito intestinal diário preservado (Bristol tipo 4)...">
+                        </td>
+                      </tr>
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>💧</span> <span>Urinário</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Diurese, volume, aspecto, queixas</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameUrinario" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Diurese espontânea preservada, urina amarelo-clara límpida, sem disúria ou alterações de débito...">
+                        </td>
+                      </tr>
+                      <tr class="hover:bg-slate-50/50">
+                        <td class="py-2 px-3 font-semibold text-slate-800 align-top bg-slate-50/40">
+                          <span class="flex items-center gap-1"><span>💪</span> <span>Muscular</span></span>
+                          <span class="block text-[10px] text-slate-400 font-normal">Tônus, força global, trofismo</span>
+                        </td>
+                        <td class="py-2 px-3">
+                          <input type="text" id="prontExameMuscular" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" placeholder="Ex: Trofismo muscular global preservado, força motriz e tônus simétricos, sem atrofias ou fadiga...">
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div>
-                <label class="block font-semibold text-slate-700 mb-1">Condições Orais, Trato Gastrointestinal e Edemas:</label>
-                <textarea id="prontTGIEdemas" class="w-full border border-slate-300 rounded p-2" rows="2" placeholder="Mastigação, deglutição, dentição/prótese, náuseas, vômitos, edema periférico, ascite..."></textarea>
+
+              <!-- PARTE B - SEMIOLOGIA NUTRICIONAL (EXAME FÍSICO POR COMPARTIMENTOS) -->
+              <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">📐</span>
+                    <h5 class="font-bold text-slate-800 text-xs uppercase tracking-wide">Parte B - Semiologia Nutricional (Exame Físico por Compartimentos)</h5>
+                  </div>
+                  <span class="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded">Descrição Minuciosa</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <!-- COMPARTIMENTO 1: CABEÇA -->
+                  <div class="bg-slate-50/60 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                    <label class="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span class="flex items-center gap-1"><span>👤</span> <span>Cabeça:</span></span>
+                      <span class="text-[10px] text-slate-400 font-normal">Temporal, bola de Bichat, cabelos, mucosas</span>
+                    </label>
+                    <textarea id="prontExameCabeca" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:border-emerald-500" rows="3" placeholder="Fossa temporal, bola gordurosa de Bichat, aspecto dos cabelos (brilho, tração), unhas, conjuntivas coradas, hidratação das mucosas, integridade dental e gengival..."></textarea>
+                  </div>
+
+                  <!-- COMPARTIMENTO 2: TRONCO -->
+                  <div class="bg-slate-50/60 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                    <label class="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span class="flex items-center gap-1"><span>👕</span> <span>Tronco:</span></span>
+                      <span class="text-[10px] text-slate-400 font-normal">Clavículas, escápulas, tórax, abdome</span>
+                    </label>
+                    <textarea id="prontExameTronco" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:border-emerald-500" rows="3" placeholder="Clavículas e acrômio, arcos costais, escápulas, tecido adiposo abdominal e dorsal, ausência de ascite..."></textarea>
+                  </div>
+
+                  <!-- COMPARTIMENTO 3: MMSS -->
+                  <div class="bg-slate-50/60 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                    <label class="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span class="flex items-center gap-1"><span>🦾</span> <span>MMSS (Membros Superiores):</span></span>
+                      <span class="text-[10px] text-slate-400 font-normal">Bíceps, tríceps, mãos, unhas, preensão</span>
+                    </label>
+                    <textarea id="prontExameMMSS" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:border-emerald-500" rows="3" placeholder="Massa e tônus muscular em bíceps e tríceps, prega cutânea tricipital, proeminência óssea das mãos, formato das unhas, força de preensão palmar..."></textarea>
+                  </div>
+
+                  <!-- COMPARTIMENTO 4: MMII -->
+                  <div class="bg-slate-50/60 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                    <label class="block font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span class="flex items-center gap-1"><span>🦵</span> <span>MMII (Membros Inferiores):</span></span>
+                      <span class="text-[10px] text-slate-400 font-normal">Quadríceps, panturrilhas, edemas, cacifo</span>
+                    </label>
+                    <textarea id="prontExameMMII" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:border-emerald-500" rows="3" placeholder="Trofismo muscular de quadríceps e patela, panturrilhas (turgor e circunferência), pesquisa de edema maleolar e pré-tibial (sinal de Godet/cacifo), perfusão distal..."></textarea>
+                  </div>
+                </div>
               </div>
+
+              <!-- CAMPOS OCULTOS PARA COMPATIBILIDADE RETROATIVA COM CASOS SIMULADOS -->
+              <input type="hidden" id="prontSinaisClinicos" value="">
+              <input type="hidden" id="prontMassaMuscular" value="">
+              <input type="hidden" id="prontTGIEdemas" value="">
             </div>
 
             <!-- ABA: INTERAÇÃO DROGA-NUTRIENTE -->
@@ -856,19 +1162,19 @@
               <div class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-3 space-y-2">
                 <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider block">Sugestões Rápidas de Interações Farmacológicas Comuns:</span>
                 <div class="flex flex-wrap gap-1.5 text-[11px]" id="drugInteractionChips">
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Metformina (850mg)" data-nutr="Depleção crônica de Vitamina B12 e Ácido Fólico" data-cond="Monitorar níveis séricos anuais de Vitamina B12 e suplementar se limítrofe (< 300 pg/mL). Administrar junto às principais refeições.">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Metformina (850mg)" data-classe="Biguanida / Antidiabético Oral" data-inter="Diminui a absorção ileal de Vitamina B12 e Ácido Fólico. Monitorar dosagem sérica anual de B12 e suplementar se necessário. Administrar junto com as refeições.">
                     💊 Metformina &rarr; Vitamina B12
                   </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Furosemida (40mg)" data-nutr="Espoliação urinária de Potássio (K), Magnésio (Mg), Cálcio e Tiamina" data-cond="Aumentar ingestão de fontes alimentares de potássio (banana, água de coco, batata) e magnésio. Monitorar eletrólitos séricos.">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Furosemida (40mg)" data-classe="Diurético de Alça" data-inter="Espoliação urinária de Potássio (K), Magnésio (Mg), Cálcio e Tiamina. Estimular fontes de potássio e magnésio na dieta; acompanhar eletrólitos séricos.">
                     💊 Furosemida &rarr; K, Mg e Ca
                   </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Varfarina Sódica" data-nutr="Antagonismo competitivo com Vitamina K (fatores de coagulação dependentes)" data-cond="Manter consumo dietético rigorosamente constante de vegetais verde-escuros (evitar oscilações bruscas). Não suspender nem concentrar.">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Varfarina Sódica" data-classe="Anticoagulante Cumarínico (Antagonista Vitamina K)" data-inter="Interação competitiva direta com a Vitamina K. Manter consumo dietético rigorosamente constante de vegetais verde-escuros, sem variações abruptas de aporte.">
                     💊 Varfarina &rarr; Vitamina K
                   </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Omeprazol / IBPs (40mg)" data-nutr="Hipocloridria reduz absorção de Vitamina B12, Ferro não-heme, Cálcio e Magnésio" data-cond="Administrar 30 a 60 minutos antes do café da manhã em jejum. Priorizar citrato de cálcio e fontes heme de ferro se necessário.">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Omeprazol / IBPs (40mg)" data-classe="Inibidor da Bomba de Prótons (IBP)" data-inter="Hipocloridria gástrica induzida prejudica a ionização e absorção de Vitamina B12, Ferro não-heme, Cálcio e Magnésio. Administrar em jejum matinal.">
                     💊 Omeprazol &rarr; B12, Fe, Ca
                   </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Levotiroxina Sódica" data-nutr="Quelação e inibição da absorção ileal por Cálcio, Ferro, Soja e Fibras alimentares" data-cond="Administrar em jejum absoluto com água, aguardar 30 a 60 min para alimentar-se. Separar suplementos de Ca e Fe por pelo menos 4 horas.">
+                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Levotiroxina Sódica" data-classe="Hormônio Tireoidiano Sintético (T4)" data-inter="Quelação e inibição da absorção por Cálcio, Ferro, Soja e Fibras alimentares. Administrar em jejum com água; aguardar 30 a 60 min para alimentar-se.">
                     💊 Levotiroxina &rarr; Ca, Fe, Fibras
                   </button>
                 </div>
@@ -879,10 +1185,10 @@
                 <table class="min-w-full divide-y divide-slate-200 text-left text-xs" id="drugNutrientTable">
                   <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
                     <tr>
-                      <th scope="col" class="py-3 px-3 w-1/4">Medicamento em Uso / Fármaco</th>
-                      <th scope="col" class="py-3 px-3 w-1/3">Nutrientes Afetados / Mecanismo</th>
-                      <th scope="col" class="py-3 px-3 w-1/3">Conduta Nutricional / Horário</th>
-                      <th scope="col" class="py-3 px-2 text-center w-16">Ação</th>
+                      <th scope="col" class="py-3 px-3 w-1/3">Medicação (Nome do remédio em uso)</th>
+                      <th scope="col" class="py-3 px-3 w-1/4">Classificação (Classe farmacológica)</th>
+                      <th scope="col" class="py-3 px-3 w-5/12">Interação (Descrição manual da interação com nutrientes)</th>
+                      <th scope="col" class="py-3 px-2 text-center w-14">Ação</th>
                     </tr>
                   </thead>
                   <tbody id="drugNutrientTableBody" class="divide-y divide-slate-100">
@@ -1219,24 +1525,49 @@
               </div>
             </div>
 
-            <!-- ABA 7: CÁLCULOS DE NECESSIDADES ENERGÉTICAS -->
+            <!-- ABA 7: CÁLCULOS DE NECESSIDADES ENERGÉTICAS (FÓRMULAS ABERTAS INTERATIVAS) -->
             <div id="tab-content-necessidades" class="student-tab-content hidden space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
                 <div>
                   <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
                     <span>🔥</span>
-                    <span>Estimativa de Necessidades Energéticas (Fórmulas Preditivas)</span>
+                    <span>Estimativa de Necessidades Energéticas (Fórmulas Preditivas Abertas)</span>
                   </h4>
-                  <p class="text-slate-500 text-[11px] mt-0.5">Selecione até 3 equações preditivas para calcular manualmente e comparar os resultados.</p>
+                  <p class="text-slate-500 text-[11px] mt-0.5">Selecione até 3 equações. Preencha as caixas de digitação numérica com os dados do paciente para acompanhar o desenvolvimento matemático do GEB/EER e VET.</p>
                 </div>
-                <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
-                  <span>Fórmulas selecionadas:</span>
-                  <span id="calcFormulasSelectedCount" class="text-emerald-900 font-extrabold text-sm">0</span>
-                  <span>/ 3</span>
+                <div class="flex items-center space-x-2">
+                  <button type="button" id="calcAutoPreencherAntropometriaBtn" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition active:scale-95 cursor-pointer" title="Preenche as variáveis das fórmulas abertas com peso, altura e idade do paciente">
+                    <span>📋</span>
+                    <span>Puxar Dados do Paciente</span>
+                  </button>
+                  <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                    <span>Fórmulas:</span>
+                    <span id="calcFormulasSelectedCount" class="text-emerald-900 font-extrabold text-sm">0</span>
+                    <span>/ 3</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- LISTA DAS 5 EQUAÇÕES PREDITIVAS -->
+              <!-- BARRA DE CONDICIONAMENTO: GÊNERO DO PACIENTE -->
+              <div class="bg-slate-100/80 border border-slate-200 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-700 flex items-center space-x-1">
+                    <span>👤</span>
+                    <span>Gênero do Paciente:</span>
+                  </span>
+                  <select id="calcPacienteGeneroSelect" class="border border-slate-300 rounded-lg px-2.5 py-1 bg-white font-semibold text-slate-800 focus:ring-1 focus:ring-emerald-500 text-xs cursor-pointer">
+                    <option value="Masculino">Masculino 👨</option>
+                    <option value="Feminino">Feminino 👩</option>
+                  </select>
+                  <span class="text-[11px] text-slate-500 italic">(Alterna dinamicamente as equações de Harris-Benedict e Mifflin)</span>
+                </div>
+                <div class="text-[11px] text-slate-500 flex items-center space-x-1">
+                  <span>💡</span>
+                  <span>O VET de cada fórmula é obtido multiplicando o gasto basal pelo Fator Atividade (FA) e Fator Injúria (FI).</span>
+                </div>
+              </div>
+
+              <!-- LISTA DAS 5 EQUAÇÕES PREDITIVAS ABERTAS -->
               <div class="space-y-3" id="calcFormulasListContainer">
                 
                 <!-- 1. FÓRMULA DE BOLSO -->
@@ -1250,109 +1581,477 @@
                           <span>Fórmula de Bolso (Regra Prática)</span>
                           <span class="badge-clinical bg-amber-50 text-amber-800 border border-amber-200 text-[10px] py-0 px-1.5">kcal/kg</span>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Estimativa rápida baseada no peso corporal (ex: 20-25 kcal/kg para perda, 25-30 manutenção, 30-35 ganho/hipermetabolismo).</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Estimativa direta do VET multiplicando a faixa de calorias recomendada pelo peso corporal.</p>
                       </div>
                     </label>
                   </div>
 
-                  <!-- Inputs exclusivos da Fórmula de Bolso (Faixa Min/Max e Resultado) -->
-                  <div id="calcBolsoFieldsContainer" class="hidden pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-2.5 rounded-lg">
-                    <div>
-                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Faixa Mínima (kcal/kg):</label>
-                      <input type="number" id="calcBolsoMinKcalKg" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white focus:border-emerald-500" placeholder="Ex: 25" min="10" max="60" step="0.5">
+                  <!-- Container Aberto Interativo -->
+                  <div id="calcBolsoFieldsContainer" class="hidden pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 p-3 rounded-lg">
+                    <!-- Equação Aberta -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider mb-2">Estrutura da Equação Aberta:</div>
+                      <div class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-emerald-700">VET Faixa = [</span>
+                        <input type="number" id="calcBolsoMinKcalKg" class="calc-bolso-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-emerald-50/40 border border-emerald-300 rounded shadow-2xs focus:ring-2 focus:ring-emerald-500" placeholder="Kcal Mín" min="10" max="60" step="0.5">
+                        <span class="text-slate-500">a</span>
+                        <input type="number" id="calcBolsoMaxKcalKg" class="calc-bolso-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-emerald-50/40 border border-emerald-300 rounded shadow-2xs focus:ring-2 focus:ring-emerald-500" placeholder="Kcal Máx" min="10" max="60" step="0.5">
+                        <span>] kcal ×</span>
+                        <input type="number" id="calcBolsoPeso" class="calc-bolso-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-emerald-50/40 border border-emerald-300 rounded shadow-2xs focus:ring-2 focus:ring-emerald-500" placeholder="Peso (kg)" min="10" max="300" step="0.1">
+                        <span>kg</span>
+                      </div>
                     </div>
-                    <div>
-                      <label class="block font-semibold text-slate-700 text-[11px] mb-1">Faixa Máxima (kcal/kg):</label>
-                      <input type="number" id="calcBolsoMaxKcalKg" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white focus:border-emerald-500" placeholder="Ex: 30" min="10" max="60" step="0.5">
+
+                    <!-- Resolução e Adoção do VET -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <span class="block text-[11px] font-semibold text-slate-600 mb-1">Faixa Calculada do VET:</span>
+                        <span id="calcBolsoFaixaDisp" class="text-xs sm:text-sm font-bold text-slate-800 font-mono">-- a -- kcal/dia</span>
+                      </div>
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <label class="block text-[11px] font-bold text-emerald-800 mb-1">VET Final Calculado/Adotado:</label>
+                        <input type="number" id="calcBolsoResultadoKcal" class="w-full border border-emerald-300 rounded px-2 py-1 text-xs sm:text-sm font-bold text-emerald-900 bg-emerald-50/20 focus:border-emerald-500" placeholder="Ex: 1850" min="500" max="6000" step="1">
+                      </div>
+                      <div>
+                        <button type="button" class="btn-adotar-vet w-full px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1" data-target="calcBolsoResultadoKcal">
+                          <span>🎯</span>
+                          <span>Adotar este VET</span>
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label class="block font-semibold text-emerald-800 text-[11px] mb-1">Resultado Calculado (kcal/dia):</label>
-                      <input type="number" id="calcBolsoResultadoKcal" class="w-full border border-emerald-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1850" min="500" max="6000" step="1">
+
+                    <!-- Linha descritiva gravada -->
+                    <div id="calcBolsoDescritivo" class="text-[11px] font-mono text-emerald-900 bg-emerald-50 border border-emerald-200 p-2 rounded-lg">
+                      Aguardando preenchimento das variáveis...
                     </div>
                   </div>
                 </div>
 
                 <!-- 2. HARRIS-BENEDICT -->
-                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-blue-300">
                   <div class="flex items-start justify-between gap-2">
                     <label class="flex items-start space-x-2.5 cursor-pointer select-none">
-                      <input type="checkbox" id="calcFormulaHarrisCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="harrisBenedict">
+                      <input type="checkbox" id="calcFormulaHarrisCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" data-formula="harrisBenedict">
                       <div>
                         <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
-                          <span class="text-emerald-700 font-semibold">2.</span>
-                          <span>Harris-Benedict (1919 / 1984)</span>
+                          <span class="text-blue-700 font-semibold">2.</span>
+                          <span>Harris-Benedict (1919)</span>
                           <span class="badge-clinical bg-blue-50 text-blue-800 border border-blue-200 text-[10px] py-0 px-1.5">GEB × FA × FI</span>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Cálculo do Gasto Energético Basal por peso, estatura e idade, corrigido por Fator Atividade e Fator Injúria.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Cálculo do Gasto Energético Basal (GEB) condicionado ao sexo, corrigido por Fator Atividade e Injúria.</p>
                       </div>
                     </label>
                   </div>
-                  <div id="calcHarrisFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
-                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
-                    <input type="number" id="calcHarrisResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1780" min="500" max="6000" step="1">
+
+                  <!-- Container Aberto Interativo -->
+                  <div id="calcHarrisFieldsContainer" class="hidden pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 p-3 rounded-lg">
+                    <!-- Equação Aberta GEB (Alterna Masc/Fem) -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do GEB (Gasto Energético Basal):</span>
+                        <span id="calcHarrisGeneroBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">Gênero: Masculino</span>
+                      </div>
+
+                      <!-- Linha Masculina -->
+                      <div id="calcHarrisMascFormula" class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-blue-700">GEB = 66,5 + ( 13,75 ×</span>
+                        <input type="number" id="calcHarrisPeso" class="calc-harris-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-blue-50/40 border border-blue-300 rounded shadow-2xs focus:ring-2 focus:ring-blue-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>kg ) + ( 5,0 ×</span>
+                        <input type="number" id="calcHarrisAltura" class="calc-harris-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-blue-50/40 border border-blue-300 rounded shadow-2xs focus:ring-2 focus:ring-blue-500" placeholder="Altura cm" min="50" max="250" step="0.5">
+                        <span>cm ) - ( 6,78 ×</span>
+                        <input type="number" id="calcHarrisIdade" class="calc-harris-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-blue-50/40 border border-blue-300 rounded shadow-2xs focus:ring-2 focus:ring-blue-500" placeholder="Idade" min="1" max="130" step="1">
+                        <span>anos )</span>
+                      </div>
+
+                      <!-- Linha Feminina -->
+                      <div id="calcHarrisFemFormula" class="hidden flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-pink-700">GEB = 655,1 + ( 9,56 ×</span>
+                        <input type="number" id="calcHarrisPesoFem" class="calc-harris-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>kg ) + ( 1,85 ×</span>
+                        <input type="number" id="calcHarrisAlturaFem" class="calc-harris-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Altura cm" min="50" max="250" step="0.5">
+                        <span>cm ) - ( 4,68 ×</span>
+                        <input type="number" id="calcHarrisIdadeFem" class="calc-harris-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Idade" min="1" max="130" step="1">
+                        <span>anos )</span>
+                      </div>
+
+                      <!-- Subtotal GEB -->
+                      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Resultado Parcial do GEB:</span>
+                        <span class="font-mono font-black text-blue-800 text-sm"><span id="calcHarrisGebDisp">--</span> kcal/dia</span>
+                      </div>
+                    </div>
+
+                    <!-- Fatores de Correção e Cálculo do VET -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs space-y-2">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do VET (GEB × FA × FI):</div>
+                      <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-blue-700">VET =</span>
+                        <span class="bg-slate-100 px-2 py-1 rounded text-slate-700 font-bold" id="calcHarrisGebRef">GEB (-- kcal)</span>
+                        <span>× [</span>
+                        <input type="number" id="calcHarrisFa" class="calc-harris-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-blue-50/40 border border-blue-300 rounded shadow-2xs focus:ring-2 focus:ring-blue-500" placeholder="FA" value="1.2" min="1.0" max="2.5" step="0.05" title="Fator de Atividade Física">
+                        <span class="text-[11px] text-slate-500 font-sans">FA</span>
+                        <span>] × [</span>
+                        <input type="number" id="calcHarrisFi" class="calc-harris-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-blue-50/40 border border-blue-300 rounded shadow-2xs focus:ring-2 focus:ring-blue-500" placeholder="FI" value="1.0" min="1.0" max="2.5" step="0.05" title="Fator de Injúria / Estresse">
+                        <span class="text-[11px] text-slate-500 font-sans">FI</span>
+                        <span>]</span>
+                      </div>
+                    </div>
+
+                    <!-- Resolução VET e Botão de Adoção -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <label class="block text-[11px] font-bold text-blue-800 mb-1">VET Final Calculado pela Equação:</label>
+                        <input type="number" id="calcHarrisResultadoKcal" class="w-full border border-blue-300 rounded px-2 py-1 text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/20 focus:border-blue-500" placeholder="Ex: 1780" min="500" max="6000" step="1">
+                      </div>
+                      <div>
+                        <button type="button" class="btn-adotar-vet w-full px-3 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1" data-target="calcHarrisResultadoKcal">
+                          <span>🎯</span>
+                          <span>Adotar este VET</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Linha descritiva gravada -->
+                    <div id="calcHarrisDescritivo" class="text-[11px] font-mono text-blue-950 bg-blue-50 border border-blue-200 p-2 rounded-lg">
+                      Aguardando preenchimento das variáveis...
+                    </div>
                   </div>
                 </div>
 
                 <!-- 3. MIFFLIN-ST JEOR -->
-                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-teal-300">
                   <div class="flex items-start justify-between gap-2">
                     <label class="flex items-start space-x-2.5 cursor-pointer select-none">
-                      <input type="checkbox" id="calcFormulaMifflinCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="mifflin">
+                      <input type="checkbox" id="calcFormulaMifflinCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer" data-formula="mifflin">
                       <div>
                         <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
-                          <span class="text-emerald-700 font-semibold">3.</span>
+                          <span class="text-teal-700 font-semibold">3.</span>
                           <span>Mifflin-St Jeor (1990)</span>
                           <span class="badge-clinical bg-teal-50 text-teal-800 border border-teal-200 text-[10px] py-0 px-1.5">Recomendada AND</span>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Altamente acurada para adultos eutróficos e obesos, integrando TMB multiplicada pelo NAF.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Diretriz da Academy of Nutrition and Dietetics para adultos eutróficos e obesos.</p>
                       </div>
                     </label>
                   </div>
-                  <div id="calcMifflinFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
-                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
-                    <input type="number" id="calcMifflinResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1820" min="500" max="6000" step="1">
-                  </div>
-                </div>
 
-                <!-- 4. EER / IOM -->
-                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
-                  <div class="flex items-start justify-between gap-2">
-                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
-                      <input type="checkbox" id="calcFormulaEerCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="eerIom">
-                      <div>
-                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
-                          <span class="text-emerald-700 font-semibold">4.</span>
-                          <span>EER / IOM (DRI 2002 / 2005)</span>
-                          <span class="badge-clinical bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] py-0 px-1.5">Institute of Medicine</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Equação de Necessidade Estimada de Energia com Coeficiente de Atividade Física (CAF) ponderado.</p>
+                  <!-- Container Aberto Interativo -->
+                  <div id="calcMifflinFieldsContainer" class="hidden pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 p-3 rounded-lg">
+                    <!-- Equação Aberta GEB -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do GEB / TMB:</span>
+                        <span id="calcMifflinGeneroBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200">Gênero: Masculino</span>
                       </div>
-                    </label>
-                  </div>
-                  <div id="calcEerFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
-                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
-                    <input type="number" id="calcEerResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1910" min="500" max="6000" step="1">
+
+                      <!-- Linha Masculina: GEB = (10 × P) + (6.25 × A) - (5 × I) + 5 -->
+                      <div id="calcMifflinMascFormula" class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-teal-700">GEB = ( 10 ×</span>
+                        <input type="number" id="calcMifflinPeso" class="calc-mifflin-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-teal-50/40 border border-teal-300 rounded shadow-2xs focus:ring-2 focus:ring-teal-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>kg ) + ( 6,25 ×</span>
+                        <input type="number" id="calcMifflinAltura" class="calc-mifflin-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-teal-50/40 border border-teal-300 rounded shadow-2xs focus:ring-2 focus:ring-teal-500" placeholder="Altura cm" min="50" max="250" step="0.5">
+                        <span>cm ) - ( 5 ×</span>
+                        <input type="number" id="calcMifflinIdade" class="calc-mifflin-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-teal-50/40 border border-teal-300 rounded shadow-2xs focus:ring-2 focus:ring-teal-500" placeholder="Idade" min="1" max="130" step="1">
+                        <span>anos ) + 5</span>
+                      </div>
+
+                      <!-- Linha Feminina: GEB = (10 × P) + (6.25 × A) - (5 × I) - 161 -->
+                      <div id="calcMifflinFemFormula" class="hidden flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-pink-700">GEB = ( 10 ×</span>
+                        <input type="number" id="calcMifflinPesoFem" class="calc-mifflin-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>kg ) + ( 6,25 ×</span>
+                        <input type="number" id="calcMifflinAlturaFem" class="calc-mifflin-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Altura cm" min="50" max="250" step="0.5">
+                        <span>cm ) - ( 5 ×</span>
+                        <input type="number" id="calcMifflinIdadeFem" class="calc-mifflin-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-pink-50/40 border border-pink-300 rounded shadow-2xs focus:ring-2 focus:ring-pink-500" placeholder="Idade" min="1" max="130" step="1">
+                        <span>anos ) - 161</span>
+                      </div>
+
+                      <!-- Subtotal GEB -->
+                      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Resultado Parcial do GEB:</span>
+                        <span class="font-mono font-black text-teal-800 text-sm"><span id="calcMifflinGebDisp">--</span> kcal/dia</span>
+                      </div>
+                    </div>
+
+                    <!-- Fatores de Correção e Cálculo do VET -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs space-y-2">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do VET (GEB × FA × FI):</div>
+                      <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-teal-700">VET =</span>
+                        <span class="bg-slate-100 px-2 py-1 rounded text-slate-700 font-bold" id="calcMifflinGebRef">GEB (-- kcal)</span>
+                        <span>× [</span>
+                        <input type="number" id="calcMifflinFa" class="calc-mifflin-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-teal-50/40 border border-teal-300 rounded shadow-2xs focus:ring-2 focus:ring-teal-500" placeholder="FA" value="1.2" min="1.0" max="2.5" step="0.05" title="Fator de Atividade Física">
+                        <span class="text-[11px] text-slate-500 font-sans">FA</span>
+                        <span>] × [</span>
+                        <input type="number" id="calcMifflinFi" class="calc-mifflin-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-teal-50/40 border border-teal-300 rounded shadow-2xs focus:ring-2 focus:ring-teal-500" placeholder="FI" value="1.0" min="1.0" max="2.5" step="0.05" title="Fator de Injúria / Estresse">
+                        <span class="text-[11px] text-slate-500 font-sans">FI</span>
+                        <span>]</span>
+                      </div>
+                    </div>
+
+                    <!-- Resolução VET e Botão de Adoção -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <label class="block text-[11px] font-bold text-teal-800 mb-1">VET Final Calculado pela Equação:</label>
+                        <input type="number" id="calcMifflinResultadoKcal" class="w-full border border-teal-300 rounded px-2 py-1 text-xs sm:text-sm font-bold text-teal-900 bg-teal-50/20 focus:border-teal-500" placeholder="Ex: 1820" min="500" max="6000" step="1">
+                      </div>
+                      <div>
+                        <button type="button" class="btn-adotar-vet w-full px-3 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-2xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1" data-target="calcMifflinResultadoKcal">
+                          <span>🎯</span>
+                          <span>Adotar este VET</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Linha descritiva gravada -->
+                    <div id="calcMifflinDescritivo" class="text-[11px] font-mono text-teal-950 bg-teal-50 border border-teal-200 p-2 rounded-lg">
+                      Aguardando preenchimento das variáveis...
+                    </div>
                   </div>
                 </div>
 
-                <!-- 5. FAO / OMS -->
-                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-emerald-300">
+                <!-- 4. FAO / OMS -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-purple-300">
                   <div class="flex items-start justify-between gap-2">
                     <label class="flex items-start space-x-2.5 cursor-pointer select-none">
-                      <input type="checkbox" id="calcFormulaFaoCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" data-formula="faoOms">
+                      <input type="checkbox" id="calcFormulaFaoCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer" data-formula="faoOms">
                       <div>
                         <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
-                          <span class="text-emerald-700 font-semibold">5.</span>
+                          <span class="text-purple-700 font-semibold">4.</span>
                           <span>FAO / OMS (1985 / 2004)</span>
                           <span class="badge-clinical bg-purple-50 text-purple-800 border border-purple-200 text-[10px] py-0 px-1.5">OMS / UNU</span>
                         </div>
-                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">TMB predita por faixa etária e peso, ajustada pelo Nível de Atividade Física individual.</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">GEB baseado em constantes lineares por sexo e faixa etária aplicadas ao peso corporal.</p>
                       </div>
                     </label>
                   </div>
-                  <div id="calcFaoFieldsContainer" class="hidden pt-2 border-t border-slate-100 bg-slate-50 p-2.5 rounded-lg">
-                    <label class="block font-semibold text-slate-700 text-[11px] mb-1">Resultado Calculado pelo Aluno (kcal/dia):</label>
-                    <input type="number" id="calcFaoResultadoKcal" class="w-full max-w-sm border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800 focus:border-emerald-500" placeholder="Ex: 1840" min="500" max="6000" step="1">
+
+                  <!-- Container Aberto Interativo -->
+                  <div id="calcFaoFieldsContainer" class="hidden pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 p-3 rounded-lg">
+                    <!-- Tabela Colapsável de Apoio das Constantes FAO/OMS -->
+                    <div class="border border-purple-200 bg-purple-50/50 rounded-lg p-2.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-900 flex items-center space-x-1">
+                          <span>📖</span>
+                          <span>Tabela de Constantes FAO/OMS (1985)</span>
+                        </span>
+                        <button type="button" id="toggleFaoTableBtn" class="text-[11px] font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer">
+                          Ver Tabela de Consulta ▾
+                        </button>
+                      </div>
+                      
+                      <div id="faoReferenceTable" class="hidden mt-2 pt-2 border-t border-purple-200 overflow-x-auto text-[11px]">
+                        <table class="w-full text-left border-collapse">
+                          <thead>
+                            <tr class="border-b border-purple-200 text-purple-950 font-bold">
+                              <th class="py-1 px-2">Faixa Etária</th>
+                              <th class="py-1 px-2">Homens (Equação TMB)</th>
+                              <th class="py-1 px-2">Mulheres (Equação TMB)</th>
+                              <th class="py-1 px-2 text-center">Atalho</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-purple-100 text-slate-700">
+                            <tr>
+                              <td class="py-1 px-2 font-medium">18 a 30 anos</td>
+                              <td class="py-1 px-2 font-mono">15,3 × Peso + 679</td>
+                              <td class="py-1 px-2 font-mono">14,7 × Peso + 496</td>
+                              <td class="py-1 px-2 text-center">
+                                <button type="button" class="btn-fill-fao text-[10px] px-1.5 py-0.5 rounded bg-purple-200 hover:bg-purple-300 font-bold text-purple-900 cursor-pointer" data-age-group="18-30">Preencher</button>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 px-2 font-medium">30 a 60 anos</td>
+                              <td class="py-1 px-2 font-mono">11,6 × Peso + 879</td>
+                              <td class="py-1 px-2 font-mono">8,7 × Peso + 829</td>
+                              <td class="py-1 px-2 text-center">
+                                <button type="button" class="btn-fill-fao text-[10px] px-1.5 py-0.5 rounded bg-purple-200 hover:bg-purple-300 font-bold text-purple-900 cursor-pointer" data-age-group="30-60">Preencher</button>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 px-2 font-medium">≥ 60 anos</td>
+                              <td class="py-1 px-2 font-mono">13,5 × Peso + 487</td>
+                              <td class="py-1 px-2 font-mono">10,5 × Peso + 596</td>
+                              <td class="py-1 px-2 text-center">
+                                <button type="button" class="btn-fill-fao text-[10px] px-1.5 py-0.5 rounded bg-purple-200 hover:bg-purple-300 font-bold text-purple-900 cursor-pointer" data-age-group="60+">Preencher</button>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 px-2 font-medium">10 a 18 anos</td>
+                              <td class="py-1 px-2 font-mono">17,5 × Peso + 651</td>
+                              <td class="py-1 px-2 font-mono">12,2 × Peso + 746</td>
+                              <td class="py-1 px-2 text-center">
+                                <button type="button" class="btn-fill-fao text-[10px] px-1.5 py-0.5 rounded bg-purple-200 hover:bg-purple-300 font-bold text-purple-900 cursor-pointer" data-age-group="10-18">Preencher</button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <!-- Equação Aberta GEB -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider mb-2">Estrutura da Equação Aberta:</div>
+                      <div class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-purple-700">GEB = ( [</span>
+                        <input type="number" id="calcFaoConstIdade" class="calc-fao-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-purple-50/40 border border-purple-300 rounded shadow-2xs focus:ring-2 focus:ring-purple-500" placeholder="Const. Idade" step="0.1">
+                        <span class="text-[11px] text-slate-500 font-sans">× Peso kg</span>
+                        <input type="number" id="calcFaoPeso" class="calc-fao-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-purple-50/40 border border-purple-300 rounded shadow-2xs focus:ring-2 focus:ring-purple-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>] ) + [</span>
+                        <input type="number" id="calcFaoConstFixa" class="calc-fao-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-purple-50/40 border border-purple-300 rounded shadow-2xs focus:ring-2 focus:ring-purple-500" placeholder="Const. Fixa" step="0.1">
+                        <span>]</span>
+                      </div>
+
+                      <!-- Subtotal GEB -->
+                      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Resultado Parcial do GEB:</span>
+                        <span class="font-mono font-black text-purple-800 text-sm"><span id="calcFaoGebDisp">--</span> kcal/dia</span>
+                      </div>
+                    </div>
+
+                    <!-- Fatores de Correção e Cálculo do VET -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs space-y-2">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do VET (GEB × FA × FI):</div>
+                      <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-purple-700">VET =</span>
+                        <span class="bg-slate-100 px-2 py-1 rounded text-slate-700 font-bold" id="calcFaoGebRef">GEB (-- kcal)</span>
+                        <span>× [</span>
+                        <input type="number" id="calcFaoFa" class="calc-fao-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-purple-50/40 border border-purple-300 rounded shadow-2xs focus:ring-2 focus:ring-purple-500" placeholder="FA" value="1.2" min="1.0" max="2.5" step="0.05" title="Fator de Atividade Física">
+                        <span class="text-[11px] text-slate-500 font-sans">FA</span>
+                        <span>] × [</span>
+                        <input type="number" id="calcFaoFi" class="calc-fao-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-purple-50/40 border border-purple-300 rounded shadow-2xs focus:ring-2 focus:ring-purple-500" placeholder="FI" value="1.0" min="1.0" max="2.5" step="0.05" title="Fator de Injúria / Estresse">
+                        <span class="text-[11px] text-slate-500 font-sans">FI</span>
+                        <span>]</span>
+                      </div>
+                    </div>
+
+                    <!-- Resolução VET e Botão de Adoção -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <label class="block text-[11px] font-bold text-purple-800 mb-1">VET Final Calculado pela Equação:</label>
+                        <input type="number" id="calcFaoResultadoKcal" class="w-full border border-purple-300 rounded px-2 py-1 text-xs sm:text-sm font-bold text-purple-900 bg-purple-50/20 focus:border-purple-500" placeholder="Ex: 1840" min="500" max="6000" step="1">
+                      </div>
+                      <div>
+                        <button type="button" class="btn-adotar-vet w-full px-3 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-2xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1" data-target="calcFaoResultadoKcal">
+                          <span>🎯</span>
+                          <span>Adotar este VET</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Linha descritiva gravada -->
+                    <div id="calcFaoDescritivo" class="text-[11px] font-mono text-purple-950 bg-purple-50 border border-purple-200 p-2 rounded-lg">
+                      Aguardando preenchimento das variáveis...
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5. EER / IOM -->
+                <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-2xs transition hover:border-indigo-300">
+                  <div class="flex items-start justify-between gap-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer select-none">
+                      <input type="checkbox" id="calcFormulaEerCheck" class="calc-formula-checkbox mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer" data-formula="eerIom">
+                      <div>
+                        <div class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                          <span class="text-indigo-700 font-semibold">5.</span>
+                          <span>DRI / IOM (Institute of Medicine - 2002/2005)</span>
+                          <span class="badge-clinical bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] py-0 px-1.5">EER Preditivo</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Necessidade Estimada de Energia (EER) ponderando coeficiente de atividade física (NAF), peso e altura em metros.</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Container Aberto Interativo -->
+                  <div id="calcEerFieldsContainer" class="hidden pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 p-3 rounded-lg">
+                    <!-- Tabela Colapsável de Apoio DRI/IOM -->
+                    <div class="border border-indigo-200 bg-indigo-50/50 rounded-lg p-2.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-900 flex items-center space-x-1">
+                          <span>📖</span>
+                          <span>Tabela de Constantes DRI/IOM (Adultos ≥ 19 anos)</span>
+                        </span>
+                        <button type="button" id="toggleEerTableBtn" class="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 underline cursor-pointer">
+                          Ver Tabela de Consulta ▾
+                        </button>
+                      </div>
+                      
+                      <div id="eerReferenceTable" class="hidden mt-2 pt-2 border-t border-indigo-200 text-[11px] space-y-2">
+                        <div class="bg-white p-2 rounded border border-indigo-200 space-y-1">
+                          <p><strong>Homens Adultos:</strong> EER = 662 - (9,53 × Idade) + NAF × (15,91 × Peso kg + 539,6 × Altura m)</p>
+                          <p><strong>Mulheres Adultas:</strong> EER = 354 - (6,91 × Idade) + NAF × (9,36 × Peso kg + 726 × Altura m)</p>
+                          <p class="text-slate-500 italic mt-1">Valores de NAF: Sedentário = 1,00 | Pouco Ativo = 1,11 (H) / 1,12 (M) | Ativo = 1,25 (H) / 1,27 (M) | Muito Ativo = 1,48 (H) / 1,45 (M)</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button type="button" id="btnFillEerAdultConsts" class="text-[10px] px-2 py-1 rounded bg-indigo-200 hover:bg-indigo-300 font-bold text-indigo-900 cursor-pointer">
+                            Preencher Constantes Padrão de Adultos
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Equação Aberta EER -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs space-y-2">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Estrutura da Equação Aberta (EER):</div>
+                      <div class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-indigo-700">EER = [</span>
+                        <input type="number" id="calcEerConst" class="calc-eer-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Const. EER" step="0.1">
+                        <span>] - ( [</span>
+                        <input type="number" id="calcEerFatIdade" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Fat. Idade" step="0.01">
+                        <span>×</span>
+                        <input type="number" id="calcEerIdade" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Idade" min="1" max="130" step="1">
+                        <span>anos ] ) + [</span>
+                        <input type="number" id="calcEerNaf" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="NAF" value="1.0" step="0.01">
+                        <span>] × ( ( [</span>
+                        <input type="number" id="calcEerFatPeso" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Fat. Peso" step="0.01">
+                        <span>×</span>
+                        <input type="number" id="calcEerPeso" class="calc-eer-input w-20 sm:w-24 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Peso kg" min="10" max="300" step="0.1">
+                        <span>kg ] ) + ( [</span>
+                        <input type="number" id="calcEerFatAltura" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Fat. Altura" step="0.1">
+                        <span>×</span>
+                        <input type="number" id="calcEerAlturaM" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="Alt. (m)" min="0.5" max="2.5" step="0.01">
+                        <span>m ] ) )</span>
+                      </div>
+
+                      <!-- Subtotal EER -->
+                      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Resultado Parcial do EER:</span>
+                        <span class="font-mono font-black text-indigo-800 text-sm"><span id="calcEerGebDisp">--</span> kcal/dia</span>
+                      </div>
+                    </div>
+
+                    <!-- Fatores de Correção e Cálculo do VET -->
+                    <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-2xs space-y-2">
+                      <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cálculo do VET (EER × FA × FI):</div>
+                      <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-mono text-slate-800">
+                        <span class="font-semibold text-indigo-700">VET =</span>
+                        <span class="bg-slate-100 px-2 py-1 rounded text-slate-700 font-bold" id="calcEerGebRef">EER (-- kcal)</span>
+                        <span>× [</span>
+                        <input type="number" id="calcEerFa" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="FA" value="1.0" min="1.0" max="2.5" step="0.05" title="Fator de Atividade Física (se não ponderado no NAF)">
+                        <span class="text-[11px] text-slate-500 font-sans">FA</span>
+                        <span>] × [</span>
+                        <input type="number" id="calcEerFi" class="calc-eer-input w-16 sm:w-20 px-1.5 py-1 text-xs sm:text-sm font-bold text-center text-slate-800 bg-indigo-50/40 border border-indigo-300 rounded shadow-2xs focus:ring-2 focus:ring-indigo-500" placeholder="FI" value="1.0" min="1.0" max="2.5" step="0.05" title="Fator de Injúria / Estresse">
+                        <span class="text-[11px] text-slate-500 font-sans">FI</span>
+                        <span>]</span>
+                      </div>
+                    </div>
+
+                    <!-- Resolução VET e Botão de Adoção -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                      <div class="bg-white border border-slate-200 p-2.5 rounded-lg">
+                        <label class="block text-[11px] font-bold text-indigo-800 mb-1">VET Final Calculado pela Equação:</label>
+                        <input type="number" id="calcEerResultadoKcal" class="w-full border border-indigo-300 rounded px-2 py-1 text-xs sm:text-sm font-bold text-indigo-900 bg-indigo-50/20 focus:border-indigo-500" placeholder="Ex: 1910" min="500" max="6000" step="1">
+                      </div>
+                      <div>
+                        <button type="button" class="btn-adotar-vet w-full px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-2xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1" data-target="calcEerResultadoKcal">
+                          <span>🎯</span>
+                          <span>Adotar este VET</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Linha descritiva gravada -->
+                    <div id="calcEerDescritivo" class="text-[11px] font-mono text-indigo-950 bg-indigo-50 border border-indigo-200 p-2 rounded-lg">
+                      Aguardando preenchimento das variáveis...
+                    </div>
                   </div>
                 </div>
 
@@ -2066,7 +2765,7 @@
             <div class="flex items-center space-x-2">
               <button id="finalizeAndExportDocxBtn" class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-md transition flex items-center space-x-1.5">
                 <span>📄</span>
-                <span>Finalizar Caso e Gerar Documento Word (.docx)</span>
+                <span>Finalizar e Emitir Relatório Completo (Word / PDF)</span>
               </button>
             </div>
           </div>
@@ -2955,7 +3654,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
 
   <!-- MODAL: CONFIRMAÇÃO DE SUBMISSÃO E FINALIZAÇÃO DO CASO -->
   <div id="submissionConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-slate-200">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-200">
       <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
         ✅
       </div>
@@ -2965,19 +3664,35 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
         <span id="modalCaseTitle" class="text-emerald-700 font-medium">Caso Clínico</span>
       </p>
 
-      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-2 mb-4 leading-relaxed">
-        <p>📥 <strong>Seu relatório completo em formato Word (.docx) foi baixado automaticamente.</strong></p>
-        <p class="text-slate-600">
-          O documento contém o prontuário construído durante a anamnese, a resolução dietoterápica, os cálculos das necessidades energéticas, o planejamento alimentar e suas respostas às questões avaliativas.
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-2.5 mb-4 leading-relaxed">
+        <p>
+          O relatório clínico-nutricional completo foi consolidado com 100% dos dados estruturados, incluindo identificação, anamnese, interações droga-nutriente, antropometria, bioquímica, exame físico, recordatório alimentar 24h, diagnóstico PES com objetivos dietoterápicos, cálculos energéticos descritivos e planejamento alimentar com análises quantitativas completas.
         </p>
         <div class="bg-amber-50 border border-amber-200 p-2 rounded text-amber-800 text-[11px]">
           🔒 <strong>Nota Didática:</strong> Conforme as diretrizes da disciplina, <strong>não é exibido feedback imediato de acertos ou erros</strong>. A avaliação e discussão detalhada serão realizadas pelo professor.
         </div>
       </div>
 
-      <div class="flex items-center justify-center">
-        <button id="closeSubmissionModalBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 py-2 rounded-lg shadow transition">
-          OK, Entendido
+      <!-- BOTÕES DE EMISSÃO DO RELATÓRIO (WORD E PDF) -->
+      <div class="space-y-2 mb-4">
+        <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider text-center">
+          Formatos Oficiais de Exportação do Relatório:
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button id="modalDownloadDocxBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+            <span>📄</span>
+            <span>Baixar Word (.docx)</span>
+          </button>
+          <button id="modalPrintPdfBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+            <span>🖨️</span>
+            <span>Visualizar / PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center pt-2 border-t border-slate-200">
+        <button id="closeSubmissionModalBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs px-6 py-2 rounded-lg transition">
+          Fechar
         </button>
       </div>
     </div>

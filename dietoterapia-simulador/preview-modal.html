@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Preview Modal Word / PDF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-6 font-sans">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 border border-slate-200 text-center relative">
+    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+      &#10004;
+    </div>
+    <h3 class="text-2xl font-bold text-slate-900 mb-2">Atendimento Conclu&iacute;do com Sucesso!</h3>
+    <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+      Todos os registros, diagn&oacute;sticos e c&aacute;lculos foram validados e consolidados no esqueleto imut&aacute;vel do prontu&aacute;rio. Escolha como deseja exportar o relat&oacute;rio oficial:
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+      <button class="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow transition">
+        <span>&#128196;</span>
+        <span>Baixar Word (.docx)</span>
+      </button>
+      <button class="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow transition">
+        <span>&#128424;&#65039;</span>
+        <span>Visualizar / PDF</span>
+      </button>
+    </div>
+
+    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 text-left space-y-2 mb-6">
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <span class="text-emerald-500 font-bold">&#10003;</span> Esqueleto Imut&aacute;vel Completo (Todas as Se&ccedil;&otilde;es e Campos)
+      </div>
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <span class="text-emerald-500 font-bold">&#10003;</span> Objetivos Dietoter&aacute;picos Estruturados P&oacute;s-PES
+      </div>
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <span class="text-emerald-500 font-bold">&#10003;</span> An&aacute;lises Quantitativas TACO (Macros, Fibras, Ca, Fe, Na, K e Adequa&ccedil;&atilde;o)
+      </div>
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <span class="text-emerald-500 font-bold">&#10003;</span> Paridade 100% Simula&ccedil;&atilde;o e Atendimento Presencial Real
+      </div>
+    </div>
+
+    <button class="w-full py-2.5 text-slate-500 hover:text-slate-700 text-sm font-medium border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+      Voltar ao Prontu&aacute;rio
+    </button>
+  </div>
+</body>
+</html>
