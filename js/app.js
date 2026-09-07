@@ -2357,11 +2357,20 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("prontVetRecordatorio").value = p.consumoAlimentar.vetRecordatorio || "";
     }
     const recTotLoad = p.consumoAlimentar?.totaisRecordatorio || {};
+    if (document.getElementById("prontRecGorduraSaturadaG")) {
+      document.getElementById("prontRecGorduraSaturadaG").value = recTotLoad.gorduraSaturadaG || "";
+    }
     if (document.getElementById("prontRecGorduraSaturadaPct")) {
       document.getElementById("prontRecGorduraSaturadaPct").value = recTotLoad.gorduraSaturadaPct || "";
     }
+    if (document.getElementById("prontRecGorduraMonoG")) {
+      document.getElementById("prontRecGorduraMonoG").value = recTotLoad.gorduraMonoinsaturadaG || "";
+    }
     if (document.getElementById("prontRecGorduraMonoPct")) {
       document.getElementById("prontRecGorduraMonoPct").value = recTotLoad.gorduraMonoinsaturadaPct || "";
+    }
+    if (document.getElementById("prontRecGorduraPoliG")) {
+      document.getElementById("prontRecGorduraPoliG").value = recTotLoad.gorduraPoliinsaturadaG || "";
     }
     if (document.getElementById("prontRecGorduraPoliPct")) {
       document.getElementById("prontRecGorduraPoliPct").value = recTotLoad.gorduraPoliinsaturadaPct || "";
@@ -2542,11 +2551,20 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCardapioTable();
 
     const cardTotLoad = p.totaisCardapio || {};
+    if (document.getElementById("prontCardapioGorduraSaturadaG")) {
+      document.getElementById("prontCardapioGorduraSaturadaG").value = cardTotLoad.gorduraSaturadaG || "";
+    }
     if (document.getElementById("prontCardapioGorduraSaturadaPct")) {
       document.getElementById("prontCardapioGorduraSaturadaPct").value = cardTotLoad.gorduraSaturadaPct || "";
     }
+    if (document.getElementById("prontCardapioGorduraMonoG")) {
+      document.getElementById("prontCardapioGorduraMonoG").value = cardTotLoad.gorduraMonoinsaturadaG || "";
+    }
     if (document.getElementById("prontCardapioGorduraMonoPct")) {
       document.getElementById("prontCardapioGorduraMonoPct").value = cardTotLoad.gorduraMonoinsaturadaPct || "";
+    }
+    if (document.getElementById("prontCardapioGorduraPoliG")) {
+      document.getElementById("prontCardapioGorduraPoliG").value = cardTotLoad.gorduraPoliinsaturadaG || "";
     }
     if (document.getElementById("prontCardapioGorduraPoliPct")) {
       document.getElementById("prontCardapioGorduraPoliPct").value = cardTotLoad.gorduraPoliinsaturadaPct || "";
@@ -2779,8 +2797,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!p.consumoAlimentar.totaisRecordatorio) {
       p.consumoAlimentar.totaisRecordatorio = {};
     }
+    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaG = document.getElementById("prontRecGorduraSaturadaG")?.value.trim() || "";
     p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaG = document.getElementById("prontRecGorduraMonoG")?.value.trim() || "";
     p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaG = document.getElementById("prontRecGorduraPoliG")?.value.trim() || "";
     p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value.trim() || "";
 
     // Diagnóstico PES
@@ -2995,8 +3016,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!p.totaisCardapio) {
       p.totaisCardapio = {};
     }
+    p.totaisCardapio.gorduraSaturadaG = document.getElementById("prontCardapioGorduraSaturadaG")?.value.trim() || "";
     p.totaisCardapio.gorduraSaturadaPct = document.getElementById("prontCardapioGorduraSaturadaPct")?.value.trim() || "";
+    p.totaisCardapio.gorduraMonoinsaturadaG = document.getElementById("prontCardapioGorduraMonoG")?.value.trim() || "";
     p.totaisCardapio.gorduraMonoinsaturadaPct = document.getElementById("prontCardapioGorduraMonoPct")?.value.trim() || "";
+    p.totaisCardapio.gorduraPoliinsaturadaG = document.getElementById("prontCardapioGorduraPoliG")?.value.trim() || "";
     p.totaisCardapio.gorduraPoliinsaturadaPct = document.getElementById("prontCardapioGorduraPoliPct")?.value.trim() || "";
 
     p.tne = {
@@ -3788,9 +3812,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
     const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
-    totals.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraSaturadaPct || "";
-    totals.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraMonoinsaturadaPct || "";
-    totals.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraPoliinsaturadaPct || "";
+
+    const inputRecSatG = document.getElementById("prontRecGorduraSaturadaG");
+    const inputRecSatPct = document.getElementById("prontRecGorduraSaturadaPct");
+    const inputRecMonoG = document.getElementById("prontRecGorduraMonoG");
+    const inputRecMonoPct = document.getElementById("prontRecGorduraMonoPct");
+    const inputRecPoliG = document.getElementById("prontRecGorduraPoliG");
+    const inputRecPoliPct = document.getElementById("prontRecGorduraPoliPct");
+
+    // Sincroniza campos se o usuário não estiver focado ativamente neles
+    if (document.activeElement !== inputRecSatG && document.activeElement !== inputRecSatPct) {
+      if (totals.gorduraSaturadaG > 0 || list.some(m => m.itens?.length > 0)) {
+        if (inputRecSatG) inputRecSatG.value = totals.gorduraSaturadaG > 0 ? totals.gorduraSaturadaG : "";
+        if (inputRecSatPct) inputRecSatPct.value = totals.gorduraSaturadaPct > 0 ? totals.gorduraSaturadaPct : "";
+      }
+    }
+    if (document.activeElement !== inputRecMonoG && document.activeElement !== inputRecMonoPct) {
+      if (totals.gorduraMonoinsaturadaG > 0 || list.some(m => m.itens?.length > 0)) {
+        if (inputRecMonoG) inputRecMonoG.value = totals.gorduraMonoinsaturadaG > 0 ? totals.gorduraMonoinsaturadaG : "";
+        if (inputRecMonoPct) inputRecMonoPct.value = totals.gorduraMonoinsaturadaPct > 0 ? totals.gorduraMonoinsaturadaPct : "";
+      }
+    }
+    if (document.activeElement !== inputRecPoliG && document.activeElement !== inputRecPoliPct) {
+      if (totals.gorduraPoliinsaturadaG > 0 || list.some(m => m.itens?.length > 0)) {
+        if (inputRecPoliG) inputRecPoliG.value = totals.gorduraPoliinsaturadaG > 0 ? totals.gorduraPoliinsaturadaG : "";
+        if (inputRecPoliPct) inputRecPoliPct.value = totals.gorduraPoliinsaturadaPct > 0 ? totals.gorduraPoliinsaturadaPct : "";
+      }
+    }
+
+    totals.gorduraSaturadaG = inputRecSatG?.value !== undefined && inputRecSatG?.value !== "" ? inputRecSatG.value : totals.gorduraSaturadaG;
+    totals.gorduraSaturadaPct = inputRecSatPct?.value !== undefined && inputRecSatPct?.value !== "" ? inputRecSatPct.value : totals.gorduraSaturadaPct;
+    totals.gorduraMonoinsaturadaG = inputRecMonoG?.value !== undefined && inputRecMonoG?.value !== "" ? inputRecMonoG.value : totals.gorduraMonoinsaturadaG;
+    totals.gorduraMonoinsaturadaPct = inputRecMonoPct?.value !== undefined && inputRecMonoPct?.value !== "" ? inputRecMonoPct.value : totals.gorduraMonoinsaturadaPct;
+    totals.gorduraPoliinsaturadaG = inputRecPoliG?.value !== undefined && inputRecPoliG?.value !== "" ? inputRecPoliG.value : totals.gorduraPoliinsaturadaG;
+    totals.gorduraPoliinsaturadaPct = inputRecPoliPct?.value !== undefined && inputRecPoliPct?.value !== "" ? inputRecPoliPct.value : totals.gorduraPoliinsaturadaPct;
+
+    // Avaliação visual rigorosa das diretrizes lipídicas:
+    // SAT: < 10% do VET | MONO: Até 20% do VET | POLI: Em média 10% do VET
+    const statusLip = prontuarioManager.evaluateLipidFractionsStatus(totals.gorduraSaturadaPct, totals.gorduraMonoinsaturadaPct, totals.gorduraPoliinsaturadaPct, totals.vetTotalKcal);
+    totals.statusLipidios = statusLip;
+
+    const dispRecSatBadge = document.getElementById("dispRecGorduraSatBadge");
+    const dispRecMonoBadge = document.getElementById("dispRecGorduraMonoBadge");
+    const dispRecPoliBadge = document.getElementById("dispRecGorduraPoliBadge");
+    if (dispRecSatBadge) {
+      dispRecSatBadge.textContent = statusLip.sat.label;
+      dispRecSatBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLip.sat.badgeClass}`;
+    }
+    if (dispRecMonoBadge) {
+      dispRecMonoBadge.textContent = statusLip.mono.label;
+      dispRecMonoBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLip.mono.badgeClass}`;
+    }
+    if (dispRecPoliBadge) {
+      dispRecPoliBadge.textContent = statusLip.poli.label;
+      dispRecPoliBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLip.poli.badgeClass}`;
+    }
 
     if (appState.currentProntuario?.consumoAlimentar) {
       appState.currentProntuario.consumoAlimentar.totaisRecordatorio = totals;
@@ -3948,9 +4024,61 @@ document.addEventListener("DOMContentLoaded", () => {
       totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
     }
 
-    totals.gorduraSaturadaPct = document.getElementById("prontCardapioGorduraSaturadaPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraSaturadaPct || "";
-    totals.gorduraMonoinsaturadaPct = document.getElementById("prontCardapioGorduraMonoPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraMonoinsaturadaPct || "";
-    totals.gorduraPoliinsaturadaPct = document.getElementById("prontCardapioGorduraPoliPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraPoliinsaturadaPct || "";
+    const inputCardSatG = document.getElementById("prontCardapioGorduraSaturadaG");
+    const inputCardSatPct = document.getElementById("prontCardapioGorduraSaturadaPct");
+    const inputCardMonoG = document.getElementById("prontCardapioGorduraMonoG");
+    const inputCardMonoPct = document.getElementById("prontCardapioGorduraMonoPct");
+    const inputCardPoliG = document.getElementById("prontCardapioGorduraPoliG");
+    const inputCardPoliPct = document.getElementById("prontCardapioGorduraPoliPct");
+
+    const listOral = appState.currentProntuario?.planejamentoAlimentar || [];
+    // Sincroniza campos se o usuário não estiver focado ativamente neles
+    if (document.activeElement !== inputCardSatG && document.activeElement !== inputCardSatPct) {
+      if (totals.gorduraSaturadaG > 0 || listOral.some(m => m.itens?.length > 0)) {
+        if (inputCardSatG) inputCardSatG.value = totals.gorduraSaturadaG > 0 ? totals.gorduraSaturadaG : "";
+        if (inputCardSatPct) inputCardSatPct.value = totals.gorduraSaturadaPct > 0 ? totals.gorduraSaturadaPct : "";
+      }
+    }
+    if (document.activeElement !== inputCardMonoG && document.activeElement !== inputCardMonoPct) {
+      if (totals.gorduraMonoinsaturadaG > 0 || listOral.some(m => m.itens?.length > 0)) {
+        if (inputCardMonoG) inputCardMonoG.value = totals.gorduraMonoinsaturadaG > 0 ? totals.gorduraMonoinsaturadaG : "";
+        if (inputCardMonoPct) inputCardMonoPct.value = totals.gorduraMonoinsaturadaPct > 0 ? totals.gorduraMonoinsaturadaPct : "";
+      }
+    }
+    if (document.activeElement !== inputCardPoliG && document.activeElement !== inputCardPoliPct) {
+      if (totals.gorduraPoliinsaturadaG > 0 || listOral.some(m => m.itens?.length > 0)) {
+        if (inputCardPoliG) inputCardPoliG.value = totals.gorduraPoliinsaturadaG > 0 ? totals.gorduraPoliinsaturadaG : "";
+        if (inputCardPoliPct) inputCardPoliPct.value = totals.gorduraPoliinsaturadaPct > 0 ? totals.gorduraPoliinsaturadaPct : "";
+      }
+    }
+
+    totals.gorduraSaturadaG = inputCardSatG?.value !== undefined && inputCardSatG?.value !== "" ? inputCardSatG.value : totals.gorduraSaturadaG;
+    totals.gorduraSaturadaPct = inputCardSatPct?.value !== undefined && inputCardSatPct?.value !== "" ? inputCardSatPct.value : totals.gorduraSaturadaPct;
+    totals.gorduraMonoinsaturadaG = inputCardMonoG?.value !== undefined && inputCardMonoG?.value !== "" ? inputCardMonoG.value : totals.gorduraMonoinsaturadaG;
+    totals.gorduraMonoinsaturadaPct = inputCardMonoPct?.value !== undefined && inputCardMonoPct?.value !== "" ? inputCardMonoPct.value : totals.gorduraMonoinsaturadaPct;
+    totals.gorduraPoliinsaturadaG = inputCardPoliG?.value !== undefined && inputCardPoliG?.value !== "" ? inputCardPoliG.value : totals.gorduraPoliinsaturadaG;
+    totals.gorduraPoliinsaturadaPct = inputCardPoliPct?.value !== undefined && inputCardPoliPct?.value !== "" ? inputCardPoliPct.value : totals.gorduraPoliinsaturadaPct;
+
+    // Avaliação visual rigorosa das diretrizes lipídicas no Cardápio:
+    // SAT: < 10% do VET | MONO: Até 20% do VET | POLI: Em média 10% do VET
+    const statusLipCard = prontuarioManager.evaluateLipidFractionsStatus(totals.gorduraSaturadaPct, totals.gorduraMonoinsaturadaPct, totals.gorduraPoliinsaturadaPct, totals.vetTotalKcal);
+    totals.statusLipidios = statusLipCard;
+
+    const dispCardSatBadge = document.getElementById("dispCardapioGorduraSatBadge");
+    const dispCardMonoBadge = document.getElementById("dispCardapioGorduraMonoBadge");
+    const dispCardPoliBadge = document.getElementById("dispCardapioGorduraPoliBadge");
+    if (dispCardSatBadge) {
+      dispCardSatBadge.textContent = statusLipCard.sat.label;
+      dispCardSatBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLipCard.sat.badgeClass}`;
+    }
+    if (dispCardMonoBadge) {
+      dispCardMonoBadge.textContent = statusLipCard.mono.label;
+      dispCardMonoBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLipCard.mono.badgeClass}`;
+    }
+    if (dispCardPoliBadge) {
+      dispCardPoliBadge.textContent = statusLipCard.poli.label;
+      dispCardPoliBadge.className = `text-[9px] font-bold px-2 py-0.5 rounded border ${statusLipCard.poli.badgeClass}`;
+    }
 
     if (appState.currentProntuario) {
       appState.currentProntuario.totaisCardapio = totals;
@@ -5562,20 +5690,68 @@ document.addEventListener("DOMContentLoaded", () => {
       vetRecInput.addEventListener("input", updateVetAdequacyCalculations);
     }
 
-    // Input listeners para fracionamento lipídico (R24h e Cardápio)
-    [
-      "prontRecGorduraSaturadaPct", "prontRecGorduraMonoPct", "prontRecGorduraPoliPct"
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener("input", updateRecordatorioTotalsDisplay);
-    });
+    // Conversão matemática automática: 1g de lipídio = 9 kcal
+    // Sincronização bidirecional entre Gramatura (g) e Porcentagem (%) do VET
+    function getRecEffectiveVet() {
+      const disp = parseFloat(document.getElementById("dispRecVetTotal")?.textContent);
+      if (!isNaN(disp) && disp > 0) return disp;
+      const prescRaw = document.getElementById("prontVetKcal")?.value || "";
+      const m = prescRaw.match(/[\d.,]+/);
+      if (m) return parseFloat(m[0].replace(",", "."));
+      const rVal = parseFloat(document.getElementById("prontVetRecordatorio")?.value);
+      if (!isNaN(rVal) && rVal > 0) return rVal;
+      return 2000;
+    }
 
-    [
-      "prontCardapioGorduraSaturadaPct", "prontCardapioGorduraMonoPct", "prontCardapioGorduraPoliPct"
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener("input", updateCardapioTotalsDisplay);
-    });
+    function getCardEffectiveVet() {
+      const disp = parseFloat(document.getElementById("dispCardapioVetTotal")?.textContent);
+      if (!isNaN(disp) && disp > 0) return disp;
+      const prescRaw = document.getElementById("prontVetKcal")?.value || "";
+      const m = prescRaw.match(/[\d.,]+/);
+      if (m) return parseFloat(m[0].replace(",", "."));
+      return 2000;
+    }
+
+    function attachLipidPair(idG, idPct, getVetFn, updateFn) {
+      const elG = document.getElementById(idG);
+      const elPct = document.getElementById(idPct);
+      if (elG) {
+        elG.addEventListener("input", () => {
+          const raw = elG.value.trim().replace(",", ".");
+          const gVal = parseFloat(raw);
+          if (!isNaN(gVal) && gVal >= 0 && elPct) {
+            const vet = getVetFn();
+            elPct.value = prontuarioManager.convertLipidGramToPct(gVal, vet);
+          } else if (raw === "" && elPct) {
+            elPct.value = "";
+          }
+          updateFn();
+        });
+      }
+      if (elPct) {
+        elPct.addEventListener("input", () => {
+          const raw = elPct.value.trim().replace(",", ".");
+          const pVal = parseFloat(raw);
+          if (!isNaN(pVal) && pVal >= 0 && elG) {
+            const vet = getVetFn();
+            elG.value = prontuarioManager.convertLipidPctToGram(pVal, vet);
+          } else if (raw === "" && elG) {
+            elG.value = "";
+          }
+          updateFn();
+        });
+      }
+    }
+
+    // Recordatório (R24h)
+    attachLipidPair("prontRecGorduraSaturadaG", "prontRecGorduraSaturadaPct", getRecEffectiveVet, updateRecordatorioTotalsDisplay);
+    attachLipidPair("prontRecGorduraMonoG", "prontRecGorduraMonoPct", getRecEffectiveVet, updateRecordatorioTotalsDisplay);
+    attachLipidPair("prontRecGorduraPoliG", "prontRecGorduraPoliPct", getRecEffectiveVet, updateRecordatorioTotalsDisplay);
+
+    // Cardápio Planejado
+    attachLipidPair("prontCardapioGorduraSaturadaG", "prontCardapioGorduraSaturadaPct", getCardEffectiveVet, updateCardapioTotalsDisplay);
+    attachLipidPair("prontCardapioGorduraMonoG", "prontCardapioGorduraMonoPct", getCardEffectiveVet, updateCardapioTotalsDisplay);
+    attachLipidPair("prontCardapioGorduraPoliG", "prontCardapioGorduraPoliPct", getCardEffectiveVet, updateCardapioTotalsDisplay);
 
     // Inicializa a ferramenta de busca oficial TACO
     setupTacoSearch();

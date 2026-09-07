@@ -1320,20 +1320,76 @@
                 </div>
 
                 <!-- FRACIONAMENTO QUALI-QUANTITATIVO DE LIPÍDIOS NO R24H -->
-                <div class="bg-slate-800/70 border border-slate-700 p-2.5 rounded-lg space-y-1.5">
-                  <span class="text-[10px] uppercase font-bold text-rose-300 block">🥩 Fracionamento Quantitativo de Lipídios (Recordatório 24h):</span>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Saturada (%):</label>
-                      <input type="text" inputmode="decimal" id="prontRecGorduraSaturadaPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 7.0">
+                <div class="bg-slate-800/80 border border-rose-900/40 p-3 rounded-xl space-y-2.5">
+                  <div class="flex flex-wrap items-center justify-between gap-1">
+                    <span class="text-[11px] uppercase font-bold text-rose-300 flex items-center space-x-1.5">
+                      <span>🥩</span>
+                      <span>Distribuição e Qualidade dos Lipídios (Recordatório 24h):</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">1g Lipídio = 9 kcal • Conversão automática para % do VET</span>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    <!-- Saturadas (SAT) -->
+                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-200">Saturadas (SAT)</span>
+                        <span id="dispRecGorduraSatBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                      </div>
+                      <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Diretriz: <strong class="text-rose-400">&lt; 10% do VET</strong></span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraSaturadaG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 15.0">
+                        </div>
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraSaturadaPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 6.8">
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Monoinsaturada (%):</label>
-                      <input type="text" inputmode="decimal" id="prontRecGorduraMonoPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 15.0">
+
+                    <!-- Monoinsaturadas (MONO) -->
+                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-200">Monoinsaturadas (MONO)</span>
+                        <span id="dispRecGorduraMonoBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                      </div>
+                      <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Diretriz: <strong class="text-amber-400">Até 20% do VET</strong></span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraMonoG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300 font-bold focus:border-amber-500" placeholder="Ex: 35.0">
+                        </div>
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraMonoPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300 font-bold focus:border-amber-500" placeholder="Ex: 15.8">
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Poli-insaturada (%):</label>
-                      <input type="text" inputmode="decimal" id="prontRecGorduraPoliPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 8.0">
+
+                    <!-- Poli-insaturadas (POLI) -->
+                    <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-200">Poli-insaturadas (POLI)</span>
+                        <span id="dispRecGorduraPoliBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                      </div>
+                      <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Diretriz: <strong class="text-sky-400">Em média 10% do VET</strong></span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraPoliG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold focus:border-sky-500" placeholder="Ex: 20.0">
+                        </div>
+                        <div>
+                          <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                          <input type="text" inputmode="decimal" id="prontRecGorduraPoliPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold focus:border-sky-500" placeholder="Ex: 9.0">
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2686,20 +2742,76 @@
               </div>
 
               <!-- FRACIONAMENTO QUALI-QUANTITATIVO DE LIPÍDIOS NO CARDÁPIO -->
-              <div class="bg-slate-800/70 border border-slate-700 p-2.5 rounded-lg space-y-1.5">
-                <span class="text-[10px] uppercase font-bold text-rose-300 block">🥑 Fracionamento Quantitativo de Lipídios (Cardápio Planejado):</span>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div>
-                    <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Saturada (% do VET):</label>
-                    <input type="text" inputmode="decimal" id="prontCardapioGorduraSaturadaPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 6.5">
+              <div class="bg-slate-800/80 border border-rose-900/40 p-3 rounded-xl space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-1">
+                  <span class="text-[11px] uppercase font-bold text-rose-300 flex items-center space-x-1.5">
+                    <span>🥑</span>
+                    <span>Distribuição e Qualidade dos Lipídios (Cardápio Planejado):</span>
+                  </span>
+                  <span class="text-[10px] text-slate-400">1g Lipídio = 9 kcal • Conversão automática para % do VET</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                  <!-- Saturadas (SAT) -->
+                  <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">Saturadas (SAT)</span>
+                      <span id="dispCardapioGorduraSatBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                      <span>Diretriz: <strong class="text-rose-400">&lt; 10% do VET</strong></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraSaturadaG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 14.5">
+                      </div>
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraSaturadaPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 6.5">
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Monoinsaturada (% do VET):</label>
-                    <input type="text" inputmode="decimal" id="prontCardapioGorduraMonoPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 18.0">
+
+                  <!-- Monoinsaturadas (MONO) -->
+                  <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">Monoinsaturadas (MONO)</span>
+                      <span id="dispCardapioGorduraMonoBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                      <span>Diretriz: <strong class="text-amber-400">Até 20% do VET</strong></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraMonoG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300 font-bold focus:border-amber-500" placeholder="Ex: 38.0">
+                      </div>
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraMonoPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300 font-bold focus:border-amber-500" placeholder="Ex: 17.1">
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-[10px] text-slate-300 mb-0.5">Gordura Poli-insaturada (% do VET):</label>
-                    <input type="text" inputmode="decimal" id="prontCardapioGorduraPoliPct" class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-rose-300 font-bold focus:border-rose-500" placeholder="Ex: 8.5">
+
+                  <!-- Poli-insaturadas (POLI) -->
+                  <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">Poli-insaturadas (POLI)</span>
+                      <span id="dispCardapioGorduraPoliBadge" class="text-[9px] font-bold px-2 py-0.5 rounded border bg-slate-800 text-slate-400 border-slate-700">Aguardando Dados</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                      <span>Diretriz: <strong class="text-sky-400">Em média 10% do VET</strong></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">Gramas (g):</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraPoliG" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold focus:border-sky-500" placeholder="Ex: 19.0">
+                      </div>
+                      <div>
+                        <label class="block text-[9px] text-slate-400 mb-0.5 font-medium">% do VET:</label>
+                        <input type="text" inputmode="decimal" id="prontCardapioGorduraPoliPct" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold focus:border-sky-500" placeholder="Ex: 8.5">
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -275,9 +275,17 @@ class StudentProntuarioManager {
           proteinasPct: 0,
           lipidiosG: 0,
           lipidiosPct: 0,
+          gorduraSaturadaG: "",
           gorduraSaturadaPct: "",
+          gorduraMonoinsaturadaG: "",
           gorduraMonoinsaturadaPct: "",
+          gorduraPoliinsaturadaG: "",
           gorduraPoliinsaturadaPct: "",
+          statusLipidios: {
+            sat: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+            mono: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+            poli: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" }
+          },
           fibrasG: 0,
           calcioMg: 0,
           ferroMg: 0,
@@ -308,9 +316,17 @@ class StudentProntuarioManager {
         proteinasPct: 0,
         lipidiosG: 0,
         lipidiosPct: 0,
+        gorduraSaturadaG: "",
         gorduraSaturadaPct: "",
+        gorduraMonoinsaturadaG: "",
         gorduraMonoinsaturadaPct: "",
+        gorduraPoliinsaturadaG: "",
         gorduraPoliinsaturadaPct: "",
+        statusLipidios: {
+          sat: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+          mono: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+          poli: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" }
+        },
         fibrasG: 0,
         calcioMg: 0,
         ferroMg: 0,
@@ -584,11 +600,11 @@ class StudentProntuarioManager {
   // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g da TACO
   calculateItemNutrition(foodTaco, gramatura) {
     if (!foodTaco) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
     }
     const g = typeof gramatura === "string" ? parseFloat(gramatura.replace(",", ".")) : parseFloat(gramatura);
     if (isNaN(g) || g <= 0) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
     }
 
     const base = foodTaco.baseGramas || 100; // sempre 100g na TACO
@@ -602,6 +618,9 @@ class StudentProntuarioManager {
       cho: round1(foodTaco.cho),
       ptn: round1(foodTaco.ptn),
       lip: round1(foodTaco.lip),
+      sat: round1(foodTaco.sat || 0),
+      mono: round1(foodTaco.mono || 0),
+      poli: round1(foodTaco.poli || 0),
       fibra: round1(foodTaco.fibra),
       calcio: round1(foodTaco.calcio),
       ferro: round1(foodTaco.ferro),
@@ -612,15 +631,26 @@ class StudentProntuarioManager {
 
   // Calcula subtotal nutricional de uma refeição somando todos os seus itens
   calculateMealSubtotal(meal) {
-    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
-    if (!meal || !Array.isArray(meal.itens)) return sub;
+    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+    if (!meal) return sub;
+    const items = Array.isArray(meal.itens) ? meal.itens : (Array.isArray(meal.alimentos) ? meal.alimentos : []);
 
-    meal.itens.forEach(item => {
+    items.forEach(rawItem => {
+      let item = rawItem;
+      if ((!item.kcal && !item.lip) && item.id && (item.gramas || item.gramatura) && typeof this.calculateItemNutrition === "function" && typeof TACO_DATABASE !== "undefined") {
+        const food = TACO_DATABASE.find(f => f.id === item.id);
+        if (food) {
+          item = this.calculateItemNutrition(food, item.gramas || item.gramatura);
+        }
+      }
       sub.kcal += Number(item.kcal || 0);
       sub.cho += Number(item.cho || 0);
       sub.ptn += Number(item.ptn || 0);
       sub.lip += Number(item.lip || 0);
-      sub.fibra += Number(item.fibra || 0);
+      sub.sat += Number(item.sat || 0);
+      sub.mono += Number(item.mono || 0);
+      sub.poli += Number(item.poli || 0);
+      sub.fibra += Number(item.fibra || item.fibras || 0);
       sub.calcio += Number(item.calcio || 0);
       sub.ferro += Number(item.ferro || 0);
       sub.sodio += Number(item.sodio || 0);
@@ -633,6 +663,9 @@ class StudentProntuarioManager {
       cho: round1(sub.cho),
       ptn: round1(sub.ptn),
       lip: round1(sub.lip),
+      sat: round1(sub.sat),
+      mono: round1(sub.mono),
+      poli: round1(sub.poli),
       fibra: round1(sub.fibra),
       calcio: round1(sub.calcio),
       ferro: round1(sub.ferro),
@@ -764,7 +797,69 @@ class StudentProntuarioManager {
     };
   }
 
-  // Calcula totais nutricionais completos (Macros e Micronutrientes: Cálcio, Ferro, Sódio, Potássio) para uma lista de refeições
+  // Conversão matemática automática: 1g de lipídio = 9 kcal
+  convertLipidGramToPct(grams, vet) {
+    const g = typeof grams === "string" ? parseFloat(grams.replace(",", ".")) : parseFloat(grams);
+    const v = typeof vet === "string" ? parseFloat(vet.replace(",", ".")) : parseFloat(vet);
+    if (isNaN(g) || isNaN(v) || v <= 0) return "0.0";
+    return ((g * 9 / v) * 100).toFixed(1);
+  }
+
+  convertLipidPctToGram(pct, vet) {
+    const p = typeof pct === "string" ? parseFloat(pct.replace(",", ".")) : parseFloat(pct);
+    const v = typeof vet === "string" ? parseFloat(vet.replace(",", ".")) : parseFloat(vet);
+    if (isNaN(p) || isNaN(v) || v <= 0) return "0.0";
+    return ((p * v / 100) / 9).toFixed(1);
+  }
+
+  // Avaliação rigorosa da qualidade dos lipídios segundo as diretrizes clínicas:
+  // - Saturadas (SAT): < 10% do VET
+  // - Monoinsaturadas (MONO): Até 20% do VET
+  // - Poli-insaturadas (POLI): Em média 10% do VET
+  evaluateLipidFractionsStatus(satPct, monoPct, poliPct, vet = 1) {
+    const parse = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      const n = typeof val === "string" ? parseFloat(val.replace(",", ".")) : parseFloat(val);
+      return isNaN(n) ? null : n;
+    };
+    const s = parse(satPct);
+    const m = parse(monoPct);
+    const p = parse(poliPct);
+
+    // Saturadas: < 10% do VET
+    let sat = { status: "indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" };
+    if (s !== null) {
+      if (s < 10.0) {
+        sat = { status: "adequado", label: "Adequado (< 10%)", badgeClass: "bg-emerald-950 text-emerald-300 border-emerald-600" };
+      } else {
+        sat = { status: "inadequado", label: "Inadequado (≥ 10%)", badgeClass: "bg-rose-950 text-rose-300 border-rose-600" };
+      }
+    }
+
+    // Monoinsaturadas: Até 20% do VET
+    let mono = { status: "indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" };
+    if (m !== null) {
+      if (m <= 20.0) {
+        mono = { status: "adequado", label: "Adequado (Até 20%)", badgeClass: "bg-emerald-950 text-emerald-300 border-emerald-600" };
+      } else {
+        mono = { status: "inadequado", label: "Inadequado (> 20%)", badgeClass: "bg-rose-950 text-rose-300 border-rose-600" };
+      }
+    }
+
+    // Poli-insaturadas: Em média 10% do VET
+    let poli = { status: "indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" };
+    if (p !== null) {
+      if (p <= 10.5) {
+        poli = { status: "adequado", label: "Adequado (Média ~10%)", badgeClass: "bg-emerald-950 text-emerald-300 border-emerald-600" };
+      } else {
+        poli = { status: "inadequado", label: "Inadequado (> 10%)", badgeClass: "bg-rose-950 text-rose-300 border-rose-600" };
+      }
+    }
+
+    return { sat, mono, poli };
+  }
+
+  // Calcula totais nutricionais completos (Macros, Lipídios e Micronutrientes: Cálcio, Ferro, Sódio, Potássio) para uma lista de refeições
   calculateNutritionalTotals(mealsList, pesoPaciente = null, vetPrescrito = null, distribuicaoPrescrita = null) {
     const totals = {
       vetTotalKcal: 0,
@@ -775,6 +870,17 @@ class StudentProntuarioManager {
       proteinasPct: 0,
       lipidiosG: 0,
       lipidiosPct: 0,
+      gorduraSaturadaG: 0,
+      gorduraSaturadaPct: 0,
+      gorduraMonoinsaturadaG: 0,
+      gorduraMonoinsaturadaPct: 0,
+      gorduraPoliinsaturadaG: 0,
+      gorduraPoliinsaturadaPct: 0,
+      statusLipidios: {
+        sat: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+        mono: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" },
+        poli: { status: "Indefinido", label: "Aguardando Dados", badgeClass: "bg-slate-800 text-slate-400 border-slate-700" }
+      },
       fibrasG: 0,
       calcioMg: 0,
       ferroMg: 0,
@@ -797,6 +903,9 @@ class StudentProntuarioManager {
       totals.carboidratosG += sub.cho;
       totals.proteinasG += sub.ptn;
       totals.lipidiosG += sub.lip;
+      totals.gorduraSaturadaG += sub.sat || 0;
+      totals.gorduraMonoinsaturadaG += sub.mono || 0;
+      totals.gorduraPoliinsaturadaG += sub.poli || 0;
       totals.fibrasG += sub.fibra;
       totals.calcioMg += sub.calcio;
       totals.ferroMg += sub.ferro;
@@ -809,6 +918,9 @@ class StudentProntuarioManager {
     totals.carboidratosG = round1(totals.carboidratosG);
     totals.proteinasG = round1(totals.proteinasG);
     totals.lipidiosG = round1(totals.lipidiosG);
+    totals.gorduraSaturadaG = round1(totals.gorduraSaturadaG);
+    totals.gorduraMonoinsaturadaG = round1(totals.gorduraMonoinsaturadaG);
+    totals.gorduraPoliinsaturadaG = round1(totals.gorduraPoliinsaturadaG);
     totals.fibrasG = round1(totals.fibrasG);
     totals.calcioMg = round1(totals.calcioMg);
     totals.ferroMg = round1(totals.ferroMg);
@@ -822,12 +934,6 @@ class StudentProntuarioManager {
       totals.lipidiosPct = round1(((totals.lipidiosG * 9) / totals.vetTotalKcal) * 100);
     }
 
-    // g/kg de proteína
-    const pKg = pesoPaciente ? (typeof pesoPaciente === "string" ? parseFloat(pesoPaciente.replace(",", ".")) : parseFloat(pesoPaciente)) : null;
-    if (pKg && pKg > 0 && totals.proteinasG > 0) {
-      totals.proteinasGKg = round1(totals.proteinasG / pKg);
-    }
-
     // % de adequação em relação ao VET planejado/prescrito
     const vPresc = vetPrescrito ? (typeof vetPrescrito === "string" ? parseFloat(vetPrescrito.replace(",", ".")) : parseFloat(vetPrescrito)) : null;
     if (vPresc && vPresc > 0 && totals.vetTotalKcal > 0) {
@@ -839,6 +945,21 @@ class StudentProntuarioManager {
       } else {
         totals.classificacaoAdequacao = "Hipercalórico em relação à meta prescrita";
       }
+    }
+
+    // Conversão matemática de gramas para % do VET (1g lipídio = 9 kcal)
+    const baseVetLip = totals.vetTotalKcal > 0 ? totals.vetTotalKcal : (vPresc && vPresc > 0 ? vPresc : 0);
+    if (baseVetLip > 0) {
+      totals.gorduraSaturadaPct = round1(((totals.gorduraSaturadaG * 9) / baseVetLip) * 100);
+      totals.gorduraMonoinsaturadaPct = round1(((totals.gorduraMonoinsaturadaG * 9) / baseVetLip) * 100);
+      totals.gorduraPoliinsaturadaPct = round1(((totals.gorduraPoliinsaturadaG * 9) / baseVetLip) * 100);
+    }
+    totals.statusLipidios = this.evaluateLipidFractionsStatus(totals.gorduraSaturadaPct, totals.gorduraMonoinsaturadaPct, totals.gorduraPoliinsaturadaPct, baseVetLip);
+
+    // g/kg de proteína
+    const pKg = pesoPaciente ? (typeof pesoPaciente === "string" ? parseFloat(pesoPaciente.replace(",", ".")) : parseFloat(pesoPaciente)) : null;
+    if (pKg && pKg > 0 && totals.proteinasG > 0) {
+      totals.proteinasGKg = round1(totals.proteinasG / pKg);
     }
 
     // Status dos macros frente à prescrição

@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import PreceptorFAB from './PreceptorFAB';
 import PreceptorDrawer from './PreceptorDrawer';
+import LipidQualitySection from './LipidQualitySection';
 
 export default function RealPatientModule() {
   const [activeTab, setActiveTab] = useState<'identificacao' | 'antropometria' | 'triagem' | 'exameFisico' | 'exames' | 'interacoes' | 'conduta'>('identificacao');
@@ -154,6 +155,21 @@ export default function RealPatientModule() {
                   <span className="text-white font-bold">Superior Completo</span>
                 </div>
               </div>
+
+              <LipidQualitySection
+                title="Análise do Recordatório de 24h - Frações Lipídicas"
+                subtitle="Avaliação da ingestão habitual de ácidos graxos relatada pelo paciente (1g = 9 kcal)."
+                vetKcal={2000}
+                theme="indigo"
+                defaultValues={{
+                  satG: '',
+                  satPct: '',
+                  monoG: '',
+                  monoPct: '',
+                  poliG: '',
+                  poliPct: ''
+                }}
+              />
             </div>
           )}
 
@@ -460,6 +476,21 @@ export default function RealPatientModule() {
                   Dieta hipocalorica moderada (deficit de 500 kcal/dia), calculada para 2.000 kcal, com fracionamento em 5 a 6 refeicoes. Estimulo ao consumo de alimentos ricos em fibras soluveis (aveia, psyllium, leguminosas) e gorduras monoinsaturadas (azeite de oliva extravirgem) para controle da esteatose hepatica e perfil lipidico.
                 </p>
               </div>
+
+              <LipidQualitySection
+                title="Quadro de Distribuição de Gorduras (Frações Lipídicas do Cardápio)"
+                subtitle="Planejamento quali-quantitativo de lipídios da conduta ambulatorial (1g = 9 kcal)."
+                vetKcal={2000}
+                theme="indigo"
+                defaultValues={{
+                  satG: '',
+                  satPct: '',
+                  monoG: '',
+                  monoPct: '',
+                  poliG: '',
+                  poliPct: ''
+                }}
+              />
             </div>
           )}
         </div>

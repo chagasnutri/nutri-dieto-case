@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import PreceptorFAB from './PreceptorFAB';
 import PreceptorDrawer from './PreceptorDrawer';
+import LipidQualitySection from './LipidQualitySection';
 
 export default function SimulationModule() {
   const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio'>('anamnese');
@@ -152,6 +153,21 @@ export default function SimulationModule() {
                   <span className="text-emerald-400 font-bold text-sm">29.9 kg/m2</span>
                 </div>
               </div>
+
+              <LipidQualitySection
+                title="Análise do Recordatório de 24h - Frações Lipídicas"
+                subtitle="Avaliação da ingestão habitual de ácidos graxos relatada no recordatório com conversão automática (1g = 9 kcal)."
+                vetKcal={2212}
+                theme="emerald"
+                defaultValues={{
+                  satG: '15.0',
+                  satPct: '6.1',
+                  monoG: '35.0',
+                  monoPct: '14.2',
+                  poliG: '20.0',
+                  poliPct: '8.1'
+                }}
+              />
             </div>
           )}
 
@@ -462,6 +478,21 @@ export default function SimulationModule() {
                   <span className="font-mono">40 kcal | 10.4g CHO | 0.5g PTN</span>
                 </div>
               </div>
+
+              <LipidQualitySection
+                title="Quadro de Distribuição de Gorduras (Frações Lipídicas do Cardápio)"
+                subtitle="Planejamento de ácidos graxos com diretrizes e conversão automática (1g = 9 kcal)."
+                vetKcal={2100}
+                theme="emerald"
+                defaultValues={{
+                  satG: '14.0',
+                  satPct: '6.0',
+                  monoG: '38.0',
+                  monoPct: '16.3',
+                  poliG: '18.0',
+                  poliPct: '7.7'
+                }}
+              />
             </div>
           )}
         </div>
