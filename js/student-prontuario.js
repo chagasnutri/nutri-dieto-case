@@ -117,7 +117,9 @@ class StudentProntuarioManager {
       bioquimica: {
         examesRelevantes: "",
         interpretacaoNutricional: "",
-        interpretacoes: {}
+        interpretacoes: {},
+        exames: [],
+        listaCustom: []
       },
       interacaoDrogaNutriente: [],
       observacoesFarmacoterapia: "",

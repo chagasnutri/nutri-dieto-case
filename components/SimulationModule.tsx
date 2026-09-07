@@ -228,7 +228,7 @@ export default function SimulationModule() {
                               updated[idx].name = e.target.value;
                               setExams(updated);
                             }}
-                            placeholder=""
+                            placeholder="Digite o exame..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-emerald-500 outline-none"
                           />
                         </td>
@@ -241,7 +241,7 @@ export default function SimulationModule() {
                               updated[idx].ref = e.target.value;
                               setExams(updated);
                             }}
-                            placeholder=""
+                            placeholder="Valores de referência..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-300 focus:border-emerald-500 outline-none"
                           />
                         </td>
@@ -254,7 +254,7 @@ export default function SimulationModule() {
                               updated[idx].value = e.target.value;
                               setExams(updated);
                             }}
-                            placeholder=""
+                            placeholder="Valor encontrado..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-semibold text-white focus:border-emerald-500 outline-none"
                           />
                         </td>
@@ -267,7 +267,7 @@ export default function SimulationModule() {
                               updated[idx].interp = e.target.value;
                               setExams(updated);
                             }}
-                            placeholder=""
+                            placeholder="Interpretação e raciocínio clínico..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:border-emerald-500 outline-none resize-y"
                           />
                         </td>
@@ -333,7 +333,7 @@ export default function SimulationModule() {
                               updated[idx].med = e.target.value;
                               setInteractions(updated);
                             }}
-                            placeholder=""
+                            placeholder="Digite o fármaco..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-emerald-500 outline-none"
                           />
                         </td>
@@ -346,7 +346,7 @@ export default function SimulationModule() {
                               updated[idx].classification = e.target.value;
                               setInteractions(updated);
                             }}
-                            placeholder=""
+                            placeholder="Classe farmacológica..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 focus:border-emerald-500 outline-none"
                           />
                         </td>
@@ -359,7 +359,7 @@ export default function SimulationModule() {
                               updated[idx].conduta = e.target.value;
                               setInteractions(updated);
                             }}
-                            placeholder=""
+                            placeholder="Descreva a interação e conduta..."
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:border-emerald-500 outline-none resize-y"
                           />
                         </td>

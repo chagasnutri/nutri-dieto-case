@@ -2721,6 +2721,53 @@ Questões Avaliativas:
       const docxRelatorioBrand = DietoterapiaDocxReport.buildReportDocument(mockStudentReport, mockCaseReport);
       assert(docxRelatorioBrand !== null && typeof docxRelatorioBrand.generateBlob === "function",
         "Documento Word (.docx) construído com sucesso contendo seção obrigatória de Direitos Autorais");
+
+      // 122. Validação do Estado Inicial Limpo e Placeholders Genéricos nas Tabelas de Interações e Exames
+      const prontBlank = prontManager.getEmptyProntuario("caso-dm2-has");
+      assert(Array.isArray(prontBlank.interacaoDrogaNutriente) && prontBlank.interacaoDrogaNutriente.length === 0,
+        "Estado inicial de Interações Droga-Nutriente no prontuário é estritamente um array vazio [] sem dados de exemplo");
+      assert(Array.isArray(prontBlank.bioquimica.exames) && prontBlank.bioquimica.exames.length === 0,
+        "Estado inicial de Exames Bioquímicos no prontuário é estritamente um array vazio [] sem dados de exemplo");
+
+      // Teste da adição de nova linha em branco via método do gerenciador
+      const interRows = prontManager.addInteracaoDrogaNutriente(prontBlank);
+      assert(interRows.length === 1 && interRows[0].medicacao === "" && interRows[0].classificacao === "" && interRows[0].interacao === "",
+        "Linha adicionada em Interações Droga-Nutriente inicializa estritamente com strings vazias (''), sem mock de Metformina ou respostas");
+
+      const bioRows = prontManager.addExameBioquimico(prontBlank);
+      assert(bioRows.length === 1 && bioRows[0].exame === "" && bioRows[0].referencia === "" && bioRows[0].valor === "" && bioRows[0].interpretacao === "",
+        "Linha adicionada em Exames Bioquímicos inicializa estritamente com strings vazias (''), sem exames pré-definidos");
+
+      // Teste de leitura de app.js para garantir que os placeholders não vazem respostas
+      let appJsSource = "";
+      try {
+        const xhrJs = new XMLHttpRequest();
+        xhrJs.open("GET", "js/app.js", false);
+        xhrJs.send();
+        appJsSource = xhrJs.responseText || "";
+      } catch (e) {
+        try {
+          const respJs = await fetch("js/app.js");
+          appJsSource = await respJs.text();
+        } catch (e2) {}
+      }
+
+      assert(appJsSource.includes('placeholder="Digite o fármaco..."'),
+        "Input de medicação da tabela de interações possui placeholder genérico 'Digite o fármaco...'");
+      assert(appJsSource.includes('placeholder="Classe farmacológica..."'),
+        "Input de classe farmacológica possui placeholder genérico 'Classe farmacológica...'");
+      assert(appJsSource.includes('placeholder="Descreva a interação e conduta nutricional..."'),
+        "Textarea de conduta nutricional possui placeholder genérico 'Descreva a interação e conduta nutricional...'");
+      assert(appJsSource.includes('placeholder="Digite o exame..."'),
+        "Input de exame laboratorial possui placeholder genérico 'Digite o exame...'");
+      assert(appJsSource.includes('placeholder="Valores de referência..."'),
+        "Input de valores de referência possui placeholder genérico 'Valores de referência...'");
+      assert(appJsSource.includes('placeholder="Valor encontrado..."'),
+        "Input de valor encontrado possui placeholder genérico 'Valor encontrado...'");
+      assert(appJsSource.includes('placeholder="Interpretação e raciocínio clínico..."'),
+        "Textarea de interpretação clínica possui placeholder genérico 'Interpretação e raciocínio clínico...'");
+      assert(!appJsSource.includes("Ex: Metformina"),
+        "Código de app.js não contém nenhum placeholder de exemplo com fármacos específicos ('Ex: Metformina')");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

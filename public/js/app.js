@@ -1176,13 +1176,13 @@ document.addEventListener("DOMContentLoaded", () => {
       tr.className = index % 2 === 0 ? "bg-white hover:bg-slate-50/60 transition" : "bg-slate-50/30 hover:bg-slate-50/80 transition";
       tr.innerHTML = `
         <td class="p-2.5 align-top">
-          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(medVal)}">
+          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="Digite o fármaco..." autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(medVal)}">
         </td>
         <td class="p-2.5 align-top">
-          <input type="text" class="drug-item-classe w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(classeVal)}">
+          <input type="text" class="drug-item-classe w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="Classe farmacológica..." autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(classeVal)}">
         </td>
         <td class="p-2.5 align-top">
-          <textarea class="drug-item-interacao w-full text-xs p-1.5 border border-slate-300 rounded text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interVal)}</textarea>
+          <textarea class="drug-item-interacao w-full text-xs p-1.5 border border-slate-300 rounded text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" data-idx="${index}" placeholder="Descreva a interação e conduta nutricional..." autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interVal)}</textarea>
         </td>
         <td class="p-2.5 text-center align-middle">
           <button type="button" class="remove-drug-btn text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${index}" title="Remover este fármaco">
@@ -5389,16 +5389,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tr.innerHTML = `
         <td class="p-2.5 align-top">
-          <input type="text" class="student-bio-nome w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(exameNome)}">
+          <input type="text" class="student-bio-nome w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="Digite o exame..." data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(exameNome)}">
         </td>
         <td class="p-2.5 align-top">
-          <input type="text" class="student-bio-ref w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(refStr)}">
+          <input type="text" class="student-bio-ref w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="Valores de referência..." data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(refStr)}">
         </td>
         <td class="p-2.5 align-top">
-          <input type="text" class="student-bio-valor w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(valorAchado)}">
+          <input type="text" class="student-bio-valor w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="Valor encontrado..." data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(valorAchado)}">
         </td>
         <td class="p-2.5 align-top">
-          <textarea class="student-bio-interp w-full text-xs p-1.5 border border-slate-300 rounded bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interpStr)}</textarea>
+          <textarea class="student-bio-interp w-full text-xs p-1.5 border border-slate-300 rounded bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" placeholder="Interpretação e raciocínio clínico..." data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interpStr)}</textarea>
         </td>
         <td class="p-2.5 text-center align-middle">
           <button type="button" class="remove-student-bio-row text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${idx}" title="Remover este exame">
@@ -6221,27 +6221,6 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDrugNutrientTable();
       });
     }
-
-    // Chips de Sugestão Rápida de Interações Farmacológicas (3 colunas)
-    document.querySelectorAll(".drug-chip").forEach(chip => {
-      chip.addEventListener("click", (e) => {
-        const p = appState.currentProntuario;
-        if (!p) return;
-        const med = chip.dataset.med || chip.textContent.trim();
-        const classe = chip.dataset.classe || chip.dataset.nutr || "";
-        const inter = chip.dataset.inter || chip.dataset.cond || "";
-        prontuarioManager.addInteracaoDrogaNutriente(p, {
-          medicacao: med,
-          classificacao: classe,
-          interacao: inter,
-          medicamento: med,
-          nutrientes: classe,
-          conduta: inter
-        });
-        renderDrugNutrientTable();
-        showToast(`Interação com "${med}" inserida na tabela!`, "success");
-      });
-    });
 
     // Triagem Nutricional: Alternância condicional (Ambulatório vs Hospitalar)
     const triagemAmbRadio = document.getElementById("prontTriagemTipoAmb");
