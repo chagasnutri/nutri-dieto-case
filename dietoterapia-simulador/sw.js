@@ -1,8 +1,9 @@
 // DietoCase Service Worker - Offline & PWA Support
-const CACHE_NAME = 'dietocase-pwa-v3';
+const CACHE_NAME = 'dietocase-pwa-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './favicon.ico',
   './css/styles.css',
   './manifest.json',
   './js/cases-data.js',
@@ -19,6 +20,10 @@ const ASSETS_TO_CACHE = [
   './js/admin-manager.js',
   './js/app.js',
   './lib/mini-docx.js',
+  './icons/favicon.ico',
+  './icons/favicon.png',
+  './icons/favicon-32x32.png',
+  './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon.svg'

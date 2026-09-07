@@ -159,13 +159,12 @@ class PreceptorEngine {
     this.isLoading = true;
 
     try {
-      // Prepara payload
+      // Prepara payload para a rota de backend /api/chat (segurança: sem chaves no frontend)
       const payload = {
         message: text,
         clinicalContext: clinicalContext,
         history: this.messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-        systemPrompt: PRECEPTOR_SYSTEM_PROMPT,
-        clientApiKey: this.getApiKey()
+        systemPrompt: PRECEPTOR_SYSTEM_PROMPT
       };
 
       let assistantReply = "";

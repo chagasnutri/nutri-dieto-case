@@ -1,6 +1,7 @@
 /**
  * Rota de API Next.js Pages Router (/pages/api/chat.js) do Preceptor IA
- * Aplica rigorosamente o Método Socrático e aguarda a chave em NEXT_PUBLIC_AI_API_KEY
+ * Executada exclusivamente pelo lado do servidor.
+ * Aplica rigorosamente o Método Socrático e consome a variável segura AI_API_KEY (sem prefixo NEXT_PUBLIC_).
  */
 const PRECEPTOR_SYSTEM_PROMPT = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
 
@@ -10,19 +11,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, clinicalContext, history = [] } = req.body || {};
+    const { message, clinicalContext, history = [], systemPrompt: customSystemPrompt } = req.body || {};
 
     if (!message) {
       return res.status(400).json({ error: "Campo 'message' é obrigatório." });
     }
 
     const apiKey = (
-      process.env.NEXT_PUBLIC_AI_API_KEY ||
       process.env.AI_API_KEY ||
       process.env.GEMINI_API_KEY ||
       process.env.OPENAI_API_KEY ||
       ""
     ).trim();
+
+    const activeSystemPrompt = customSystemPrompt || PRECEPTOR_SYSTEM_PROMPT;
 
     const ctxString = clinicalContext ? `
 [CENÁRIO CLÍNICO DO PACIENTE EM TEMPO REAL]
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: PRECEPTOR_SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: activeSystemPrompt }] },
           contents: contents,
           generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
         })
@@ -71,7 +73,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Resposta socrática quando chave estiver pendente
+    // Resposta socrática quando chave estiver pendente no servidor
     const pNome = clinicalContext?.paciente?.nome || "o paciente";
     const pIdade = clinicalContext?.paciente?.idade || "idade a apurar";
     const pPatol = clinicalContext?.paciente?.patologiasHipoteses || "quadro clínico atual";
@@ -89,7 +91,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       reply: socraticReply,
       apiKeyConfigured: false,
-      note: "Rota pronta para receber a chave em NEXT_PUBLIC_AI_API_KEY."
+      note: "Rota pronta para receber a chave em AI_API_KEY no servidor."
     });
 
   } catch (error) {

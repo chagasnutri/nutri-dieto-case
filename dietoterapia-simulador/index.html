@@ -23,18 +23,27 @@
       }
     }
   </script>
-  <!-- PWA & Mobile Web App Meta Tags -->
+  <!-- PWA, Favicon & Mobile Web App Meta Tags -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#059669">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="DietoCase">
   <meta name="application-name" content="DietoCase">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+
+  <!-- Favicon Oficial do Aplicativo -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 
   <!-- Estilos Customizados -->
   <link rel="stylesheet" href="css/styles.css">
@@ -950,7 +959,7 @@
                     <span>🧪</span>
                     <span>Exames Bioquímicos e Raciocínio Clínico</span>
                   </h4>
-                  <p class="text-xs text-slate-500">Exames laboratoriais do paciente com avaliação propedêutica automática e raciocínio clínico individual.</p>
+                  <p class="text-xs text-slate-500">Exames laboratoriais do paciente para análise e formulação do raciocínio clínico individual do estudante.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2.5">
                   <div class="flex items-center space-x-2 text-[11px] font-semibold">
@@ -995,7 +1004,7 @@
                   <span>🧠 Síntese e Raciocínio Clínico-Nutricional Global dos Exames:</span>
                   <span class="text-[10px] text-slate-400 font-normal">Integração metabólica para a conduta</span>
                 </label>
-                <textarea id="prontInterpretacaoBioq" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" rows="3" placeholder="Qual a relação integrada dos exames com a patologia de base do paciente e quais exigem intervenção dietoterápica imediata?"></textarea>
+                <textarea id="prontInterpretacaoBioq" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" rows="3" placeholder=""></textarea>
               </div>
 
               <!-- Campo oculto para compatibilidade com rotinas legadas -->

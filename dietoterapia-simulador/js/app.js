@@ -450,14 +450,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (urlParams.get("demo") === "bioquimica") {
           if (appState.currentProntuario) {
             if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
-            appState.currentProntuario.bioquimica.interpretacoes = {
-              "Glicemia de Jejum": "Hiperglicemia acentuada (> 126 mg/dL), indicando descontrole glicêmico grave e resistência periférica à insulina.",
-              "Hemoglobina Glicada (HbA1c)": "Controle glicêmico crônico inadequado (> 7.0%), com elevado risco micro e macrovascular.",
-              "Colesterol Total": "Hipercolesterolemia moderada associada ao descontrole metabólico e perfil lipídico aterogênico.",
-              "HDL-Colesterol": "HDL reduzido (< 40 mg/dL), configurando fator de risco cardiovascular independente.",
-              "Triglicerídeos": "Hipertrigliceridemia moderada (> 150 mg/dL), fortemente ligada à dieta hiperglicídica de alto índice glicêmico."
-            };
-            appState.currentProntuario.bioquimica.interpretacaoNutricional = "Quadro de descompensação metabólica com síndrome de resistência insulínica e dislipidemia mista aterogênica. A intervenção dietoterápica prioritária deve focar no controle de carboidratos refinados, aumento de fibras solúveis e substituição de gorduras saturadas por mono e poli-insaturadas.";
+            appState.currentProntuario.bioquimica.interpretacoes = {};
+            appState.currentProntuario.bioquimica.interpretacaoNutricional = "";
           }
           populateProntuarioForm();
         }
@@ -1320,9 +1314,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleAddCustomBioExam() {
     const nome = prompt("Nome do Exame Laboratorial (ex: Glicemia de Jejum, Hemoglobina Glicada, Triglicerídeos, Ureia):");
     if (!nome || !nome.trim()) return;
-    const ref = prompt("Valor de Referência (ex: 70 - 99 mg/dL ou < 150 mg/dL):", "Normal");
-    const valor = prompt("Valor Achado do Paciente (ex: 110 mg/dL):", "");
-    const interp = prompt("Interpretação Clínica Preliminar (opcional):", "");
+    const ref = prompt("Valor de Referência (ex: 70 - 99 mg/dL ou < 150 mg/dL):", "-");
+    const valor = prompt("Valor Achado do Paciente (ex: 110 mg/dL):", "-");
 
     if (!appState.currentCase) return;
     if (!Array.isArray(appState.currentCase.bioquimica)) {
@@ -1333,7 +1326,7 @@ document.addEventListener("DOMContentLoaded", () => {
       exame: nome.trim(),
       referencia: (ref || "-").trim(),
       valor: (valor || "-").trim(),
-      interpretacao: (interp || "").trim()
+      isCustom: true
     };
 
     appState.currentCase.bioquimica.push(novoExame);
@@ -1341,9 +1334,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (appState.currentProntuario) {
       if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
       if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
-      if (interp) {
-        appState.currentProntuario.bioquimica.interpretacoes[novoExame.exame] = interp;
-      }
+      // Inicia o campo de interpretação estritamente em branco para o aluno formular seu raciocínio
+      appState.currentProntuario.bioquimica.interpretacoes[novoExame.exame] = "";
       if (!Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
         appState.currentProntuario.bioquimica.listaCustom = [];
       }
@@ -5179,22 +5171,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const exameNome = item.exame || `Exame ${idx + 1}`;
       const refStr = item.referencia || "-";
       const valorAchado = item.valor || "-";
-      const savedInterp = (interps && interps[exameNome] !== undefined)
+
+      // Aprendizado Ativo: Campo estritamente em branco. Não sugere textos, predições ou feedbacks automáticos.
+      const savedInterp = (interps && typeof interps[exameNome] === "string")
         ? interps[exameNome]
-        : (interps && interps[idx] !== undefined ? interps[idx] : "");
+        : (interps && typeof interps[idx] === "string" ? interps[idx] : "");
 
       const badgeHtml = (typeof renderBiochemicalValueCell === "function")
         ? renderBiochemicalValueCell(valorAchado, refStr)
         : `<span class="font-bold text-slate-800">${escapeHtml(valorAchado)}</span>`;
 
+      // Suporte à remoção de exames customizados / atendimento real
+      const isRemovable = !!(item.isCustom || appState.workflowMode === "real" || (appState.currentProntuario?.bioquimica?.listaCustom && appState.currentProntuario.bioquimica.listaCustom.some(c => c.exame === exameNome)));
+      const removeBtnHtml = isRemovable 
+        ? `<button type="button" class="text-slate-300 hover:text-rose-500 font-bold ml-1.5 remove-student-bio-row cursor-pointer" data-exam="${escapeHtml(exameNome)}" title="Remover este exame">✕</button>`
+        : '';
+
       tr.innerHTML = `
         <td class="py-3 px-4 align-top">
-          <div class="flex items-start space-x-2">
-            <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
-            <div>
-              <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
-              <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
+          <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-2">
+              <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
+              <div>
+                <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
+                <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
+              </div>
             </div>
+            ${removeBtnHtml}
           </div>
         </td>
         <td class="py-3 px-3 align-top">
@@ -5211,7 +5214,11 @@ document.addEventListener("DOMContentLoaded", () => {
             rows="2" 
             data-exam="${escapeHtml(exameNome)}" 
             data-idx="${idx}" 
-            placeholder="Interprete este achado clínico (ex: diagnóstico provável, risco metabólico e impacto dietoterápico)..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="sentences"
+            spellcheck="false"
+            placeholder=""
           >${escapeHtml(savedInterp)}</textarea>
         </td>
       `;
@@ -5229,6 +5236,27 @@ document.addEventListener("DOMContentLoaded", () => {
           appState.currentProntuario.bioquimica.interpretacoes[exam] = val;
           syncBioquimicaExamesRelevantesText();
         }
+      });
+    });
+
+    // Event listener para remoção de exames customizados no aluno
+    tbody.querySelectorAll(".remove-student-bio-row").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const examToRemove = e.currentTarget.dataset.exam;
+        if (!examToRemove) return;
+        if (appState.currentCase && Array.isArray(appState.currentCase.bioquimica)) {
+          appState.currentCase.bioquimica = appState.currentCase.bioquimica.filter(b => b.exame !== examToRemove);
+        }
+        if (appState.currentProntuario && appState.currentProntuario.bioquimica) {
+          if (appState.currentProntuario.bioquimica.interpretacoes) {
+            delete appState.currentProntuario.bioquimica.interpretacoes[examToRemove];
+          }
+          if (Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
+            appState.currentProntuario.bioquimica.listaCustom = appState.currentProntuario.bioquimica.listaCustom.filter(b => b.exame !== examToRemove);
+          }
+        }
+        renderStudentBioTable(appState.currentCase?.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
+        syncBioquimicaExamesRelevantesText();
       });
     });
   }
@@ -5960,21 +5988,29 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Modal de API Key Gemini
-    openApiKeyBtn.addEventListener("click", () => {
-      apiKeyInput.value = chatEngine.getApiKey();
-      apiKeyModal.classList.remove("hidden");
-    });
+    // Configuração de IA Segura no Servidor (AI_API_KEY)
+    if (openApiKeyBtn) {
+      openApiKeyBtn.addEventListener("click", () => {
+        if (apiKeyModal && apiKeyInput) {
+          apiKeyModal.classList.remove("hidden");
+        } else {
+          showToast("🔒 Segurança Ativa: A chave da API é configurada exclusivamente no servidor backend (/api/chat) via variável AI_API_KEY, sem exposição no frontend.", "info");
+        }
+      });
+    }
 
-    closeApiKeyModalBtn.addEventListener("click", () => {
-      apiKeyModal.classList.add("hidden");
-    });
+    if (closeApiKeyModalBtn && apiKeyModal) {
+      closeApiKeyModalBtn.addEventListener("click", () => {
+        apiKeyModal.classList.add("hidden");
+      });
+    }
 
-    saveApiKeyBtn.addEventListener("click", () => {
-      chatEngine.setApiKey(apiKeyInput.value);
-      apiKeyModal.classList.add("hidden");
-      showToast(apiKeyInput.value ? "Chave da Gemini API salva com sucesso!" : "Chave da Gemini API removida. Usando motor nativo offline.");
-    });
+    if (saveApiKeyBtn && apiKeyModal) {
+      saveApiKeyBtn.addEventListener("click", () => {
+        apiKeyModal.classList.add("hidden");
+        showToast("🔒 As chamadas ao LLM são processadas exclusivamente pelo lado do servidor via AI_API_KEY.", "info");
+      });
+    }
 
     // Modal de Aba Bloqueada (Aluno)
     const closeBlockedTabModalBtn = document.getElementById("closeBlockedTabModalBtn");

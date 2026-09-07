@@ -1,5 +1,6 @@
 // Netlify Serverless Function para a rota /api/chat do Preceptor IA
-// Suporta a injeção da variável de ambiente NEXT_PUBLIC_AI_API_KEY ou AI_API_KEY
+// Executada exclusivamente pelo lado do servidor.
+// Suporta a injeção da variável de ambiente segura AI_API_KEY (sem prefixo NEXT_PUBLIC_).
 
 const MANDATORY_SYSTEM_PROMPT = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
 
@@ -25,7 +26,7 @@ exports.handler = async (event, context) => {
 
   try {
     const data = JSON.parse(event.body || "{}");
-    const { message, clinicalContext, history = [], clientApiKey } = data;
+    const { message, clinicalContext, history = [], systemPrompt: customSystemPrompt } = data;
 
     if (!message || typeof message !== "string") {
       return {
@@ -35,15 +36,15 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Identifica chave de API em variáveis de ambiente ou enviada pelo cliente
+    // Identifica chave de API em variáveis de ambiente exclusivamente no servidor
     const apiKey = (
-      process.env.NEXT_PUBLIC_AI_API_KEY ||
       process.env.AI_API_KEY ||
       process.env.GEMINI_API_KEY ||
       process.env.OPENAI_API_KEY ||
-      clientApiKey ||
       ""
     ).trim();
+
+    const activeSystemPrompt = customSystemPrompt || MANDATORY_SYSTEM_PROMPT;
 
     // Contexto textual formatado para o LLM
     const ctxString = clinicalContext ? `
@@ -58,7 +59,7 @@ exports.handler = async (event, context) => {
 • Conduta / VET Planejado: ${clinicalContext.planejamentoConduta?.vetPlanejadoKcal || 'Ainda não calculado'}
 ` : "";
 
-    // SE A CHAVE DE API ESTIVER CONFIGURADA: Dispara chamada real ao modelo LLM (Google Gemini)
+    // SE A CHAVE DE API ESTIVER CONFIGURADA NO SERVIDOR: Dispara chamada real ao modelo LLM (Google Gemini)
     if (apiKey) {
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -83,7 +84,7 @@ exports.handler = async (event, context) => {
 
       const geminiBody = {
         systemInstruction: {
-          parts: [{ text: MANDATORY_SYSTEM_PROMPT }]
+          parts: [{ text: activeSystemPrompt }]
         },
         contents: contents,
         generationConfig: {
@@ -116,7 +117,7 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // CASO A CHAVE DE API ESTEJA VAZIA (NEXT_PUBLIC_AI_API_KEY PENDENTE):
+    // CASO A CHAVE DE API ESTEJA VAZIA (AI_API_KEY PENDENTE NO SERVIDOR):
     // Retorna resposta socrática pedagogicamente guiada demonstrando a funcionalidade
     const pNome = clinicalContext?.paciente?.nome || "o paciente";
     const pIdade = clinicalContext?.paciente?.idade || "idade a apurar";
@@ -138,7 +139,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         reply: socraticReply,
         apiKeyConfigured: false,
-        note: "Chave NEXT_PUBLIC_AI_API_KEY aguardando injeção. Modo Socrático de demonstração ativo."
+        note: "Chave AI_API_KEY aguardando injeção no servidor. Modo Socrático de demonstração ativo."
       })
     };
 

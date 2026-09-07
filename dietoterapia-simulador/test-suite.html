@@ -2145,12 +2145,12 @@ Questões Avaliativas:
       assert(preceptorEngine.messages.some(m => m.content === "Como devo analisar os exames laboratoriais?"),
         "Preceptor Engine: Pergunta do estudante gravada no histórico de mensagens");
 
-      // 115. Componentes React & Next.js e Variável de Ambiente NEXT_PUBLIC_AI_API_KEY
+      // 115. Segurança de Ambiente: Variável AI_API_KEY no Servidor (Sem expor NEXT_PUBLIC_)
       try {
         const envResp = await fetch(".env.example");
         const envText = await envResp.text();
-        assert(envText.includes("NEXT_PUBLIC_AI_API_KEY="),
-          "Variável de Ambiente: .env.example documenta NEXT_PUBLIC_AI_API_KEY= pronta para injeção");
+        assert(envText.includes("AI_API_KEY=") && !envText.includes("NEXT_PUBLIC_AI_API_KEY="),
+          "Variável de Ambiente: .env.example documenta exclusivamente AI_API_KEY= no servidor, sem prefixo NEXT_PUBLIC_");
       } catch (e) {
         assert(true, "Variável de Ambiente: .env.example validada");
       }
@@ -2164,6 +2164,82 @@ Questões Avaliativas:
       } catch (e) {
         assert(true, "Backend Netlify: Redirecionamento /api/chat validado");
       }
+
+      // 116. Pedagogia Ativa em Exames Bioquímicos: Ausência de Sugestões Automáticas e Paridade Estrita
+      // 116.1. Chat Engine: Omissão de parecer/interpretação nos diálogos de exames laboratoriais
+      const chatEngineBio = new ClinicalChatEngine();
+      const respGlicDialogo = await chatEngineBio.processQuestion("Qual o resultado da glicemia de jejum?", caso1, "medico");
+      assert(respGlicDialogo.includes("188") && respGlicDialogo.includes("99"),
+        "Chat Engine: Informa com precisão o valor achado e referência do exame laboratorial");
+      assert(!respGlicDialogo.toLowerCase().includes("hiperglicemia acentuada") &&
+             !respGlicDialogo.includes("[Interpretação") &&
+             !respGlicDialogo.includes("[Parecer Médico]:"),
+        "Chat Engine: NÃO sugere nem vaza interpretação clínica prévia, preservando o aprendizado ativo");
+
+      // 116.2. Prontuário Modelo: Inicialização 100% em branco para interpretações clínicas
+      const pMgrBio = new StudentProntuarioManager();
+      const prontBioVazio = pMgrBio.getEmptyProntuario("caso-dm2-has");
+      assert(prontBioVazio.bioquimica && typeof prontBioVazio.bioquimica.interpretacoes === "object",
+        "Prontuário Modelo: Objeto 'bioquimica.interpretacoes' inicializado corretamente");
+      const todasChavesVazias = Object.keys(prontBioVazio.bioquimica.interpretacoes).length === 0 ||
+        Object.values(prontBioVazio.bioquimica.interpretacoes).every(v => !v || v.trim() === "");
+      assert(todasChavesVazias,
+        "Prontuário Modelo: Interpretações clínicas de exames estão 100% em branco por padrão (sem respostas prontas)");
+
+      // 116.3. Relatório em Modo Simulação: Não vazar interpretação do banco de casos e imprimir estritamente o texto do aluno
+      const htmlSimSemInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioVazio, caso1);
+      assert(htmlSimSemInterp.includes("Não preenchido / ---"),
+        "Relatório Simulação (HTML/PDF): Exibe 'Não preenchido / ---' quando o aluno não formulou interpretação");
+      assert(!htmlSimSemInterp.includes("Hiperglicemia acentuada") && !htmlSimSemInterp.includes("Mau controle glicêmico"),
+        "Relatório Simulação (HTML/PDF): JAMAIS imprime sugestões ou interpretações do caso clínico se o aluno não digitou");
+
+      const docxSimSemInterp = DietoterapiaDocxReport.buildReportDocument(prontBioVazio, caso1);
+      const docxXmlSemInterp = docxSimSemInterp.generateDocumentXml();
+      assert(!docxXmlSemInterp.includes("Hiperglicemia acentuada") && !docxXmlSemInterp.includes("Mau controle glic"),
+        "Relatório Simulação (Word .docx): Não vaza interpretação prévia do caso clínico no documento DOCX");
+
+      // Agora o aluno preenche seu próprio raciocínio clínico formulado do zero
+      prontBioVazio.bioquimica.interpretacoes["Glicemia de Jejum"] = "Quadro de glicemia de jejum descompensada requerendo ajuste alimentar imediato";
+      const htmlSimComInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioVazio, caso1);
+      assert(htmlSimComInterp.includes("Quadro de glicemia de jejum descompensada requerendo ajuste alimentar imediato"),
+        "Relatório Simulação: Imprime fidedignamente o raciocínio clínico formulado e digitado pelo estudante");
+
+      // 116.4. Paridade Obrigatória com o Modo Atendimento Real
+      const prontBioReal = pMgrBio.getEmptyProntuario("atendimento-real-bio-test");
+      prontBioReal.isRealPatient = true;
+      prontBioReal.dadosPacienteReal = {
+        nome: "Paciente Real Teste",
+        idade: 48,
+        sexo: "Masculino",
+        ocupacao: "Vendedor",
+        hipoteseDiagnostica: "Dislipidemia Mista e Resistência Insulínica"
+      };
+      prontBioReal.bioquimica.listaCustom = [
+        { exame: "Perfil Lipídico - Triglicerídeos", valor: "310 mg/dL", referencia: "< 150 mg/dL" }
+      ];
+      const realCaseMetaBio = {
+        id: "atendimento-real-bio-test",
+        title: "Atendimento Presencial Real",
+        isRealCase: true,
+        patient: prontBioReal.dadosPacienteReal,
+        hipoteseDiagnostica: prontBioReal.dadosPacienteReal.hipoteseDiagnostica
+      };
+
+      // Real sem preenchimento do aluno -> "Não preenchido / ---"
+      const htmlRealSemInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioReal, realCaseMetaBio);
+      assert(htmlRealSemInterp.includes("Não preenchido / ---"),
+        "Relatório Atendimento Real: Exibe 'Não preenchido / ---' para exames customizados sem interpretação");
+
+      // Real com interpretação formulada pelo acadêmico
+      prontBioReal.bioquimica.interpretacoes["Perfil Lipídico - Triglicerídeos"] = "Hipertrigliceridemia grave associada à dieta rica em carboidratos refinados";
+      const htmlRealComInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioReal, realCaseMetaBio);
+      assert(htmlRealComInterp.includes("Hipertrigliceridemia grave associada à dieta rica em carboidratos refinados"),
+        "Paridade Obrigatória: Relatório em Modo Atendimento Real imprime rigorosamente o texto digitado pelo aluno");
+
+      const docxRealBio = DietoterapiaDocxReport.buildReportDocument(prontBioReal, realCaseMetaBio);
+      const docxRealBioXml = docxRealBio.generateDocumentXml();
+      assert(docxRealBioXml.includes("Hipertrigliceridemia grave associada") || docxRealBioXml.includes("Hipertrigliceridemia"),
+        "Paridade Obrigatória: Relatório DOCX do Atendimento Real inclui interpretação autônoma do acadêmico");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

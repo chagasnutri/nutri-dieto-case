@@ -70,11 +70,11 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Médico responde HbA1c de 8.9%: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)), caracterizando mau controle glicêmico crônico."
+              ✅ PASS: Médico responde HbA1c de 8.9%: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)). A análise clínica e dietoterápica fica a cargo da sua avaliação nutricional."
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Humanização: Resposta médica sem prefixos mecânicos ou colchetes: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)), caracterizando mau controle glicêmico crônico."
+              ✅ PASS: Humanização: Resposta médica sem prefixos mecânicos ou colchetes: "Colega, o laudo de Hemoglobina Glicada (HbA1c) do paciente resultou em 8.9 % (valor de referência: &lt; 5.7 % (meta &lt; 7.0%)). A análise clínica e dietoterápica fica a cargo da sua avaliação nutricional."
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -82,7 +82,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Humanização: Acompanhante refere-se naturalmente ao paciente ("Doutor(a), disso eu realmente não sei te dizer. Ele(a) nunca comentou nada parecido em casa.")
+              ✅ PASS: Humanização: Acompanhante refere-se naturalmente ao paciente ("Olha, os médicos não falaram nada disso com a gente e ele(a) não reclama disso.")
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -406,7 +406,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: 284779 bytes
+              ✅ PASS: Relatório Word completo gerado com sucesso incluindo AJ e Demais Avaliações: 284649 bytes
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -514,7 +514,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Relatório Word gerado com dados alternativos de Chumlea e adequação do VET TACO (284819 bytes)
+              ✅ PASS: Relatório Word gerado com dados alternativos de Chumlea e adequação do VET TACO (284689 bytes)
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -610,7 +610,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Relatório Word (.docx) gerado com sucesso com Cardápio TACO e tabela de metas (273601 bytes)
+              ✅ PASS: Relatório Word (.docx) gerado com sucesso com Cardápio TACO e tabela de metas (273471 bytes)
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -862,7 +862,7 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (277859 bytes)
+              ✅ PASS: Relatório Word (.docx): Gerado com sucesso incluindo Seção 2.2 de Cálculos de Necessidades e Decisão Clínica (277729 bytes)
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
@@ -1594,11 +1594,55 @@
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
-              ✅ PASS: Variável de Ambiente: .env.example documenta NEXT_PUBLIC_AI_API_KEY= pronta para injeção
+              ✅ PASS: Variável de Ambiente: .env.example documenta exclusivamente AI_API_KEY= no servidor, sem prefixo NEXT_PUBLIC_
             </div>
           
             <div style="font-family: monospace; padding: 4px; color: green">
               ✅ PASS: Backend Netlify: Redirecionamento da rota /api/chat configurado no netlify.toml
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Chat Engine: Informa com precisão o valor achado e referência do exame laboratorial
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Chat Engine: NÃO sugere nem vaza interpretação clínica prévia, preservando o aprendizado ativo
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário Modelo: Objeto 'bioquimica.interpretacoes' inicializado corretamente
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Prontuário Modelo: Interpretações clínicas de exames estão 100% em branco por padrão (sem respostas prontas)
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Simulação (HTML/PDF): Exibe 'Não preenchido / ---' quando o aluno não formulou interpretação
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Simulação (HTML/PDF): JAMAIS imprime sugestões ou interpretações do caso clínico se o aluno não digitou
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Simulação (Word .docx): Não vaza interpretação prévia do caso clínico no documento DOCX
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Simulação: Imprime fidedignamente o raciocínio clínico formulado e digitado pelo estudante
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Relatório Atendimento Real: Exibe 'Não preenchido / ---' para exames customizados sem interpretação
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Paridade Obrigatória: Relatório em Modo Atendimento Real imprime rigorosamente o texto digitado pelo aluno
+            </div>
+          
+            <div style="font-family: monospace; padding: 4px; color: green">
+              ✅ PASS: Paridade Obrigatória: Relatório DOCX do Atendimento Real inclui interpretação autônoma do acadêmico
             </div>
           </div>
 
@@ -3708,12 +3752,12 @@ Questões Avaliativas:
       assert(preceptorEngine.messages.some(m => m.content === "Como devo analisar os exames laboratoriais?"),
         "Preceptor Engine: Pergunta do estudante gravada no histórico de mensagens");
 
-      // 115. Componentes React & Next.js e Variável de Ambiente NEXT_PUBLIC_AI_API_KEY
+      // 115. Segurança de Ambiente: Variável AI_API_KEY no Servidor (Sem expor NEXT_PUBLIC_)
       try {
         const envResp = await fetch(".env.example");
         const envText = await envResp.text();
-        assert(envText.includes("NEXT_PUBLIC_AI_API_KEY="),
-          "Variável de Ambiente: .env.example documenta NEXT_PUBLIC_AI_API_KEY= pronta para injeção");
+        assert(envText.includes("AI_API_KEY=") && !envText.includes("NEXT_PUBLIC_AI_API_KEY="),
+          "Variável de Ambiente: .env.example documenta exclusivamente AI_API_KEY= no servidor, sem prefixo NEXT_PUBLIC_");
       } catch (e) {
         assert(true, "Variável de Ambiente: .env.example validada");
       }
@@ -3727,6 +3771,82 @@ Questões Avaliativas:
       } catch (e) {
         assert(true, "Backend Netlify: Redirecionamento /api/chat validado");
       }
+
+      // 116. Pedagogia Ativa em Exames Bioquímicos: Ausência de Sugestões Automáticas e Paridade Estrita
+      // 116.1. Chat Engine: Omissão de parecer/interpretação nos diálogos de exames laboratoriais
+      const chatEngineBio = new ClinicalChatEngine();
+      const respGlicDialogo = await chatEngineBio.processQuestion("Qual o resultado da glicemia de jejum?", caso1, "medico");
+      assert(respGlicDialogo.includes("188") && respGlicDialogo.includes("99"),
+        "Chat Engine: Informa com precisão o valor achado e referência do exame laboratorial");
+      assert(!respGlicDialogo.toLowerCase().includes("hiperglicemia acentuada") &&
+             !respGlicDialogo.includes("[Interpretação") &&
+             !respGlicDialogo.includes("[Parecer Médico]:"),
+        "Chat Engine: NÃO sugere nem vaza interpretação clínica prévia, preservando o aprendizado ativo");
+
+      // 116.2. Prontuário Modelo: Inicialização 100% em branco para interpretações clínicas
+      const pMgrBio = new StudentProntuarioManager();
+      const prontBioVazio = pMgrBio.getEmptyProntuario("caso-dm2-has");
+      assert(prontBioVazio.bioquimica && typeof prontBioVazio.bioquimica.interpretacoes === "object",
+        "Prontuário Modelo: Objeto 'bioquimica.interpretacoes' inicializado corretamente");
+      const todasChavesVazias = Object.keys(prontBioVazio.bioquimica.interpretacoes).length === 0 ||
+        Object.values(prontBioVazio.bioquimica.interpretacoes).every(v => !v || v.trim() === "");
+      assert(todasChavesVazias,
+        "Prontuário Modelo: Interpretações clínicas de exames estão 100% em branco por padrão (sem respostas prontas)");
+
+      // 116.3. Relatório em Modo Simulação: Não vazar interpretação do banco de casos e imprimir estritamente o texto do aluno
+      const htmlSimSemInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioVazio, caso1);
+      assert(htmlSimSemInterp.includes("Não preenchido / ---"),
+        "Relatório Simulação (HTML/PDF): Exibe 'Não preenchido / ---' quando o aluno não formulou interpretação");
+      assert(!htmlSimSemInterp.includes("Hiperglicemia acentuada") && !htmlSimSemInterp.includes("Mau controle glicêmico"),
+        "Relatório Simulação (HTML/PDF): JAMAIS imprime sugestões ou interpretações do caso clínico se o aluno não digitou");
+
+      const docxSimSemInterp = DietoterapiaDocxReport.buildReportDocument(prontBioVazio, caso1);
+      const docxXmlSemInterp = docxSimSemInterp.generateDocumentXml();
+      assert(!docxXmlSemInterp.includes("Hiperglicemia acentuada") && !docxXmlSemInterp.includes("Mau controle glic"),
+        "Relatório Simulação (Word .docx): Não vaza interpretação prévia do caso clínico no documento DOCX");
+
+      // Agora o aluno preenche seu próprio raciocínio clínico formulado do zero
+      prontBioVazio.bioquimica.interpretacoes["Glicemia de Jejum"] = "Quadro de glicemia de jejum descompensada requerendo ajuste alimentar imediato";
+      const htmlSimComInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioVazio, caso1);
+      assert(htmlSimComInterp.includes("Quadro de glicemia de jejum descompensada requerendo ajuste alimentar imediato"),
+        "Relatório Simulação: Imprime fidedignamente o raciocínio clínico formulado e digitado pelo estudante");
+
+      // 116.4. Paridade Obrigatória com o Modo Atendimento Real
+      const prontBioReal = pMgrBio.getEmptyProntuario("atendimento-real-bio-test");
+      prontBioReal.isRealPatient = true;
+      prontBioReal.dadosPacienteReal = {
+        nome: "Paciente Real Teste",
+        idade: 48,
+        sexo: "Masculino",
+        ocupacao: "Vendedor",
+        hipoteseDiagnostica: "Dislipidemia Mista e Resistência Insulínica"
+      };
+      prontBioReal.bioquimica.listaCustom = [
+        { exame: "Perfil Lipídico - Triglicerídeos", valor: "310 mg/dL", referencia: "< 150 mg/dL" }
+      ];
+      const realCaseMetaBio = {
+        id: "atendimento-real-bio-test",
+        title: "Atendimento Presencial Real",
+        isRealCase: true,
+        patient: prontBioReal.dadosPacienteReal,
+        hipoteseDiagnostica: prontBioReal.dadosPacienteReal.hipoteseDiagnostica
+      };
+
+      // Real sem preenchimento do aluno -> "Não preenchido / ---"
+      const htmlRealSemInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioReal, realCaseMetaBio);
+      assert(htmlRealSemInterp.includes("Não preenchido / ---"),
+        "Relatório Atendimento Real: Exibe 'Não preenchido / ---' para exames customizados sem interpretação");
+
+      // Real com interpretação formulada pelo acadêmico
+      prontBioReal.bioquimica.interpretacoes["Perfil Lipídico - Triglicerídeos"] = "Hipertrigliceridemia grave associada à dieta rica em carboidratos refinados";
+      const htmlRealComInterp = DietoterapiaDocxReport.buildHtmlReport(prontBioReal, realCaseMetaBio);
+      assert(htmlRealComInterp.includes("Hipertrigliceridemia grave associada à dieta rica em carboidratos refinados"),
+        "Paridade Obrigatória: Relatório em Modo Atendimento Real imprime rigorosamente o texto digitado pelo aluno");
+
+      const docxRealBio = DietoterapiaDocxReport.buildReportDocument(prontBioReal, realCaseMetaBio);
+      const docxRealBioXml = docxRealBio.generateDocumentXml();
+      assert(docxRealBioXml.includes("Hipertrigliceridemia grave associada") || docxRealBioXml.includes("Hipertrigliceridemia"),
+        "Paridade Obrigatória: Relatório DOCX do Atendimento Real inclui interpretação autônoma do acadêmico");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

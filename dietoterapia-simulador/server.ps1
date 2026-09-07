@@ -116,6 +116,77 @@ while ($listener.IsListening) {
             }
         }
 
+        # ROTA DE API: Preceptor IA (/api/chat) - Processamento exclusivo do lado do servidor
+        if ($relPath -eq "/api/chat" -and $request.HttpMethod -eq "POST") {
+            $response.ContentType = "application/json; charset=utf-8"
+            $response.AddHeader("Cache-Control", "no-store, no-cache, must-revalidate")
+
+            $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
+            $bodyText = $reader.ReadToEnd()
+            $reader.Close()
+
+            $parsedBody = $null
+            try { $parsedBody = ConvertFrom-Json $bodyText } catch {}
+            $msg = if ($parsedBody -and $parsedBody.message) { $parsedBody.message } else { "" }
+
+            # Obtém chave segura do servidor (AI_API_KEY)
+            $serverApiKey = $env:AI_API_KEY
+            if ([string]::IsNullOrWhiteSpace($serverApiKey)) {
+                $envLocalPath = Join-Path $basePath ".env.local"
+                if (Test-Path $envLocalPath -PathType Leaf) {
+                    Get-Content $envLocalPath | ForEach-Object {
+                        if ($_ -match '^\s*AI_API_KEY\s*=\s*(.+)$') {
+                            $serverApiKey = $matches[1].Trim()
+                        }
+                    }
+                }
+            }
+
+            $assistantReply = ""
+            $apiKeyConfigured = $false
+
+            if (-not [string]::IsNullOrWhiteSpace($serverApiKey)) {
+                try {
+                    $geminiUri = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$serverApiKey"
+                    $sysPrompt = if ($parsedBody -and $parsedBody.systemPrompt) {
+                        $parsedBody.systemPrompt
+                    } else {
+                        'Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Utilize exclusivamente o Método Socrático.'
+                    }
+
+                    $llmPayload = @{
+                        systemInstruction = @{ parts = @( @{ text = $sysPrompt } ) }
+                        contents = @( @{ role = "user"; parts = @( @{ text = $msg } ) } )
+                        generationConfig = @{ temperature = 0.7; maxOutputTokens = 600 }
+                    } | ConvertTo-Json -Depth 6
+
+                    $geminiResp = Invoke-RestMethod -Uri $geminiUri -Method Post -ContentType "application/json" -Body $llmPayload -TimeoutSec 15
+                    if ($geminiResp.candidates -and $geminiResp.candidates[0].content.parts) {
+                        $assistantReply = $geminiResp.candidates[0].content.parts[0].text
+                        $apiKeyConfigured = $true
+                    }
+                } catch {
+                    "Erro ao chamar LLM no servidor: $_" | Out-File $logFile -Append
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($assistantReply)) {
+                $assistantReply = "Como preceptor de nutrição clínica, estimulo sua reflexão crítica. Considerando os dados clínicos cadastrados para este paciente, que diretrizes fisiopatológicas fundamentam sua tomada de decisão?"
+            }
+
+            $respObj = [PSCustomObject]@{
+                reply = $assistantReply
+                apiKeyConfigured = $apiKeyConfigured
+                serverSide = $true
+            }
+            $respJson = ConvertTo-Json $respObj
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($respJson)
+            $response.StatusCode = 200
+            $response.OutputStream.Write($bytes, 0, $bytes.Length)
+            $response.Close()
+            continue
+        }
+
         # Servidor de arquivos estáticos
         if ($relPath -eq "/" -or [string]::IsNullOrWhiteSpace($relPath)) {
             $relPath = "/index.html"
