@@ -4,6 +4,8 @@
         "nome":  "Arroz, tipo 1, cozido",
         "categoria":  "Cereais e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  128.0,
         "cho":  28.1,
         "ptn":  2.5,
@@ -16,6 +18,8 @@
         "ferro":  0.1,
         "sodio":  1.0,
         "potassio":  34.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "4 colheres de sopa (~100g)"
     },
     {
@@ -23,6 +27,8 @@
         "nome":  "Arroz, integral, cozido",
         "categoria":  "Cereais e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  124.0,
         "cho":  25.8,
         "ptn":  2.6,
@@ -35,6 +41,8 @@
         "ferro":  0.3,
         "sodio":  1.0,
         "potassio":  75.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "4 colheres de sopa (~100g)"
     },
     {
@@ -42,6 +50,8 @@
         "nome":  "FeijÃ£o, carioca, cozido",
         "categoria":  "Leguminosas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  76.0,
         "cho":  13.6,
         "ptn":  4.8,
@@ -54,6 +64,8 @@
         "ferro":  1.3,
         "sodio":  2.0,
         "potassio":  255.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 concha mÃ©dia (~100g)"
     },
     {
@@ -61,6 +73,8 @@
         "nome":  "FeijÃ£o, preto, cozido",
         "categoria":  "Leguminosas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  77.0,
         "cho":  14.0,
         "ptn":  4.5,
@@ -73,6 +87,8 @@
         "ferro":  1.5,
         "sodio":  2.0,
         "potassio":  256.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 concha mÃ©dia (~100g)"
     },
     {
@@ -80,6 +96,8 @@
         "nome":  "Frango, peito, sem pele, grelhado",
         "categoria":  "Carnes e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  159.0,
         "cho":  0.0,
         "ptn":  32.0,
@@ -92,6 +110,8 @@
         "ferro":  0.4,
         "sodio":  50.0,
         "potassio":  377.0,
+        "vitA":  8.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 filÃ© mÃ©dio (~100g)"
     },
     {
@@ -99,6 +119,8 @@
         "nome":  "Frango, peito, cozido, desfiado",
         "categoria":  "Carnes e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  163.0,
         "cho":  0.0,
         "ptn":  31.5,
@@ -111,6 +133,8 @@
         "ferro":  0.5,
         "sodio":  52.0,
         "potassio":  380.0,
+        "vitA":  8.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "3 colheres de sopa cheias (~90g)"
     },
     {
@@ -118,6 +142,8 @@
         "nome":  "Carne bovina, patinho, sem gordura, grelhado",
         "categoria":  "Carnes e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  219.0,
         "cho":  0.0,
         "ptn":  35.9,
@@ -130,6 +156,8 @@
         "ferro":  3.0,
         "sodio":  53.0,
         "potassio":  370.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 bife mÃ©dio (~100g)"
     },
     {
@@ -137,6 +165,8 @@
         "nome":  "Carne bovina, moÃ­da (acÃ©m), cozida",
         "categoria":  "Carnes e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  212.0,
         "cho":  0.0,
         "ptn":  26.7,
@@ -149,6 +179,8 @@
         "ferro":  2.7,
         "sodio":  58.0,
         "potassio":  330.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "4 colheres de sopa (~100g)"
     },
     {
@@ -156,6 +188,8 @@
         "nome":  "Ovo, de galinha, inteiro, cozido",
         "categoria":  "Ovos e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  146.0,
         "cho":  0.6,
         "ptn":  13.0,
@@ -168,6 +202,8 @@
         "ferro":  1.5,
         "sodio":  146.0,
         "potassio":  130.0,
+        "vitA":  160.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 unidade grande (~50g = 73 kcal)"
     },
     {
@@ -175,6 +211,8 @@
         "nome":  "Ovo, de galinha, clara, cozida",
         "categoria":  "Ovos e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  52.0,
         "cho":  0.7,
         "ptn":  11.2,
@@ -187,6 +225,8 @@
         "ferro":  0.1,
         "sodio":  164.0,
         "potassio":  150.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 clara (~35g = 18 kcal)"
     },
     {
@@ -194,6 +234,8 @@
         "nome":  "Peixe, filÃ© de tilÃ¡pia, grelhado",
         "categoria":  "Pescados e frutos do mar",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  128.0,
         "cho":  0.0,
         "ptn":  26.2,
@@ -206,6 +248,8 @@
         "ferro":  0.4,
         "sodio":  52.0,
         "potassio":  380.0,
+        "vitA":  5.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 filÃ© mÃ©dio (~100g)"
     },
     {
@@ -213,6 +257,8 @@
         "nome":  "Peixe, atum, em Ã¡gua, enlatado",
         "categoria":  "Pescados e frutos do mar",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  116.0,
         "cho":  0.0,
         "ptn":  25.5,
@@ -225,6 +271,8 @@
         "ferro":  1.3,
         "sodio":  360.0,
         "potassio":  280.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "3 colheres de sopa (~60g)"
     },
     {
@@ -232,6 +280,8 @@
         "nome":  "PÃ£o, de trigo, francÃªs",
         "categoria":  "PanificaÃ§Ã£o e biscoitos",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  300.0,
         "cho":  58.6,
         "ptn":  8.0,
@@ -244,6 +294,8 @@
         "ferro":  1.0,
         "sodio":  648.0,
         "potassio":  125.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 unidade (~50g = 150 kcal)"
     },
     {
@@ -251,6 +303,8 @@
         "nome":  "PÃ£o, de forma, integral",
         "categoria":  "PanificaÃ§Ã£o e biscoitos",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  253.0,
         "cho":  49.9,
         "ptn":  9.4,
@@ -263,6 +317,8 @@
         "ferro":  2.4,
         "sodio":  506.0,
         "potassio":  228.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "2 fatias (~50g = 127 kcal)"
     },
     {
@@ -270,6 +326,8 @@
         "nome":  "Tapioca, goma hidratada",
         "categoria":  "Cereais e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  240.0,
         "cho":  58.0,
         "ptn":  0.5,
@@ -282,6 +340,8 @@
         "ferro":  0.2,
         "sodio":  1.0,
         "potassio":  17.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "3 colheres de sopa cheias (~60g)"
     },
     {
@@ -289,6 +349,8 @@
         "nome":  "Torrada, de pÃ£o francÃªs",
         "categoria":  "PanificaÃ§Ã£o e biscoitos",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  377.0,
         "cho":  74.5,
         "ptn":  10.5,
@@ -301,6 +363,8 @@
         "ferro":  1.5,
         "sodio":  820.0,
         "potassio":  160.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "3 unidades (~30g)"
     },
     {
@@ -308,6 +372,8 @@
         "nome":  "Leite de vaca, pasteurizado, integral",
         "categoria":  "Leite e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  61.0,
         "cho":  4.5,
         "ptn":  3.2,
@@ -320,6 +386,8 @@
         "ferro":  0.1,
         "sodio":  65.0,
         "potassio":  145.0,
+        "vitA":  28.0,
+        "vitC":  1.0,
         "porcaoSugerida":  "1 copo mÃ©dio (200mL = 122 kcal)"
     },
     {
@@ -327,6 +395,8 @@
         "nome":  "Leite de vaca, desnatado",
         "categoria":  "Leite e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  35.0,
         "cho":  4.7,
         "ptn":  3.3,
@@ -339,6 +409,8 @@
         "ferro":  0.1,
         "sodio":  67.0,
         "potassio":  156.0,
+        "vitA":  2.0,
+        "vitC":  1.0,
         "porcaoSugerida":  "1 copo mÃ©dio (200mL = 70 kcal)"
     },
     {
@@ -346,6 +418,8 @@
         "nome":  "Queijo, minas frescal",
         "categoria":  "Leite e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  264.0,
         "cho":  3.2,
         "ptn":  17.4,
@@ -358,6 +432,8 @@
         "ferro":  0.3,
         "sodio":  410.0,
         "potassio":  95.0,
+        "vitA":  180.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 fatia mÃ©dia (~30g = 79 kcal)"
     },
     {
@@ -365,6 +441,8 @@
         "nome":  "Queijo, mozarela",
         "categoria":  "Leite e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  330.0,
         "cho":  2.0,
         "ptn":  22.6,
@@ -377,6 +455,8 @@
         "ferro":  0.4,
         "sodio":  580.0,
         "potassio":  78.0,
+        "vitA":  210.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 fatia (~25g = 83 kcal)"
     },
     {
@@ -384,6 +464,8 @@
         "nome":  "Iogurte, natural, desnatado",
         "categoria":  "Leite e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  51.0,
         "cho":  6.6,
         "ptn":  4.0,
@@ -396,6 +478,8 @@
         "ferro":  0.1,
         "sodio":  70.0,
         "potassio":  180.0,
+        "vitA":  2.0,
+        "vitC":  0.8,
         "porcaoSugerida":  "1 pote (~170g = 87 kcal)"
     },
     {
@@ -403,6 +487,8 @@
         "nome":  "Banana, prata, crua",
         "categoria":  "Frutas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  98.0,
         "cho":  26.0,
         "ptn":  1.3,
@@ -415,6 +501,8 @@
         "ferro":  0.4,
         "sodio":  1.0,
         "potassio":  358.0,
+        "vitA":  4.0,
+        "vitC":  8.5,
         "porcaoSugerida":  "1 unidade mÃ©dia (~100g)"
     },
     {
@@ -422,6 +510,8 @@
         "nome":  "MaÃ§Ã£, fuji, com casca, crua",
         "categoria":  "Frutas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  56.0,
         "cho":  15.2,
         "ptn":  0.3,
@@ -434,6 +524,8 @@
         "ferro":  0.1,
         "sodio":  1.0,
         "potassio":  75.0,
+        "vitA":  3.0,
+        "vitC":  5.9,
         "porcaoSugerida":  "1 unidade pequena (~100g)"
     },
     {
@@ -441,6 +533,8 @@
         "nome":  "Laranja, pera, crua",
         "categoria":  "Frutas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  37.0,
         "cho":  8.9,
         "ptn":  1.0,
@@ -453,6 +547,8 @@
         "ferro":  0.1,
         "sodio":  1.0,
         "potassio":  147.0,
+        "vitA":  11.0,
+        "vitC":  53.0,
         "porcaoSugerida":  "1 unidade mÃ©dia (~100g)"
     },
     {
@@ -460,6 +556,8 @@
         "nome":  "MamÃ£o, papaia, cru",
         "categoria":  "Frutas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  40.0,
         "cho":  10.4,
         "ptn":  0.5,
@@ -472,6 +570,8 @@
         "ferro":  0.2,
         "sodio":  2.0,
         "potassio":  222.0,
+        "vitA":  95.0,
+        "vitC":  61.8,
         "porcaoSugerida":  "1/2 unidade (~150g = 60 kcal)"
     },
     {
@@ -479,6 +579,8 @@
         "nome":  "Melancia, crua",
         "categoria":  "Frutas e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  33.0,
         "cho":  8.1,
         "ptn":  0.9,
@@ -491,6 +593,8 @@
         "ferro":  0.2,
         "sodio":  1.0,
         "potassio":  104.0,
+        "vitA":  28.0,
+        "vitC":  8.1,
         "porcaoSugerida":  "1 fatia mÃ©dia (~200g = 66 kcal)"
     },
     {
@@ -498,6 +602,8 @@
         "nome":  "Aveia, em flocos",
         "categoria":  "Cereais e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  394.0,
         "cho":  66.6,
         "ptn":  13.9,
@@ -510,6 +616,8 @@
         "ferro":  4.4,
         "sodio":  5.0,
         "potassio":  336.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "2 colheres de sopa (~30g = 118 kcal)"
     },
     {
@@ -517,6 +625,8 @@
         "nome":  "Azeite, de oliva, extravirgem",
         "categoria":  "Ã“leos e gorduras",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  884.0,
         "cho":  0.0,
         "ptn":  0.0,
@@ -529,6 +639,8 @@
         "ferro":  0.0,
         "sodio":  0.0,
         "potassio":  0.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 colher de sopa (~13mL = 108 kcal)"
     },
     {
@@ -536,6 +648,8 @@
         "nome":  "Ã“leo, de soja",
         "categoria":  "Ã“leos e gorduras",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  884.0,
         "cho":  0.0,
         "ptn":  0.0,
@@ -548,6 +662,8 @@
         "ferro":  0.0,
         "sodio":  0.0,
         "potassio":  0.0,
+        "vitA":  0.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 colher de sopa (~13mL = 108 kcal)"
     },
     {
@@ -555,6 +671,8 @@
         "nome":  "Manteiga, com sal",
         "categoria":  "Ã“leos e gorduras",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  726.0,
         "cho":  0.1,
         "ptn":  0.4,
@@ -567,6 +685,8 @@
         "ferro":  0.1,
         "sodio":  593.0,
         "potassio":  24.0,
+        "vitA":  580.0,
+        "vitC":  0.0,
         "porcaoSugerida":  "1 ponta de faca (~10g = 73 kcal)"
     },
     {
@@ -574,6 +694,8 @@
         "nome":  "Batata, inglesa, cozida",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  52.0,
         "cho":  11.9,
         "ptn":  1.2,
@@ -586,6 +708,8 @@
         "ferro":  0.4,
         "sodio":  3.0,
         "potassio":  161.0,
+        "vitA":  1.0,
+        "vitC":  7.4,
         "porcaoSugerida":  "1 unidade mÃ©dia (~100g)"
     },
     {
@@ -593,6 +717,8 @@
         "nome":  "Mandioca, cozida",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  125.0,
         "cho":  30.1,
         "ptn":  0.6,
@@ -605,6 +731,8 @@
         "ferro":  0.3,
         "sodio":  2.0,
         "potassio":  225.0,
+        "vitA":  2.0,
+        "vitC":  14.0,
         "porcaoSugerida":  "1 pedaÃ§o mÃ©dio (~100g)"
     },
     {
@@ -612,6 +740,8 @@
         "nome":  "Cenoura, crua",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  34.0,
         "cho":  7.7,
         "ptn":  1.3,
@@ -624,6 +754,8 @@
         "ferro":  0.2,
         "sodio":  3.0,
         "potassio":  315.0,
+        "vitA":  835.0,
+        "vitC":  5.9,
         "porcaoSugerida":  "1 xÃ­cara ralada (~100g)"
     },
     {
@@ -631,6 +763,8 @@
         "nome":  "Alface, americana, crua",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  9.0,
         "cho":  1.7,
         "ptn":  0.9,
@@ -643,6 +777,8 @@
         "ferro":  0.4,
         "sodio":  7.0,
         "potassio":  136.0,
+        "vitA":  80.0,
+        "vitC":  4.0,
         "porcaoSugerida":  "1 prato raso (~100g)"
     },
     {
@@ -650,6 +786,8 @@
         "nome":  "Tomate, com semente, cru",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  15.0,
         "cho":  3.1,
         "ptn":  1.1,
@@ -662,6 +800,8 @@
         "ferro":  0.2,
         "sodio":  1.0,
         "potassio":  222.0,
+        "vitA":  42.0,
+        "vitC":  21.2,
         "porcaoSugerida":  "4 fatias mÃ©dias (~100g)"
     },
     {
@@ -669,6 +809,8 @@
         "nome":  "Chuchu, cozido",
         "categoria":  "Verduras, hortaliÃ§as e derivados",
         "baseGramas":  100,
+        "tabela":  "TACO",
+        "fonte":  "TACO (UNICAMP 4Âª Ed)",
         "kcal":  19.0,
         "cho":  4.1,
         "ptn":  0.4,
@@ -681,6 +823,8 @@
         "ferro":  0.2,
         "sodio":  1.0,
         "potassio":  86.0,
+        "vitA":  4.0,
+        "vitC":  6.0,
         "porcaoSugerida":  "3 colheres de sopa (~80g)"
     }
 ]

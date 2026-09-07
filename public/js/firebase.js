@@ -114,6 +114,70 @@ var firebaseSyncService = {
     } catch (e) {}
     return true;
   },
+  async saveAlimentoColaborativo(alimento) {
+    if (!alimento || !alimento.nome) return false;
+    const id = alimento.id || ("colab-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6));
+    const uid = alimento.userId || this.getUserId();
+    const payload = {
+      ...alimento,
+      id: id,
+      tabela: alimento.tabela || "Tabela Colaborativa",
+      fonte: alimento.fonte || "Cadastro Colaborativo (Nuvem)",
+      userId: uid,
+      baseGramas: Number(alimento.baseGramas) || 100,
+      kcal: Number(alimento.kcal) || 0,
+      cho: Number(alimento.cho) || 0,
+      ptn: Number(alimento.ptn) || 0,
+      lip: Number(alimento.lip) || 0,
+      sat: Number(alimento.sat) || 0,
+      mono: Number(alimento.mono) || 0,
+      poli: Number(alimento.poli) || 0,
+      fibra: Number(alimento.fibra) || 0,
+      calcio: Number(alimento.calcio) || 0,
+      ferro: Number(alimento.ferro) || 0,
+      sodio: Number(alimento.sodio) || 0,
+      potassio: Number(alimento.potassio) || 0,
+      vitA: Number(alimento.vitA) || 0,
+      vitC: Number(alimento.vitC) || 0,
+      porcaoSugerida: alimento.porcaoSugerida || `${alimento.baseGramas || 100}g`,
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      const storageKey = "dietocase_alimentos_colaborativos_v1";
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      const idx = list.findIndex(item => item.id === id);
+      if (idx >= 0) {
+        list[idx] = payload;
+      } else {
+        list.push(payload);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+      if (typeof window !== "undefined") {
+        window.ALIMENTOS_COLABORATIVOS = list;
+        try {
+          const bc = new BroadcastChannel("dietocase_sync_channel");
+          bc.postMessage({ type: "ALIMENTO_COLABORATIVO_SALVO", alimento: payload });
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn("Aviso ao salvar alimento colaborativo localmente:", e);
+    }
+    return payload;
+  },
+  async fetchAlimentosColaborativos() {
+    try {
+      const storageKey = "dietocase_alimentos_colaborativos_v1";
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      if (typeof window !== "undefined") {
+        window.ALIMENTOS_COLABORATIVOS = list;
+      }
+      return list;
+    } catch (e) {
+      return [];
+    }
+  },
   async saveDisciplina(d) { return true; },
   async deleteDisciplina(id) { return true; },
   applyPhysicalTabLocks(caseData) {
@@ -159,6 +223,8 @@ if (typeof window !== "undefined") {
   window.FIREBASE_CONFIG = firebaseConfig;
   window.firebaseConfig = firebaseConfig;
   window.firebaseSyncService = firebaseSyncService;
+  window.saveAlimentoColaborativo = firebaseSyncService.saveAlimentoColaborativo.bind(firebaseSyncService);
+  window.fetchAlimentosColaborativos = firebaseSyncService.fetchAlimentosColaborativos.bind(firebaseSyncService);
 }
 
 // Exportação para Node.js / Vercel bundler se importado como módulo

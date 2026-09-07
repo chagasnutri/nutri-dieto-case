@@ -9,7 +9,7 @@
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 import { 
   getAuth, 
   signInAnonymously, 
@@ -618,6 +618,119 @@ class FirebaseSyncService {
     } catch (err) {
       console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", err.message);
       return false;
+    }
+  }
+
+  // Salva alimento colaborativo cadastrado pelo usuário na coleção 'alimentos_colaborativos'
+  async saveAlimentoColaborativo(alimentoData) {
+    if (!alimentoData || !alimentoData.nome) return null;
+    const id = alimentoData.id || ("colab-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6));
+    const uid = alimentoData.userId || this.getUserId();
+    const storageKey = "dietocase_alimentos_colaborativos_v1";
+
+    const payload = {
+      ...alimentoData,
+      id: id,
+      tabela: "Colaborativa",
+      fonte: alimentoData.fonte || "Cadastro Colaborativo (Nuvem)",
+      userId: uid,
+      baseGramas: Number(alimentoData.baseGramas) || 100,
+      kcal: Number(alimentoData.kcal) || 0,
+      cho: Number(alimentoData.cho) || 0,
+      ptn: Number(alimentoData.ptn) || 0,
+      lip: Number(alimentoData.lip) || 0,
+      sat: Number(alimentoData.sat) || 0,
+      mono: Number(alimentoData.mono) || 0,
+      poli: Number(alimentoData.poli) || 0,
+      fibra: Number(alimentoData.fibra) || 0,
+      calcio: Number(alimentoData.calcio) || 0,
+      ferro: Number(alimentoData.ferro) || 0,
+      sodio: Number(alimentoData.sodio) || 0,
+      potassio: Number(alimentoData.potassio) || 0,
+      vitA: Number(alimentoData.vitA) || 0,
+      vitC: Number(alimentoData.vitC) || 0,
+      porcaoSugerida: alimentoData.porcaoSugerida || `${alimentoData.baseGramas || 100}g`,
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Persistência local imediata e sincronização entre abas
+    try {
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      const idx = list.findIndex(item => item.id === id);
+      if (idx >= 0) {
+        list[idx] = payload;
+      } else {
+        list.push(payload);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+      if (typeof window !== "undefined") {
+        window.ALIMENTOS_COLABORATIVOS = list;
+        try {
+          const bc = new BroadcastChannel("dietocase_sync_channel");
+          bc.postMessage({ type: "ALIMENTO_COLABORATIVO_SALVO", alimento: payload });
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn("Aviso ao salvar alimento colaborativo em localStorage:", e);
+    }
+
+    // 2. Persistência em nuvem no Cloud Firestore
+    if (!this.db || !this.isConfigured()) {
+      console.log("☁️ Alimento colaborativo salvo em cache local (Firestore offline ou chave de exemplo).");
+      return payload;
+    }
+
+    try {
+      const colabRef = doc(this.db, "alimentos_colaborativos", id);
+      await setDoc(colabRef, payload, { merge: true });
+      console.log(`☁️ [Firebase v9] Alimento colaborativo '${payload.nome}' salvo no Firestore ('alimentos_colaborativos/${id}')!`);
+      return payload;
+    } catch (err) {
+      console.warn("⚠️ Aviso ao salvar alimento colaborativo no Firestore:", err.message);
+      return payload;
+    }
+  }
+
+  // Busca todos os alimentos colaborativos em nuvem (Firestore) e consolida com cache local
+  async fetchAlimentosColaborativos() {
+    const storageKey = "dietocase_alimentos_colaborativos_v1";
+    let localList = [];
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) localList = JSON.parse(raw) || [];
+    } catch (e) {}
+
+    if (!this.db || !this.isConfigured()) {
+      if (typeof window !== "undefined") window.ALIMENTOS_COLABORATIVOS = localList;
+      return localList;
+    }
+
+    try {
+      const colRef = collection(this.db, "alimentos_colaborativos");
+      const snap = await getDocs(colRef);
+      const cloudList = [];
+      snap.forEach(docSnap => {
+        cloudList.push(docSnap.data());
+      });
+
+      const mergedMap = new Map();
+      localList.forEach(item => mergedMap.set(item.id, item));
+      cloudList.forEach(item => mergedMap.set(item.id, item));
+      const merged = Array.from(mergedMap.values());
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(merged));
+      } catch (e) {}
+
+      if (typeof window !== "undefined") {
+        window.ALIMENTOS_COLABORATIVOS = merged;
+      }
+      return merged;
+    } catch (err) {
+      console.warn("⚠️ Aviso ao buscar alimentos colaborativos do Firestore:", err.message);
+      if (typeof window !== "undefined") window.ALIMENTOS_COLABORATIVOS = localList;
+      return localList;
     }
   }
 

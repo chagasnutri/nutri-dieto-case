@@ -597,17 +597,17 @@ class StudentProntuarioManager {
     return (vet / weight).toFixed(1);
   }
 
-  // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g da TACO
+  // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g
   calculateItemNutrition(foodTaco, gramatura) {
     if (!foodTaco) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0, vitA: 0, vitC: 0 };
     }
     const g = typeof gramatura === "string" ? parseFloat(gramatura.replace(",", ".")) : parseFloat(gramatura);
     if (isNaN(g) || g <= 0) {
-      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+      return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0, vitA: 0, vitC: 0 };
     }
 
-    const base = foodTaco.baseGramas || 100; // sempre 100g na TACO
+    const base = foodTaco.baseGramas || 100; // sempre 100g na TACO e Decisão Nutricional
     const factor = g / base;
 
     const round1 = (val) => Math.round((Number(val || 0) * factor) * 10) / 10;
@@ -625,20 +625,33 @@ class StudentProntuarioManager {
       calcio: round1(foodTaco.calcio),
       ferro: round1(foodTaco.ferro),
       sodio: round1(foodTaco.sodio),
-      potassio: round1(foodTaco.potassio)
+      potassio: round1(foodTaco.potassio),
+      vitA: round1(foodTaco.vitA || 0),
+      vitC: round1(foodTaco.vitC || 0)
     };
   }
 
-  // Calcula subtotal nutricional de uma refeição somando todos os seus itens
+  // Calcula subtotal nutricional de uma refeição somando todos os seus itens (TACO, Decisão Nutricional ou Colaborativa)
   calculateMealSubtotal(meal) {
-    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 };
+    const sub = { kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0, vitA: 0, vitC: 0 };
     if (!meal) return sub;
     const items = Array.isArray(meal.itens) ? meal.itens : (Array.isArray(meal.alimentos) ? meal.alimentos : []);
 
     items.forEach(rawItem => {
       let item = rawItem;
-      if ((!item.kcal && !item.lip) && item.id && (item.gramas || item.gramatura) && typeof this.calculateItemNutrition === "function" && typeof TACO_DATABASE !== "undefined") {
-        const food = TACO_DATABASE.find(f => f.id === item.id);
+      const targetId = item.id || item.tacoId;
+      if ((!item.kcal && !item.lip) && targetId && (item.gramas || item.gramatura) && typeof this.calculateItemNutrition === "function") {
+        let food = null;
+        if (typeof getFoodById === "function") {
+          food = getFoodById(targetId);
+        } else if (typeof getTacoFoodById === "function") {
+          food = getTacoFoodById(targetId);
+        } else if (typeof TACO_DATABASE !== "undefined") {
+          food = TACO_DATABASE.find(f => f.id === targetId);
+        }
+        if (!food && typeof DECISAO_NUTRICIONAL_DATABASE !== "undefined") {
+          food = DECISAO_NUTRICIONAL_DATABASE.find(f => f.id === targetId);
+        }
         if (food) {
           item = this.calculateItemNutrition(food, item.gramas || item.gramatura);
         }
@@ -655,6 +668,8 @@ class StudentProntuarioManager {
       sub.ferro += Number(item.ferro || 0);
       sub.sodio += Number(item.sodio || 0);
       sub.potassio += Number(item.potassio || 0);
+      sub.vitA += Number(item.vitA || 0);
+      sub.vitC += Number(item.vitC || 0);
     });
 
     const round1 = (val) => Math.round(val * 10) / 10;
@@ -670,7 +685,9 @@ class StudentProntuarioManager {
       calcio: round1(sub.calcio),
       ferro: round1(sub.ferro),
       sodio: round1(sub.sodio),
-      potassio: round1(sub.potassio)
+      potassio: round1(sub.potassio),
+      vitA: round1(sub.vitA),
+      vitC: round1(sub.vitC)
     };
   }
 
@@ -886,6 +903,8 @@ class StudentProntuarioManager {
       ferroMg: 0,
       sodioMg: 0,
       potassioMg: 0,
+      vitAMcg: 0,
+      vitCMg: 0,
       adequacaoVetPct: 0,
       classificacaoAdequacao: "",
       statusMacros: {
@@ -911,6 +930,8 @@ class StudentProntuarioManager {
       totals.ferroMg += sub.ferro;
       totals.sodioMg += sub.sodio;
       totals.potassioMg += sub.potassio;
+      totals.vitAMcg += sub.vitA || 0;
+      totals.vitCMg += sub.vitC || 0;
     });
 
     const round1 = (val) => Math.round(val * 10) / 10;
@@ -926,6 +947,8 @@ class StudentProntuarioManager {
     totals.ferroMg = round1(totals.ferroMg);
     totals.sodioMg = round1(totals.sodioMg);
     totals.potassioMg = round1(totals.potassioMg);
+    totals.vitAMcg = round1(totals.vitAMcg);
+    totals.vitCMg = round1(totals.vitCMg);
 
     // Percentuais calóricos dos macronutrientes: CHO e PTN = 4 kcal/g, LIP = 9 kcal/g
     if (totals.vetTotalKcal > 0) {

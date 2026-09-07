@@ -23,6 +23,7 @@
   </script>
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
+  <script src="js/decisaoData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>
@@ -2563,6 +2564,103 @@ Questões Avaliativas:
         `Consolidação de Lipídios: % VET de Saturadas calculada (${totaisNutri.gorduraSaturadaPct}%)`);
       assert(totaisNutri.statusLipidios && (totaisNutri.statusLipidios.sat.status === "adequado" || totaisNutri.statusLipidios.sat.status === "inadequado"),
         `Consolidação de Lipídios: Status de SAT avaliado como ${totaisNutri.statusLipidios.sat.label} no relatório nutricional`);
+
+      // 120. Múltiplas Tabelas de Alimentos (TACO + Decisão Nutricional) e Tabela Colaborativa Global
+      // 120.1. Verificação da Base Decisão Nutricional e completude de micronutrientes/lipídios
+      assert(typeof DECISAO_NUTRICIONAL_DATABASE !== "undefined" && Array.isArray(DECISAO_NUTRICIONAL_DATABASE),
+        "Tabela Decisão Nutricional carregada com sucesso no ambiente global");
+      assert(DECISAO_NUTRICIONAL_DATABASE.length >= 46,
+        `Tabela Decisão Nutricional contém catálogo abrangente de alimentos (${DECISAO_NUTRICIONAL_DATABASE.length} itens)`);
+
+      const missingFields = [];
+      DECISAO_NUTRICIONAL_DATABASE.forEach(item => {
+        const requiredKeys = ['id', 'nome', 'categoria', 'tabela', 'porcaoSugerida', 'kcal', 'cho', 'ptn', 'lip', 'sat', 'mono', 'poli', 'fibra', 'calcio', 'ferro', 'sodio', 'potassio', 'vitA', 'vitC'];
+        for (const key of requiredKeys) {
+          if (item[key] === undefined || item[key] === null || (isNaN(Number(item[key])) && !['id', 'nome', 'categoria', 'tabela', 'porcaoSugerida'].includes(key))) {
+            missingFields.push(`${item.id} (${item.nome}) faltando ou NaN no campo ${key}`);
+          }
+        }
+      });
+      assert(missingFields.length === 0,
+        `Composição 100% Completa na Decisão Nutricional: Todos os 46 itens possuem macros, frações lipídicas e micronutrientes válidos (${missingFields.length} erros)`);
+
+      // 120.2. Resolução Unificada de Alimentos (getFoodById)
+      const alimentoTaco = getFoodById("taco-1");
+      const alimentoDecisao = getFoodById("dec-1");
+      const alimentoSalmao = getFoodById("dec-18");
+
+      assert(alimentoTaco && alimentoTaco.nome.toLowerCase().includes("arroz"),
+        `getFoodById resolve alimento TACO (taco-1): ${alimentoTaco ? alimentoTaco.nome : 'null'}`);
+      assert(alimentoDecisao && alimentoDecisao.tabela === "Decisão Nutricional",
+        `getFoodById resolve alimento Decisão Nutricional (dec-1): ${alimentoDecisao ? alimentoDecisao.nome : 'null'}`);
+      assert(alimentoSalmao && alimentoSalmao.sat > 0 && alimentoSalmao.mono > 0 && alimentoSalmao.poli > 0,
+        `Item Decisão Nutricional (Salmão) possui detalhamento completo de frações lipídicas (SAT: ${alimentoSalmao.sat}g, MONO: ${alimentoSalmao.mono}g, POLI: ${alimentoSalmao.poli}g)`);
+
+      // 120.3. Refeição Mista (TACO + Decisão Nutricional) e Cálculo Nutricional sem quebras ou NaN
+      const mockRefeicaoMista = [
+        {
+          nome: "Almoço Misto",
+          horario: "12:00",
+          alimentos: [
+            { id: "taco-1", gramas: 150 },  // Arroz branco TACO
+            { id: "dec-2", gramas: 100 },   // Feijão preto Decisão Nutricional
+            { id: "dec-18", gramas: 120 },  // Filé de salmão grelhado Decisão Nutricional
+            { id: "taco-28", gramas: 10 }   // Azeite de oliva TACO
+          ]
+        }
+      ];
+
+      const totaisMistos = pMgrLip.calculateNutritionalTotals(mockRefeicaoMista, 2000);
+      assert(!isNaN(parseFloat(totaisMistos.vetTotalKcal)) && parseFloat(totaisMistos.vetTotalKcal) > 0,
+        `Cálculo Nutricional Misto: Calorias totais calculadas com sucesso (${totaisMistos.vetTotalKcal} kcal)`);
+      assert(!isNaN(parseFloat(totaisMistos.carboidratosG)) && !isNaN(parseFloat(totaisMistos.proteinasG)) && !isNaN(parseFloat(totaisMistos.lipidiosG)),
+        `Cálculo Nutricional Misto: Macronutrientes (CHO: ${totaisMistos.carboidratosG}g, PTN: ${totaisMistos.proteinasG}g, LIP: ${totaisMistos.lipidiosG}g)`);
+      assert(!isNaN(parseFloat(totaisMistos.gorduraSaturadaG)) && !isNaN(parseFloat(totaisMistos.gorduraMonoinsaturadaG)) && !isNaN(parseFloat(totaisMistos.gorduraPoliinsaturadaG)),
+        `Cálculo Nutricional Misto: Frações lipídicas completas (SAT: ${totaisMistos.gorduraSaturadaG}g, MONO: ${totaisMistos.gorduraMonoinsaturadaG}g, POLI: ${totaisMistos.gorduraPoliinsaturadaG}g)`);
+      assert(!isNaN(parseFloat(totaisMistos.calcioMg)) && !isNaN(parseFloat(totaisMistos.ferroMg)) && !isNaN(parseFloat(totaisMistos.sodioMg)) && !isNaN(parseFloat(totaisMistos.potassioMg)),
+        `Cálculo Nutricional Misto: Minerais sem NaN (Cálcio: ${totaisMistos.calcioMg}mg, Ferro: ${totaisMistos.ferroMg}mg, Sódio: ${totaisMistos.sodioMg}mg, Potássio: ${totaisMistos.potassioMg}mg)`);
+      assert(!isNaN(parseFloat(totaisMistos.vitAMcg)) && !isNaN(parseFloat(totaisMistos.vitCMg)) && !isNaN(parseFloat(totaisMistos.fibrasG)),
+        `Cálculo Nutricional Misto: Vitaminas e Fibras sem NaN (Fibras: ${totaisMistos.fibrasG}g, Vit A: ${totaisMistos.vitAMcg}mcg, Vit C: ${totaisMistos.vitCMg}mg)`);
+
+      // 120.4. Tabela Colaborativa Global em Nuvem e Cadastro Manual de Alimentos
+      assert(typeof saveAlimentoColaborativo === "function",
+        "Função saveAlimentoColaborativo disponível no ecossistema");
+      assert(typeof fetchAlimentosColaborativos === "function",
+        "Função fetchAlimentosColaborativos disponível no ecossistema");
+
+      const novoAlimentoMock = {
+        nome: "Whey Protein Isolado Teste Automatizado",
+        categoria: "Suplementos",
+        grupo: "Suplementos",
+        quantidade: 100,
+        medidaCaseira: "1 scoop (30g)",
+        kcal: 370,
+        cho: 2.0,
+        ptn: 88.0,
+        lip: 1.0,
+        sat: 0.5,
+        mono: 0.3,
+        poli: 0.2,
+        fibra: 0.0,
+        calcio: 450,
+        ferro: 1.2,
+        sodio: 160,
+        potassio: 380,
+        vitA: 0,
+        vitC: 0
+      };
+
+      const salvo = await saveAlimentoColaborativo(novoAlimentoMock);
+      assert(salvo && salvo.id && salvo.id.startsWith("colab-"),
+        `Alimento colaborativo salvo com ID unificado (${salvo ? salvo.id : 'falha'})`);
+
+      const alimentoRecuperado = getFoodById(salvo.id);
+      assert(alimentoRecuperado && alimentoRecuperado.nome === novoAlimentoMock.nome && (alimentoRecuperado.tabela === "Tabela Colaborativa" || alimentoRecuperado.tabela === "Colaborativa"),
+        `Alimento colaborativo recuperado imediatamente na busca unificada (${alimentoRecuperado ? alimentoRecuperado.nome : 'não encontrado'})`);
+
+      const listaColaborativa = await fetchAlimentosColaborativos();
+      assert(Array.isArray(listaColaborativa) && listaColaborativa.some(item => item.id === salvo.id),
+        "Alimento cadastrado sincronizado na lista de alimentos colaborativos");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

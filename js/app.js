@@ -3251,40 +3251,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Inicializa o buscador de alimentos da Tabela Oficial TACO
+  // Obtém lista de alimentos de todas as bases (TACO, Decisão Nutricional e Colaborativa)
+  function getAllFoodsList(sourceFilter = "todas") {
+    const taco = (typeof TACO_DATABASE !== "undefined" && Array.isArray(TACO_DATABASE)) ? TACO_DATABASE : ((typeof window !== "undefined" && Array.isArray(window.TACO_DATABASE)) ? window.TACO_DATABASE : []);
+    const decisao = (typeof DECISAO_NUTRICIONAL_DATABASE !== "undefined" && Array.isArray(DECISAO_NUTRICIONAL_DATABASE)) ? DECISAO_NUTRICIONAL_DATABASE : ((typeof window !== "undefined" && Array.isArray(window.DECISAO_NUTRICIONAL_DATABASE)) ? window.DECISAO_NUTRICIONAL_DATABASE : []);
+    const colab = (typeof getAlimentosColaborativosList === "function") ? getAlimentosColaborativosList() : ((typeof window !== "undefined" && Array.isArray(window.ALIMENTOS_COLABORATIVOS)) ? window.ALIMENTOS_COLABORATIVOS : []);
+
+    if (sourceFilter === "taco") return taco;
+    if (sourceFilter === "decisao") return decisao;
+    if (sourceFilter === "colaborativa") return colab;
+    return [...taco, ...decisao, ...colab];
+  }
+
+  // Obtém a lista oficial de alimentos TACO isolada / unificada
+  function getTacoFoodsList(sourceFilter = "todas") {
+    return getAllFoodsList(sourceFilter);
+  }
+
+  // Inicializa o buscador de alimentos com suporte a TACO, Decisão Nutricional e Colaborativa
   function setupTacoSearch() {
     const input = document.getElementById("tacoSearchInput");
     const container = document.getElementById("tacoSearchResults");
+    const sourceSelect = document.getElementById("foodSourceSelect");
     if (!input || !container) return;
 
     function renderTacoList(filter = "") {
-      const list = window.TACO_FOODS_DATABASE || [];
+      const activeSource = sourceSelect ? sourceSelect.value : "todas";
+      const list = getAllFoodsList(activeSource);
       const term = filter.toLowerCase().trim();
-      const filtered = list.filter(f => !term || f.nome.toLowerCase().includes(term) || f.categoria.toLowerCase().includes(term));
+      const filtered = list.filter(f => !term || f.nome.toLowerCase().includes(term) || (f.categoria && f.categoria.toLowerCase().includes(term)));
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="text-slate-400 text-center py-2 text-xs">Nenhum alimento encontrado na base oficial TACO para "${filter}".</div>`;
+        container.innerHTML = `
+          <div class="text-slate-500 text-center py-3 text-xs space-y-2">
+            <div>Nenhum alimento encontrado para "<strong>${escapeHtml(filter)}</strong>" na base selecionada.</div>
+            <button type="button" class="btn-open-modal-cadastrar-inline inline-flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-2xs transition cursor-pointer">
+              <span>➕</span>
+              <span>Cadastrar Alimento Não Encontrado</span>
+            </button>
+          </div>
+        `;
+        const btnInline = container.querySelector(".btn-open-modal-cadastrar-inline");
+        if (btnInline) {
+          btnInline.addEventListener("click", () => openModalCadastrarAlimento(filter));
+        }
         return;
       }
 
-      container.innerHTML = filtered.map(item => `
-        <div class="py-1.5 px-2 flex items-center justify-between hover:bg-emerald-50/60 rounded transition">
-          <div>
-            <div class="flex items-center space-x-1.5">
-              <strong class="text-slate-800 text-xs">${escapeHtml(item.nome)}</strong>
-              <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.categoria)}</span>
+      container.innerHTML = filtered.map(item => {
+        let badgeColor = "bg-blue-100 text-blue-900 border-blue-200";
+        let badgeLabel = "TACO";
+        if (item.id.startsWith("dec-") || item.tabela === "Decisão Nutricional") {
+          badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-200";
+          badgeLabel = "Decisão Nutricional";
+        } else if (item.id.startsWith("colab-") || item.tabela === "Colaborativa") {
+          badgeColor = "bg-purple-100 text-purple-900 border-purple-200";
+          badgeLabel = "Colaborativa";
+        }
+
+        const porcaoTxt = item.porcaoSugerida || item.porcao || "100g";
+        return `
+        <div class="py-2 px-2.5 flex flex-wrap items-center justify-between hover:bg-emerald-50/60 rounded-lg transition gap-2">
+          <div class="flex-1 min-w-[240px]">
+            <div class="flex items-center space-x-1.5 flex-wrap gap-1">
+              <strong class="text-slate-900 text-xs">${escapeHtml(item.nome)}</strong>
+              <span class="text-[9px] ${badgeColor} border px-1.5 py-0.5 rounded font-bold">${badgeLabel}</span>
+              <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.categoria || "Geral")}</span>
             </div>
-            <div class="text-[10px] text-slate-500 mt-0.5">
-              Porção: <span class="text-slate-700 font-medium">${escapeHtml(item.porcao)}</span> • 
-              <strong class="text-emerald-800">${item.kcal} kcal</strong> • 
-              CHO: ${item.cho}g • PTN: ${item.ptn}g • LIP: ${item.lip}g • Fibras: ${item.fibra || 0}g
+            <div class="text-[10px] text-slate-500 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+              <span>Porção: <strong class="text-slate-700">${escapeHtml(porcaoTxt)}</strong></span>
+              <span>• <strong class="text-emerald-800">${item.kcal} kcal</strong></span>
+              <span>• CHO: ${item.cho}g</span>
+              <span>• PTN: ${item.ptn}g</span>
+              <span>• LIP: ${item.lip}g</span>
+              <span class="text-amber-900 font-medium">(SAT: ${item.sat || 0}g | MONO: ${item.mono || 0}g | POLI: ${item.poli || 0}g)</span>
+              <span>• Fibras: ${item.fibra || 0}g</span>
+              <span>• Sódio: ${item.sodio || 0}mg</span>
             </div>
           </div>
-          <button type="button" class="btn-copy-taco text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded transition ml-2 whitespace-nowrap shadow-2xs" data-food="${escapeHtml(item.nome + ' (' + item.porcao + ': ' + item.kcal + ' kcal, CHO ' + item.cho + 'g, PTN ' + item.ptn + 'g, LIP ' + item.lip + 'g)')}">
+          <button type="button" class="btn-copy-taco text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded-lg transition whitespace-nowrap shadow-2xs cursor-pointer" data-food="${escapeHtml(item.nome + ' (' + porcaoTxt + ': ' + item.kcal + ' kcal, CHO ' + item.cho + 'g, PTN ' + item.ptn + 'g, LIP ' + item.lip + 'g)')}">
             + Inserir no R24h
           </button>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       container.querySelectorAll(".btn-copy-taco").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -3293,7 +3343,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (resumoTextarea) {
             const current = resumoTextarea.value.trim();
             resumoTextarea.value = current ? `${current}\n- ${foodText}` : `- ${foodText}`;
-            showToast("Item da TACO inserido no Recordatório!");
+            showToast("Alimento inserido no Recordatório!");
             triggerProntuarioAutoSave();
           }
         });
@@ -3304,18 +3354,13 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTacoList(input.value);
     });
 
-    renderTacoList("");
-  }
+    if (sourceSelect) {
+      sourceSelect.addEventListener("change", () => {
+        renderTacoList(input.value);
+      });
+    }
 
-  // Obtém a lista oficial de alimentos TACO isolada
-  function getTacoFoodsList() {
-    if (typeof TACO_DATABASE !== "undefined" && Array.isArray(TACO_DATABASE)) {
-      return TACO_DATABASE;
-    }
-    if (typeof window !== "undefined" && Array.isArray(window.TACO_DATABASE)) {
-      return window.TACO_DATABASE;
-    }
-    return [];
+    renderTacoList("");
   }
 
   // Obtém o peso adotado/efetivo do paciente de forma robusta
@@ -3596,10 +3641,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Rodapé da refeição
       let footerHtml = `
-        <div class="flex items-center justify-between pt-1 border-t border-indigo-50">
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-indigo-50">
           <button type="button" class="add-rec-food-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
             <span>➕</span>
-            <span>Adicionar Alimento no R24h (TACO)</span>
+            <span>Adicionar Alimento (TACO / Decisão)</span>
+          </button>
+          <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold flex items-center space-x-1 cursor-pointer">
+            <span>➕</span>
+            <span class="underline">Cadastrar Alimento</span>
           </button>
         </div>
       `;
@@ -3770,11 +3819,16 @@ document.addEventListener("DOMContentLoaded", () => {
             cho: nutri.cho,
             ptn: nutri.ptn,
             lip: nutri.lip,
+            sat: nutri.sat,
+            mono: nutri.mono,
+            poli: nutri.poli,
             fibra: nutri.fibra,
             calcio: nutri.calcio,
             ferro: nutri.ferro,
             sodio: nutri.sodio,
-            potassio: nutri.potassio
+            potassio: nutri.potassio,
+            vitA: nutri.vitA,
+            vitC: nutri.vitC
           });
         });
 
@@ -4235,11 +4289,16 @@ document.addEventListener("DOMContentLoaded", () => {
             cho: nutri.cho,
             ptn: nutri.ptn,
             lip: nutri.lip,
+            sat: nutri.sat,
+            mono: nutri.mono,
+            poli: nutri.poli,
             fibra: nutri.fibra,
             calcio: nutri.calcio,
             ferro: nutri.ferro,
             sodio: nutri.sodio,
-            potassio: nutri.potassio
+            potassio: nutri.potassio,
+            vitA: nutri.vitA,
+            vitC: nutri.vitC
           });
         });
 
@@ -4287,25 +4346,39 @@ document.addEventListener("DOMContentLoaded", () => {
     return list;
   }
 
-  // Gera as opções do dropdown de alimentos TACO agrupados por categoria
+  // Gera as opções do dropdown de alimentos (TACO, Decisão Nutricional e Colaborativa)
   function buildTacoSelectOptions(selectedTacoId = "") {
-    const foods = getTacoFoodsList();
-    const categories = {};
+    const foods = getAllFoodsList("todas");
+    
+    // Agrupamento estruturado por fonte de dados
+    const groups = {
+      "TACO - UNICAMP (4ª Edição)": [],
+      "Tabela de Decisão Nutricional (Philippi)": [],
+      "Tabela Colaborativa Global (Nuvem)": []
+    };
 
     foods.forEach(f => {
-      const cat = f.categoria || "Outros";
-      if (!categories[cat]) categories[cat] = [];
-      categories[cat].push(f);
+      if (f.id.startsWith("dec-") || f.tabela === "Decisão Nutricional") {
+        groups["Tabela de Decisão Nutricional (Philippi)"].push(f);
+      } else if (f.id.startsWith("colab-") || f.tabela === "Colaborativa") {
+        groups["Tabela Colaborativa Global (Nuvem)"].push(f);
+      } else {
+        groups["TACO - UNICAMP (4ª Edição)"].push(f);
+      }
     });
 
-    let html = `<option value="">-- Selecione o alimento da TACO --</option>`;
-    Object.keys(categories).sort().forEach(cat => {
-      html += `<optgroup label="${escapeHtml(cat)}">`;
-      categories[cat].forEach(f => {
-        const isSel = f.id === selectedTacoId ? "selected" : "";
-        html += `<option value="${escapeHtml(f.id)}" ${isSel}>${escapeHtml(f.nome)} (100g = ${f.kcal} kcal, CHO ${f.cho}g, PTN ${f.ptn}g, LIP ${f.lip}g)</option>`;
-      });
-      html += `</optgroup>`;
+    let html = `<option value="">-- Selecione o alimento (TACO / Decisão / Colaborativa) --</option>`;
+    Object.keys(groups).forEach(grpName => {
+      const list = groups[grpName];
+      if (list.length > 0) {
+        html += `<optgroup label="${escapeHtml(grpName)}">`;
+        list.forEach(f => {
+          const isSel = f.id === selectedTacoId ? "selected" : "";
+          const resumo = `100g: ${f.kcal} kcal | C:${f.cho}g P:${f.ptn}g L:${f.lip}g`;
+          html += `<option value="${escapeHtml(f.id)}" ${isSel}>${escapeHtml(f.nome)} (${resumo})</option>`;
+        });
+        html += `</optgroup>`;
+      }
     });
 
     return html;
@@ -4433,10 +4506,15 @@ document.addEventListener("DOMContentLoaded", () => {
       // Rodapé da refeição (botão adicionar alimento e campo de substituições)
       let footerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
-          <button type="button" class="add-food-item-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
-            <span>➕</span>
-            <span>Adicionar Alimento (TACO)</span>
-          </button>
+          <div class="flex items-center space-x-2">
+            <button type="button" class="add-food-item-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
+              <span>➕</span>
+              <span>Adicionar Alimento (TACO / Decisão)</span>
+            </button>
+            <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer">
+              + Cadastrar Alimento
+            </button>
+          </div>
           
           <div class="flex-1 min-w-[260px]">
             <input type="text" class="cardapio-ref-subs w-full border border-slate-200 rounded px-2.5 py-1 text-xs bg-slate-50 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600" placeholder="Opções de substituição para esta refeição..." value="${escapeHtml(meal.substituicoes || '')}">
@@ -6284,7 +6362,175 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Modal de Cadastro Colaborativo de Alimentos (Nuvem / Multi-tabelas)
+    setupCadastrarAlimentoModal();
+  }
 
+  // Abre o modal de cadastro manual de alimento na tabela colaborativa
+  function openModalCadastrarAlimento(initialName = "") {
+    const modal = document.getElementById("modalCadastrarAlimento");
+    if (!modal) return;
+    const nameInput = document.getElementById("cadAlimentoNome");
+    if (nameInput) {
+      if (initialName && typeof initialName === "string") {
+        nameInput.value = initialName;
+      }
+    }
+    modal.classList.remove("hidden");
+    if (nameInput) nameInput.focus();
+  }
+
+  function closeModalCadastrarAlimento() {
+    const modal = document.getElementById("modalCadastrarAlimento");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    const form = document.getElementById("formCadastrarAlimento");
+    if (form) form.reset();
+  }
+
+  // Atualiza dinamicamente todos os selects de alimentos no Recordatório e Cardápio sem perder seleção atual
+  function refreshAllFoodSelects(newFoodIdToSelect = null) {
+    document.querySelectorAll(".rec-item-food, .cardapio-item-food").forEach(select => {
+      const currentVal = newFoodIdToSelect || select.value;
+      select.innerHTML = buildTacoSelectOptions(currentVal);
+      if (currentVal) {
+        select.value = currentVal;
+      }
+    });
+  }
+
+  function setupCadastrarAlimentoModal() {
+    const modal = document.getElementById("modalCadastrarAlimento");
+    if (!modal) return;
+
+    // Abrir via botões com classe ou ID em qualquer parte do app
+    document.addEventListener("click", (e) => {
+      const trigger = e.target.closest(".btn-cadastrar-alimento-trigger, #btnOpenCadastrarAlimento");
+      if (trigger) {
+        e.preventDefault();
+        const searchInput = document.getElementById("tacoSearchInput");
+        const currentQuery = searchInput ? searchInput.value.trim() : "";
+        openModalCadastrarAlimento(currentQuery);
+      }
+    });
+
+    // Fechar via X ou Cancelar
+    const btnCloseX = document.getElementById("btnCloseCadAlimentoX");
+    if (btnCloseX) btnCloseX.addEventListener("click", () => closeModalCadastrarAlimento());
+
+    const btnCancel = document.getElementById("btnCancelarCadAlimento");
+    if (btnCancel) btnCancel.addEventListener("click", () => closeModalCadastrarAlimento());
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModalCadastrarAlimento();
+    });
+
+    // Submissão do formulário
+    const form = document.getElementById("formCadastrarAlimento");
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const nome = document.getElementById("cadAlimentoNome")?.value?.trim();
+        if (!nome) {
+          alert("Por favor, preencha o Nome do Alimento.");
+          return;
+        }
+
+        const categoria = document.getElementById("cadAlimentoCategoria")?.value || "Outros";
+        const baseGramas = parseFloat(document.getElementById("cadAlimentoBaseGramas")?.value?.replace(",", ".")) || 100;
+        const porcaoSugerida = document.getElementById("cadAlimentoPorcaoSugerida")?.value?.trim() || `${baseGramas}g`;
+
+        const kcal = parseFloat(document.getElementById("cadAlimentoKcal")?.value?.replace(",", ".")) || 0;
+        const cho = parseFloat(document.getElementById("cadAlimentoCho")?.value?.replace(",", ".")) || 0;
+        const ptn = parseFloat(document.getElementById("cadAlimentoPtn")?.value?.replace(",", ".")) || 0;
+        const lip = parseFloat(document.getElementById("cadAlimentoLip")?.value?.replace(",", ".")) || 0;
+
+        const sat = parseFloat(document.getElementById("cadAlimentoSat")?.value?.replace(",", ".")) || 0;
+        const mono = parseFloat(document.getElementById("cadAlimentoMono")?.value?.replace(",", ".")) || 0;
+        const poli = parseFloat(document.getElementById("cadAlimentoPoli")?.value?.replace(",", ".")) || 0;
+
+        const fibra = parseFloat(document.getElementById("cadAlimentoFibra")?.value?.replace(",", ".")) || 0;
+        const calcio = parseFloat(document.getElementById("cadAlimentoCalcio")?.value?.replace(",", ".")) || 0;
+        const ferro = parseFloat(document.getElementById("cadAlimentoFerro")?.value?.replace(",", ".")) || 0;
+        const sodio = parseFloat(document.getElementById("cadAlimentoSodio")?.value?.replace(",", ".")) || 0;
+        const potassio = parseFloat(document.getElementById("cadAlimentoPotassio")?.value?.replace(",", ".")) || 0;
+        const vitA = parseFloat(document.getElementById("cadAlimentoVitA")?.value?.replace(",", ".")) || 0;
+        const vitC = parseFloat(document.getElementById("cadAlimentoVitC")?.value?.replace(",", ".")) || 0;
+
+        const novoAlimento = {
+          id: "colab-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+          nome: nome,
+          categoria: categoria,
+          baseGramas: baseGramas,
+          tabela: "Colaborativa",
+          fonte: "Cadastro Colaborativo (Nuvem)",
+          porcaoSugerida: porcaoSugerida,
+          kcal: kcal,
+          cho: cho,
+          ptn: ptn,
+          lip: lip,
+          sat: sat,
+          mono: mono,
+          poli: poli,
+          fibra: fibra,
+          calcio: calcio,
+          ferro: ferro,
+          sodio: sodio,
+          potassio: potassio,
+          vitA: vitA,
+          vitC: vitC
+        };
+
+        // Salvar via FirebaseSyncService (em nuvem + cache local)
+        if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveAlimentoColaborativo === "function") {
+          await firebaseSyncService.saveAlimentoColaborativo(novoAlimento);
+        } else {
+          const storageKey = "dietocase_alimentos_colaborativos_v1";
+          const raw = localStorage.getItem(storageKey);
+          const list = raw ? JSON.parse(raw) : [];
+          list.push(novoAlimento);
+          localStorage.setItem(storageKey, JSON.stringify(list));
+          if (typeof window !== "undefined") window.ALIMENTOS_COLABORATIVOS = list;
+        }
+
+        showToast(`Alimento "${nome}" cadastrado e sincronizado na nuvem com sucesso!`);
+        closeModalCadastrarAlimento();
+
+        // Atualiza os dropdowns de seleção imediatamente
+        refreshAllFoodSelects();
+
+        // Atualiza a barra de pesquisa
+        const searchInput = document.getElementById("tacoSearchInput");
+        if (searchInput) {
+          const sourceSelect = document.getElementById("foodSourceSelect");
+          if (sourceSelect) sourceSelect.value = "colaborativa";
+          searchInput.value = nome;
+          searchInput.dispatchEvent(new Event("input"));
+        }
+      });
+    }
+
+    // Escuta sincronização via BroadcastChannel para outras abas abertas
+    try {
+      const bc = new BroadcastChannel("dietocase_sync_channel");
+      bc.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "ALIMENTO_COLABORATIVO_SALVO") {
+          refreshAllFoodSelects();
+          const searchInput = document.getElementById("tacoSearchInput");
+          if (searchInput) searchInput.dispatchEvent(new Event("input"));
+        }
+      });
+    } catch (e) {}
+
+    // Busca alimentos em nuvem na inicialização
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.fetchAlimentosColaborativos === "function") {
+      firebaseSyncService.fetchAlimentosColaborativos().then(colabs => {
+        if (Array.isArray(colabs) && colabs.length > 0) {
+          refreshAllFoodSelects();
+        }
+      }).catch(() => {});
+    }
   }
 
   // Setup do Painel do Professor / Administrador

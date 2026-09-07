@@ -1514,26 +1514,46 @@
                   </p>
                 </div>
 
-                <!-- SEÇÃO VISUAL OFICIAL TACO E CONSULTA RÁPIDA DE ALIMENTOS -->
-                <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-3 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-1.5">
-                      <span class="text-base">🥦</span>
+                <!-- SEÇÃO VISUAL DE BANCO DE DADOS DE ALIMENTOS: TACO, DECISÃO NUTRICIONAL & COLABORATIVA -->
+                <div class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-lg">🥦</span>
                       <div>
-                        <strong class="text-xs text-emerald-950 block">Base Oficial: Tabela TACO (UNICAMP, 4ª edição) & Livros Oficiais</strong>
-                        <span class="text-[10px] text-emerald-800">Valores de composição nutricional validados por 100g e porção usual</span>
+                        <strong class="text-xs text-emerald-950 block font-bold">Bancos de Alimentos: TACO (UNICAMP) & Decisão Nutricional (Philippi)</strong>
+                        <span class="text-[10px] text-emerald-800">Composição nutricional completa por 100g: macros, frações lipídicas e micronutrientes</span>
                       </div>
                     </div>
-                    <span class="text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded font-bold">100% Oficial</span>
+                    <div class="flex items-center space-x-2">
+                      <button type="button" id="btnOpenCadastrarAlimento" class="btn-cadastrar-alimento-trigger bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1 cursor-pointer">
+                        <span>➕</span>
+                        <span>Cadastrar Alimento</span>
+                      </button>
+                      <span class="text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded font-bold">Multi-Tabelas</span>
+                    </div>
                   </div>
 
-                  <!-- BARRA DE BUSCA RÁPIDA DE ALIMENTOS TACO -->
-                  <div class="relative">
-                    <input type="text" id="tacoSearchInput" placeholder="🔍 Digite para consultar na TACO (ex: arroz, feijão, frango, carne, leite, banana, pão...)" class="w-full border border-emerald-300 rounded-lg p-2 text-xs pl-3 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-white placeholder:text-slate-400">
+                  <!-- SELETOR DE FONTE DA TABELA E BARRA DE BUSCA -->
+                  <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+                    <div class="md:col-span-4">
+                      <label for="foodSourceSelect" class="block text-[11px] font-semibold text-emerald-900 mb-1">Fonte de Dados:</label>
+                      <select id="foodSourceSelect" class="w-full border border-emerald-300 rounded-lg p-2 text-xs font-semibold bg-white text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600">
+                        <option value="todas">Todas as Fontes (Integrado)</option>
+                        <option value="taco" selected>TACO - UNICAMP (4ª edição)</option>
+                        <option value="decisao">Tabela de Composição de Alimentos: Decisão Nutricional</option>
+                        <option value="colaborativa">Tabela Colaborativa Global (Nuvem)</option>
+                      </select>
+                    </div>
+                    <div class="md:col-span-8">
+                      <label for="tacoSearchInput" class="block text-[11px] font-semibold text-emerald-900 mb-1">Buscar Alimento:</label>
+                      <div class="relative">
+                        <input type="text" id="tacoSearchInput" placeholder="🔍 Digite para consultar alimento (ex: arroz, feijão, frango, carne, leite, fruta, castanha...)" class="w-full border border-emerald-300 rounded-lg p-2 text-xs pl-3 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-white placeholder:text-slate-400">
+                      </div>
+                    </div>
                   </div>
 
-                  <!-- CONTAINER DOS RESULTADOS DA BUSCA TACO -->
-                  <div id="tacoSearchResults" class="max-h-48 overflow-y-auto space-y-1.5 text-xs bg-white rounded-lg border border-emerald-200 p-2 divide-y divide-slate-100">
+                  <!-- CONTAINER DOS RESULTADOS DA BUSCA -->
+                  <div id="tacoSearchResults" class="max-h-52 overflow-y-auto space-y-1.5 text-xs bg-white rounded-lg border border-emerald-200 p-2 divide-y divide-slate-100 shadow-inner">
                     <!-- Itens renderizados via JS -->
                   </div>
                 </div>
@@ -4150,7 +4170,170 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
     </div>
   </div>
 
+  <!-- MODAL: CADASTRAR NOVO ALIMENTO (TABELA COLABORATIVA GLOBAL EM NUVEM) -->
+  <div id="modalCadastrarAlimento" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl modal-fade-in border border-emerald-300 space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-2xl">🥗</span>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Cadastrar Novo Alimento</h3>
+            <p class="text-xs text-slate-500">Tabela Colaborativa Global em Nuvem • Sincronização em tempo real</p>
+          </div>
+        </div>
+        <button type="button" id="btnCloseCadAlimentoX" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
 
+      <form id="formCadastrarAlimento" class="space-y-4">
+        <!-- DADOS GERAIS -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+            <span>🏷️</span>
+            <span>Identificação do Alimento</span>
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="md:col-span-7">
+              <label for="cadAlimentoNome" class="block text-xs font-semibold text-slate-700 mb-1">Nome do Alimento: <span class="text-rose-600">*</span></label>
+              <input type="text" id="cadAlimentoNome" required placeholder="Ex: Iogurte grego natural tradicional" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 bg-white">
+            </div>
+            <div class="md:col-span-5">
+              <label for="cadAlimentoCategoria" class="block text-xs font-semibold text-slate-700 mb-1">Categoria / Grupo: <span class="text-rose-600">*</span></label>
+              <select id="cadAlimentoCategoria" required class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-emerald-600 bg-white">
+                <option value="Cereais e derivados">Cereais e derivados</option>
+                <option value="Leguminosas e derivados">Leguminosas e derivados</option>
+                <option value="Carnes e derivados">Carnes e derivados</option>
+                <option value="Pescados e frutos do mar">Pescados e frutos do mar</option>
+                <option value="Ovos e derivados">Ovos e derivados</option>
+                <option value="Leite e derivados">Leite e derivados</option>
+                <option value="Frutas e derivados">Frutas e derivados</option>
+                <option value="Verduras, hortaliças e derivados">Verduras, hortaliças e derivados</option>
+                <option value="Óleos e gorduras">Óleos e gorduras</option>
+                <option value="Panificação e biscoitos">Panificação e biscoitos</option>
+                <option value="Açúcares e doces">Açúcares e doces</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="md:col-span-4">
+              <label for="cadAlimentoBaseGramas" class="block text-xs font-semibold text-slate-700 mb-1">Gramatura Base (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoBaseGramas" required min="1" step="1" value="100" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white" title="Base de referência para todos os nutrientes informados (padrão 100g)">
+            </div>
+            <div class="md:col-span-8">
+              <label for="cadAlimentoPorcaoSugerida" class="block text-xs font-semibold text-slate-700 mb-1">Medida Caseira Sugerida:</label>
+              <input type="text" id="cadAlimentoPorcaoSugerida" placeholder="Ex: 1 pote (~100g), 2 colheres de sopa (~30g)..." class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- MACRONUTRIENTES OBRIGATÓRIOS -->
+        <div class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-indigo-950 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>⚡</span>
+              <span>Macronutrientes (Obrigatórios por 100g)</span>
+            </h4>
+            <span class="text-[10px] text-indigo-800 font-semibold">Cálculo proporcional automático</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label for="cadAlimentoKcal" class="block text-xs font-semibold text-indigo-900 mb-1">Energia (kcal): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoKcal" required min="0" step="0.1" placeholder="0.0" class="w-full border border-indigo-300 rounded-lg p-2 text-xs font-bold text-indigo-950 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoCho" class="block text-xs font-semibold text-slate-700 mb-1">CHO (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoCho" required min="0" step="0.1" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoPtn" class="block text-xs font-semibold text-slate-700 mb-1">PTN (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoPtn" required min="0" step="0.1" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoLip" class="block text-xs font-semibold text-slate-700 mb-1">LIP Totais (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoLip" required min="0" step="0.1" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- FRAÇÕES LIPÍDICAS OBRIGATÓRIAS -->
+        <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>🥑</span>
+              <span>Detalhamento das Frações Lipídicas (Obrigatório)</span>
+            </h4>
+            <span class="text-[10px] text-amber-800 font-medium">Evita cálculo zerado no quadro de gorduras</span>
+          </div>
+          <p class="text-[11px] text-amber-900 leading-tight">
+            Informe as frações em gramas (g) por 100g. Caso o alimento não contenha determinada fração, mantenha 0.
+          </p>
+          <div class="grid grid-cols-3 gap-2.5">
+            <div>
+              <label for="cadAlimentoSat" class="block text-xs font-semibold text-amber-950 mb-1">Saturadas (SAT g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoSat" required min="0" step="0.01" value="0" placeholder="0.00" class="w-full border border-amber-300 rounded-lg p-2 text-xs font-bold text-amber-950 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoMono" class="block text-xs font-semibold text-amber-950 mb-1">Monoinsaturadas (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoMono" required min="0" step="0.01" value="0" placeholder="0.00" class="w-full border border-amber-300 rounded-lg p-2 text-xs font-bold text-amber-950 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoPoli" class="block text-xs font-semibold text-amber-950 mb-1">Poli-insaturadas (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoPoli" required min="0" step="0.01" value="0" placeholder="0.00" class="w-full border border-amber-300 rounded-lg p-2 text-xs font-bold text-amber-950 bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- MICRONUTRIENTES E MINERAIS OBRIGATÓRIOS -->
+        <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>🔬</span>
+              <span>Micronutrientes e Minerais (Tela de Análise Final)</span>
+            </h4>
+            <span class="text-[10px] text-emerald-800 font-medium">Porção de 100g</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label for="cadAlimentoFibra" class="block text-xs font-semibold text-slate-700 mb-1">Fibras (g): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoFibra" required min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoCalcio" class="block text-xs font-semibold text-slate-700 mb-1">Cálcio (mg): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoCalcio" required min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoFerro" class="block text-xs font-semibold text-slate-700 mb-1">Ferro (mg): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoFerro" required min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoSodio" class="block text-xs font-semibold text-slate-700 mb-1">Sódio (mg): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoSodio" required min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoPotassio" class="block text-xs font-semibold text-slate-700 mb-1">Potássio (mg): <span class="text-rose-600">*</span></label>
+              <input type="number" id="cadAlimentoPotassio" required min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoVitA" class="block text-xs font-semibold text-slate-700 mb-1">Vitamina A (mcg):</label>
+              <input type="number" id="cadAlimentoVitA" min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+            <div>
+              <label for="cadAlimentoVitC" class="block text-xs font-semibold text-slate-700 mb-1">Vitamina C (mg):</label>
+              <input type="number" id="cadAlimentoVitC" min="0" step="0.1" value="0" placeholder="0.0" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800 bg-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
+          <button type="button" id="btnCancelarCadAlimento" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSalvarAlimentoColab" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+            <span>☁️</span>
+            <span>Salvar e Sincronizar na Nuvem</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- BOTÃO FLUTUANTE (FAB): PRECEPTOR IA -->
   <div id="preceptorFabContainer" class="fixed bottom-6 right-6 z-40">
@@ -4259,6 +4442,7 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
+  <script src="js/decisaoData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>
