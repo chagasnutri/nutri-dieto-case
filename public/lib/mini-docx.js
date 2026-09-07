@@ -5,6 +5,12 @@ class MiniDocx {
   constructor() {
     this.files = {};
     this.bodyElements = [];
+    this.footerText = "© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.";
+  }
+
+  // Configura o texto do rodapé nativo (Footer) que é repetido em todas as páginas do documento Word
+  setFooter(text) {
+    this.footerText = text || "";
   }
 
   // Tabela CRC32 pré-calculada
@@ -232,12 +238,15 @@ class MiniDocx {
 
   // Gera os arquivos OpenXML internos
   buildXmlFiles() {
+    const hasFooter = Boolean(this.footerText && String(this.footerText).trim());
+
     // 1. [Content_Types].xml
     const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  ${hasFooter ? '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' : ''}
 </Types>`;
 
     // 2. _rels/.rels
@@ -248,26 +257,65 @@ class MiniDocx {
 
     // 3. word/document.xml
     const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <w:body>
     ${this.bodyElements.join("\n")}
     <w:sectPr>
+      ${hasFooter ? '<w:footerReference w:type="default" r:id="rIdFooter1"/>' : ''}
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/>
     </w:sectPr>
   </w:body>
 </w:document>`;
 
-    return {
+    const xmlMap = {
       "[Content_Types].xml": contentTypes,
       "_rels/.rels": rels,
       "word/document.xml": documentXml
     };
+
+    if (hasFooter) {
+      // 4. word/_rels/document.xml.rels
+      xmlMap["word/_rels/document.xml.rels"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdFooter1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>
+</Relationships>`;
+
+      // 5. word/footer1.xml (Componente nativo de Rodapé que aparece em todas as páginas)
+      xmlMap["word/footer1.xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p>
+    <w:pPr>
+      <w:pBdr>
+        <w:top w:val="single" w:sz="4" w:space="4" w:color="CBD5E1"/>
+      </w:pBdr>
+      <w:jc w:val="center"/>
+      <w:spacing w:before="60" w:after="0"/>
+    </w:pPr>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>
+        <w:sz w:val="18"/>
+        <w:color w:val="475569"/>
+        <w:b/>
+      </w:rPr>
+      <w:t xml:space="preserve">${MiniDocx.xmlEscape(this.footerText)}</w:t>
+    </w:r>
+  </w:p>
+</w:ftr>`;
+    }
+
+    return xmlMap;
   }
 
   // Retorna a string OpenXML completa do documento principal (/word/document.xml)
   generateDocumentXml() {
     return this.buildXmlFiles()["word/document.xml"] || "";
+  }
+
+  // Retorna a string OpenXML completa do rodapé (/word/footer1.xml)
+  generateFooterXml() {
+    return this.buildXmlFiles()["word/footer1.xml"] || "";
   }
 
   // Cria pacote binário ZIP (Método Store 0)

@@ -2717,10 +2717,23 @@ Questões Avaliativas:
       assert(htmlRelatorio.includes("position: fixed !important") && htmlRelatorio.includes("bottom: 0 !important"),
         "Estilo @media print trava o rodapé fixo na margem inferior do documento impresso/PDF");
 
-      // 121.4. Trava de Direitos Autorais no Documento Word (.docx)
+      // 121.4. Trava de Direitos Autorais no Componente Nativo de Rodapé do Word (.docx)
       const docxRelatorioBrand = DietoterapiaDocxReport.buildReportDocument(mockStudentReport, mockCaseReport);
       assert(docxRelatorioBrand !== null && typeof docxRelatorioBrand.generateBlob === "function",
-        "Documento Word (.docx) construído com sucesso contendo seção obrigatória de Direitos Autorais");
+        "Documento Word (.docx) construído com sucesso contendo módulo de exportação");
+      assert(docxRelatorioBrand.generateFooterXml().includes("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados."),
+        "Frase de direitos autorais inserida dentro do componente nativo de Rodapé (Footer/footer1.xml) do documento Word");
+      assert(docxRelatorioBrand.generateDocumentXml().includes("footerReference") && docxRelatorioBrand.generateDocumentXml().includes("rIdFooter1"),
+        "Documento Word vincula o rodapé nativo (w:footerReference default) para repetição na margem inferior de todas as páginas");
+      const docxXmlFiles = docxRelatorioBrand.buildXmlFiles();
+      assert(Boolean(docxXmlFiles["word/footer1.xml"] && docxXmlFiles["word/_rels/document.xml.rels"]),
+        "Pacote OpenXML contém os arquivos obrigatórios do rodapé (footer1.xml e document.xml.rels)");
+
+      // 121.5. Trava de Paginação e Rodapé Repetido em Cada Página Impressa / PDF
+      assert(htmlRelatorio.includes("report-print-layout-table") && htmlRelatorio.includes("<tfoot"),
+        "Relatório HTML/PDF estruturado com layout table e tfoot spacer para evitar sobreposição em quebras de página");
+      assert(htmlRelatorio.includes("table-footer-group"),
+        "CSS de impressão define display: table-footer-group para repetição da reserva de rodapé em cada página");
 
       // 122. Validação do Estado Inicial Limpo e Placeholders Genéricos nas Tabelas de Interações e Exames
       const prontBlank = prontManager.getEmptyProntuario("caso-dm2-has");

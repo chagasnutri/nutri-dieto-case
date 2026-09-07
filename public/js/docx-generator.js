@@ -4,6 +4,8 @@
 class DietoterapiaDocxReport {
   static buildReportDocument(studentData, clinicalCase) {
     const doc = new MiniDocx();
+    // Configuração do componente nativo de Rodapé (Footer) do Word para todas as páginas
+    doc.setFooter("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
 
     const aluno = studentData.aluno || {};
     const anamnese = studentData.anamnese || {};
@@ -706,9 +708,8 @@ class DietoterapiaDocxReport {
       }
     }
 
-    doc.addHeading("DIREITOS AUTORAIS & TERMOS DE USO", 2);
-    doc.addParagraph("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
-    doc.addParagraph(`Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual • Emissão em ${dataFormatada}`);
+    // Componente nativo de Rodapé (Footer) do Word para repetição obrigatória em todas as páginas
+    doc.setFooter("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
 
     return doc;
   }
@@ -863,13 +864,25 @@ class DietoterapiaDocxReport {
       }
       body {
         padding: 0;
+        margin: 0;
         margin-bottom: 25mm !important;
       }
       .no-print { display: none !important; }
       table { page-break-inside: auto; }
       tr { page-break-inside: avoid; page-break-after: auto; }
 
-      /* Trava de Segurança nos Direitos Autorais do Relatório (Impressão / PDF) */
+      .report-print-layout-table {
+        width: 100% !important;
+        border: none !important;
+        border-collapse: collapse !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .report-print-layout-table > tfoot {
+        display: table-footer-group !important;
+      }
+
+      /* Trava de Segurança nos Direitos Autorais do Relatório (Impressão / PDF em Todas as Páginas) */
       .report-print-footer,
       .report-copyright-footer {
         position: fixed !important;
@@ -912,7 +925,14 @@ class DietoterapiaDocxReport {
     </div>
   </div>
 
-  <h1 class="report-title">DIETOCASE - DISCIPLINA DE DIETOTERAPIA</h1>
+  <table class="report-print-layout-table" style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+    <thead>
+      <tr><td style="border: none; padding: 0; height: 0;"></td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border: none; padding: 0; vertical-align: top;">
+          <h1 class="report-title">DIETOCASE - DISCIPLINA DE DIETOTERAPIA</h1>
   <h2 class="report-subtitle">RELATÓRIO CLÍNICO-NUTRICIONAL E CONDUTA DIETOTERÁPICA</h2>
 
   ${renderTableHtml(
@@ -1271,9 +1291,20 @@ class DietoterapiaDocxReport {
       : `<p>Não foram cadastradas questões avaliativas específicas para este caso clínico.</p>`
   }
     `
-  }
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td style="border: none; padding: 0; height: 22mm;">
+          <!-- Espaçador reservado para o rodapé em todas as páginas da impressão/PDF -->
+          <div style="height: 22mm; visibility: hidden;">&nbsp;</div>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
 
-  <!-- TRAVA DE SEGURANÇA: RODAPÉ DE DIREITOS AUTORAIS OBRIGATÓRIO (IMPRESSÃO / PDF) -->
+  <!-- TRAVA DE SEGURANÇA: RODAPÉ DE DIREITOS AUTORAIS OBRIGATÓRIO (REPETIDO NA MARGEM INFERIOR DE CADA PÁGINA) -->
   <footer class="report-print-footer report-copyright-footer" style="margin-top: 30px; border-top: 1.5px solid #0f172a; padding-top: 8px; font-size: 10px; color: #334155; text-align: center; width: 100%;">
     <p style="margin: 0; font-size: 10pt; font-weight: 700; color: #0f172a;">
       © 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.
