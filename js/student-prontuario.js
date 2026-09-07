@@ -977,6 +977,36 @@ class StudentProntuarioManager {
     }
     return prontuario.interacaoDrogaNutriente;
   }
+
+  // Adiciona exame laboratorial em branco ao prontuário
+  addExameBioquimico(prontuario, item = {}) {
+    if (!prontuario) return [];
+    if (!prontuario.bioquimica) prontuario.bioquimica = {};
+    if (!Array.isArray(prontuario.bioquimica.exames)) {
+      prontuario.bioquimica.exames = [];
+    }
+    const exame = (item.exame || "").trim();
+    const referencia = (item.referencia || "").trim();
+    const valor = (item.valor || "").trim();
+    const interpretacao = (item.interpretacao || "").trim();
+
+    prontuario.bioquimica.exames.push({
+      exame,
+      referencia,
+      valor,
+      interpretacao
+    });
+    return prontuario.bioquimica.exames;
+  }
+
+  // Remove exame laboratorial do prontuário
+  removeExameBioquimico(prontuario, index) {
+    if (!prontuario || !prontuario.bioquimica || !Array.isArray(prontuario.bioquimica.exames)) return [];
+    if (index >= 0 && index < prontuario.bioquimica.exames.length) {
+      prontuario.bioquimica.exames.splice(index, 1);
+    }
+    return prontuario.bioquimica.exames;
+  }
 }
 
 // Avaliador Clínico Propedêutico de Exames Bioquímicos

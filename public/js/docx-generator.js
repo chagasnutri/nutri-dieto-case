@@ -186,9 +186,11 @@ class DietoterapiaDocxReport {
     );
 
     doc.addHeading("1.6. Avaliação Bioquímica Relevante e Raciocínio Clínico", 2);
-    const caseBio = (Array.isArray(clinicalCase.bioquimica) && clinicalCase.bioquimica.length > 0)
-      ? clinicalCase.bioquimica
-      : (Array.isArray(bio.listaCustom) && bio.listaCustom.length > 0 ? bio.listaCustom : []);
+    const caseBio = (Array.isArray(bio.exames) && bio.exames.length > 0)
+      ? bio.exames
+      : ((Array.isArray(bio.listaCustom) && bio.listaCustom.length > 0)
+        ? bio.listaCustom
+        : (Array.isArray(clinicalCase?.bioquimica) && clinicalCase.bioquimica.length > 0 ? clinicalCase.bioquimica : []));
     const interps = bio.interpretacoes || {};
 
     if (Array.isArray(caseBio) && caseBio.length > 0) {
@@ -198,9 +200,11 @@ class DietoterapiaDocxReport {
           : { label: "Apurado", seta: "" };
         const statusStr = evalRes.seta ? `${item.valor} [${evalRes.label} ${evalRes.seta}]` : `${item.valor} [${evalRes.label}]`;
         // Imprime estritamente e apenas o texto livre digitado pelo estudante (ou sinaliza ausência de preenchimento)
-        const interpAluno = (interps && typeof interps[item.exame] === "string" && interps[item.exame].trim()) 
-          ? interps[item.exame].trim() 
-          : "Não preenchido / ---";
+        const interpAluno = (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim())
+          ? item.interpretacao.trim()
+          : ((interps && typeof interps[item.exame] === "string" && interps[item.exame].trim()) 
+            ? interps[item.exame].trim() 
+            : "Não preenchido / ---");
         return [
           item.exame || "Exame",
           item.referencia || "-",
@@ -979,11 +983,13 @@ class DietoterapiaDocxReport {
   <h3 class="subsec-heading">1.6. Avaliação Bioquímica Relevante e Raciocínio Clínico</h3>
   ${renderTableHtml(
     ["Exame Bioquímico", "Valor de Referência", "Valor Achado", "Interpretação Clínica do Aluno"],
-    (Array.isArray(clinicalCase.bioquimica) && clinicalCase.bioquimica.length > 0)
-      ? clinicalCase.bioquimica.map(item => [item.exame, item.referencia, item.valor, (bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---"])
-      : (Array.isArray(bio.listaCustom) && bio.listaCustom.length > 0)
-        ? bio.listaCustom.map(item => [item.exame, item.referencia, item.valor, (bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---"])
-        : [["---", "---", "Não preenchido", "Nenhum exame laboratorial registrado nesta avaliação"]]
+    (Array.isArray(bio.exames) && bio.exames.length > 0)
+      ? bio.exames.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
+      : ((Array.isArray(bio.listaCustom) && bio.listaCustom.length > 0)
+        ? bio.listaCustom.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
+        : ((Array.isArray(clinicalCase?.bioquimica) && clinicalCase.bioquimica.length > 0)
+          ? clinicalCase.bioquimica.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---"])
+          : [["---", "---", "Não preenchido", "Nenhum exame laboratorial registrado nesta avaliação"]]))
   )}
   <p><strong>Exames Laboratoriais Apurados / Anotações:</strong> ${bio.examesRelevantes || "Não preenchido / ---"}</p>
   ${renderCalloutHtml(

@@ -972,41 +972,33 @@
                   </h4>
                   <p class="text-xs text-slate-500">Exames laboratoriais do paciente para análise e formulação do raciocínio clínico individual do estudante.</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2.5">
-                  <div class="flex items-center space-x-2 text-[11px] font-semibold">
-                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      <span>Adequado</span>
-                    </span>
-                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                      <span>Alto ↑</span>
-                    </span>
-                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                      <span>Baixo ↓</span>
-                    </span>
-                  </div>
-                  <button id="studentAddCustomBioExamBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-2xs transition flex items-center space-x-1 cursor-pointer">
-                    <span>➕</span>
-                    <span>Adicionar Exame</span>
-                  </button>
-                </div>
               </div>
 
-              <!-- TABELA MODERNA E RESPONSIVA COM EXATAMENTE AS 4 COLUNAS SOLICITADAS -->
+              <!-- TABELA DE EXAMES BIOQUÍMICOS COM CAMPOS EDITÁVEIS PELO ALUNO -->
               <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs bg-white">
                 <table class="min-w-full divide-y divide-slate-200 text-left text-xs" id="studentBioTable">
                   <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
                     <tr>
-                      <th scope="col" class="py-3 px-4 w-1/4">Exame</th>
+                      <th scope="col" class="py-3 px-3 w-1/4">Exame</th>
                       <th scope="col" class="py-3 px-3 w-1/5">Valor de Referência</th>
                       <th scope="col" class="py-3 px-3 w-1/5">Valor Achado</th>
-                      <th scope="col" class="py-3 px-4 w-1/3">Interpretação</th>
+                      <th scope="col" class="py-3 px-3 w-4/12">Interpretação / Análise Clínica</th>
+                      <th scope="col" class="py-3 px-2 text-center w-12">Ação</th>
                     </tr>
                   </thead>
                   <tbody id="studentBioTableBody" class="divide-y divide-slate-100">
                     <!-- Linhas geradas dinamicamente via JS -->
                   </tbody>
                 </table>
+              </div>
+
+              <!-- BOTÃO ADICIONAR EXAME ABAIXO DA TABELA -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                <button id="studentAddCustomBioExamBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer">
+                  <span>➕</span>
+                  <span>Adicionar Exame</span>
+                </button>
+                <span class="text-[11px] text-slate-400">Adicione quantas linhas de exames laboratoriais forem necessárias para a análise.</span>
               </div>
 
               <!-- Síntese e Raciocínio Clínico Global dos Exames -->
@@ -1172,32 +1164,6 @@
                   </h4>
                   <p class="text-xs text-slate-500">Mapeamento dos medicamentos em uso pelo paciente, nutrientes espoliados ou com absorção alterada e conduta nutricional preventiva.</p>
                 </div>
-                <button type="button" id="addDrugInteractionBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer">
-                  <span>➕</span>
-                  <span>Adicionar Fármaco / Interação</span>
-                </button>
-              </div>
-
-              <!-- SUGESTÕES RÁPIDAS DE INTERAÇÕES COMUNS -->
-              <div id="drugInteractionSuggestionsContainer" class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-3 space-y-2">
-                <span class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider block">Sugestões Rápidas de Interações Farmacológicas Comuns:</span>
-                <div class="flex flex-wrap gap-1.5 text-[11px]" id="drugInteractionChips">
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Metformina (850mg)" data-classe="Biguanida / Antidiabético Oral" data-inter="Diminui a absorção ileal de Vitamina B12 e Ácido Fólico. Monitorar dosagem sérica anual de B12 e suplementar se necessário. Administrar junto com as refeições.">
-                    💊 Metformina &rarr; Vitamina B12
-                  </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Furosemida (40mg)" data-classe="Diurético de Alça" data-inter="Espoliação urinária de Potássio (K), Magnésio (Mg), Cálcio e Tiamina. Estimular fontes de potássio e magnésio na dieta; acompanhar eletrólitos séricos.">
-                    💊 Furosemida &rarr; K, Mg e Ca
-                  </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Varfarina Sódica" data-classe="Anticoagulante Cumarínico (Antagonista Vitamina K)" data-inter="Interação competitiva direta com a Vitamina K. Manter consumo dietético rigorosamente constante de vegetais verde-escuros, sem variações abruptas de aporte.">
-                    💊 Varfarina &rarr; Vitamina K
-                  </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Omeprazol / IBPs (40mg)" data-classe="Inibidor da Bomba de Prótons (IBP)" data-inter="Hipocloridria gástrica induzida prejudica a ionização e absorção de Vitamina B12, Ferro não-heme, Cálcio e Magnésio. Administrar em jejum matinal.">
-                    💊 Omeprazol &rarr; B12, Fe, Ca
-                  </button>
-                  <button type="button" class="drug-chip bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-2.5 py-1 rounded-lg font-medium transition cursor-pointer" data-med="Levotiroxina Sódica" data-classe="Hormônio Tireoidiano Sintético (T4)" data-inter="Quelação e inibição da absorção por Cálcio, Ferro, Soja e Fibras alimentares. Administrar em jejum com água; aguardar 30 a 60 min para alimentar-se.">
-                    💊 Levotiroxina &rarr; Ca, Fe, Fibras
-                  </button>
-                </div>
               </div>
 
               <!-- TABELA DINÂMICA DE INTERAÇÕES DROGA-NUTRIENTE -->
@@ -1205,16 +1171,25 @@
                 <table class="min-w-full divide-y divide-slate-200 text-left text-xs" id="drugNutrientTable">
                   <thead class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
                     <tr>
-                      <th scope="col" class="py-3 px-3 w-1/3">Medicação (Nome do remédio em uso)</th>
-                      <th scope="col" class="py-3 px-3 w-1/4">Classificação (Classe farmacológica)</th>
-                      <th scope="col" class="py-3 px-3 w-5/12">Interação (Descrição manual da interação com nutrientes)</th>
-                      <th scope="col" class="py-3 px-2 text-center w-14">Ação</th>
+                      <th scope="col" class="py-3 px-3 w-1/4">Medicação / Fármaco</th>
+                      <th scope="col" class="py-3 px-3 w-1/4">Classificação Farmacológica</th>
+                      <th scope="col" class="py-3 px-3 w-5/12">Interação e Conduta Nutricional</th>
+                      <th scope="col" class="py-3 px-2 text-center w-12">Ação</th>
                     </tr>
                   </thead>
                   <tbody id="drugNutrientTableBody" class="divide-y divide-slate-100">
                     <!-- Linhas injetadas dinamicamente via JS -->
                   </tbody>
                 </table>
+              </div>
+
+              <!-- BOTÃO ADICIONAR INTERAÇÃO ABAIXO DA TABELA -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                <button type="button" id="addDrugInteractionBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-2xs transition flex items-center space-x-1.5 cursor-pointer">
+                  <span>➕</span>
+                  <span>Adicionar Interação</span>
+                </button>
+                <span class="text-[11px] text-slate-400">Adicione quantas linhas de fármacos e interações forem necessárias para a conduta.</span>
               </div>
 
               <!-- Campo livre de Observações Farmacoterápicas -->

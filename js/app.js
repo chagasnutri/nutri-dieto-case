@@ -308,33 +308,8 @@ document.addEventListener("DOMContentLoaded", () => {
           mmss: "Sem perda visível de massa em deltoides e bíceps. Bola gordurosa de Bichat preservada.",
           mmii: "Panturrilhas preservadas, sem perda de massa no quadríceps. Edema maleolar ausente (cacifo negativo)."
         };
-        appState.currentProntuario.interacaoDrogaNutriente = [
-          {
-            medicacao: "Metformina 850mg (2x/dia)",
-            classificacao: "Biguanida / Antidiabético Oral",
-            interacao: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos.",
-            medicamento: "Metformina 850mg (2x/dia)",
-            nutrientes: "Biguanida / Antidiabético Oral",
-            conduta: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos."
-          },
-          {
-            medicacao: "Furosemida 40mg (1x/dia)",
-            classificacao: "Diurético de Alça",
-            interacao: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia.",
-            medicamento: "Furosemida 40mg (1x/dia)",
-            nutrientes: "Diurético de Alça",
-            conduta: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia."
-          },
-          {
-            medicacao: "Atorvastatina 20mg",
-            classificacao: "Estatina / Hipolipemiante",
-            interacao: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia.",
-            medicamento: "Atorvastatina 20mg",
-            nutrientes: "Estatina / Hipolipemiante",
-            conduta: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia."
-          }
-        ];
-        appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+        appState.currentProntuario.interacaoDrogaNutriente = [];
+        appState.currentProntuario.observacoesFarmacoterapia = "";
       }
       populateProntuarioForm();
       renderDrugNutrientTable();
@@ -766,33 +741,8 @@ document.addEventListener("DOMContentLoaded", () => {
               mmss: "Sem perda visível de massa em deltoides e bíceps. Bola gordurosa de Bichat preservada.",
               mmii: "Panturrilhas preservadas, sem perda de massa no quadríceps. Edema maleolar ausente (cacifo negativo)."
             };
-            appState.currentProntuario.interacaoDrogaNutriente = [
-              {
-                medicacao: "Metformina 850mg (2x/dia)",
-                classificacao: "Biguanida / Antidiabético Oral",
-                interacao: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos.",
-                medicamento: "Metformina 850mg (2x/dia)",
-                nutrientes: "Biguanida / Antidiabético Oral",
-                conduta: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos."
-              },
-              {
-                medicacao: "Furosemida 40mg (1x/dia)",
-                classificacao: "Diurético de Alça",
-                interacao: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia.",
-                medicamento: "Furosemida 40mg (1x/dia)",
-                nutrientes: "Diurético de Alça",
-                conduta: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia."
-              },
-              {
-                medicacao: "Atorvastatina 20mg",
-                classificacao: "Estatina / Hipolipemiante",
-                interacao: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia.",
-                medicamento: "Atorvastatina 20mg",
-                nutrientes: "Estatina / Hipolipemiante",
-                conduta: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia."
-              }
-            ];
-            appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+            appState.currentProntuario.interacaoDrogaNutriente = [];
+            appState.currentProntuario.observacoesFarmacoterapia = "";
           }
           populateProntuarioForm();
           renderDrugNutrientTable();
@@ -1197,7 +1147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isReal = appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient === true;
     const drugSuggestions = document.getElementById("drugInteractionSuggestionsContainer");
     if (drugSuggestions) {
-      drugSuggestions.classList.toggle("hidden", isReal);
+      drugSuggestions.classList.toggle("hidden", true);
     }
 
     const p = appState.currentProntuario;
@@ -1209,10 +1159,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (p.interacaoDrogaNutriente.length === 0) {
       tbody.innerHTML = `
         <tr id="drugNutrientEmptyRow">
-          <td colspan="4" class="py-6 text-center text-slate-400 text-xs italic">
-            ${isReal 
-              ? 'Nenhuma interação medicamentosa registrada. Clique em "Adicionar Fármaco / Interação" acima para formular o raciocínio clínico.' 
-              : 'Nenhuma interação medicamentosa registrada. Clique em "Adicionar Fármaco / Interação" acima ou selecione uma das sugestões rápidas.'}
+          <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
+            Nenhuma interação registrada. Clique no botão "+ Adicionar Interação" abaixo para inserir os fármacos e relatar as interações droga-nutriente.
           </td>
         </tr>
       `;
@@ -1222,19 +1170,19 @@ document.addEventListener("DOMContentLoaded", () => {
     p.interacaoDrogaNutriente.forEach((item, index) => {
       const medVal = item.medicacao || item.medicamento || "";
       const classeVal = item.classificacao || item.classe || "";
-      const interVal = item.interacao || (item.nutrientes ? (item.nutrientes + (item.conduta ? " - " + item.conduta : "")) : "");
+      const interVal = item.interacao || item.conduta || (item.nutrientes ? (item.nutrientes + (item.conduta ? " - " + item.conduta : "")) : "");
 
       const tr = document.createElement("tr");
       tr.className = index % 2 === 0 ? "bg-white hover:bg-slate-50/60 transition" : "bg-slate-50/30 hover:bg-slate-50/80 transition";
       tr.innerHTML = `
         <td class="p-2.5 align-top">
-          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500" data-idx="${index}" placeholder="${isReal ? '' : 'Ex: Metformina 850mg'}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(medVal)}">
+          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(medVal)}">
         </td>
         <td class="p-2.5 align-top">
-          <input type="text" class="drug-item-classe w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" data-idx="${index}" placeholder="${isReal ? '' : 'Ex: Biguanida / Antidiabético Oral'}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(classeVal)}">
+          <input type="text" class="drug-item-classe w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(classeVal)}">
         </td>
         <td class="p-2.5 align-top">
-          <textarea class="drug-item-interacao w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" rows="2" data-idx="${index}" placeholder="${isReal ? '' : 'Descrição manual da interação com nutrientes...'}" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interVal)}</textarea>
+          <textarea class="drug-item-interacao w-full text-xs p-1.5 border border-slate-300 rounded text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" data-idx="${index}" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interVal)}</textarea>
         </td>
         <td class="p-2.5 text-center align-middle">
           <button type="button" class="remove-drug-btn text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${index}" title="Remover este fármaco">
@@ -1260,6 +1208,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const idx = parseInt(e.target.dataset.idx);
         if (p.interacaoDrogaNutriente[idx]) {
           p.interacaoDrogaNutriente[idx].classificacao = e.target.value;
+          p.interacaoDrogaNutriente[idx].nutrientes = e.target.value;
         }
       });
     });
@@ -1269,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const idx = parseInt(e.target.dataset.idx);
         if (p.interacaoDrogaNutriente[idx]) {
           p.interacaoDrogaNutriente[idx].interacao = e.target.value;
-          p.interacaoDrogaNutriente[idx].nutrientes = e.target.value;
+          p.interacaoDrogaNutriente[idx].conduta = e.target.value;
         }
       });
     });
@@ -1283,41 +1232,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Adiciona novo exame laboratorial na tabela de bioquímica
+  // Adiciona novo exame laboratorial na tabela de bioquímica (linha em branco dinâmica, sem prompt)
   function handleAddCustomBioExam() {
-    const nome = prompt("Nome do Exame Laboratorial (ex: Glicemia de Jejum, Hemoglobina Glicada, Triglicerídeos, Ureia):");
-    if (!nome || !nome.trim()) return;
-    const ref = prompt("Valor de Referência (ex: 70 - 99 mg/dL ou < 150 mg/dL):", "-");
-    const valor = prompt("Valor Achado do Paciente (ex: 110 mg/dL):", "-");
-
-    if (!appState.currentCase) return;
-    if (!Array.isArray(appState.currentCase.bioquimica)) {
-      appState.currentCase.bioquimica = [];
+    const p = appState.currentProntuario;
+    if (!p) return;
+    if (!p.bioquimica) p.bioquimica = {};
+    if (!Array.isArray(p.bioquimica.exames)) {
+      p.bioquimica.exames = [];
     }
 
     const novoExame = {
-      exame: nome.trim(),
-      referencia: (ref || "-").trim(),
-      valor: (valor || "-").trim(),
-      isCustom: true
+      exame: "",
+      referencia: "",
+      valor: "",
+      interpretacao: ""
     };
 
-    appState.currentCase.bioquimica.push(novoExame);
+    p.bioquimica.exames.push(novoExame);
 
-    if (appState.currentProntuario) {
-      if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
-      if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
-      // Inicia o campo de interpretação estritamente em branco para o aluno formular seu raciocínio
-      appState.currentProntuario.bioquimica.interpretacoes[novoExame.exame] = "";
-      if (!Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
-        appState.currentProntuario.bioquimica.listaCustom = [];
-      }
-      appState.currentProntuario.bioquimica.listaCustom.push(novoExame);
+    if (typeof syncBioquimicaInterpretacoesAndCustom === "function") {
+      syncBioquimicaInterpretacoesAndCustom(p);
     }
-
-    renderStudentBioTable(appState.currentCase.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
+    renderStudentBioTable();
     syncBioquimicaExamesRelevantesText();
-    showToast(`Exame "${novoExame.exame}" adicionado à tabela com sucesso!`, "success");
+
+    setTimeout(() => {
+      const rows = document.querySelectorAll("#studentBioTableBody tr:not(#studentBioEmptyRow)");
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        const firstInp = lastRow.querySelector(".student-bio-nome") || lastRow.querySelector("input");
+        if (firstInp) firstInp.focus();
+      }
+    }, 50);
   }
 
   // Exibe o Template 2: Painel do Professor / Administrador (requer senha Nutri2@26)
@@ -2718,25 +2664,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontObsFarmacoterapia")) {
       p.observacoesFarmacoterapia = document.getElementById("prontObsFarmacoterapia").value.trim();
     }
+    p.interacaoDrogaNutriente = [];
     const drugRows = document.querySelectorAll("#drugNutrientTableBody tr:not(#drugNutrientEmptyRow)");
-    if (drugRows.length > 0) {
-      p.interacaoDrogaNutriente = [];
-      drugRows.forEach(row => {
-        const med = row.querySelector(".drug-item-med")?.value.trim() || "";
-        const classe = row.querySelector(".drug-item-classe")?.value.trim() || row.querySelector(".drug-item-nutr")?.value.trim() || "";
-        const interacao = row.querySelector(".drug-item-interacao")?.value.trim() || row.querySelector(".drug-item-cond")?.value.trim() || "";
-        if (med || classe || interacao) {
-          p.interacaoDrogaNutriente.push({
-            medicacao: med,
-            classificacao: classe,
-            interacao: interacao,
-            medicamento: med,
-            nutrientes: classe,
-            conduta: interacao
-          });
-        }
-      });
-    }
+    drugRows.forEach(row => {
+      const med = row.querySelector(".drug-item-med")?.value.trim() || "";
+      const classe = row.querySelector(".drug-item-classe")?.value.trim() || row.querySelector(".drug-item-nutr")?.value.trim() || "";
+      const interacao = row.querySelector(".drug-item-interacao")?.value.trim() || row.querySelector(".drug-item-cond")?.value.trim() || "";
+      if (med || classe || interacao) {
+        p.interacaoDrogaNutriente.push({
+          medicacao: med,
+          classificacao: classe,
+          interacao: interacao,
+          medicamento: med,
+          nutrientes: classe,
+          conduta: interacao
+        });
+      }
+    });
 
     // Antropometria & Triagem Nutricional
     if (!p.antropometria.triagemNutricional) {
@@ -2776,13 +2720,28 @@ document.addEventListener("DOMContentLoaded", () => {
     // Bioquímica (Tabela Moderna de 4 Colunas e Raciocínio Clínico)
     if (!p.bioquimica) p.bioquimica = {};
     if (!p.bioquimica.interpretacoes) p.bioquimica.interpretacoes = {};
-    const bioTextareas = document.querySelectorAll("#studentBioTableBody .student-bio-interp");
-    bioTextareas.forEach(ta => {
-      const examName = ta.dataset.exam;
-      if (examName) {
-        p.bioquimica.interpretacoes[examName] = ta.value.trim();
+    p.bioquimica.exames = [];
+    const bioRows = document.querySelectorAll("#studentBioTableBody tr:not(#studentBioEmptyRow)");
+    bioRows.forEach(row => {
+      const nome = row.querySelector(".student-bio-nome")?.value.trim() || "";
+      const ref = row.querySelector(".student-bio-ref")?.value.trim() || "";
+      const valor = row.querySelector(".student-bio-valor")?.value.trim() || "";
+      const interp = row.querySelector(".student-bio-interp")?.value.trim() || "";
+      if (nome || ref || valor || interp) {
+        p.bioquimica.exames.push({
+          exame: nome,
+          referencia: ref,
+          valor: valor,
+          interpretacao: interp
+        });
+        if (nome) {
+          p.bioquimica.interpretacoes[nome] = interp;
+        }
       }
     });
+    if (typeof syncBioquimicaInterpretacoesAndCustom === "function") {
+      syncBioquimicaInterpretacoesAndCustom(p);
+    }
     syncBioquimicaExamesRelevantesText();
     if (document.getElementById("prontExamesRelevantes")) {
       p.bioquimica.examesRelevantes = document.getElementById("prontExamesRelevantes").value.trim();
@@ -5178,18 +5137,35 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setupCalculoNecessidadesListeners = setupCalculoNecessidadesListeners;
 
   // Renderiza a Tabela Moderna de Exames Bioquímicos do Aluno (4 Colunas)
-  function renderStudentBioTable(bioList = null, existingInterpretacoes = null) {
-    const list = bioList || appState.currentCase?.bioquimica || [];
-    const interps = existingInterpretacoes || appState.currentProntuario?.bioquimica?.interpretacoes || {};
+  // Renderiza a Tabela de Exames Bioquímicos do Aluno (Inputs Totalmente em Branco e Editáveis com Adição Dinâmica)
+  function renderStudentBioTable() {
     const tbody = document.getElementById("studentBioTableBody");
     if (!tbody) return;
     tbody.innerHTML = "";
 
+    const p = appState.currentProntuario;
+    if (!p) return;
+    if (!p.bioquimica) p.bioquimica = {};
+    if (!Array.isArray(p.bioquimica.exames)) {
+      if (Array.isArray(p.bioquimica.listaCustom) && p.bioquimica.listaCustom.length > 0) {
+        p.bioquimica.exames = p.bioquimica.listaCustom.map(c => ({
+          exame: c.exame || "",
+          referencia: c.referencia || "",
+          valor: c.valor || "",
+          interpretacao: c.interpretacao || (p.bioquimica.interpretacoes && p.bioquimica.interpretacoes[c.exame]) || ""
+        }));
+      } else {
+        p.bioquimica.exames = [];
+      }
+    }
+
+    const list = p.bioquimica.exames;
+
     if (!Array.isArray(list) || list.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="py-8 text-center text-slate-400 text-xs italic">
-            Nenhum exame laboratorial apurado para este caso clínico.
+        <tr id="studentBioEmptyRow">
+          <td colspan="5" class="py-8 text-center text-slate-400 text-xs italic">
+            Nenhum exame adicionado. Clique no botão "+ Adicionar Exame" abaixo para incluir exames e realizar sua análise clínica do zero.
           </td>
         </tr>
       `;
@@ -5200,113 +5176,128 @@ document.addEventListener("DOMContentLoaded", () => {
       const tr = document.createElement("tr");
       tr.className = idx % 2 === 0 ? "bg-white hover:bg-slate-50/70 transition" : "bg-slate-50/40 hover:bg-slate-50/90 transition";
 
-      const exameNome = item.exame || `Exame ${idx + 1}`;
-      const refStr = item.referencia || "-";
-      const valorAchado = item.valor || "-";
-
-      // Aprendizado Ativo: Campo estritamente em branco. Não sugere textos, predições ou feedbacks automáticos.
-      const savedInterp = (interps && typeof interps[exameNome] === "string")
-        ? interps[exameNome]
-        : (interps && typeof interps[idx] === "string" ? interps[idx] : "");
-
-      const badgeHtml = (typeof renderBiochemicalValueCell === "function")
-        ? renderBiochemicalValueCell(valorAchado, refStr)
-        : `<span class="font-bold text-slate-800">${escapeHtml(valorAchado)}</span>`;
-
-      // Suporte à remoção de exames customizados / atendimento real
-      const isRemovable = !!(item.isCustom || appState.workflowMode === "real" || (appState.currentProntuario?.bioquimica?.listaCustom && appState.currentProntuario.bioquimica.listaCustom.some(c => c.exame === exameNome)));
-      const removeBtnHtml = isRemovable 
-        ? `<button type="button" class="text-slate-300 hover:text-rose-500 font-bold ml-1.5 remove-student-bio-row cursor-pointer" data-exam="${escapeHtml(exameNome)}" title="Remover este exame">✕</button>`
-        : '';
+      const exameNome = item.exame || "";
+      const refStr = item.referencia || "";
+      const valorAchado = item.valor || "";
+      const interpStr = item.interpretacao || (p.bioquimica.interpretacoes ? (p.bioquimica.interpretacoes[exameNome] || "") : "");
 
       tr.innerHTML = `
-        <td class="py-3 px-4 align-top">
-          <div class="flex items-start justify-between">
-            <div class="flex items-start space-x-2">
-              <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
-              <div>
-                <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
-                <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
-              </div>
-            </div>
-            ${removeBtnHtml}
-          </div>
+        <td class="p-2.5 align-top">
+          <input type="text" class="student-bio-nome w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(exameNome)}">
         </td>
-        <td class="py-3 px-3 align-top">
-          <span class="inline-block font-mono text-[11px] text-slate-600 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200">
-            ${escapeHtml(refStr)}
-          </span>
+        <td class="p-2.5 align-top">
+          <input type="text" class="student-bio-ref w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(refStr)}">
         </td>
-        <td class="py-3 px-3 align-top">
-          ${badgeHtml}
+        <td class="p-2.5 align-top">
+          <input type="text" class="student-bio-valor w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(valorAchado)}">
         </td>
-        <td class="py-2.5 px-4 align-top">
-          <textarea 
-            class="student-bio-interp w-full text-xs p-2 border border-slate-300 rounded-lg bg-white focus:bg-emerald-50/20 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition resize-y shadow-2xs" 
-            rows="2" 
-            data-exam="${escapeHtml(exameNome)}" 
-            data-idx="${idx}" 
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="sentences"
-            spellcheck="false"
-            placeholder=""
-          >${escapeHtml(savedInterp)}</textarea>
+        <td class="p-2.5 align-top">
+          <textarea class="student-bio-interp w-full text-xs p-1.5 border border-slate-300 rounded bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-y" rows="2" placeholder="" data-idx="${idx}" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interpStr)}</textarea>
+        </td>
+        <td class="p-2.5 text-center align-middle">
+          <button type="button" class="remove-student-bio-row text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${idx}" title="Remover este exame">
+            🗑️
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
     });
 
     // Sincronização imediata no estado ao digitar
-    tbody.querySelectorAll(".student-bio-interp").forEach(textarea => {
-      textarea.addEventListener("input", (e) => {
-        const exam = e.target.dataset.exam;
-        const val = e.target.value;
-        if (appState.currentProntuario) {
-          if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
-          if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
-          appState.currentProntuario.bioquimica.interpretacoes[exam] = val;
+    tbody.querySelectorAll(".student-bio-nome").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.bioquimica.exames[idx]) {
+          p.bioquimica.exames[idx].exame = e.target.value;
+          syncBioquimicaInterpretacoesAndCustom(p);
           syncBioquimicaExamesRelevantesText();
         }
       });
     });
 
-    // Event listener para remoção de exames customizados no aluno
+    tbody.querySelectorAll(".student-bio-ref").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.bioquimica.exames[idx]) {
+          p.bioquimica.exames[idx].referencia = e.target.value;
+          syncBioquimicaInterpretacoesAndCustom(p);
+          syncBioquimicaExamesRelevantesText();
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".student-bio-valor").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.bioquimica.exames[idx]) {
+          p.bioquimica.exames[idx].valor = e.target.value;
+          syncBioquimicaInterpretacoesAndCustom(p);
+          syncBioquimicaExamesRelevantesText();
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".student-bio-interp").forEach(textarea => {
+      textarea.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.bioquimica.exames[idx]) {
+          p.bioquimica.exames[idx].interpretacao = e.target.value;
+          syncBioquimicaInterpretacoesAndCustom(p);
+          syncBioquimicaExamesRelevantesText();
+        }
+      });
+    });
+
     tbody.querySelectorAll(".remove-student-bio-row").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const examToRemove = e.currentTarget.dataset.exam;
-        if (!examToRemove) return;
-        if (appState.currentCase && Array.isArray(appState.currentCase.bioquimica)) {
-          appState.currentCase.bioquimica = appState.currentCase.bioquimica.filter(b => b.exame !== examToRemove);
+        const idx = parseInt(e.currentTarget.dataset.idx);
+        if (p.bioquimica.exames && idx >= 0 && idx < p.bioquimica.exames.length) {
+          p.bioquimica.exames.splice(idx, 1);
+          syncBioquimicaInterpretacoesAndCustom(p);
+          renderStudentBioTable();
+          syncBioquimicaExamesRelevantesText();
         }
-        if (appState.currentProntuario && appState.currentProntuario.bioquimica) {
-          if (appState.currentProntuario.bioquimica.interpretacoes) {
-            delete appState.currentProntuario.bioquimica.interpretacoes[examToRemove];
-          }
-          if (Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
-            appState.currentProntuario.bioquimica.listaCustom = appState.currentProntuario.bioquimica.listaCustom.filter(b => b.exame !== examToRemove);
-          }
-        }
-        renderStudentBioTable(appState.currentCase?.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
-        syncBioquimicaExamesRelevantesText();
       });
     });
   }
 
+  function syncBioquimicaInterpretacoesAndCustom(p) {
+    if (!p || !p.bioquimica) return;
+    if (!p.bioquimica.interpretacoes) p.bioquimica.interpretacoes = {};
+    p.bioquimica.listaCustom = [];
+    if (Array.isArray(p.bioquimica.exames)) {
+      p.bioquimica.exames.forEach(ex => {
+        if (ex.exame) {
+          p.bioquimica.interpretacoes[ex.exame] = ex.interpretacao || "";
+          p.bioquimica.listaCustom.push({
+            exame: ex.exame,
+            referencia: ex.referencia || "-",
+            valor: ex.valor || "-",
+            interpretacao: ex.interpretacao || "",
+            isCustom: true
+          });
+        }
+      });
+    }
+  }
+
   // Gera texto consolidado de exames para compatibilidade com relatórios e validações
   function syncBioquimicaExamesRelevantesText() {
-    if (!appState.currentProntuario || !appState.currentCase) return;
-    const bioList = appState.currentCase.bioquimica || [];
-    const interps = appState.currentProntuario.bioquimica?.interpretacoes || {};
+    if (!appState.currentProntuario) return;
+    const p = appState.currentProntuario;
+    const bioList = (Array.isArray(p.bioquimica?.exames) && p.bioquimica.exames.length > 0)
+      ? p.bioquimica.exames
+      : (Array.isArray(p.bioquimica?.listaCustom) ? p.bioquimica.listaCustom : []);
+    const interps = p.bioquimica?.interpretacoes || {};
     const relevantSummary = bioList.map(item => {
-      const interp = interps[item.exame] ? ` [Interpretação: ${interps[item.exame]}]` : "";
-      return `${item.exame}: ${item.valor} (Ref: ${item.referencia})${interp}`;
+      const interp = item.interpretacao || interps[item.exame] ? ` [Interpretação: ${item.interpretacao || interps[item.exame]}]` : "";
+      return `${item.exame || 'Exame'}: ${item.valor || '-'} (Ref: ${item.referencia || '-'})${interp}`;
     }).join("; ");
 
     const hiddenInput = document.getElementById("prontExamesRelevantes");
     if (hiddenInput) hiddenInput.value = relevantSummary;
-    if (appState.currentProntuario.bioquimica) {
-      appState.currentProntuario.bioquimica.examesRelevantes = relevantSummary;
+    if (p.bioquimica) {
+      p.bioquimica.examesRelevantes = relevantSummary;
     }
   }
 
@@ -5321,16 +5312,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     container.innerHTML = list.map(item => {
-      const badge = (typeof renderBiochemicalValueCell === "function")
-        ? renderBiochemicalValueCell(item.valor, item.referencia)
-        : `<span class="text-emerald-700 font-semibold">${escapeHtml(item.valor)}</span>`;
       return `
         <div class="bg-white border border-slate-200 rounded-lg p-2 text-[11px] mb-1.5 shadow-2xs">
-          <div class="font-bold text-slate-800 mb-1 flex items-center justify-between">
+          <div class="font-bold text-slate-800 mb-0.5 flex items-center justify-between">
             <span>${escapeHtml(item.exame)}</span>
-            <span class="text-[10px] text-slate-400 font-mono">Ref: ${escapeHtml(item.referencia)}</span>
+            <span class="text-[10px] text-slate-500 font-mono">Ref: ${escapeHtml(item.referencia)}</span>
           </div>
-          <div>${badge}</div>
+          <div class="text-xs text-slate-700">Resultado: <span class="font-bold text-slate-900">${escapeHtml(item.valor)}</span></div>
         </div>
       `;
     }).join("");
