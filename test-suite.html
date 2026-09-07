@@ -2714,8 +2714,10 @@ Questões Avaliativas:
         "Relatório HTML/PDF contém obrigatoriamente o rodapé com os Direitos Autorais");
       assert(htmlRelatorio.includes("report-print-footer") || htmlRelatorio.includes("report-copyright-footer"),
         "Relatório HTML/PDF contém o container com classe de travamento de impressão (.report-print-footer)");
-      assert(htmlRelatorio.includes("position: fixed !important") && htmlRelatorio.includes("bottom: 0 !important"),
-        "Estilo @media print trava o rodapé fixo na margem inferior do documento impresso/PDF");
+      assert(!htmlRelatorio.includes("position: fixed") && !htmlRelatorio.includes("position: absolute"),
+        "Estilo @media print NÃO utiliza position: fixed ou absolute no rodapé para não quebrar paginação nem travar impressão");
+      assert(htmlRelatorio.includes("position: static !important"),
+        "Estilo @media print utiliza position: static para fluxo nativo de impressão");
 
       // 121.4. Trava de Direitos Autorais no Componente Nativo de Rodapé do Word (.docx)
       const docxRelatorioBrand = DietoterapiaDocxReport.buildReportDocument(mockStudentReport, mockCaseReport);
@@ -2729,11 +2731,13 @@ Questões Avaliativas:
       assert(Boolean(docxXmlFiles["word/footer1.xml"] && docxXmlFiles["word/_rels/document.xml.rels"]),
         "Pacote OpenXML contém os arquivos obrigatórios do rodapé (footer1.xml e document.xml.rels)");
 
-      // 121.5. Trava de Paginação e Rodapé Repetido em Cada Página Impressa / PDF
-      assert(htmlRelatorio.includes("report-print-layout-table") && htmlRelatorio.includes("<tfoot"),
-        "Relatório HTML/PDF estruturado com layout table e tfoot spacer para evitar sobreposição em quebras de página");
-      assert(htmlRelatorio.includes("table-footer-group"),
-        "CSS de impressão define display: table-footer-group para repetição da reserva de rodapé em cada página");
+      // 121.5. Trava de Paginação e Rodapé Repetido em Cada Página Impressa / PDF (CSS Nativo)
+      assert(htmlRelatorio.includes("report-print-container") || htmlRelatorio.includes("report-print-layout-table"),
+        "Relatório HTML/PDF estruturado com contêiner nativo para paginação perfeita");
+      assert(htmlRelatorio.includes("<tfoot") && htmlRelatorio.includes("table-footer-group"),
+        "CSS de impressão define display: table-footer-group para repetição nativa do rodapé em cada página");
+      assert(htmlRelatorio.includes("<tfoot") && htmlRelatorio.includes("© 2026 DietoCase"),
+        "O rodapé com direitos autorais está embutido diretamente dentro do <tfoot> para repetição em todas as páginas sem quebra");
 
       // 122. Validação do Estado Inicial Limpo e Placeholders Genéricos nas Tabelas de Interações e Exames
       const prontBlank = prontManager.getEmptyProntuario("caso-dm2-has");
@@ -2781,6 +2785,29 @@ Questões Avaliativas:
         "Textarea de interpretação clínica possui placeholder genérico 'Interpretação e raciocínio clínico...'");
       assert(!appJsSource.includes("Ex: Metformina"),
         "Código de app.js não contém nenhum placeholder de exemplo com fármacos específicos ('Ex: Metformina')");
+
+      // 123. Validação das Configurações de Auto-Atualização do PWA (skipWaiting & clientsClaim)
+      let swSource = "";
+      try {
+        const xhrSw = new XMLHttpRequest();
+        xhrSw.open("GET", "sw.js", false);
+        xhrSw.send();
+        swSource = xhrSw.responseText || "";
+      } catch (e) {
+        try {
+          const respSw = await fetch("sw.js");
+          swSource = await respSw.text();
+        } catch (e2) {}
+      }
+
+      assert(swSource.includes("skipWaiting: true") && swSource.includes("clientsClaim: true"),
+        "sw.js define pwaConfig com skipWaiting: true e clientsClaim: true para atualização automática de cache");
+      assert(swSource.includes("self.skipWaiting()") && swSource.includes("self.clients.claim()"),
+        "sw.js invoca self.skipWaiting() e self.clients.claim() durante instalação e ativação");
+      assert(appJsSource.includes("skipWaiting: true") && appJsSource.includes("clientsClaim: true"),
+        "app.js configura registro do Service Worker com skipWaiting: true e clientsClaim: true");
+      assert(appJsSource.includes("controllerchange") && appJsSource.includes("window.location.reload()"),
+        "app.js escuta evento controllerchange para recarregar automaticamente a aplicação após novo deploy");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

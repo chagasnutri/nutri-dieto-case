@@ -7030,13 +7030,46 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Configurações do PWA para atualização automática de cache e ciclo de vida do Service Worker
+    const pwaConfig = {
+      skipWaiting: true,
+      clientsClaim: true
+    };
+
     // Registro de Service Worker para PWA (Progressive Web App)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then((reg) => {
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
           console.log('✅ DietoCase Service Worker registrado com escopo:', reg.scope);
+          // Força verificação imediata de novo deploy na Vercel
+          reg.update().catch(() => {});
+
+          // Monitora se uma nova versão do Service Worker foi baixada
+          reg.addEventListener('updatefound', () => {
+            const installingWorker = reg.installing;
+            if (installingWorker) {
+              installingWorker.addEventListener('statechange', () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('🔄 Nova versão do DietoCase disponível! Aplicando skipWaiting...');
+                  if (pwaConfig.skipWaiting) {
+                    installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                }
+              });
+            }
+          });
         }).catch((err) => {
           console.warn('Falha ao registrar Service Worker:', err);
+        });
+
+        // Quando o novo Service Worker assume o controle (clientsClaim: true), atualiza automaticamente a interface
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('⚡ Novo Service Worker ativo com clientsClaim! Recarregando para carregar a versão mais recente...');
+            window.location.reload();
+          }
         });
       });
     }

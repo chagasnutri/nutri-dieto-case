@@ -860,17 +860,22 @@ class DietoterapiaDocxReport {
     }
     @media print {
       @page {
-        margin: 12mm 15mm 22mm 15mm;
+        size: A4;
+        margin: 12mm 15mm 15mm 15mm;
       }
       body {
-        padding: 0;
-        margin: 0;
-        margin-bottom: 25mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .no-print { display: none !important; }
       table { page-break-inside: auto; }
       tr { page-break-inside: avoid; page-break-after: auto; }
 
+      /* Contêiner de Layout Nativo para Impressão com Repetição via table-footer-group */
+      .report-print-container,
       .report-print-layout-table {
         width: 100% !important;
         border: none !important;
@@ -878,31 +883,37 @@ class DietoterapiaDocxReport {
         margin: 0 !important;
         padding: 0 !important;
       }
+      .report-print-container > thead,
+      .report-print-layout-table > thead {
+        display: table-header-group !important;
+      }
+      .report-print-container > tbody,
+      .report-print-layout-table > tbody {
+        display: table-row-group !important;
+      }
+      .report-print-container > tfoot,
       .report-print-layout-table > tfoot {
         display: table-footer-group !important;
       }
 
-      /* Trava de Segurança nos Direitos Autorais do Relatório (Impressão / PDF em Todas as Páginas) */
+      /* Trava de Segurança nos Direitos Autorais do Relatório: CSS Nativo (sem posicionamento fixed/absolute) */
       .report-print-footer,
       .report-copyright-footer {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
+        position: static !important;
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
         background-color: #ffffff !important;
         color: #1e293b !important;
         border-top: 1.5px solid #0f172a !important;
-        padding: 6px 12px !important;
+        padding: 6px 0 2px 0 !important;
+        margin-top: 12px !important;
         font-size: 9.5pt !important;
         font-weight: 600 !important;
         text-align: center !important;
-        z-index: 999999 !important;
-        pointer-events: none !important;
-        user-select: none !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -925,7 +936,7 @@ class DietoterapiaDocxReport {
     </div>
   </div>
 
-  <table class="report-print-layout-table" style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+  <table class="report-print-container report-print-layout-table" style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
     <thead>
       <tr><td style="border: none; padding: 0; height: 0;"></td></tr>
     </thead>
@@ -1291,28 +1302,26 @@ class DietoterapiaDocxReport {
       : `<p>Não foram cadastradas questões avaliativas específicas para este caso clínico.</p>`
   }
     `
+  }
         </td>
       </tr>
     </tbody>
-    <tfoot>
+    <tfoot style="display: table-footer-group;">
       <tr>
-        <td style="border: none; padding: 0; height: 22mm;">
-          <!-- Espaçador reservado para o rodapé em todas as páginas da impressão/PDF -->
-          <div style="height: 22mm; visibility: hidden;">&nbsp;</div>
+        <td style="border: none; padding: 0; vertical-align: bottom;">
+          <!-- TRAVA DE SEGURANÇA: RODAPÉ DE DIREITOS AUTORAIS OBRIGATÓRIO (REPETIDO NA MARGEM INFERIOR DE CADA PÁGINA VIA TABLE-FOOTER-GROUP) -->
+          <footer class="report-print-footer report-copyright-footer" style="border-top: 1.5px solid #0f172a; padding-top: 8px; margin-top: 16px; font-size: 10px; color: #334155; text-align: center; width: 100%;">
+            <p style="margin: 0; font-size: 10pt; font-weight: 700; color: #0f172a;">
+              © 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.
+            </p>
+            <p style="margin: 2px 0 0 0; font-size: 8.5pt; color: #64748b;">
+              Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual • Emissão em ${dataFormatada}
+            </p>
+          </footer>
         </td>
       </tr>
     </tfoot>
   </table>
-
-  <!-- TRAVA DE SEGURANÇA: RODAPÉ DE DIREITOS AUTORAIS OBRIGATÓRIO (REPETIDO NA MARGEM INFERIOR DE CADA PÁGINA) -->
-  <footer class="report-print-footer report-copyright-footer" style="margin-top: 30px; border-top: 1.5px solid #0f172a; padding-top: 8px; font-size: 10px; color: #334155; text-align: center; width: 100%;">
-    <p style="margin: 0; font-size: 10pt; font-weight: 700; color: #0f172a;">
-      © 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.
-    </p>
-    <p style="margin: 2px 0 0 0; font-size: 8.5pt; color: #64748b;">
-      Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual • Emissão em ${dataFormatada}
-    </p>
-  </footer>
 </body>
 </html>
     `;

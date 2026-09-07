@@ -1,5 +1,13 @@
 // DietoCase Service Worker - Offline & PWA Support
-const CACHE_NAME = 'dietocase-pwa-v5';
+const CACHE_NAME = 'dietocase-pwa-v6';
+
+// Configurações do PWA para forçar atualização automática de cache no cliente
+const pwaConfig = {
+  skipWaiting: true,
+  clientsClaim: true,
+  cleanupOutdatedCaches: true
+};
+
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -28,30 +36,49 @@ const ASSETS_TO_CACHE = [
   './icons/icon-512.png'
 ];
 
-// Instalação do Service Worker
+// Instalação do Service Worker - ativa skipWaiting imediatamente
 self.addEventListener('install', (event) => {
+  if (pwaConfig.skipWaiting) {
+    self.skipWaiting();
+  }
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
         console.warn('Algum arquivo falhou no pré-cache do SW:', err);
       });
-    }).then(() => self.skipWaiting())
+    }).then(() => {
+      if (pwaConfig.skipWaiting) {
+        return self.skipWaiting();
+      }
+    })
   );
 });
 
-// Ativação e limpeza de caches legados
+// Ativação e limpeza de caches legados - assume controle com clients.claim()
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
+            console.log('🧹 PWA: Removendo cache legado:', cache);
             return caches.delete(cache);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      if (pwaConfig.clientsClaim) {
+        return self.clients.claim();
+      }
+    })
   );
+});
+
+// Escuta mensagem SKIP_WAITING enviada pelo cliente durante novo deploy
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data === 'skipWaiting')) {
+    self.skipWaiting();
+  }
 });
 
 // Estratégia Stale-While-Revalidate com fallback para cache
