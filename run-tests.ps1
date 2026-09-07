@@ -2,10 +2,11 @@
 $edgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 $baseDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 $suiteFile = Join-Path $baseDir "test-suite.html"
+$fileUrl = "file:///" + $suiteFile.Replace('\', '/')
 $outputHtml = Join-Path $baseDir "test-output.html"
 
 Write-Host "Executando testes automatizados no Edge headless..."
-Start-Process -FilePath $edgePath -ArgumentList "--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--virtual-time-budget=8000", "--dump-dom", $suiteFile -RedirectStandardOutput $outputHtml -Wait
+Start-Process -FilePath $edgePath -ArgumentList "--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--virtual-time-budget=6000", "--dump-dom", $fileUrl -RedirectStandardOutput $outputHtml -Wait
 
 if (Test-Path $outputHtml) {
     $raw = Get-Content -Path $outputHtml -Raw

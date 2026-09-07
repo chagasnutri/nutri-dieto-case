@@ -19,8 +19,44 @@ var FIREBASE_CONFIG = firebaseConfig;
 var firebaseSyncService = {
   config: firebaseConfig,
   status: "online_firebase",
+  isTeacher: false,
+  currentUserId: null,
   isConfigured() { return true; },
   getConfig() { return firebaseConfig; },
+  getFallbackUid() {
+    try {
+      let uid = localStorage.getItem("dietocase_anonymous_uid");
+      if (!uid) {
+        uid = "anon_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+        localStorage.setItem("dietocase_anonymous_uid", uid);
+      }
+      return uid;
+    } catch (e) {
+      return "anon_local_temp";
+    }
+  },
+  getUserId() {
+    return this.currentUserId || this.getFallbackUid();
+  },
+  isAnonymousUser() {
+    return !this.isTeacher;
+  },
+  isTeacherUser() {
+    return !!this.isTeacher;
+  },
+  async loginTeacher(email, password) {
+    if (password === "Nutri2@26") {
+      this.isTeacher = true;
+      this.currentUserId = "prof_" + (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : "admin");
+      return { success: true, user: { uid: this.currentUserId, email: email, isAnonymous: false } };
+    }
+    return { success: false, error: "Senha inválida" };
+  },
+  async logoutTeacher() {
+    this.isTeacher = false;
+    this.currentUserId = this.getFallbackUid();
+    return true;
+  },
   onStatusChange(cb) { if (typeof cb === "function") cb("online_firebase"); },
   onDataChange(cb) {},
   async fetchRemoteData() {
@@ -36,6 +72,48 @@ var firebaseSyncService = {
   async setCaseLock(id, lock) { return true; },
   async saveCase(c) { return true; },
   async deleteCase(id) { return true; },
+  async setCaseVisibility(id, vis) { return true; },
+  ensureSimulationDataLoaded() { return true; },
+  async saveAtendimentoReal(p) {
+    if (!p) return false;
+    const id = p.id || ("atendimento-real-" + Date.now());
+    const uid = p.userId || this.getUserId();
+    const payload = {
+      ...p,
+      id: id,
+      userId: uid,
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      const storageKey = "dietocase_atendimentos_reais_v1";
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      const idx = list.findIndex(item => item.id === id);
+      if (idx >= 0) {
+        list[idx] = payload;
+      } else {
+        list.push(payload);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+      localStorage.setItem("dietocase_atendimento_real_current", JSON.stringify(payload));
+    } catch (e) {}
+    return true;
+  },
+  async saveProntuario(caseId, p) {
+    if (!caseId || !p) return false;
+    const uid = p.userId || this.getUserId();
+    const docId = `${caseId}_${uid}`;
+    const payload = {
+      ...p,
+      caseId: caseId,
+      userId: uid,
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(`dietocase_prontuario_${docId}`, JSON.stringify(payload));
+    } catch (e) {}
+    return true;
+  },
   async saveDisciplina(d) { return true; },
   async deleteDisciplina(id) { return true; },
   applyPhysicalTabLocks(caseData) {

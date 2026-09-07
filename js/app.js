@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Estado da aplicação
   let appState = {
     mode: "student", // 'student' ou 'admin'
+    workflowMode: "simulation", // 'simulation' ou 'real'
     currentCaseId: null,
     currentCase: null,
     activeInterlocutor: "paciente",
@@ -38,10 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const backToCatalogBtn = document.getElementById("backToCatalogBtn");
   
   const studentView = document.getElementById("studentView");
+  const studentLandingDashboard = document.getElementById("studentLandingDashboard");
   const studentCatalogSection = document.getElementById("studentCatalogSection");
+  const studentDisciplinePortalSection = document.getElementById("studentDisciplinePortalSection");
+  const studentBackToLandingBtn = document.getElementById("studentBackToLandingBtn");
   const studentSimulationContainer = document.getElementById("studentSimulationContainer");
   const studentCasesGrid = document.getElementById("studentCasesGrid");
   const catalogSearchInput = document.getElementById("catalogSearchInput");
+  
+  // Flag de lazy-loading para casos e disciplinas simuladas
+  let isSimulationDataLoaded = false;
   
   const adminView = document.getElementById("adminView");
   const caseSelectDropdown = document.getElementById("caseSelectDropdown");
@@ -75,71 +82,151 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentCatalogFilter = "all"; // 'all', 'available', 'locked'
   let currentCatalogSearch = "";
 
-  // Inicialização
-  function initApp() {
+  // Carregamento sob demanda (lazy-loading) de disciplinas e casos simulados do Firestore
+  function ensureSimulationDataLoaded() {
+    if (isSimulationDataLoaded) return;
+    isSimulationDataLoaded = true;
+
     loadCasesIntoDropdown();
-    setupEventListeners();
-    setupAdminUI();
     renderStudentDisciplinePortal();
     renderAdminDisciplineTabs();
+
+    if (typeof dietoSyncEngine !== "undefined" && typeof dietoSyncEngine.init === "function") {
+      dietoSyncEngine.init(true);
+    }
+  }
+
+  // Exibe a tela inicial limpa do Aluno com os dois módulos empilhados verticalmente
+  function showStudentLandingDashboard() {
+    isTeacherAuthenticated = false;
+    appState.mode = "student-landing";
+
+    if (studentView) studentView.classList.remove("hidden");
+    if (adminView) adminView.classList.add("hidden");
+
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.remove("hidden");
+
+    if (studentCatalogSection) studentCatalogSection.classList.add("hidden");
+    if (studentSimulationContainer) studentSimulationContainer.classList.add("hidden");
+
+    if (modeBadge) {
+      modeBadge.textContent = "ÁREA DO ALUNO";
+      modeBadge.className = "badge-clinical bg-emerald-100 text-emerald-800 border border-emerald-300";
+    }
+
+    if (navStudentCatalogBtn) {
+      navStudentCatalogBtn.className = "bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition flex items-center space-x-1.5";
+    }
+    if (switchModeBtn) {
+      switchModeBtn.className = "bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-xs transition flex items-center space-x-1.5";
+    }
+    if (teacherBtnText) teacherBtnText.textContent = "Painel do Professor";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Abertura sob demanda do Modo Simulação (Lazy Loading de disciplinas e casos do Firestore)
+  function openSimulationMode() {
+    setStudentWorkflowMode("simulation");
+    ensureSimulationDataLoaded();
     showStudentCatalog();
+  }
 
-    // Inicializa o Motor de Sincronização Automática com o Servidor Central / Firebase
-    if (typeof dietoSyncEngine !== "undefined") {
-      const badge = document.getElementById("navSyncBadge");
-      if (badge) {
-        badge.style.cursor = "pointer";
-        badge.addEventListener("click", () => {
-          openFirebaseConfigModal();
-        });
-      }
+  // Configuração da Interface do Preceptor IA (FAB, Drawer e Método Socrático)
+  function setupPreceptorUI() {
+    if (typeof preceptorEngine === "undefined") return;
 
-      dietoSyncEngine.onStatusChange((status) => {
-        const badge = document.getElementById("navSyncBadge");
-        const dot = document.getElementById("navSyncDot");
-        const text = document.getElementById("navSyncText");
-        if (!badge || !dot || !text) return;
-        badge.classList.remove("hidden");
+    const fabBtn = document.getElementById("preceptorFabBtn");
+    const closeBtn = document.getElementById("closePreceptorDrawerBtn");
+    const backdrop = document.getElementById("preceptorBackdrop");
+    const toggleContextBtn = document.getElementById("togglePreceptorContextBtn");
+    const chatForm = document.getElementById("preceptorChatForm");
+    const inputText = document.getElementById("preceptorInputText");
 
-        if (status === "online_firebase") {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5";
-          text.textContent = "Nuvem Ativa (Firestore)";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer hover:bg-emerald-100 transition";
-          badge.title = "Conectado ao Firebase Firestore em tempo real. Clique para gerenciar.";
-        } else if (status === "syncing") {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5";
-          text.textContent = "Sincronizando...";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs cursor-pointer";
-        } else if (status === "unconfigured_firebase") {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5";
-          text.textContent = "Nuvem: Chaves Pendentes";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs cursor-pointer hover:bg-amber-100 transition";
-          badge.title = "Chaves do Firebase pendentes. Operando em modo local. Clique para inserir.";
-        } else if (status === "error_firebase") {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5";
-          text.textContent = "Nuvem com Erro";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs cursor-pointer hover:bg-rose-100 transition";
-          badge.title = "Erro ao comunicar com o Firebase. Clique para verificar credenciais.";
-        } else if (status === "online") {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5";
-          text.textContent = "Servidor Conectado";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs cursor-pointer";
+    // Abrir e fechar Drawer
+    fabBtn?.addEventListener("click", () => {
+      preceptorEngine.toggleDrawer();
+    });
+
+    closeBtn?.addEventListener("click", () => {
+      preceptorEngine.closeDrawer();
+    });
+
+    backdrop?.addEventListener("click", () => {
+      preceptorEngine.closeDrawer();
+    });
+
+    // Alternar painel sanfonado de contexto clínico
+    toggleContextBtn?.addEventListener("click", () => {
+      const body = document.getElementById("preceptorContextSummaryBody");
+      const arrow = document.getElementById("preceptorContextToggleArrow");
+      if (body) {
+        const isHidden = body.classList.contains("hidden");
+        if (isHidden) {
+          body.classList.remove("hidden");
+          if (arrow) arrow.textContent = "▲ Fechar";
+          preceptorEngine.updateClinicalContextBadge();
         } else {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5";
-          text.textContent = "Modo Local";
-          badge.className = "hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 shadow-2xs cursor-pointer hover:bg-slate-100 transition";
-          badge.title = "Operando em modo local neste navegador. Clique para conectar à nuvem.";
+          body.classList.add("hidden");
+          if (arrow) arrow.textContent = "▼ Ver";
         }
-      });
+      }
+    });
 
+    // Envio de mensagens
+    const handleSend = async (text) => {
+      const trimmed = (text || "").trim();
+      if (!trimmed || preceptorEngine.isLoading) return;
+      if (inputText) inputText.value = "";
+      preceptorEngine.renderMessages();
+      await preceptorEngine.sendMessage(trimmed, {
+        isRealPatient: appState.workflowMode === "real",
+        activeCase: appState.currentCase,
+        prontuario: appState.currentProntuario
+      });
+      preceptorEngine.renderMessages();
+    };
+
+    chatForm?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleSend(inputText?.value);
+    });
+
+    inputText?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend(inputText.value);
+      }
+    });
+
+    // Chips de perguntas rápidas socráticas
+    document.querySelectorAll(".preceptor-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const prompt = chip.dataset.prompt;
+        if (prompt) handleSend(prompt);
+      });
+    });
+
+    // Renderização inicial
+    preceptorEngine.renderMessages();
+    preceptorEngine.updateClinicalContextBadge();
+  }
+
+  // Inicialização
+  function initApp() {
+    setupEventListeners();
+    setupAdminUI();
+    setupPreceptorUI();
+
+    // Inicializa o Motor de Sincronização Automática com o Servidor Central / Firebase (100% Silencioso em Background)
+    if (typeof dietoSyncEngine !== "undefined") {
       dietoSyncEngine.onDataUpdated(({ disciplinas, cases, isInitial, isRemote }) => {
         syncAppStateAndNotify(null, false);
         if (!isTeacherAuthenticated && !isInitial) {
           showToast("🔄 Disciplinas, casos e travas atualizados em tempo real pelo professor!");
         }
       });
-
-      dietoSyncEngine.init();
     }
 
     // Ouvinte instantâneo de alterações realizadas em outras abas ou janelas
@@ -170,11 +257,94 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const requestedView = urlParams.get("view");
-    if (requestedView === "simulation") {
-      showStudentSimulation("caso-dm2-has");
+    if (requestedView === "real" || urlParams.get("demo") === "real-patient") {
+      startRealPatientSession();
+      if (appState.currentProntuario) {
+        appState.currentProntuario.aluno = {
+          nome: "Mariana Aluna",
+          matriculaTurma: "NUT-2026-A",
+          data: "2026-09-05"
+        };
+        appState.currentProntuario.dadosPacienteReal = {
+          nome: "Carlos Eduardo Silva",
+          idade: "52",
+          genero: "Masculino",
+          sexo: "Masculino",
+          naturalidade: "Belo Horizonte - MG",
+          procedencia: "São Paulo - SP",
+          ocupacao: "Contador",
+          profissao: "Contador",
+          estadoCivil: "Casado",
+          renda: "4 a 6 Salários Mínimos",
+          moradia: "Casa de alvenaria com saneamento básico",
+          escolaridade: "Superior Completo",
+          historicoSocial: {
+            estadoCivil: "Casado",
+            renda: "4 a 6 Salários Mínimos",
+            profissao: "Contador",
+            moradia: "Casa de alvenaria com saneamento básico",
+            escolaridade: "Superior Completo"
+          },
+          hipoteseDiagnostica: "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II"
+        };
+        appState.currentProntuario.anamnese.hipoteseDiagnostica = "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II";
+        appState.currentProntuario.antropometria.triagemNutricional = {
+          tipo: "hospitalar",
+          ferramenta: "NRS-2002",
+          pontuacao: "3",
+          diagnostico: "Em risco nutricional (Score >= 3). Requer acompanhamento dietoterápico imediato."
+        };
+        appState.currentProntuario.exameFisico.orgaosSistemas = {
+          neurologico: "Lúcido, orientado no tempo e espaço, Glasgow 15, sem queixas álgicas agudas.",
+          respiratorio: "Eupneico em ar ambiente, murmúrio vesicular universalmente audível, sem ruídos adventícios.",
+          circulatorio: "Normocárdico, bulhas rítmicas normofonéticas em 2T, PA 135/85 mmHg.",
+          digestorio: "Abdome globoso, flácido, indolor à palpação superficial e profunda, RHA normoativos, hepatomegalia leve.",
+          urinario: "Diurese espontânea preservada, aspecto claro, sem disúria.",
+          muscular: "Tônus e trofismo muscular preservados bilateralmente, sem atrofias evidentes."
+        };
+        appState.currentProntuario.exameFisico.compartimentos = {
+          cabeca: "Fácies atípica, conjuntivas normocoradas e anictéricas, mucosa oral úmida e íntegra.",
+          tronco: "Tórax simétrico, distribuição adiposa centrípeta (adiposidade troncular/visceral aumentada). Sem edema sacral.",
+          mmss: "Sem perda visível de massa em deltoides e bíceps. Bola gordurosa de Bichat preservada.",
+          mmii: "Panturrilhas preservadas, sem perda de massa no quadríceps. Edema maleolar ausente (cacifo negativo)."
+        };
+        appState.currentProntuario.interacaoDrogaNutriente = [
+          {
+            medicacao: "Metformina 850mg (2x/dia)",
+            classificacao: "Biguanida / Antidiabético Oral",
+            interacao: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos.",
+            medicamento: "Metformina 850mg (2x/dia)",
+            nutrientes: "Biguanida / Antidiabético Oral",
+            conduta: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos."
+          },
+          {
+            medicacao: "Furosemida 40mg (1x/dia)",
+            classificacao: "Diurético de Alça",
+            interacao: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia.",
+            medicamento: "Furosemida 40mg (1x/dia)",
+            nutrientes: "Diurético de Alça",
+            conduta: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia."
+          },
+          {
+            medicacao: "Atorvastatina 20mg",
+            classificacao: "Estatina / Hipolipemiante",
+            interacao: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia.",
+            medicamento: "Atorvastatina 20mg",
+            nutrientes: "Estatina / Hipolipemiante",
+            conduta: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia."
+          }
+        ];
+        appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+      }
+      populateProntuarioForm();
+      renderDrugNutrientTable();
+    } else if (requestedView === "simulation") {
+      ensureSimulationDataLoaded();
+      showStudentSimulation(urlParams.get("caseId") || "caso-dm2-has");
     } else if (requestedView === "password") {
       showTeacherPanel();
     } else if (requestedView === "admin") {
+      ensureSimulationDataLoaded();
       isTeacherAuthenticated = true;
       showTeacherPanel();
       if (urlParams.get("action") === "edit") {
@@ -187,12 +357,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } else if (requestedView === "upload") {
+      ensureSimulationDataLoaded();
       isTeacherAuthenticated = true;
       showTeacherPanel();
       showAdminUploadCase();
+    } else if (requestedView === "disciplines") {
+      openSimulationMode();
     } else if (requestedView === "discipline") {
+      ensureSimulationDataLoaded();
       const discId = urlParams.get("id") || "dietoterapia";
       openStudentDiscipline(discId);
+    } else {
+      // PADRÃO: Tela inicial limpa com apenas os dois grandes módulos verticais
+      showStudentLandingDashboard();
     }
 
     const requestedTab = urlParams.get("tab");
@@ -227,14 +404,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (urlParams.get("demo") === "bioquimica") {
           if (appState.currentProntuario) {
             if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
-            appState.currentProntuario.bioquimica.interpretacoes = {
-              "Glicemia de Jejum": "Hiperglicemia acentuada (> 126 mg/dL), indicando descontrole glicêmico grave e resistência periférica à insulina.",
-              "Hemoglobina Glicada (HbA1c)": "Controle glicêmico crônico inadequado (> 7.0%), com elevado risco micro e macrovascular.",
-              "Colesterol Total": "Hipercolesterolemia moderada associada ao descontrole metabólico e perfil lipídico aterogênico.",
-              "HDL-Colesterol": "HDL reduzido (< 40 mg/dL), configurando fator de risco cardiovascular independente.",
-              "Triglicerídeos": "Hipertrigliceridemia moderada (> 150 mg/dL), fortemente ligada à dieta hiperglicídica de alto índice glicêmico."
-            };
-            appState.currentProntuario.bioquimica.interpretacaoNutricional = "Quadro de descompensação metabólica com síndrome de resistência insulínica e dislipidemia mista aterogênica. A intervenção dietoterápica prioritária deve focar no controle de carboidratos refinados, aumento de fibras solúveis e substituição de gorduras saturadas por mono e poli-insaturadas.";
+            appState.currentProntuario.bioquimica.interpretacoes = {};
+            appState.currentProntuario.bioquimica.interpretacaoNutricional = "";
           }
           populateProntuarioForm();
         }
@@ -452,6 +623,184 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
         }
+        if (urlParams.get("demo") === "pes-objetivos") {
+          if (appState.currentProntuario) {
+            if (!appState.currentProntuario.diagnosticoPES) appState.currentProntuario.diagnosticoPES = {};
+            appState.currentProntuario.diagnosticoPES.problema = "Ingestão excessiva de carboidratos simples e gorduras saturadas";
+            appState.currentProntuario.diagnosticoPES.etiologia = "Consumo frequente de lanches e alimentos ultraprocessados associado à rotina de trabalho";
+            appState.currentProntuario.diagnosticoPES.sinaisSintomas = "Glicemia de jejum de 188 mg/dL, HbA1c de 8.9% e ganho de peso involuntário";
+            appState.currentProntuario.diagnosticoPES.textoCompletoPES = "Ingestão excessiva de carboidratos simples e gorduras saturadas relacionado ao consumo frequente de ultraprocessados na rotina de trabalho evidenciado por HbA1c 8.9% e ganho de 8 kg.";
+            appState.currentProntuario.diagnosticoPES.objetivosDietoterapicos = "• Promover otimização do controle glicêmico com ênfase em carboidratos complexos e fibras (> 25g/dia)\n• Reduzir sobrecarga cardiovascular e aterogênica com restrição de gorduras saturadas (< 7% do VET)\n• Promover perda ponderal gradual e sustentável de 5% a 10% em 6 meses\n• Estimular rotina regular de hidratação e horários consistentes de refeições";
+          }
+          populateProntuarioForm();
+        }
+        if (urlParams.get("demo") === "tne-gravitacional") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.tne = {
+              viaAlimentacao: "tne",
+              tipoDieta: "Polimérica normocalórica e hiperproteica com fibras",
+              densidadeCalorica: "1.2 kcal/mL",
+              fracionamento: "5 etapas ao dia (a cada 3 horas)",
+              viaAdministracao: "gravitacional",
+              gravitacional: {
+                volumePorRefeicao: "300 mL por etapa",
+                quantidadeFrascosEtapas: "5 frascos de 300 mL (Total: 1500 mL/dia)",
+                metaVazaoGotasMin: "42 gotas/minuto (infusão em 60 a 70 min)"
+              },
+              bombaInfusao: {
+                tempoInfusaoHoras: "20 horas",
+                metaVazaoMlHora: "75 mL/h"
+              },
+              moduloSuplementacaoProteica: "Prescrito módulo de Whey Protein isolado (2 tomadas de 15g ao dia) diluído em 100mL de água, administrado às 10h e 16h para atingir meta de 1.4 g/kg/dia."
+            };
+          }
+          populateProntuarioForm();
+        }
+        if (urlParams.get("demo") === "tne-bomba") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.tne = {
+              viaAlimentacao: "tne",
+              tipoDieta: "Polimérica hipercalórica e hiperproteica sem lactose",
+              densidadeCalorica: "1.5 kcal/mL",
+              fracionamento: "Contínuo em 20 horas/dia (pausa de 4h para cuidados)",
+              viaAdministracao: "bomba",
+              gravitacional: {
+                volumePorRefeicao: "",
+                quantidadeFrascosEtapas: "",
+                metaVazaoGotasMin: ""
+              },
+              bombaInfusao: {
+                tempoInfusaoHoras: "20 horas/dia",
+                metaVazaoMlHora: "65 mL/hora (Volume Total: 1300 mL/dia)"
+              },
+              moduloSuplementacaoProteica: "Adição de módulo proteico de caseinato de cálcio (1 medida de 20g) para atingir meta proteica de 1.5 g/kg/dia."
+            };
+          }
+          populateProntuarioForm();
+        }
+        if (urlParams.get("demo") === "cardapio-oral-consistencia") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.consistenciaDietaOral = "Dieta Branda";
+            if (appState.currentProntuario.tne) appState.currentProntuario.tne.viaAlimentacao = "oral";
+          }
+          populateProntuarioForm();
+          setNutritionRouteSelection("oral");
+        }
+        if (urlParams.get("demo") === "tne-quantitativo") {
+          if (appState.currentProntuario) {
+            appState.currentProntuario.tne = {
+              viaAlimentacao: "tne",
+              nomeComercial: "Fresubin HP Energy (Fresenius)",
+              tipoDieta: "Polimérica normocalórica e hiperproteica com fibras",
+              densidadeCalorica: "1.5 kcal/mL",
+              fracionamento: "Contínuo em 20 horas/dia",
+              viaAdministracao: "bomba",
+              gravitacional: { volumePorRefeicao: "", quantidadeFrascosEtapas: "", metaVazaoGotasMin: "" },
+              bombaInfusao: { tempoInfusaoHoras: "20 horas/dia", metaVazaoMlHora: "65 mL/h (Volume: 1300 mL)" },
+              tabelaNutricionalManual: {
+                vet: "1950",
+                cho: "234",
+                ptn: "97.5",
+                lip: "65",
+                fibra: "24",
+                sodio: "1250",
+                potassio: "1850",
+                calcio: "1000",
+                fosforo: "800"
+              },
+              moduloSuplementacaoProteica: "Módulo proteico isolado (1 dose de 15g de Whey) para atingir meta de 1.4 g/kg/dia."
+            };
+          }
+          populateProntuarioForm();
+          setNutritionRouteSelection("tne");
+          updateCardapioTotalsDisplay();
+        }
+        if (urlParams.get("demo") === "real-patient" || urlParams.get("view") === "real") {
+          startRealPatientSession();
+          if (appState.currentProntuario) {
+            appState.currentProntuario.aluno = {
+              nome: "Mariana Aluna",
+              matriculaTurma: "NUT-2026-A",
+              data: "2026-09-05"
+            };
+            appState.currentProntuario.dadosPacienteReal = {
+              nome: "Carlos Eduardo Silva",
+              idade: "52",
+              genero: "Masculino",
+              sexo: "Masculino",
+              naturalidade: "Belo Horizonte - MG",
+              procedencia: "São Paulo - SP",
+              ocupacao: "Contador",
+              profissao: "Contador",
+              estadoCivil: "Casado",
+              renda: "4 a 6 Salários Mínimos",
+              moradia: "Casa de alvenaria com saneamento básico",
+              escolaridade: "Superior Completo",
+              historicoSocial: {
+                estadoCivil: "Casado",
+                renda: "4 a 6 Salários Mínimos",
+                profissao: "Contador",
+                moradia: "Casa de alvenaria com saneamento básico",
+                escolaridade: "Superior Completo"
+              },
+              hipoteseDiagnostica: "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II"
+            };
+            appState.currentProntuario.anamnese.hipoteseDiagnostica = "Síndrome Metabólica e Esteatose Hepática Não Alcoólica Grau II";
+            appState.currentProntuario.antropometria.triagemNutricional = {
+              tipo: "hospitalar",
+              ferramenta: "NRS-2002",
+              pontuacao: "3",
+              diagnostico: "Em risco nutricional (Score >= 3). Requer acompanhamento dietoterápico imediato."
+            };
+            appState.currentProntuario.exameFisico.orgaosSistemas = {
+              neurologico: "Lúcido, orientado no tempo e espaço, Glasgow 15, sem queixas álgicas agudas.",
+              respiratorio: "Eupneico em ar ambiente, murmúrio vesicular universalmente audível, sem ruídos adventícios.",
+              circulatorio: "Normocárdico, bulhas rítmicas normofonéticas em 2T, PA 135/85 mmHg.",
+              digestorio: "Abdome globoso, flácido, indolor à palpação superficial e profunda, RHA normoativos, hepatomegalia leve.",
+              urinario: "Diurese espontânea preservada, aspecto claro, sem disúria.",
+              muscular: "Tônus e trofismo muscular preservados bilateralmente, sem atrofias evidentes."
+            };
+            appState.currentProntuario.exameFisico.compartimentos = {
+              cabeca: "Fácies atípica, conjuntivas normocoradas e anictéricas, mucosa oral úmida e íntegra.",
+              tronco: "Tórax simétrico, distribuição adiposa centrípeta (adiposidade troncular/visceral aumentada). Sem edema sacral.",
+              mmss: "Sem perda visível de massa em deltoides e bíceps. Bola gordurosa de Bichat preservada.",
+              mmii: "Panturrilhas preservadas, sem perda de massa no quadríceps. Edema maleolar ausente (cacifo negativo)."
+            };
+            appState.currentProntuario.interacaoDrogaNutriente = [
+              {
+                medicacao: "Metformina 850mg (2x/dia)",
+                classificacao: "Biguanida / Antidiabético Oral",
+                interacao: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos.",
+                medicamento: "Metformina 850mg (2x/dia)",
+                nutrientes: "Biguanida / Antidiabético Oral",
+                conduta: "Reduz absorção ileal de Vitamina B12 e folato a longo prazo. Recomenda-se monitorar níveis séricos."
+              },
+              {
+                medicacao: "Furosemida 40mg (1x/dia)",
+                classificacao: "Diurético de Alça",
+                interacao: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia.",
+                medicamento: "Furosemida 40mg (1x/dia)",
+                nutrientes: "Diurético de Alça",
+                conduta: "Aumenta excreção urinária de potássio, magnésio, cálcio e tiamina. Risco de hipocalemia."
+              },
+              {
+                medicacao: "Atorvastatina 20mg",
+                classificacao: "Estatina / Hipolipemiante",
+                interacao: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia.",
+                medicamento: "Atorvastatina 20mg",
+                nutrientes: "Estatina / Hipolipemiante",
+                conduta: "Pode deplecionar níveis de Coenzima Q10 mitocondrial; atentar para queixas de mialgia."
+              }
+            ];
+            appState.currentProntuario.observacoesFarmacoterapia = "Paciente relata uso contínuo e pontual das medicações após o almoço e jantar. Monitorar níveis séricos de B12 e transaminases.";
+          }
+          populateProntuarioForm();
+          renderDrugNutrientTable();
+          if (requestedTab) {
+            const tBtn = document.querySelector(`.student-tab-btn[data-tab="${requestedTab}"]`);
+            if (tBtn) tBtn.click();
+          }
+        }
         if (urlParams.get("scroll") === "totals") {
           setTimeout(() => {
             const panel = document.getElementById("cardapioTotalsPanel");
@@ -463,6 +812,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const panel = document.getElementById("recordatorioTotalsPanel");
             if (panel) panel.scrollIntoView({ behavior: "instant", block: "center" });
           }, 300);
+        }
+        if (urlParams.get("scroll") === "exame") {
+          setTimeout(() => {
+            const panel = document.getElementById("tab-content-examefisico");
+            if (panel) panel.scrollIntoView({ behavior: "instant", block: "start" });
+          }, 350);
+        }
+        if (urlParams.get("scroll") === "droga") {
+          setTimeout(() => {
+            const panel = document.getElementById("tab-content-droganutriente");
+            if (panel) panel.scrollIntoView({ behavior: "instant", block: "start" });
+          }, 350);
         }
       }, 150);
     }
@@ -476,9 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const openModalParam = urlParams.get("openModal");
-    if (openModalParam === "firebase") {
-      setTimeout(() => openFirebaseConfigModal(), 200);
-    } else if (openModalParam === "blocked") {
+    if (openModalParam === "blocked") {
       setTimeout(() => openStudentBlockedTabModal("bioquimica"), 200);
     }
 
@@ -504,9 +863,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function showStudentCatalog(disciplinaId = null) {
     isTeacherAuthenticated = false;
     appState.mode = "student-catalog";
+    ensureSimulationDataLoaded();
+
     studentView.classList.remove("hidden");
     adminView.classList.add("hidden");
     
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.add("hidden");
+
     if (studentCatalogSection) studentCatalogSection.classList.remove("hidden");
     if (studentSimulationContainer) studentSimulationContainer.classList.add("hidden");
 
@@ -551,8 +915,22 @@ document.addEventListener("DOMContentLoaded", () => {
     studentView.classList.remove("hidden");
     adminView.classList.add("hidden");
     
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.add("hidden");
+
     if (studentCatalogSection) studentCatalogSection.classList.add("hidden");
     if (studentSimulationContainer) studentSimulationContainer.classList.remove("hidden");
+
+    if (backToCatalogBtn) {
+      const span = backToCatalogBtn.querySelector("span:last-child");
+      if (span) span.textContent = "Voltar ao Painel de Casos";
+    }
+
+    const prontCardSim = document.querySelector("#studentSimulationContent > section:last-child > div");
+    if (prontCardSim) {
+      prontCardSim.classList.remove("min-h-[820px]", "h-auto");
+      prontCardSim.classList.add("h-[820px]");
+    }
 
     modeBadge.textContent = "SIMULAÇÃO DO CASO";
     modeBadge.className = "badge-clinical bg-emerald-100 text-emerald-800 border border-emerald-300";
@@ -562,6 +940,384 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Alterna o modo de trabalho do aluno (Simulação vs Atendimento Real)
+  function setStudentWorkflowMode(mode) {
+    appState.workflowMode = mode;
+    const badge = document.getElementById("activeWorkflowModeBadge");
+    if (badge) {
+      if (mode === "real") {
+        badge.textContent = "Modo Atual: 🩺 Atendimento Real";
+        badge.className = "badge-clinical bg-sky-50 text-sky-700 border border-sky-300 text-[11px]";
+      } else {
+        badge.textContent = "Modo Atual: 🎓 Simulação";
+        badge.className = "badge-clinical bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px]";
+      }
+    }
+    const drugSuggestions = document.getElementById("drugInteractionSuggestionsContainer");
+    if (drugSuggestions) {
+      drugSuggestions.classList.toggle("hidden", mode === "real");
+    }
+  }
+
+  // Inicia uma nova sessão de Atendimento Presencial Real (Prontuário em Branco)
+  function startRealPatientSession() {
+    setStudentWorkflowMode("real");
+    appState.mode = "student-real";
+    appState.currentCaseId = "atendimento-real";
+    
+    // Tenta carregar rascunho de atendimento real do localStorage
+    let p = null;
+    try {
+      const saved = localStorage.getItem("dietocase_atendimento_real_current");
+      if (saved) {
+        p = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn("Aviso ao carregar rascunho de atendimento real:", e);
+    }
+    
+    const uid = (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.getUserId === "function") 
+      ? firebaseSyncService.getUserId() 
+      : "anon_user";
+
+    if (!p) {
+      p = prontuarioManager.getEmptyProntuario("atendimento-real");
+      p.isRealPatient = true;
+      p.userId = uid;
+    } else {
+      p.isRealPatient = true;
+      if (!p.userId) p.userId = uid;
+    }
+
+    appState.currentProntuario = p;
+
+    // Constrói objeto de caso clínico virtual para o atendimento real
+    appState.currentCase = {
+      id: "atendimento-real",
+      title: "Atendimento Presencial Real",
+      category: "Consulta Ambulatorial / Hospitalar",
+      description: "Prontuário de atendimento presencial clínico-nutricional registrado pelo estudante.",
+      isRealCase: true,
+      habilitarQuestoesAvaliativas: false,
+      blockedTabs: [],
+      patient: {
+        name: p.dadosPacienteReal?.nome || "Paciente Real",
+        age: p.dadosPacienteReal?.idade || "--",
+        gender: p.dadosPacienteReal?.sexo || "Feminino",
+        avatar: "🩺"
+      },
+      hipoteseDiagnostica: p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "",
+      bioquimica: Array.isArray(p.bioquimica?.listaCustom) ? p.bioquimica.listaCustom : []
+    };
+
+    // Ajusta layout visual para Modo Atendimento Real
+    studentView.classList.remove("hidden");
+    adminView.classList.add("hidden");
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.add("hidden");
+    if (studentCatalogSection) studentCatalogSection.classList.add("hidden");
+    if (studentSimulationContainer) studentSimulationContainer.classList.remove("hidden");
+
+    if (backToCatalogBtn) {
+      const span = backToCatalogBtn.querySelector("span:last-child");
+      if (span) span.textContent = "Voltar aos Modos";
+    }
+
+    // Oculta a coluna do chat e expande o prontuário para 12 colunas
+    const chatColumn = document.querySelector("#studentSimulationContent > section:first-child");
+    const prontColumn = document.querySelector("#studentSimulationContent > section:last-child");
+    if (chatColumn) {
+      chatColumn.classList.add("hidden");
+      chatColumn.style.display = "none";
+    }
+    if (prontColumn) {
+      prontColumn.classList.remove("lg:col-span-7");
+      prontColumn.classList.add("lg:col-span-12");
+      prontColumn.style.gridColumn = "span 12 / span 12";
+    }
+
+    const prontCardReal = document.querySelector("#studentSimulationContent > section:last-child > div");
+    if (prontCardReal) {
+      prontCardReal.classList.remove("h-[820px]");
+      prontCardReal.classList.add("min-h-[820px]", "h-auto");
+    }
+
+    // Exibe o card de identificação do paciente real
+    const realHeaderCard = document.getElementById("realPatientHeaderCard");
+    if (realHeaderCard) {
+      realHeaderCard.classList.remove("hidden");
+      realHeaderCard.style.display = "block";
+    }
+
+    // Ajusta controles no cabeçalho
+    const simWrapper = document.getElementById("simCaseSelectWrapper");
+    const realWrapper = document.getElementById("realPatientActionsWrapper");
+    if (simWrapper) {
+      simWrapper.classList.add("hidden");
+      simWrapper.style.display = "none";
+    }
+    if (realWrapper) {
+      realWrapper.classList.remove("hidden");
+      realWrapper.style.display = "flex";
+    }
+
+    // Oculta aba de questões avaliativas (não se aplica para consulta real)
+    const questoesTabBtn = document.querySelector('.student-tab-btn[data-tab="questoes"]');
+    if (questoesTabBtn) {
+      questoesTabBtn.classList.add("hidden");
+      questoesTabBtn.style.display = "none";
+    }
+
+    // Atualiza badges do cabeçalho
+    document.getElementById("casePatientNameHeader").textContent = p.dadosPacienteReal?.nome || "Novo Atendimento Presencial";
+    document.getElementById("caseCategoryHeader").textContent = "Atendimento Real";
+    document.getElementById("caseCategoryHeader").className = "badge-clinical bg-sky-100 text-sky-800 border border-sky-300";
+    document.getElementById("caseDescHeader").textContent = "Preencha os dados da consulta, avaliação antropométrica, interações droga-nutriente, exames e conduta.";
+    
+    const hipBadge = document.getElementById("caseHipoteseDiagnosticaHeader");
+    if (hipBadge) {
+      const hip = p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "";
+      hipBadge.textContent = hip ? `🩺 ${hip}` : "🩺 Definir Diagnóstico Médico";
+      hipBadge.title = hip;
+    }
+
+    modeBadge.textContent = "ATENDIMENTO REAL";
+    modeBadge.className = "badge-clinical bg-sky-100 text-sky-800 border border-sky-300";
+
+    // Garante que todas as etapas clínicas fiquem liberadas
+    applyStudentTabBlockingState(appState.currentCase);
+
+    // Preenche o formulário do prontuário
+    populateProntuarioForm();
+
+    // Renderiza a tabela de exames com a lista customizada
+    renderStudentBioTable(appState.currentCase.bioquimica, p.bioquimica?.interpretacoes);
+
+    // Renderiza a tabela de interações droga-nutriente
+    renderDrugNutrientTable();
+
+    // Seleciona a aba Anamnese inicialmente
+    const anamneseBtn = document.querySelector('.student-tab-btn[data-tab="anamnese"]');
+    if (anamneseBtn) anamneseBtn.click();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast("🩺 Modo Atendimento Real iniciado! Preencha a identificação e o diagnóstico médico.", "info");
+  }
+
+  // Salva atendimento presencial real
+  async function saveRealPatientSession(showFeedback = true) {
+    const p = readProntuarioFromForm();
+    if (!p) return;
+    p.isRealPatient = true;
+    p.userId = p.userId || ((typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.getUserId === "function") 
+      ? firebaseSyncService.getUserId() 
+      : "anon_user");
+    p.updatedAt = new Date().toISOString();
+
+    // 1. Salva no localStorage
+    localStorage.setItem("dietocase_atendimento_real_current", JSON.stringify(p));
+
+    // 2. Salva no Firestore se configurado
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveAtendimentoReal === "function") {
+      await firebaseSyncService.saveAtendimentoReal(p);
+    }
+
+    if (showFeedback) {
+      showToast("💾 Prontuário de Atendimento Real salvo com sucesso!", "success");
+    }
+  }
+
+  // Exporta documento Word (.docx) do Atendimento Real
+  function exportRealPatientDocx() {
+    const p = readProntuarioFromForm();
+    if (!p) return;
+    
+    if (!p.aluno.nome) {
+      showToast("Por favor, preencha o Nome do Estudante antes de gerar o relatório.", "warning");
+      const alunoInput = document.getElementById("alunoNome");
+      if (alunoInput) alunoInput.focus();
+      return;
+    }
+
+    const hip = p.dadosPacienteReal?.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica;
+    if (!hip) {
+      showToast("A Hipótese Diagnóstica / Diagnóstico Médico é obrigatória para gerar o relatório.", "warning");
+      const hipInput = document.getElementById("realPatHipoteseDiagnostica") || document.getElementById("prontHipoteseDiagnostica");
+      if (hipInput) hipInput.focus();
+      return;
+    }
+
+    const realCase = {
+      id: p.id || ("atendimento-real-" + Date.now()),
+      title: "Atendimento Presencial Real",
+      category: "Consulta Ambulatorial / Hospitalar",
+      description: `Consulta presencial de ${p.dadosPacienteReal?.nome || "Paciente Real"}`,
+      isRealCase: true,
+      patient: {
+        name: p.dadosPacienteReal?.nome || "Paciente Real",
+        age: p.dadosPacienteReal?.idade || "--",
+        gender: p.dadosPacienteReal?.genero || p.dadosPacienteReal?.sexo || "--",
+        occupation: p.dadosPacienteReal?.profissao || p.dadosPacienteReal?.ocupacao || "",
+        naturalidade: p.dadosPacienteReal?.naturalidade || "",
+        procedencia: p.dadosPacienteReal?.procedencia || "",
+        estadoCivil: p.dadosPacienteReal?.historicoSocial?.estadoCivil || p.dadosPacienteReal?.estadoCivil || "",
+        renda: p.dadosPacienteReal?.historicoSocial?.renda || p.dadosPacienteReal?.renda || "",
+        profissao: p.dadosPacienteReal?.historicoSocial?.profissao || p.dadosPacienteReal?.profissao || p.dadosPacienteReal?.ocupacao || "",
+        moradia: p.dadosPacienteReal?.historicoSocial?.moradia || p.dadosPacienteReal?.moradia || "",
+        escolaridade: p.dadosPacienteReal?.historicoSocial?.escolaridade || p.dadosPacienteReal?.escolaridade || ""
+      },
+      hipoteseDiagnostica: hip,
+      habilitarQuestoesAvaliativas: false
+    };
+
+    appState.currentCase = realCase;
+    appState.currentProntuario = p;
+
+    DietoterapiaDocxReport.generateReport(p, realCase);
+    saveRealPatientSession(false);
+    showToast("📄 Relatório do Atendimento Real gerado com sucesso!", "success");
+
+    const modalStudent = document.getElementById("modalStudentName");
+    const modalCase = document.getElementById("modalCaseTitle");
+    if (modalStudent) modalStudent.textContent = p.aluno.nome;
+    if (modalCase) modalCase.textContent = "Atendimento Presencial Real (" + (p.dadosPacienteReal?.nome || "Paciente Real") + ")";
+    if (submissionConfirmModal) {
+      submissionConfirmModal.classList.remove("hidden");
+    }
+  }
+
+  // Renderiza a Tabela Dinâmica de Interações Droga-Nutriente (3 Colunas Exatas: Medicação, Classificação, Interação)
+  function renderDrugNutrientTable() {
+    const tbody = document.getElementById("drugNutrientTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const isReal = appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient === true;
+    const drugSuggestions = document.getElementById("drugInteractionSuggestionsContainer");
+    if (drugSuggestions) {
+      drugSuggestions.classList.toggle("hidden", isReal);
+    }
+
+    const p = appState.currentProntuario;
+    if (!p) return;
+    if (!Array.isArray(p.interacaoDrogaNutriente)) {
+      p.interacaoDrogaNutriente = [];
+    }
+
+    if (p.interacaoDrogaNutriente.length === 0) {
+      tbody.innerHTML = `
+        <tr id="drugNutrientEmptyRow">
+          <td colspan="4" class="py-6 text-center text-slate-400 text-xs italic">
+            ${isReal 
+              ? 'Nenhuma interação medicamentosa registrada. Clique em "Adicionar Fármaco / Interação" acima para formular o raciocínio clínico.' 
+              : 'Nenhuma interação medicamentosa registrada. Clique em "Adicionar Fármaco / Interação" acima ou selecione uma das sugestões rápidas.'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    p.interacaoDrogaNutriente.forEach((item, index) => {
+      const medVal = item.medicacao || item.medicamento || "";
+      const classeVal = item.classificacao || item.classe || "";
+      const interVal = item.interacao || (item.nutrientes ? (item.nutrientes + (item.conduta ? " - " + item.conduta : "")) : "");
+
+      const tr = document.createElement("tr");
+      tr.className = index % 2 === 0 ? "bg-white hover:bg-slate-50/60 transition" : "bg-slate-50/30 hover:bg-slate-50/80 transition";
+      tr.innerHTML = `
+        <td class="p-2.5 align-top">
+          <input type="text" class="drug-item-med w-full text-xs p-1.5 border border-slate-300 rounded font-semibold text-slate-800 focus:border-emerald-500" data-idx="${index}" placeholder="${isReal ? '' : 'Ex: Metformina 850mg'}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(medVal)}">
+        </td>
+        <td class="p-2.5 align-top">
+          <input type="text" class="drug-item-classe w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" data-idx="${index}" placeholder="${isReal ? '' : 'Ex: Biguanida / Antidiabético Oral'}" autocomplete="off" autocorrect="off" spellcheck="false" value="${escapeHtml(classeVal)}">
+        </td>
+        <td class="p-2.5 align-top">
+          <textarea class="drug-item-interacao w-full text-xs p-1.5 border border-slate-300 rounded text-slate-700 focus:border-emerald-500" rows="2" data-idx="${index}" placeholder="${isReal ? '' : 'Descrição manual da interação com nutrientes...'}" autocomplete="off" autocorrect="off" spellcheck="false">${escapeHtml(interVal)}</textarea>
+        </td>
+        <td class="p-2.5 text-center align-middle">
+          <button type="button" class="remove-drug-btn text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition cursor-pointer" data-idx="${index}" title="Remover este fármaco">
+            🗑️
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll(".drug-item-med").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].medicacao = e.target.value;
+          p.interacaoDrogaNutriente[idx].medicamento = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".drug-item-classe").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].classificacao = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".drug-item-interacao").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (p.interacaoDrogaNutriente[idx]) {
+          p.interacaoDrogaNutriente[idx].interacao = e.target.value;
+          p.interacaoDrogaNutriente[idx].nutrientes = e.target.value;
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".remove-drug-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const idx = parseInt(e.currentTarget.dataset.idx);
+        prontuarioManager.removeInteracaoDrogaNutriente(p, idx);
+        renderDrugNutrientTable();
+      });
+    });
+  }
+
+  // Adiciona novo exame laboratorial na tabela de bioquímica
+  function handleAddCustomBioExam() {
+    const nome = prompt("Nome do Exame Laboratorial (ex: Glicemia de Jejum, Hemoglobina Glicada, Triglicerídeos, Ureia):");
+    if (!nome || !nome.trim()) return;
+    const ref = prompt("Valor de Referência (ex: 70 - 99 mg/dL ou < 150 mg/dL):", "-");
+    const valor = prompt("Valor Achado do Paciente (ex: 110 mg/dL):", "-");
+
+    if (!appState.currentCase) return;
+    if (!Array.isArray(appState.currentCase.bioquimica)) {
+      appState.currentCase.bioquimica = [];
+    }
+
+    const novoExame = {
+      exame: nome.trim(),
+      referencia: (ref || "-").trim(),
+      valor: (valor || "-").trim(),
+      isCustom: true
+    };
+
+    appState.currentCase.bioquimica.push(novoExame);
+
+    if (appState.currentProntuario) {
+      if (!appState.currentProntuario.bioquimica) appState.currentProntuario.bioquimica = {};
+      if (!appState.currentProntuario.bioquimica.interpretacoes) appState.currentProntuario.bioquimica.interpretacoes = {};
+      // Inicia o campo de interpretação estritamente em branco para o aluno formular seu raciocínio
+      appState.currentProntuario.bioquimica.interpretacoes[novoExame.exame] = "";
+      if (!Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
+        appState.currentProntuario.bioquimica.listaCustom = [];
+      }
+      appState.currentProntuario.bioquimica.listaCustom.push(novoExame);
+    }
+
+    renderStudentBioTable(appState.currentCase.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
+    syncBioquimicaExamesRelevantesText();
+    showToast(`Exame "${novoExame.exame}" adicionado à tabela com sucesso!`, "success");
   }
 
   // Exibe o Template 2: Painel do Professor / Administrador (requer senha Nutri2@26)
@@ -749,6 +1505,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function openStudentDiscipline(disciplinaId) {
     appState.studentSelectedDisciplinaId = disciplinaId;
 
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.add("hidden");
+    const catalogSec = document.getElementById("studentCatalogSection");
+    if (catalogSec) catalogSec.classList.remove("hidden");
+
     const portalSection = document.getElementById("studentDisciplinePortalSection");
     const casesSection = document.getElementById("studentDisciplineCasesSection");
     if (portalSection) portalSection.classList.add("hidden");
@@ -811,6 +1572,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Retorna à visualização de disciplinas (sem casos aparecendo)
   function backToStudentDisciplinePortal() {
     appState.studentSelectedDisciplinaId = null;
+
+    const landing = document.getElementById("studentLandingDashboard");
+    if (landing) landing.classList.add("hidden");
+    const catalogSec = document.getElementById("studentCatalogSection");
+    if (catalogSec) catalogSec.classList.remove("hidden");
+
     const portalSection = document.getElementById("studentDisciplinePortalSection");
     const casesSection = document.getElementById("studentDisciplineCasesSection");
     if (portalSection) portalSection.classList.remove("hidden");
@@ -1029,6 +1796,11 @@ document.addEventListener("DOMContentLoaded", () => {
       caseSelectDropdown.appendChild(opt);
     });
 
+    // Se o modo ativo for Atendimento Real, não sobrescreve com um caso simulado
+    if (appState.workflowMode === "real" || appState.currentCaseId === "atendimento-real") {
+      return;
+    }
+
     // Se o caso atual for nulo ou não estiver liberado, seleciona o primeiro disponível
     if (!appState.currentCaseId || !availableCases.some(c => c.id === appState.currentCaseId)) {
       selectCase(availableCases[0].id);
@@ -1091,7 +1863,14 @@ document.addEventListener("DOMContentLoaded", () => {
         renderStudentCatalog();
       }
     }
-    loadCasesIntoDropdown();
+    // Se estiver em modo Atendimento Real, não sobrescreve com dados de caso simulado
+    if (appState.workflowMode === "real" || appState.currentCaseId === "atendimento-real") {
+      renderAdminDisciplineTabs();
+      renderAdminCasesList();
+      updateAdminMetrics();
+      populateDisciplineDropdowns();
+      return;
+    }
 
     // Se o aluno estiver dentro da simulação e o caso ativo foi atualizado
     const activeCaseId = appState.currentCaseId || (appState.currentCase ? appState.currentCase.id : null) || document.getElementById("caseSelectDropdown")?.value;
@@ -1156,6 +1935,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Seleciona caso clínico ativo
   function selectCase(caseId) {
+    setStudentWorkflowMode("simulation");
     const found = adminManager.getCaseById(caseId);
     if (!found) return;
 
@@ -1163,13 +1943,56 @@ document.addEventListener("DOMContentLoaded", () => {
     appState.currentCase = found;
     caseSelectDropdown.value = caseId;
 
+    // Restaura layout de 5 colunas para o chat e 7 colunas para o prontuário
+    const chatColumn = document.querySelector("#studentSimulationContent > section:first-child");
+    const prontColumn = document.querySelector("#studentSimulationContent > section:last-child");
+    if (chatColumn) {
+      chatColumn.classList.remove("hidden");
+      chatColumn.style.display = "";
+    }
+    if (prontColumn) {
+      prontColumn.classList.remove("lg:col-span-12");
+      prontColumn.classList.add("lg:col-span-7");
+      prontColumn.style.gridColumn = "";
+    }
+
+    // Oculta cabeçalho de atendimento real
+    const realHeaderCard = document.getElementById("realPatientHeaderCard");
+    if (realHeaderCard) {
+      realHeaderCard.classList.add("hidden");
+      realHeaderCard.style.display = "none";
+    }
+
+    // Restaura controles do topo
+    const simWrapper = document.getElementById("simCaseSelectWrapper");
+    const realWrapper = document.getElementById("realPatientActionsWrapper");
+    if (simWrapper) {
+      simWrapper.classList.remove("hidden");
+      simWrapper.style.display = "";
+    }
+    if (realWrapper) {
+      realWrapper.classList.add("hidden");
+      realWrapper.style.display = "none";
+    }
+
     // Carrega prontuário do aluno (ou rascunho salvo)
     appState.currentProntuario = prontuarioManager.loadDraft(caseId);
+    if (appState.currentProntuario) {
+      appState.currentProntuario.isRealPatient = false;
+    }
 
     // Atualiza cabeçalho do caso
     document.getElementById("casePatientNameHeader").textContent = found.patient.name;
     document.getElementById("caseCategoryHeader").textContent = found.category;
+    document.getElementById("caseCategoryHeader").className = "badge-clinical bg-slate-100 text-slate-700";
     document.getElementById("caseDescHeader").textContent = found.description;
+
+    const hipBadge = document.getElementById("caseHipoteseDiagnosticaHeader");
+    if (hipBadge) {
+      const hip = found.hipoteseDiagnostica || found.history?.hipoteseDiagnostica || "";
+      hipBadge.textContent = hip ? `🩺 ${hip}` : "🩺 Não informada";
+      hipBadge.title = hip;
+    }
 
     // Atualiza lista dinâmica de interlocutores do caso no chat
     updateInterlocutorDropdown(found);
@@ -1185,6 +2008,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Renderiza abas dinâmicas (exames laboratoriais, questões avaliativas)
     renderCaseLabExamsBadge();
+    renderStudentBioTable();
+    renderDrugNutrientTable();
     renderStudentEvaluationQuestions();
 
     // Aplica bloqueio de abas configurado para este caso
@@ -1337,6 +2162,77 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Alternância visual da via nutricional (Oral vs TNE)
+  function setNutritionRouteSelection(route) {
+    const isTne = route === "tne";
+    const radioOral = document.getElementById("radioViaOral");
+    const radioTne = document.getElementById("radioViaTne");
+    const labelOral = document.getElementById("labelViaOral");
+    const labelTne = document.getElementById("labelViaTne");
+    const containerOral = document.getElementById("cardapioOralContainer");
+    const containerTne = document.getElementById("cardapioTneContainer");
+
+    if (radioOral) radioOral.checked = !isTne;
+    if (radioTne) radioTne.checked = isTne;
+
+    if (labelOral) {
+      if (!isTne) {
+        labelOral.className = "relative flex items-center p-3 rounded-xl border-2 cursor-pointer transition select-none border-emerald-500 bg-emerald-50/60 shadow-xs";
+        const dot = labelOral.querySelector(".rounded-full .rounded-full");
+        if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-600";
+      } else {
+        labelOral.className = "relative flex items-center p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-slate-300";
+        const dot = labelOral.querySelector(".rounded-full .rounded-full");
+        if (dot) dot.className = "w-2 h-2 rounded-full bg-transparent";
+      }
+    }
+
+    if (labelTne) {
+      if (isTne) {
+        labelTne.className = "relative flex items-center p-3 rounded-xl border-2 cursor-pointer transition select-none border-sky-500 bg-sky-50/60 shadow-xs";
+        const dot = labelTne.querySelector(".rounded-full .rounded-full");
+        if (dot) dot.className = "w-2 h-2 rounded-full bg-sky-600";
+      } else {
+        labelTne.className = "relative flex items-center p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-slate-300";
+        const dot = labelTne.querySelector(".rounded-full .rounded-full");
+        if (dot) dot.className = "w-2 h-2 rounded-full bg-transparent";
+      }
+    }
+
+    if (containerOral) {
+      if (!isTne) containerOral.classList.remove("hidden");
+      else containerOral.classList.add("hidden");
+    }
+
+    if (containerTne) {
+      if (isTne) containerTne.classList.remove("hidden");
+      else containerTne.classList.add("hidden");
+    }
+
+    if (typeof updateCardapioTotalsDisplay === "function") {
+      updateCardapioTotalsDisplay();
+    }
+  }
+  window.setNutritionRouteSelection = setNutritionRouteSelection;
+
+  // Alternância condicional dos campos de via da TNE (Gravitacional vs Bomba)
+  function updateTneAdministrationRouteDisplay(via) {
+    const isBomba = via === "bomba";
+    const gravFields = document.getElementById("tneGravitacionalFields");
+    const bombaFields = document.getElementById("tneBombaFields");
+
+    if (gravFields) {
+      if (!isBomba) gravFields.classList.remove("hidden");
+      else gravFields.classList.add("hidden");
+    }
+
+    if (bombaFields) {
+      if (isBomba) bombaFields.classList.remove("hidden");
+      else bombaFields.classList.add("hidden");
+    }
+  }
+  window.updateTneAdministrationRouteDisplay = updateTneAdministrationRouteDisplay;
+
   // Preenche formulário do prontuário
   function populateProntuarioForm() {
     const p = appState.currentProntuario;
@@ -1347,16 +2243,94 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("alunoMatricula").value = p.aluno.matriculaTurma || "";
     document.getElementById("alunoData").value = p.aluno.data || new Date().toISOString().split("T")[0];
 
-    // Anamnese
+    // Atendimento Real: Campos do Paciente Real & Histórico Social
+    const rp = p.dadosPacienteReal || {};
+    const hs = rp.historicoSocial || {};
+    
+    // Identificação
+    const patNome = rp.nome || "";
+    const patIdade = rp.idade || "";
+    const patGenero = rp.genero || rp.sexo || "Feminino";
+    const patNat = rp.naturalidade || "";
+    const patProc = rp.procedencia || "";
+
+    if (document.getElementById("realPatName")) document.getElementById("realPatName").value = patNome;
+    if (document.getElementById("realPatAge")) document.getElementById("realPatAge").value = patIdade;
+    if (document.getElementById("realPatGender")) document.getElementById("realPatGender").value = patGenero;
+    if (document.getElementById("realPatNaturalidade")) document.getElementById("realPatNaturalidade").value = patNat;
+    if (document.getElementById("realPatProcedencia")) document.getElementById("realPatProcedencia").value = patProc;
+
+    if (document.getElementById("prontIdentNaturalidade")) document.getElementById("prontIdentNaturalidade").value = patNat;
+    if (document.getElementById("prontIdentProcedencia")) document.getElementById("prontIdentProcedencia").value = patProc;
+
+    // Histórico Social
+    const estCivil = hs.estadoCivil || rp.estadoCivil || "";
+    const renda = hs.renda || rp.renda || "";
+    const profissao = hs.profissao || rp.profissao || rp.ocupacao || "";
+    const moradia = hs.moradia || rp.moradia || "";
+    const escolaridade = hs.escolaridade || rp.escolaridade || "";
+
+    if (document.getElementById("realPatEstadoCivil")) document.getElementById("realPatEstadoCivil").value = estCivil;
+    if (document.getElementById("realPatRenda")) document.getElementById("realPatRenda").value = renda;
+    if (document.getElementById("realPatProfissao")) document.getElementById("realPatProfissao").value = profissao;
+    if (document.getElementById("realPatOccupation")) document.getElementById("realPatOccupation").value = profissao;
+    if (document.getElementById("realPatMoradia")) document.getElementById("realPatMoradia").value = moradia;
+    if (document.getElementById("realPatEscolaridade")) document.getElementById("realPatEscolaridade").value = escolaridade;
+
+    if (document.getElementById("prontSocialEstadoCivil")) document.getElementById("prontSocialEstadoCivil").value = estCivil;
+    if (document.getElementById("prontSocialRenda")) document.getElementById("prontSocialRenda").value = renda;
+    if (document.getElementById("prontSocialProfissao")) document.getElementById("prontSocialProfissao").value = profissao;
+    if (document.getElementById("prontSocialMoradia")) document.getElementById("prontSocialMoradia").value = moradia;
+    if (document.getElementById("prontSocialEscolaridade")) document.getElementById("prontSocialEscolaridade").value = escolaridade;
+
+    if (document.getElementById("realPatHipoteseDiagnostica")) {
+      document.getElementById("realPatHipoteseDiagnostica").value = rp.hipoteseDiagnostica || p.anamnese?.hipoteseDiagnostica || "";
+    }
+
+    // Anamnese & Hipótese Diagnóstica
+    if (document.getElementById("prontHipoteseDiagnostica")) {
+      const hip = p.anamnese?.hipoteseDiagnostica || p.dadosPacienteReal?.hipoteseDiagnostica || appState.currentCase?.hipoteseDiagnostica || appState.currentCase?.history?.hipoteseDiagnostica || "";
+      document.getElementById("prontHipoteseDiagnostica").value = hip;
+      if (p.anamnese) p.anamnese.hipoteseDiagnostica = hip;
+    }
     document.getElementById("prontQueixaPrincipal").value = p.anamnese.queixaPrincipal || "";
     document.getElementById("prontHistoriaClinica").value = p.anamnese.historiaClinica || "";
     document.getElementById("prontAntecedentesMed").value = p.anamnese.antecedentesMedicamentos || "";
     document.getElementById("prontHabitosEstiloVida").value = p.anamnese.habitosEstiloVida || "";
 
-    // Antropometria
+    // Interações Droga-Nutriente
+    renderDrugNutrientTable();
+    if (document.getElementById("prontObsFarmacoterapia")) {
+      document.getElementById("prontObsFarmacoterapia").value = p.observacoesFarmacoterapia || "";
+    }
+
+    // Antropometria & Triagem Nutricional
+    if (!p.antropometria.triagemNutricional) {
+      p.antropometria.triagemNutricional = { tipo: "ambulatorio", ferramenta: "", pontuacao: "", diagnostico: "" };
+    }
+    const triagem = p.antropometria.triagemNutricional;
+    const isHosp = triagem.tipo === "hospitalar";
+    if (document.getElementById("prontTriagemTipoAmb")) document.getElementById("prontTriagemTipoAmb").checked = !isHosp;
+    if (document.getElementById("prontTriagemTipoHosp")) document.getElementById("prontTriagemTipoHosp").checked = isHosp;
+
+    const triagemHospContainer = document.getElementById("triagemHospitalarContainer");
+    const triagemAmbMsg = document.getElementById("triagemAmbulatorialMsg");
+    if (triagemHospContainer) triagemHospContainer.classList.toggle("hidden", !isHosp);
+    if (triagemAmbMsg) triagemAmbMsg.classList.toggle("hidden", isHosp);
+
+    if (document.getElementById("prontTriagemFerramenta")) document.getElementById("prontTriagemFerramenta").value = triagem.ferramenta || "";
+    if (document.getElementById("prontTriagemPontuacao")) document.getElementById("prontTriagemPontuacao").value = triagem.pontuacao || "";
+    if (document.getElementById("prontTriagemDiagnostico")) document.getElementById("prontTriagemDiagnostico").value = triagem.diagnostico || "";
+
     document.getElementById("prontPesoAtual").value = p.antropometria.pesoAtual || "";
     document.getElementById("prontPesoHabitual").value = p.antropometria.pesoHabitual || "";
     document.getElementById("prontEstatura").value = p.antropometria.estatura || "";
+    if (document.getElementById("prontPercentualPerda")) {
+      document.getElementById("prontPercentualPerda").value = p.antropometria.perdaPesoPct || p.antropometria.percentualPerda || "";
+    }
+    if (document.getElementById("prontImcIdeal")) {
+      document.getElementById("prontImcIdeal").value = p.antropometria.imcIdeal || "";
+    }
     if (document.getElementById("prontAlturaJoelho")) {
       document.getElementById("prontAlturaJoelho").value = p.antropometria.alturaJoelho || "";
     }
@@ -1410,14 +2384,41 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("prontInterpretacaoBioq").value = p.bioquimica.interpretacaoNutricional || "";
     }
 
-    // Exame Físico
-    document.getElementById("prontSinaisClinicos").value = p.exameFisico.sinaisClinicos || "";
-    document.getElementById("prontMassaMuscular").value = p.exameFisico.massaMuscularAdiposa || "";
-    document.getElementById("prontTGIEdemas").value = p.exameFisico.condicoesTGIeEdemas || "";
+    // Exame Físico Remodelado (Órgãos e Sistemas + Semiologia por Compartimentos)
+    const ef = p.exameFisico || {};
+    const sis = ef.orgaosSistemas || {};
+    const comp = ef.compartimentos || {};
+
+    if (document.getElementById("prontExameNeurologico")) document.getElementById("prontExameNeurologico").value = sis.neurologico || "";
+    if (document.getElementById("prontExameRespiratorio")) document.getElementById("prontExameRespiratorio").value = sis.respiratorio || "";
+    if (document.getElementById("prontExameCirculatorio")) document.getElementById("prontExameCirculatorio").value = sis.circulatorio || "";
+    if (document.getElementById("prontExameDigestorio")) document.getElementById("prontExameDigestorio").value = sis.digestorio || "";
+    if (document.getElementById("prontExameUrinario")) document.getElementById("prontExameUrinario").value = sis.urinario || "";
+    if (document.getElementById("prontExameMuscular")) document.getElementById("prontExameMuscular").value = sis.muscular || "";
+
+    if (document.getElementById("prontExameCabeca")) document.getElementById("prontExameCabeca").value = comp.cabeca || "";
+    if (document.getElementById("prontExameTronco")) document.getElementById("prontExameTronco").value = comp.tronco || "";
+    if (document.getElementById("prontExameMMSS")) document.getElementById("prontExameMMSS").value = comp.mmss || "";
+    if (document.getElementById("prontExameMMII")) document.getElementById("prontExameMMII").value = comp.mmii || "";
+
+    // Legados para compatibilidade com casos simulados
+    if (document.getElementById("prontSinaisClinicos")) document.getElementById("prontSinaisClinicos").value = ef.sinaisClinicos || "";
+    if (document.getElementById("prontMassaMuscular")) document.getElementById("prontMassaMuscular").value = ef.massaMuscularAdiposa || "";
+    if (document.getElementById("prontTGIEdemas")) document.getElementById("prontTGIEdemas").value = ef.condicoesTGIeEdemas || "";
 
     // Consumo Alimentar (Recordatório de 24h)
     if (document.getElementById("prontVetRecordatorio")) {
       document.getElementById("prontVetRecordatorio").value = p.consumoAlimentar.vetRecordatorio || "";
+    }
+    const recTotLoad = p.consumoAlimentar?.totaisRecordatorio || {};
+    if (document.getElementById("prontRecGorduraSaturadaPct")) {
+      document.getElementById("prontRecGorduraSaturadaPct").value = recTotLoad.gorduraSaturadaPct || "";
+    }
+    if (document.getElementById("prontRecGorduraMonoPct")) {
+      document.getElementById("prontRecGorduraMonoPct").value = recTotLoad.gorduraMonoinsaturadaPct || "";
+    }
+    if (document.getElementById("prontRecGorduraPoliPct")) {
+      document.getElementById("prontRecGorduraPoliPct").value = recTotLoad.gorduraPoliinsaturadaPct || "";
     }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
@@ -1429,6 +2430,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontPesEtiologia").value = p.diagnosticoPES.etiologia || "";
     document.getElementById("prontPesSinais").value = p.diagnosticoPES.sinaisSintomas || "";
     document.getElementById("prontPesTextoCompleto").value = p.diagnosticoPES.textoCompletoPES || "";
+    if (document.getElementById("prontObjetivosDietoterapicos")) {
+      document.getElementById("prontObjetivosDietoterapicos").value = p.diagnosticoPES.objetivosDietoterapicos || "";
+    }
 
     // Cálculos de Necessidades
     const calc = p.calculoNecessidades || {};
@@ -1457,38 +2461,105 @@ document.addEventListener("DOMContentLoaded", () => {
     const countEl = document.getElementById("calcFormulasSelectedCount");
     if (countEl) countEl.textContent = formulasSel.length;
 
+    // Gênero adotado
+    const generoCalc = calc.generoUtilizado || (
+      (p.dadosPacienteReal?.sexo && p.dadosPacienteReal.sexo.toLowerCase().startsWith("fem")) ||
+      (appState.currentCase?.patient?.gender && appState.currentCase.patient.gender.toLowerCase().startsWith("fem"))
+        ? "Feminino" : "Masculino"
+    );
+    const generoSelect = document.getElementById("calcPacienteGeneroSelect");
+    if (generoSelect) {
+      generoSelect.value = generoCalc;
+      if (typeof applyCalcGenderVisuals === "function") {
+        applyCalcGenderVisuals(generoCalc);
+      }
+    }
+
+    // 1. Bolso
     if (document.getElementById("calcBolsoMinKcalKg")) document.getElementById("calcBolsoMinKcalKg").value = calc.bolso?.minKcalKg || "";
     if (document.getElementById("calcBolsoMaxKcalKg")) document.getElementById("calcBolsoMaxKcalKg").value = calc.bolso?.maxKcalKg || "";
+    if (document.getElementById("calcBolsoPeso")) document.getElementById("calcBolsoPeso").value = calc.bolso?.pesoKg || "";
     if (document.getElementById("calcBolsoResultadoKcal")) document.getElementById("calcBolsoResultadoKcal").value = calc.bolso?.resultadoKcal || "";
-    if (document.getElementById("calcHarrisResultadoKcal")) document.getElementById("calcHarrisResultadoKcal").value = calc.harrisBenedict?.resultadoKcal || "";
-    if (document.getElementById("calcMifflinResultadoKcal")) document.getElementById("calcMifflinResultadoKcal").value = calc.mifflin?.resultadoKcal || "";
-    if (document.getElementById("calcEerResultadoKcal")) document.getElementById("calcEerResultadoKcal").value = calc.eerIom?.resultadoKcal || "";
-    if (document.getElementById("calcFaoResultadoKcal")) document.getElementById("calcFaoResultadoKcal").value = calc.faoOms?.resultadoKcal || "";
+
+    // 2. Harris-Benedict
+    const harrisPesoVal = calc.harrisBenedict?.pesoKg || "";
+    const harrisAltVal = calc.harrisBenedict?.alturaCm || "";
+    const harrisIdadeVal = calc.harrisBenedict?.idadeAnos || "";
+    if (document.getElementById("calcHarrisPeso")) document.getElementById("calcHarrisPeso").value = harrisPesoVal;
+    if (document.getElementById("calcHarrisPesoFem")) document.getElementById("calcHarrisPesoFem").value = harrisPesoVal;
+    if (document.getElementById("calcHarrisAltura")) document.getElementById("calcHarrisAltura").value = harrisAltVal;
+    if (document.getElementById("calcHarrisAlturaFem")) document.getElementById("calcHarrisAlturaFem").value = harrisAltVal;
+    if (document.getElementById("calcHarrisIdade")) document.getElementById("calcHarrisIdade").value = harrisIdadeVal;
+    if (document.getElementById("calcHarrisIdadeFem")) document.getElementById("calcHarrisIdadeFem").value = harrisIdadeVal;
+    if (document.getElementById("calcHarrisFa")) document.getElementById("calcHarrisFa").value = calc.harrisBenedict?.fa || "1.2";
+    if (document.getElementById("calcHarrisFi")) document.getElementById("calcHarrisFi").value = calc.harrisBenedict?.fi || "1.0";
+    if (document.getElementById("calcHarrisResultadoKcal")) document.getElementById("calcHarrisResultadoKcal").value = calc.harrisBenedict?.resultadoKcal || calc.harrisBenedict?.vetKcal || "";
+
+    // 3. Mifflin-St Jeor
+    const mifflinPesoVal = calc.mifflin?.pesoKg || "";
+    const mifflinAltVal = calc.mifflin?.alturaCm || "";
+    const mifflinIdadeVal = calc.mifflin?.idadeAnos || "";
+    if (document.getElementById("calcMifflinPeso")) document.getElementById("calcMifflinPeso").value = mifflinPesoVal;
+    if (document.getElementById("calcMifflinPesoFem")) document.getElementById("calcMifflinPesoFem").value = mifflinPesoVal;
+    if (document.getElementById("calcMifflinAltura")) document.getElementById("calcMifflinAltura").value = mifflinAltVal;
+    if (document.getElementById("calcMifflinAlturaFem")) document.getElementById("calcMifflinAlturaFem").value = mifflinAltVal;
+    if (document.getElementById("calcMifflinIdade")) document.getElementById("calcMifflinIdade").value = mifflinIdadeVal;
+    if (document.getElementById("calcMifflinIdadeFem")) document.getElementById("calcMifflinIdadeFem").value = mifflinIdadeVal;
+    if (document.getElementById("calcMifflinFa")) document.getElementById("calcMifflinFa").value = calc.mifflin?.fa || "1.2";
+    if (document.getElementById("calcMifflinFi")) document.getElementById("calcMifflinFi").value = calc.mifflin?.fi || "1.0";
+    if (document.getElementById("calcMifflinResultadoKcal")) document.getElementById("calcMifflinResultadoKcal").value = calc.mifflin?.resultadoKcal || calc.mifflin?.vetKcal || "";
+
+    // 4. FAO/OMS
+    if (document.getElementById("calcFaoConstIdade")) document.getElementById("calcFaoConstIdade").value = calc.faoOms?.constanteIdade || "";
+    if (document.getElementById("calcFaoPeso")) document.getElementById("calcFaoPeso").value = calc.faoOms?.pesoKg || "";
+    if (document.getElementById("calcFaoConstFixa")) document.getElementById("calcFaoConstFixa").value = calc.faoOms?.constanteFixa || "";
+    if (document.getElementById("calcFaoFa")) document.getElementById("calcFaoFa").value = calc.faoOms?.fa || "1.2";
+    if (document.getElementById("calcFaoFi")) document.getElementById("calcFaoFi").value = calc.faoOms?.fi || "1.0";
+    if (document.getElementById("calcFaoResultadoKcal")) document.getElementById("calcFaoResultadoKcal").value = calc.faoOms?.resultadoKcal || calc.faoOms?.vetKcal || "";
+
+    // 5. DRI/IOM
+    if (document.getElementById("calcEerConst")) document.getElementById("calcEerConst").value = calc.eerIom?.constanteEer || "";
+    if (document.getElementById("calcEerFatIdade")) document.getElementById("calcEerFatIdade").value = calc.eerIom?.fatorIdade || "";
+    if (document.getElementById("calcEerIdade")) document.getElementById("calcEerIdade").value = calc.eerIom?.idadeAnos || "";
+    if (document.getElementById("calcEerNaf")) document.getElementById("calcEerNaf").value = calc.eerIom?.naf || "1.0";
+    if (document.getElementById("calcEerFatPeso")) document.getElementById("calcEerFatPeso").value = calc.eerIom?.fatorPeso || "";
+    if (document.getElementById("calcEerPeso")) document.getElementById("calcEerPeso").value = calc.eerIom?.pesoKg || "";
+    if (document.getElementById("calcEerFatAltura")) document.getElementById("calcEerFatAltura").value = calc.eerIom?.fatorAltura || "";
+    if (document.getElementById("calcEerAlturaM")) document.getElementById("calcEerAlturaM").value = calc.eerIom?.alturaM || "";
+    if (document.getElementById("calcEerFa")) document.getElementById("calcEerFa").value = calc.eerIom?.fa || "1.0";
+    if (document.getElementById("calcEerFi")) document.getElementById("calcEerFi").value = calc.eerIom?.fi || "1.0";
+    if (document.getElementById("calcEerResultadoKcal")) document.getElementById("calcEerResultadoKcal").value = calc.eerIom?.resultadoKcal || calc.eerIom?.vetKcal || "";
 
     if (document.getElementById("prontCalcVetPlanejado")) document.getElementById("prontCalcVetPlanejado").value = calc.vetPlanejadoKcal || "";
     if (document.getElementById("prontCalcJustificativa")) document.getElementById("prontCalcJustificativa").value = calc.justificativaEscolha || "";
 
+    if (typeof recalculateAllFormulas === "function") {
+      recalculateAllFormulas();
+    }
+
     // Prescrição Dietoterápica
     if (p.prescricaoDietoterapica) {
-      if (document.getElementById("prontVetKcal")) {
-        document.getElementById("prontVetKcal").value = calc.vetPlanejadoKcal ? `${calc.vetPlanejadoKcal} kcal/dia` : (p.prescricaoDietoterapica.vetKcal || "");
-      }
-      if (document.getElementById("prontRegraBolso")) {
-        document.getElementById("prontRegraBolso").value = p.prescricaoDietoterapica.regraBolsoKcalKg || "";
-      }
+      if (document.getElementById("prontVetKcal")) document.getElementById("prontVetKcal").value = p.prescricaoDietoterapica.vetKcal || "";
+      if (document.getElementById("prontRegraBolso")) document.getElementById("prontRegraBolso").value = p.prescricaoDietoterapica.regraBolsoKcalKg || "";
       if (p.prescricaoDietoterapica.distribuicaoMacros) {
         const dm = p.prescricaoDietoterapica.distribuicaoMacros;
-        if (document.getElementById("prontChoMinPct")) document.getElementById("prontChoMinPct").value = dm.cho?.minPct ?? "45";
-        if (document.getElementById("prontChoMaxPct")) document.getElementById("prontChoMaxPct").value = dm.cho?.maxPct ?? "55";
-        if (document.getElementById("prontPtnMinPct")) document.getElementById("prontPtnMinPct").value = dm.ptn?.minPct ?? "15";
-        if (document.getElementById("prontPtnMaxPct")) document.getElementById("prontPtnMaxPct").value = dm.ptn?.maxPct ?? "20";
-        if (document.getElementById("prontLipMinPct")) document.getElementById("prontLipMinPct").value = dm.lip?.minPct ?? "25";
-        if (document.getElementById("prontLipMaxPct")) document.getElementById("prontLipMaxPct").value = dm.lip?.maxPct ?? "30";
-      }
-      if (p.prescricaoDietoterapica.recomendacaoProteinaGKg) {
-        const rp = p.prescricaoDietoterapica.recomendacaoProteinaGKg;
-        if (document.getElementById("prontPtnMinGKg")) document.getElementById("prontPtnMinGKg").value = rp.minGKg ?? "1.0";
-        if (document.getElementById("prontPtnMaxGKg")) document.getElementById("prontPtnMaxGKg").value = rp.maxGKg ?? "1.2";
+        if (dm.cho) {
+          if (document.getElementById("prontChoMinPct")) document.getElementById("prontChoMinPct").value = dm.cho.minPct ?? "45";
+          if (document.getElementById("prontChoMaxPct")) document.getElementById("prontChoMaxPct").value = dm.cho.maxPct ?? "55";
+        }
+        if (dm.ptn) {
+          if (document.getElementById("prontPtnMinPct")) document.getElementById("prontPtnMinPct").value = dm.ptn.minPct ?? "15";
+          if (document.getElementById("prontPtnMaxPct")) document.getElementById("prontPtnMaxPct").value = dm.ptn.maxPct ?? "20";
+        }
+        if (dm.lip) {
+          if (document.getElementById("prontLipMinPct")) document.getElementById("prontLipMinPct").value = dm.lip.minPct ?? "25";
+          if (document.getElementById("prontLipMaxPct")) document.getElementById("prontLipMaxPct").value = dm.lip.maxPct ?? "30";
+        }
+        if (p.prescricaoDietoterapica.recomendacaoProteinaGKg) {
+          const rp = p.prescricaoDietoterapica.recomendacaoProteinaGKg;
+          if (document.getElementById("prontPtnMinGKg")) document.getElementById("prontPtnMinGKg").value = rp.minGKg ?? "1.0";
+          if (document.getElementById("prontPtnMaxGKg")) document.getElementById("prontPtnMaxGKg").value = rp.maxGKg ?? "1.2";
+        }
       }
     }
     updateCalculoNecessidadesDisplay();
@@ -1506,8 +2577,75 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prontFibrasMicronutrientes").value = p.prescricaoDietoterapica.fibrasMicronutrientes || "";
     document.getElementById("prontJustificativa").value = p.prescricaoDietoterapica.justificativaFisiopatologica || "";
 
-    // Planejamento Alimentar (Cardápio)
+    // Consistência da Dieta Oral no Cardápio
+    const oralCons = p.consistenciaDietaOral || p.prescricaoDietoterapica.consistencia || "Dieta Livre / Normal";
+    const selectOralCons = document.getElementById("prontCardapioConsistencia");
+    const customOralCons = document.getElementById("prontCardapioConsistenciaCustom");
+    if (selectOralCons) {
+      const existsInSelect = Array.from(selectOralCons.options).some(o => o.value === oralCons);
+      if (existsInSelect) {
+        selectOralCons.value = oralCons;
+        if (customOralCons) customOralCons.value = "";
+      } else {
+        selectOralCons.value = "Personalizada";
+        if (customOralCons) customOralCons.value = oralCons;
+      }
+    }
+
+    // Planejamento Alimentar (Cardápio Oral & TNE)
     renderCardapioTable();
+
+    const cardTotLoad = p.totaisCardapio || {};
+    if (document.getElementById("prontCardapioGorduraSaturadaPct")) {
+      document.getElementById("prontCardapioGorduraSaturadaPct").value = cardTotLoad.gorduraSaturadaPct || "";
+    }
+    if (document.getElementById("prontCardapioGorduraMonoPct")) {
+      document.getElementById("prontCardapioGorduraMonoPct").value = cardTotLoad.gorduraMonoinsaturadaPct || "";
+    }
+    if (document.getElementById("prontCardapioGorduraPoliPct")) {
+      document.getElementById("prontCardapioGorduraPoliPct").value = cardTotLoad.gorduraPoliinsaturadaPct || "";
+    }
+
+    const tne = p.tne || {
+      viaAlimentacao: "oral",
+      nomeComercial: "",
+      tipoDieta: "",
+      densidadeCalorica: "",
+      fracionamento: "",
+      viaAdministracao: "gravitacional",
+      gravitacional: { volumePorRefeicao: "", quantidadeFrascosEtapas: "", metaVazaoGotasMin: "" },
+      bombaInfusao: { tempoInfusaoHoras: "", metaVazaoMlHora: "" },
+      tabelaNutricionalManual: { vet: "", cho: "", ptn: "", lip: "", fibra: "", sodio: "", potassio: "", calcio: "", fosforo: "" },
+      moduloSuplementacaoProteica: ""
+    };
+    p.tne = tne;
+    setNutritionRouteSelection(tne.viaAlimentacao || "oral");
+    if (document.getElementById("tneNomeComercial")) document.getElementById("tneNomeComercial").value = tne.nomeComercial || "";
+    if (document.getElementById("tneTipoDieta")) document.getElementById("tneTipoDieta").value = tne.tipoDieta || "";
+    if (document.getElementById("tneDensidadeCalorica")) document.getElementById("tneDensidadeCalorica").value = tne.densidadeCalorica || "";
+    if (document.getElementById("tneFracionamento")) document.getElementById("tneFracionamento").value = tne.fracionamento || "";
+    if (document.getElementById("tneViaAdministracao")) {
+      document.getElementById("tneViaAdministracao").value = tne.viaAdministracao || "gravitacional";
+      updateTneAdministrationRouteDisplay(tne.viaAdministracao || "gravitacional");
+    }
+    if (document.getElementById("tneGravVolumePorRefeicao")) document.getElementById("tneGravVolumePorRefeicao").value = tne.gravitacional?.volumePorRefeicao || "";
+    if (document.getElementById("tneGravQtdFrascos")) document.getElementById("tneGravQtdFrascos").value = tne.gravitacional?.quantidadeFrascosEtapas || "";
+    if (document.getElementById("tneGravMetaVazao")) document.getElementById("tneGravMetaVazao").value = tne.gravitacional?.metaVazaoGotasMin || "";
+    if (document.getElementById("tneBombaTempoInfusao")) document.getElementById("tneBombaTempoInfusao").value = tne.bombaInfusao?.tempoInfusaoHoras || "";
+    if (document.getElementById("tneBombaMetaVazao")) document.getElementById("tneBombaMetaVazao").value = tne.bombaInfusao?.metaVazaoMlHora || "";
+    if (document.getElementById("tneModuloProteico")) document.getElementById("tneModuloProteico").value = tne.moduloSuplementacaoProteica || "";
+
+    // Tabela Nutricional Manual da TNE
+    const manTne = tne.tabelaNutricionalManual || {};
+    if (document.getElementById("tneManualVet")) document.getElementById("tneManualVet").value = manTne.vet ?? "";
+    if (document.getElementById("tneManualCho")) document.getElementById("tneManualCho").value = manTne.cho ?? "";
+    if (document.getElementById("tneManualPtn")) document.getElementById("tneManualPtn").value = manTne.ptn ?? "";
+    if (document.getElementById("tneManualLip")) document.getElementById("tneManualLip").value = manTne.lip ?? "";
+    if (document.getElementById("tneManualFibra")) document.getElementById("tneManualFibra").value = manTne.fibra ?? "";
+    if (document.getElementById("tneManualSodio")) document.getElementById("tneManualSodio").value = manTne.sodio ?? "";
+    if (document.getElementById("tneManualPotassio")) document.getElementById("tneManualPotassio").value = manTne.potassio ?? "";
+    if (document.getElementById("tneManualCalcio")) document.getElementById("tneManualCalcio").value = manTne.calcio ?? "";
+    if (document.getElementById("tneManualFosforo")) document.getElementById("tneManualFosforo").value = manTne.fosforo ?? "";
 
     // Orientações Nutricionais
     document.getElementById("prontOrientacoesGerais").value = p.orientacoesNutricionais || "";
@@ -1523,13 +2661,93 @@ document.addEventListener("DOMContentLoaded", () => {
     p.aluno.matriculaTurma = document.getElementById("alunoMatricula").value.trim();
     p.aluno.data = document.getElementById("alunoData").value;
 
-    // Anamnese
+    // Atendimento Real: Coleta dadosPacienteReal & Histórico Social
+    if (p.isRealPatient || appState.workflowMode === "real" || p.dadosPacienteReal) {
+      if (!p.dadosPacienteReal) p.dadosPacienteReal = {};
+      const patNome = document.getElementById("realPatName") ? document.getElementById("realPatName").value.trim() : (p.dadosPacienteReal.nome || "");
+      const patIdade = document.getElementById("realPatAge") ? document.getElementById("realPatAge").value.trim() : (p.dadosPacienteReal.idade || "");
+      const patGenero = document.getElementById("realPatGender") ? document.getElementById("realPatGender").value : (p.dadosPacienteReal.genero || p.dadosPacienteReal.sexo || "Feminino");
+      const patNat = (document.getElementById("realPatNaturalidade")?.value.trim()) || (document.getElementById("prontIdentNaturalidade")?.value.trim()) || p.dadosPacienteReal.naturalidade || "";
+      const patProc = (document.getElementById("realPatProcedencia")?.value.trim()) || (document.getElementById("prontIdentProcedencia")?.value.trim()) || p.dadosPacienteReal.procedencia || "";
+
+      const estCivil = (document.getElementById("realPatEstadoCivil")?.value.trim()) || (document.getElementById("prontSocialEstadoCivil")?.value.trim()) || p.dadosPacienteReal.historicoSocial?.estadoCivil || p.dadosPacienteReal.estadoCivil || "";
+      const renda = (document.getElementById("realPatRenda")?.value.trim()) || (document.getElementById("prontSocialRenda")?.value.trim()) || p.dadosPacienteReal.historicoSocial?.renda || p.dadosPacienteReal.renda || "";
+      const profissao = (document.getElementById("realPatProfissao")?.value.trim()) || (document.getElementById("realPatOccupation")?.value.trim()) || (document.getElementById("prontSocialProfissao")?.value.trim()) || p.dadosPacienteReal.historicoSocial?.profissao || p.dadosPacienteReal.profissao || p.dadosPacienteReal.ocupacao || "";
+      const moradia = (document.getElementById("realPatMoradia")?.value.trim()) || (document.getElementById("prontSocialMoradia")?.value.trim()) || p.dadosPacienteReal.historicoSocial?.moradia || p.dadosPacienteReal.moradia || "";
+      const escolaridade = (document.getElementById("realPatEscolaridade")?.value.trim()) || (document.getElementById("prontSocialEscolaridade")?.value.trim()) || p.dadosPacienteReal.historicoSocial?.escolaridade || p.dadosPacienteReal.escolaridade || "";
+
+      p.dadosPacienteReal.nome = patNome;
+      p.dadosPacienteReal.idade = patIdade;
+      p.dadosPacienteReal.genero = patGenero;
+      p.dadosPacienteReal.sexo = patGenero;
+      p.dadosPacienteReal.naturalidade = patNat;
+      p.dadosPacienteReal.procedencia = patProc;
+      p.dadosPacienteReal.ocupacao = profissao;
+      p.dadosPacienteReal.profissao = profissao;
+      p.dadosPacienteReal.estadoCivil = estCivil;
+      p.dadosPacienteReal.renda = renda;
+      p.dadosPacienteReal.moradia = moradia;
+      p.dadosPacienteReal.escolaridade = escolaridade;
+
+      p.dadosPacienteReal.historicoSocial = {
+        estadoCivil: estCivil,
+        renda: renda,
+        profissao: profissao,
+        moradia: moradia,
+        escolaridade: escolaridade
+      };
+
+      p.dadosPacienteReal.hipoteseDiagnostica = (document.getElementById("realPatHipoteseDiagnostica")?.value.trim()) || (document.getElementById("prontHipoteseDiagnostica")?.value.trim()) || "";
+    }
+
+    // Anamnese & Hipótese Diagnóstica
+    const hip = (document.getElementById("prontHipoteseDiagnostica") ? document.getElementById("prontHipoteseDiagnostica").value.trim() : "") ||
+                (document.getElementById("realPatHipoteseDiagnostica") ? document.getElementById("realPatHipoteseDiagnostica").value.trim() : "");
+    if (p.anamnese) {
+      p.anamnese.hipoteseDiagnostica = hip;
+    }
+    if (p.isRealPatient && p.dadosPacienteReal && !p.dadosPacienteReal.hipoteseDiagnostica) {
+      p.dadosPacienteReal.hipoteseDiagnostica = hip;
+    }
     p.anamnese.queixaPrincipal = document.getElementById("prontQueixaPrincipal").value.trim();
     p.anamnese.historiaClinica = document.getElementById("prontHistoriaClinica").value.trim();
     p.anamnese.antecedentesMedicamentos = document.getElementById("prontAntecedentesMed").value.trim();
     p.anamnese.habitosEstiloVida = document.getElementById("prontHabitosEstiloVida").value.trim();
 
-    // Antropometria
+    // Interações Droga-Nutriente & Farmacoterapia
+    if (document.getElementById("prontObsFarmacoterapia")) {
+      p.observacoesFarmacoterapia = document.getElementById("prontObsFarmacoterapia").value.trim();
+    }
+    const drugRows = document.querySelectorAll("#drugNutrientTableBody tr:not(#drugNutrientEmptyRow)");
+    if (drugRows.length > 0) {
+      p.interacaoDrogaNutriente = [];
+      drugRows.forEach(row => {
+        const med = row.querySelector(".drug-item-med")?.value.trim() || "";
+        const classe = row.querySelector(".drug-item-classe")?.value.trim() || row.querySelector(".drug-item-nutr")?.value.trim() || "";
+        const interacao = row.querySelector(".drug-item-interacao")?.value.trim() || row.querySelector(".drug-item-cond")?.value.trim() || "";
+        if (med || classe || interacao) {
+          p.interacaoDrogaNutriente.push({
+            medicacao: med,
+            classificacao: classe,
+            interacao: interacao,
+            medicamento: med,
+            nutrientes: classe,
+            conduta: interacao
+          });
+        }
+      });
+    }
+
+    // Antropometria & Triagem Nutricional
+    if (!p.antropometria.triagemNutricional) {
+      p.antropometria.triagemNutricional = { tipo: "ambulatorio", ferramenta: "", pontuacao: "", diagnostico: "" };
+    }
+    const isTriagemHosp = document.getElementById("prontTriagemTipoHosp")?.checked;
+    p.antropometria.triagemNutricional.tipo = isTriagemHosp ? "hospitalar" : "ambulatorio";
+    p.antropometria.triagemNutricional.ferramenta = document.getElementById("prontTriagemFerramenta") ? document.getElementById("prontTriagemFerramenta").value.trim() : "";
+    p.antropometria.triagemNutricional.pontuacao = document.getElementById("prontTriagemPontuacao") ? document.getElementById("prontTriagemPontuacao").value.trim() : "";
+    p.antropometria.triagemNutricional.diagnostico = document.getElementById("prontTriagemDiagnostico") ? document.getElementById("prontTriagemDiagnostico").value.trim() : "";
+
     p.antropometria.pesoAtual = document.getElementById("prontPesoAtual").value.trim();
     p.antropometria.pesoHabitual = document.getElementById("prontPesoHabitual").value.trim();
     p.antropometria.estatura = document.getElementById("prontEstatura").value.trim();
@@ -1549,7 +2767,10 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.imc = document.getElementById("calculatedImcDisplay").textContent.trim();
     p.antropometria.classificacaoImc = document.getElementById("calculatedImcClassDisplay").textContent.trim();
     p.antropometria.diagnosticoNutricionalExtenso = document.getElementById("calculatedImcExtensoDisplay") ? document.getElementById("calculatedImcExtensoDisplay").textContent.trim() : "";
-    p.antropometria.percentualPerda = document.getElementById("calculatedLossDisplay").textContent.trim();
+    p.antropometria.imcIdeal = document.getElementById("prontImcIdeal") ? document.getElementById("prontImcIdeal").value.trim() : "";
+    const manualLoss = document.getElementById("prontPercentualPerda") ? document.getElementById("prontPercentualPerda").value.trim() : "";
+    p.antropometria.percentualPerda = manualLoss || document.getElementById("calculatedLossDisplay").textContent.trim();
+    p.antropometria.perdaPesoPct = p.antropometria.percentualPerda;
     p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias").value.trim();
 
     // Bioquímica (Tabela Moderna de 4 Colunas e Raciocínio Clínico)
@@ -1570,22 +2791,45 @@ document.addEventListener("DOMContentLoaded", () => {
       p.bioquimica.interpretacaoNutricional = document.getElementById("prontInterpretacaoBioq").value.trim();
     }
 
-    // Exame Físico
-    p.exameFisico.sinaisClinicos = document.getElementById("prontSinaisClinicos").value.trim();
-    p.exameFisico.massaMuscularAdiposa = document.getElementById("prontMassaMuscular").value.trim();
-    p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas").value.trim();
+    // Exame Físico Remodelado (Órgãos e Sistemas + Semiologia por Compartimentos)
+    if (!p.exameFisico) p.exameFisico = {};
+    if (!p.exameFisico.orgaosSistemas) p.exameFisico.orgaosSistemas = {};
+    p.exameFisico.orgaosSistemas.neurologico = document.getElementById("prontExameNeurologico") ? document.getElementById("prontExameNeurologico").value.trim() : (p.exameFisico.orgaosSistemas.neurologico || "");
+    p.exameFisico.orgaosSistemas.respiratorio = document.getElementById("prontExameRespiratorio") ? document.getElementById("prontExameRespiratorio").value.trim() : (p.exameFisico.orgaosSistemas.respiratorio || "");
+    p.exameFisico.orgaosSistemas.circulatorio = document.getElementById("prontExameCirculatorio") ? document.getElementById("prontExameCirculatorio").value.trim() : (p.exameFisico.orgaosSistemas.circulatorio || "");
+    p.exameFisico.orgaosSistemas.digestorio = document.getElementById("prontExameDigestorio") ? document.getElementById("prontExameDigestorio").value.trim() : (p.exameFisico.orgaosSistemas.digestorio || "");
+    p.exameFisico.orgaosSistemas.urinario = document.getElementById("prontExameUrinario") ? document.getElementById("prontExameUrinario").value.trim() : (p.exameFisico.orgaosSistemas.urinario || "");
+    p.exameFisico.orgaosSistemas.muscular = document.getElementById("prontExameMuscular") ? document.getElementById("prontExameMuscular").value.trim() : (p.exameFisico.orgaosSistemas.muscular || "");
+
+    if (!p.exameFisico.compartimentos) p.exameFisico.compartimentos = {};
+    p.exameFisico.compartimentos.cabeca = document.getElementById("prontExameCabeca") ? document.getElementById("prontExameCabeca").value.trim() : (p.exameFisico.compartimentos.cabeca || "");
+    p.exameFisico.compartimentos.tronco = document.getElementById("prontExameTronco") ? document.getElementById("prontExameTronco").value.trim() : (p.exameFisico.compartimentos.tronco || "");
+    p.exameFisico.compartimentos.mmss = document.getElementById("prontExameMMSS") ? document.getElementById("prontExameMMSS").value.trim() : (p.exameFisico.compartimentos.mmss || "");
+    p.exameFisico.compartimentos.mmii = document.getElementById("prontExameMMII") ? document.getElementById("prontExameMMII").value.trim() : (p.exameFisico.compartimentos.mmii || "");
+
+    // Legados para compatibilidade com casos simulados
+    p.exameFisico.sinaisClinicos = document.getElementById("prontSinaisClinicos") ? document.getElementById("prontSinaisClinicos").value.trim() : (p.exameFisico.sinaisClinicos || "");
+    p.exameFisico.massaMuscularAdiposa = document.getElementById("prontMassaMuscular") ? document.getElementById("prontMassaMuscular").value.trim() : (p.exameFisico.massaMuscularAdiposa || "");
+    p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas") ? document.getElementById("prontTGIEdemas").value.trim() : (p.exameFisico.condicoesTGIeEdemas || "");
 
     // Consumo Alimentar (Recordatório de 24h)
     p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio") ? document.getElementById("prontVetRecordatorio").value.trim() : "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo").value.trim();
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias").value.trim();
     p.consumoAlimentar.refeicoesRecordatorio = readRecordatorioFromDOM();
+    if (!p.consumoAlimentar.totaisRecordatorio) {
+      p.consumoAlimentar.totaisRecordatorio = {};
+    }
+    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value.trim() || "";
 
     // Diagnóstico PES
     p.diagnosticoPES.problema = document.getElementById("prontPesProblema").value.trim();
     p.diagnosticoPES.etiologia = document.getElementById("prontPesEtiologia").value.trim();
     p.diagnosticoPES.sinaisSintomas = document.getElementById("prontPesSinais").value.trim();
     p.diagnosticoPES.textoCompletoPES = document.getElementById("prontPesTextoCompleto").value.trim();
+    p.diagnosticoPES.objetivosDietoterapicos = document.getElementById("prontObjetivosDietoterapicos")?.value.trim() || "";
 
     // Cálculos de Necessidades
     if (!p.calculoNecessidades) p.calculoNecessidades = {};
@@ -1596,23 +2840,147 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     p.calculoNecessidades.formulasSelecionadas = formulasSel;
+
+    const generoCalc = document.getElementById("calcPacienteGeneroSelect")?.value || "Masculino";
+    p.calculoNecessidades.generoUtilizado = generoCalc;
+    const isFem = generoCalc === "Feminino";
+
+    // 1. Bolso
+    const bolsoMin = document.getElementById("calcBolsoMinKcalKg")?.value.trim() || "";
+    const bolsoMax = document.getElementById("calcBolsoMaxKcalKg")?.value.trim() || "";
+    const bolsoPeso = document.getElementById("calcBolsoPeso")?.value.trim() || "";
+    const bolsoRes = document.getElementById("calcBolsoResultadoKcal")?.value.trim() || "";
+    let bolsoFaixa = "";
+    if (bolsoMin && bolsoMax && bolsoPeso) {
+      bolsoFaixa = `${Math.round(parseFloat(bolsoMin) * parseFloat(bolsoPeso))} a ${Math.round(parseFloat(bolsoMax) * parseFloat(bolsoPeso))} kcal/dia`;
+    }
     p.calculoNecessidades.bolso = {
-      minKcalKg: document.getElementById("calcBolsoMinKcalKg")?.value.trim() || "",
-      maxKcalKg: document.getElementById("calcBolsoMaxKcalKg")?.value.trim() || "",
-      resultadoKcal: document.getElementById("calcBolsoResultadoKcal")?.value.trim() || ""
+      minKcalKg: bolsoMin,
+      maxKcalKg: bolsoMax,
+      pesoKg: bolsoPeso,
+      faixaKcal: bolsoFaixa,
+      resultadoKcal: bolsoRes,
+      equacaoDescritiva: (bolsoMin && bolsoMax && bolsoPeso) ? `[${bolsoMin} a ${bolsoMax} kcal/kg] × ${bolsoPeso} kg = ${bolsoFaixa} (Adotado: ${bolsoRes || '--'} kcal/dia)` : ""
     };
+
+    // 2. Harris-Benedict
+    const harrisPeso = document.getElementById(isFem ? "calcHarrisPesoFem" : "calcHarrisPeso")?.value.trim() || "";
+    const harrisAlt = document.getElementById(isFem ? "calcHarrisAlturaFem" : "calcHarrisAltura")?.value.trim() || "";
+    const harrisIdade = document.getElementById(isFem ? "calcHarrisIdadeFem" : "calcHarrisIdade")?.value.trim() || "";
+    const harrisFa = document.getElementById("calcHarrisFa")?.value.trim() || "1.2";
+    const harrisFi = document.getElementById("calcHarrisFi")?.value.trim() || "1.0";
+    const harrisRes = document.getElementById("calcHarrisResultadoKcal")?.value.trim() || "";
+    const harrisGeb = document.getElementById("calcHarrisGebDisp")?.textContent.trim() || "";
+    let harrisDesc = "";
+    if (harrisPeso && harrisAlt && harrisIdade) {
+      if (!isFem) {
+        harrisDesc = `GEB = 66,5 + (13,75 × ${harrisPeso}) + (5,0 × ${harrisAlt}) - (6,78 × ${harrisIdade}) = ${harrisGeb} kcal | VET = ${harrisGeb} × ${harrisFa} (FA) × ${harrisFi} (FI) = ${harrisRes} kcal/dia`;
+      } else {
+        harrisDesc = `GEB = 655,1 + (9,56 × ${harrisPeso}) + (1,85 × ${harrisAlt}) - (4,68 × ${harrisIdade}) = ${harrisGeb} kcal | VET = ${harrisGeb} × ${harrisFa} (FA) × ${harrisFi} (FI) = ${harrisRes} kcal/dia`;
+      }
+    }
     p.calculoNecessidades.harrisBenedict = {
-      resultadoKcal: document.getElementById("calcHarrisResultadoKcal")?.value.trim() || ""
+      genero: generoCalc,
+      pesoKg: harrisPeso,
+      alturaCm: harrisAlt,
+      idadeAnos: harrisIdade,
+      gebKcal: (harrisGeb && harrisGeb !== "--") ? harrisGeb : "",
+      fa: harrisFa,
+      fi: harrisFi,
+      vetKcal: harrisRes,
+      resultadoKcal: harrisRes,
+      equacaoDescritiva: harrisDesc
     };
+
+    // 3. Mifflin-St Jeor
+    const mifflinPeso = document.getElementById(isFem ? "calcMifflinPesoFem" : "calcMifflinPeso")?.value.trim() || "";
+    const mifflinAlt = document.getElementById(isFem ? "calcMifflinAlturaFem" : "calcMifflinAltura")?.value.trim() || "";
+    const mifflinIdade = document.getElementById(isFem ? "calcMifflinIdadeFem" : "calcMifflinIdade")?.value.trim() || "";
+    const mifflinFa = document.getElementById("calcMifflinFa")?.value.trim() || "1.2";
+    const mifflinFi = document.getElementById("calcMifflinFi")?.value.trim() || "1.0";
+    const mifflinRes = document.getElementById("calcMifflinResultadoKcal")?.value.trim() || "";
+    const mifflinGeb = document.getElementById("calcMifflinGebDisp")?.textContent.trim() || "";
+    let mifflinDesc = "";
+    if (mifflinPeso && mifflinAlt && mifflinIdade) {
+      if (!isFem) {
+        mifflinDesc = `GEB = (10 × ${mifflinPeso}) + (6,25 × ${mifflinAlt}) - (5 × ${mifflinIdade}) + 5 = ${mifflinGeb} kcal | VET = ${mifflinGeb} × ${mifflinFa} (FA) × ${mifflinFi} (FI) = ${mifflinRes} kcal/dia`;
+      } else {
+        mifflinDesc = `GEB = (10 × ${mifflinPeso}) + (6,25 × ${mifflinAlt}) - (5 × ${mifflinIdade}) - 161 = ${mifflinGeb} kcal | VET = ${mifflinGeb} × ${mifflinFa} (FA) × ${mifflinFi} (FI) = ${mifflinRes} kcal/dia`;
+      }
+    }
     p.calculoNecessidades.mifflin = {
-      resultadoKcal: document.getElementById("calcMifflinResultadoKcal")?.value.trim() || ""
+      genero: generoCalc,
+      pesoKg: mifflinPeso,
+      alturaCm: mifflinAlt,
+      idadeAnos: mifflinIdade,
+      gebKcal: (mifflinGeb && mifflinGeb !== "--") ? mifflinGeb : "",
+      fa: mifflinFa,
+      fi: mifflinFi,
+      vetKcal: mifflinRes,
+      resultadoKcal: mifflinRes,
+      equacaoDescritiva: mifflinDesc
     };
-    p.calculoNecessidades.eerIom = {
-      resultadoKcal: document.getElementById("calcEerResultadoKcal")?.value.trim() || ""
-    };
+
+    // 4. FAO / OMS
+    const faoConstIdade = document.getElementById("calcFaoConstIdade")?.value.trim() || "";
+    const faoPeso = document.getElementById("calcFaoPeso")?.value.trim() || "";
+    const faoConstFixa = document.getElementById("calcFaoConstFixa")?.value.trim() || "";
+    const faoFa = document.getElementById("calcFaoFa")?.value.trim() || "1.2";
+    const faoFi = document.getElementById("calcFaoFi")?.value.trim() || "1.0";
+    const faoRes = document.getElementById("calcFaoResultadoKcal")?.value.trim() || "";
+    const faoGeb = document.getElementById("calcFaoGebDisp")?.textContent.trim() || "";
+    let faoDesc = "";
+    if (faoConstIdade && faoPeso && faoConstFixa) {
+      faoDesc = `GEB = (${faoConstIdade} × ${faoPeso}) + ${faoConstFixa} = ${faoGeb} kcal | VET = ${faoGeb} × ${faoFa} (FA) × ${faoFi} (FI) = ${faoRes} kcal/dia`;
+    }
     p.calculoNecessidades.faoOms = {
-      resultadoKcal: document.getElementById("calcFaoResultadoKcal")?.value.trim() || ""
+      genero: generoCalc,
+      constanteIdade: faoConstIdade,
+      pesoKg: faoPeso,
+      constanteFixa: faoConstFixa,
+      gebKcal: (faoGeb && faoGeb !== "--") ? faoGeb : "",
+      fa: faoFa,
+      fi: faoFi,
+      vetKcal: faoRes,
+      resultadoKcal: faoRes,
+      equacaoDescritiva: faoDesc
     };
+
+    // 5. DRI / IOM
+    const eerConst = document.getElementById("calcEerConst")?.value.trim() || "";
+    const eerFatIdade = document.getElementById("calcEerFatIdade")?.value.trim() || "";
+    const eerIdade = document.getElementById("calcEerIdade")?.value.trim() || "";
+    const eerNaf = document.getElementById("calcEerNaf")?.value.trim() || "1.0";
+    const eerFatPeso = document.getElementById("calcEerFatPeso")?.value.trim() || "";
+    const eerPeso = document.getElementById("calcEerPeso")?.value.trim() || "";
+    const eerFatAlt = document.getElementById("calcEerFatAltura")?.value.trim() || "";
+    const eerAltM = document.getElementById("calcEerAlturaM")?.value.trim() || "";
+    const eerFa = document.getElementById("calcEerFa")?.value.trim() || "1.0";
+    const eerFi = document.getElementById("calcEerFi")?.value.trim() || "1.0";
+    const eerRes = document.getElementById("calcEerResultadoKcal")?.value.trim() || "";
+    const eerGeb = document.getElementById("calcEerGebDisp")?.textContent.trim() || "";
+    let eerDesc = "";
+    if (eerConst && eerFatIdade && eerIdade && eerFatPeso && eerPeso && eerFatAlt && eerAltM) {
+      eerDesc = `EER = ${eerConst} - (${eerFatIdade} × ${eerIdade}) + ${eerNaf} × ((${eerFatPeso} × ${eerPeso}) + (${eerFatAlt} × ${eerAltM})) = ${eerGeb} kcal | VET = ${eerGeb} × ${eerFa} (FA) × ${eerFi} (FI) = ${eerRes} kcal/dia`;
+    }
+    p.calculoNecessidades.eerIom = {
+      genero: generoCalc,
+      constanteEer: eerConst,
+      fatorIdade: eerFatIdade,
+      idadeAnos: eerIdade,
+      naf: eerNaf,
+      fatorPeso: eerFatPeso,
+      pesoKg: eerPeso,
+      fatorAltura: eerFatAlt,
+      alturaM: eerAltM,
+      eerKcal: (eerGeb && eerGeb !== "--") ? eerGeb : "",
+      fa: eerFa,
+      fi: eerFi,
+      vetKcal: eerRes,
+      resultadoKcal: eerRes,
+      equacaoDescritiva: eerDesc
+    };
+
     p.calculoNecessidades.vetPlanejadoKcal = document.getElementById("prontCalcVetPlanejado")?.value.trim() || "";
     p.calculoNecessidades.justificativaEscolha = document.getElementById("prontCalcJustificativa")?.value.trim() || "";
     p.calculoNecessidades.taxaMetabolicaCalculada = document.getElementById("dispTaxaMetabolicaCalculada")?.textContent.replace(" kcal/kg", "").trim() || "";
@@ -1647,13 +3015,60 @@ document.addEventListener("DOMContentLoaded", () => {
     p.prescricaoDietoterapica.proteinasPct = document.getElementById("prontPtnPct")?.value.trim() || "";
     p.prescricaoDietoterapica.lipidiosG = document.getElementById("prontLipG")?.value.trim() || "";
     p.prescricaoDietoterapica.lipidiosPct = document.getElementById("prontLipPct")?.value.trim() || "";
-    p.prescricaoDietoterapica.consistencia = document.getElementById("prontConsistencia").value;
+    const selectOralCons = document.getElementById("prontCardapioConsistencia")?.value || "";
+    const customOralCons = document.getElementById("prontCardapioConsistenciaCustom")?.value.trim() || "";
+    const finalOralCons = selectOralCons === "Personalizada" && customOralCons ? customOralCons : (selectOralCons || document.getElementById("prontConsistencia")?.value || "Dieta Livre / Normal");
+    p.consistenciaDietaOral = finalOralCons;
+    p.prescricaoDietoterapica.consistencia = finalOralCons;
     p.prescricaoDietoterapica.fracionamento = document.getElementById("prontFracionamento").value;
     p.prescricaoDietoterapica.fibrasMicronutrientes = document.getElementById("prontFibrasMicronutrientes").value.trim();
     p.prescricaoDietoterapica.justificativaFisiopatologica = document.getElementById("prontJustificativa").value.trim();
 
-    // Planejamento Alimentar (Cardápio)
+    // Planejamento Alimentar (Cardápio Oral)
     p.planejamentoAlimentar = readCardapioFromDOM();
+
+    // Terapia Nutricional Enteral (TNE)
+    const viaAlimentacao = document.querySelector('input[name="prontViaAlimentacao"]:checked')?.value || "oral";
+    p.viaAlimentacao = viaAlimentacao;
+    if (p.prescricaoDietoterapica) {
+      p.prescricaoDietoterapica.viaAlimentacao = viaAlimentacao;
+    }
+    if (!p.totaisCardapio) {
+      p.totaisCardapio = {};
+    }
+    p.totaisCardapio.gorduraSaturadaPct = document.getElementById("prontCardapioGorduraSaturadaPct")?.value.trim() || "";
+    p.totaisCardapio.gorduraMonoinsaturadaPct = document.getElementById("prontCardapioGorduraMonoPct")?.value.trim() || "";
+    p.totaisCardapio.gorduraPoliinsaturadaPct = document.getElementById("prontCardapioGorduraPoliPct")?.value.trim() || "";
+
+    p.tne = {
+      viaAlimentacao: viaAlimentacao,
+      nomeComercial: document.getElementById("tneNomeComercial")?.value.trim() || "",
+      tipoDieta: document.getElementById("tneTipoDieta")?.value.trim() || "",
+      densidadeCalorica: document.getElementById("tneDensidadeCalorica")?.value.trim() || "",
+      fracionamento: document.getElementById("tneFracionamento")?.value.trim() || "",
+      viaAdministracao: document.getElementById("tneViaAdministracao")?.value || "gravitacional",
+      gravitacional: {
+        volumePorRefeicao: document.getElementById("tneGravVolumePorRefeicao")?.value.trim() || "",
+        quantidadeFrascosEtapas: document.getElementById("tneGravQtdFrascos")?.value.trim() || "",
+        metaVazaoGotasMin: document.getElementById("tneGravMetaVazao")?.value.trim() || ""
+      },
+      bombaInfusao: {
+        tempoInfusaoHoras: document.getElementById("tneBombaTempoInfusao")?.value.trim() || "",
+        metaVazaoMlHora: document.getElementById("tneBombaMetaVazao")?.value.trim() || ""
+      },
+      tabelaNutricionalManual: {
+        vet: document.getElementById("tneManualVet")?.value.trim() || "",
+        cho: document.getElementById("tneManualCho")?.value.trim() || "",
+        ptn: document.getElementById("tneManualPtn")?.value.trim() || "",
+        lip: document.getElementById("tneManualLip")?.value.trim() || "",
+        fibra: document.getElementById("tneManualFibra")?.value.trim() || "",
+        sodio: document.getElementById("tneManualSodio")?.value.trim() || "",
+        potassio: document.getElementById("tneManualPotassio")?.value.trim() || "",
+        calcio: document.getElementById("tneManualCalcio")?.value.trim() || "",
+        fosforo: document.getElementById("tneManualFosforo")?.value.trim() || ""
+      },
+      moduloSuplementacaoProteica: document.getElementById("tneModuloProteico")?.value.trim() || ""
+    };
 
     // Orientações Nutricionais
     p.orientacoesNutricionais = document.getElementById("prontOrientacoesGerais").value.trim();
@@ -1792,7 +3207,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const lossResult = prontuarioManager.calculateWeightLoss(pesoHabitual, pesoKg);
     const lossDisp = document.getElementById("calculatedLossDisplay");
     const lossClassDisp = document.getElementById("calculatedLossClassDisplay");
-    if (lossDisp) lossDisp.textContent = lossResult.percentual ? `${lossResult.percentual}%` : "--";
+    const lossInput = document.getElementById("prontPercentualPerda");
+    const finalLossVal = lossInput?.value?.trim() || (lossResult.percentual ? `${lossResult.percentual}` : "");
+    if (lossDisp) lossDisp.textContent = finalLossVal ? `${finalLossVal}%` : "--";
     if (lossClassDisp) lossClassDisp.textContent = lossResult.interpretacao || "-";
 
     // Grava no prontuário atual se existir
@@ -1805,6 +3222,9 @@ document.addEventListener("DOMContentLoaded", () => {
       a.classificacaoImc = imcResult.classificacao || "";
       a.diagnosticoNutricionalExtenso = imcResult.diagnosticoExtenso || "";
       a.criterioClassificacao = imcResult.criterio || "";
+      a.imcIdeal = document.getElementById("prontImcIdeal")?.value.trim() || a.imcIdeal || "";
+      a.percentualPerda = finalLossVal;
+      a.perdaPesoPct = finalLossVal;
     }
     updateCalculoNecessidadesDisplay();
   }
@@ -1924,6 +3344,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const formPeso = document.getElementById("prontPesoAtual")?.value?.trim();
     if (formPeso && !isNaN(parseFloat(formPeso.replace(",", ".")))) {
       return parseFloat(formPeso.replace(",", "."));
+    }
+    if (appState.currentProntuario?.antropometria?.pesoAtual) {
+      const pW = parseFloat(String(appState.currentProntuario.antropometria.pesoAtual).replace(",", "."));
+      if (!isNaN(pW)) return pW;
+    }
+    if (appState.currentProntuario?.antropometria?.pesoEstimadoChumlea) {
+      const pW = parseFloat(String(appState.currentProntuario.antropometria.pesoEstimadoChumlea).replace(",", "."));
+      if (!isNaN(pW)) return pW;
     }
     if (appState.currentCase?.patient?.weight) {
       const caseW = parseFloat(String(appState.currentCase.patient.weight).replace(",", "."));
@@ -2401,6 +3829,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
     const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+    totals.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraSaturadaPct || "";
+    totals.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraMonoinsaturadaPct || "";
+    totals.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value.trim() || appState.currentProntuario?.consumoAlimentar?.totaisRecordatorio?.gorduraPoliinsaturadaPct || "";
 
     if (appState.currentProntuario?.consumoAlimentar) {
       appState.currentProntuario.consumoAlimentar.totaisRecordatorio = totals;
@@ -2523,9 +3954,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Atualiza em tempo real o painel consolidado do cardápio vs metas prescritas
+  // Atualiza em tempo real o painel consolidado do cardápio/TNE vs metas prescritas
   function updateCardapioTotalsDisplay() {
-    const list = appState.currentProntuario?.planejamentoAlimentar || [];
+    const viaAlimentacao = document.querySelector('input[name="prontViaAlimentacao"]:checked')?.value || appState.currentProntuario?.tne?.viaAlimentacao || "oral";
+    const isTne = viaAlimentacao === "tne";
     const pesoPaciente = getEffectivePatientWeight();
 
     const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
@@ -2533,7 +3965,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
 
     const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
-    const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+
+    const dispTitle = document.getElementById("dispCardapioTotalsTitle");
+    let totals;
+
+    if (isTne) {
+      if (dispTitle) dispTitle.textContent = "Consolidação Nutricional da TNE & Suplementação vs Metas Prescritas";
+      const manualData = {
+        vet: document.getElementById("tneManualVet")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.vet ?? "",
+        cho: document.getElementById("tneManualCho")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.cho ?? "",
+        ptn: document.getElementById("tneManualPtn")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.ptn ?? "",
+        lip: document.getElementById("tneManualLip")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.lip ?? "",
+        fibra: document.getElementById("tneManualFibra")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.fibra ?? "",
+        sodio: document.getElementById("tneManualSodio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.sodio ?? "",
+        potassio: document.getElementById("tneManualPotassio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.potassio ?? "",
+        calcio: document.getElementById("tneManualCalcio")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.calcio ?? "",
+        fosforo: document.getElementById("tneManualFosforo")?.value ?? appState.currentProntuario?.tne?.tabelaNutricionalManual?.fosforo ?? ""
+      };
+      totals = prontuarioManager.calculateTneManualNutritionalTotals(manualData, pesoPaciente, prescVet, prescDist);
+    } else {
+      if (dispTitle) dispTitle.textContent = "Consolidação Nutricional do Cardápio Oral vs Metas Prescritas";
+      const list = appState.currentProntuario?.planejamentoAlimentar || [];
+      totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
+    }
+
+    totals.gorduraSaturadaPct = document.getElementById("prontCardapioGorduraSaturadaPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraSaturadaPct || "";
+    totals.gorduraMonoinsaturadaPct = document.getElementById("prontCardapioGorduraMonoPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraMonoinsaturadaPct || "";
+    totals.gorduraPoliinsaturadaPct = document.getElementById("prontCardapioGorduraPoliPct")?.value.trim() || appState.currentProntuario?.totaisCardapio?.gorduraPoliinsaturadaPct || "";
+
     if (appState.currentProntuario) {
       appState.currentProntuario.totaisCardapio = totals;
     }
@@ -2623,23 +4082,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dispFibra) dispFibra.textContent = (totals.fibrasG || 0).toFixed(1);
 
-    // Micronutrientes do Cardápio
+    // Micronutrientes Consolidados
     const dispCalcio = document.getElementById("dispCardapioCalcioTotal");
     const dispFerro = document.getElementById("dispCardapioFerroTotal");
     const dispSodio = document.getElementById("dispCardapioSodioTotal");
     const dispPotassio = document.getElementById("dispCardapioPotassioTotal");
+    const dispFosforo = document.getElementById("dispCardapioFosforoTotal");
     if (dispCalcio) dispCalcio.textContent = totals.calcioMg || 0;
-    if (dispFerro) dispFerro.textContent = totals.ferroMg || 0;
+    if (dispFerro) dispFerro.textContent = isTne ? "--" : (totals.ferroMg || 0);
     if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
     if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
+    if (dispFosforo) dispFosforo.textContent = totals.fosforoMg ?? (isTne ? 0 : "--");
 
     if (dispBalancoMsg) {
       if (totals.vetTotalKcal === 0) {
-        dispBalancoMsg.textContent = "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
+        dispBalancoMsg.textContent = isTne
+          ? "Preencha a Tabela Nutricional Manual da TNE para confrontar os totais com a prescrição."
+          : "Adicione alimentos às refeições para confrontar os totais com a prescrição.";
       } else if (prescVet) {
-        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta de ${prescVet} kcal).`;
+        dispBalancoMsg.textContent = `${isTne ? 'TNE' : 'Cardápio'} consolidado com ${totals.vetTotalKcal} kcal (${totals.adequacaoVetPct}% da meta de ${prescVet} kcal).`;
       } else {
-        dispBalancoMsg.textContent = `Cardápio consolidado com ${totals.vetTotalKcal} kcal. Defina o VET na aba Prescrição para o cálculo de adequação.`;
+        dispBalancoMsg.textContent = `${isTne ? 'TNE' : 'Cardápio'} consolidado com ${totals.vetTotalKcal} kcal. Defina o VET na aba Prescrição para o cálculo de adequação.`;
       }
     }
   }
@@ -3095,6 +4558,313 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Funções de apoio para obtenção de antropometria do paciente
+  function getEffectivePatientHeight() {
+    const dispEst = document.getElementById("dispEstaturaEfetiva")?.textContent?.replace("m", "").trim();
+    if (dispEst && !isNaN(parseFloat(dispEst.replace(",", ".")))) {
+      const val = parseFloat(dispEst.replace(",", "."));
+      return val > 3 ? val : Math.round(val * 100);
+    }
+    const formEst = document.getElementById("prontEstatura")?.value?.trim();
+    if (formEst && !isNaN(parseFloat(formEst.replace(",", ".")))) {
+      const val = parseFloat(formEst.replace(",", "."));
+      return val > 3 ? val : Math.round(val * 100);
+    }
+    if (appState.currentProntuario?.antropometria?.estatura) {
+      const pEst = parseFloat(String(appState.currentProntuario.antropometria.estatura).replace(",", "."));
+      if (!isNaN(pEst)) return pEst > 3 ? pEst : Math.round(pEst * 100);
+    }
+    if (appState.currentCase?.patient?.height) {
+      const caseH = parseFloat(String(appState.currentCase.patient.height).replace(",", "."));
+      if (!isNaN(caseH)) return caseH > 3 ? caseH : Math.round(caseH * 100);
+    }
+    return null;
+  }
+
+  function getEffectivePatientAge() {
+    const realAge = document.getElementById("realPatAge")?.value?.trim();
+    if (realAge && !isNaN(parseInt(realAge, 10))) {
+      return parseInt(realAge, 10);
+    }
+    const formIdade = document.getElementById("prontRealIdade")?.value?.trim();
+    if (formIdade && !isNaN(parseInt(formIdade, 10))) {
+      return parseInt(formIdade, 10);
+    }
+    if (appState.currentProntuario?.dadosPacienteReal?.idade) {
+      const a = parseInt(String(appState.currentProntuario.dadosPacienteReal.idade), 10);
+      if (!isNaN(a)) return a;
+    }
+    if (appState.currentCase?.patient?.age) {
+      const caseAge = parseInt(String(appState.currentCase.patient.age), 10);
+      if (!isNaN(caseAge)) return caseAge;
+    }
+    return null;
+  }
+
+  function getEffectivePatientGender() {
+    const realGender = document.getElementById("realPatGender")?.value?.trim();
+    if (realGender) {
+      if (realGender.toLowerCase().startsWith("fem") || realGender.toLowerCase().startsWith("m")) {
+        return realGender.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+      }
+    }
+    const formSexo = document.getElementById("prontRealSexo")?.value?.trim();
+    if (formSexo) {
+      if (formSexo.toLowerCase().startsWith("fem") || formSexo.toLowerCase().startsWith("m")) {
+        return formSexo.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+      }
+    }
+    if (appState.currentProntuario?.dadosPacienteReal?.sexo) {
+      const s = appState.currentProntuario.dadosPacienteReal.sexo;
+      return s.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+    }
+    if (appState.currentProntuario?.dadosPacienteReal?.genero) {
+      const s = appState.currentProntuario.dadosPacienteReal.genero;
+      return s.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+    }
+    if (appState.currentCase?.patient?.gender) {
+      const g = appState.currentCase.patient.gender;
+      return g.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+    }
+    return "Masculino";
+  }
+
+  function getSelectedCalcGender() {
+    const sel = document.getElementById("calcPacienteGeneroSelect");
+    return sel?.value || "Masculino";
+  }
+
+  function applyCalcGenderVisuals(gender) {
+    const isFem = gender === "Feminino";
+    const harrisBadge = document.getElementById("calcHarrisGeneroBadge");
+    if (harrisBadge) harrisBadge.textContent = `Gênero: ${gender}`;
+    const mifflinBadge = document.getElementById("calcMifflinGeneroBadge");
+    if (mifflinBadge) mifflinBadge.textContent = `Gênero: ${gender}`;
+
+    const harrisMasc = document.getElementById("calcHarrisMascFormula");
+    const harrisFem = document.getElementById("calcHarrisFemFormula");
+    if (harrisMasc && harrisFem) {
+      if (isFem) {
+        harrisMasc.classList.add("hidden");
+        harrisFem.classList.remove("hidden");
+      } else {
+        harrisMasc.classList.remove("hidden");
+        harrisFem.classList.add("hidden");
+      }
+    }
+
+    const mifflinMasc = document.getElementById("calcMifflinMascFormula");
+    const mifflinFem = document.getElementById("calcMifflinFemFormula");
+    if (mifflinMasc && mifflinFem) {
+      if (isFem) {
+        mifflinMasc.classList.add("hidden");
+        mifflinFem.classList.remove("hidden");
+      } else {
+        mifflinMasc.classList.remove("hidden");
+        mifflinFem.classList.add("hidden");
+      }
+    }
+  }
+  window.applyCalcGenderVisuals = applyCalcGenderVisuals;
+
+  // Recálculo da Fórmula de Bolso
+  function recalculateBolso() {
+    const min = parseFloat(document.getElementById("calcBolsoMinKcalKg")?.value);
+    const max = parseFloat(document.getElementById("calcBolsoMaxKcalKg")?.value);
+    const peso = parseFloat(document.getElementById("calcBolsoPeso")?.value);
+    const faixaDisp = document.getElementById("calcBolsoFaixaDisp");
+    const resInput = document.getElementById("calcBolsoResultadoKcal");
+    const descEl = document.getElementById("calcBolsoDescritivo");
+
+    if (!isNaN(min) && !isNaN(max) && !isNaN(peso) && peso > 0) {
+      const minVet = Math.round(min * peso);
+      const maxVet = Math.round(max * peso);
+      const avgVet = Math.round((minVet + maxVet) / 2);
+      if (faixaDisp) faixaDisp.textContent = `${minVet} a ${maxVet} kcal/dia`;
+      if (resInput && (!resInput.value || resInput.dataset.autoCalculated === "true")) {
+        resInput.value = avgVet;
+        resInput.dataset.autoCalculated = "true";
+      }
+      if (descEl) {
+        descEl.textContent = `Equação Resolvida: [${min} a ${max} kcal/kg] × ${peso} kg = Faixa: ${minVet} a ${maxVet} kcal/dia (Média adotada: ${resInput?.value || avgVet} kcal/dia)`;
+      }
+    } else {
+      if (faixaDisp) faixaDisp.textContent = "-- a -- kcal/dia";
+      if (descEl) descEl.textContent = "Preencha a faixa de kcal/kg e o peso do paciente.";
+    }
+  }
+  window.recalculateBolso = recalculateBolso;
+
+  // Recálculo da Fórmula de Harris-Benedict (1919)
+  function recalculateHarris() {
+    const gender = getSelectedCalcGender();
+    const isFem = gender === "Feminino";
+    const peso = parseFloat(document.getElementById(isFem ? "calcHarrisPesoFem" : "calcHarrisPeso")?.value);
+    const alt = parseFloat(document.getElementById(isFem ? "calcHarrisAlturaFem" : "calcHarrisAltura")?.value);
+    const idade = parseFloat(document.getElementById(isFem ? "calcHarrisIdadeFem" : "calcHarrisIdade")?.value);
+    const fa = parseFloat(document.getElementById("calcHarrisFa")?.value) || 1.0;
+    const fi = parseFloat(document.getElementById("calcHarrisFi")?.value) || 1.0;
+    const gebDisp = document.getElementById("calcHarrisGebDisp");
+    const gebRef = document.getElementById("calcHarrisGebRef");
+    const resInput = document.getElementById("calcHarrisResultadoKcal");
+    const descEl = document.getElementById("calcHarrisDescritivo");
+
+    if (!isNaN(peso) && !isNaN(alt) && !isNaN(idade) && peso > 0 && alt > 0 && idade > 0) {
+      let geb = 0;
+      let gebFormulaText = "";
+      if (!isFem) {
+        geb = 66.5 + (13.75 * peso) + (5.0 * alt) - (6.78 * idade);
+        gebFormulaText = `GEB = 66,5 + (13,75 × ${peso}) + (5,0 × ${alt}) - (6,78 × ${idade})`;
+      } else {
+        geb = 655.1 + (9.56 * peso) + (1.85 * alt) - (4.68 * idade);
+        gebFormulaText = `GEB = 655,1 + (9,56 × ${peso}) + (1,85 × ${alt}) - (4,68 × ${idade})`;
+      }
+      const gebRounded = Math.round(geb);
+      const vet = Math.round(geb * fa * fi);
+
+      if (gebDisp) gebDisp.textContent = gebRounded;
+      if (gebRef) gebRef.textContent = `GEB (${gebRounded} kcal)`;
+      if (resInput && (!resInput.value || resInput.dataset.autoCalculated === "true")) {
+        resInput.value = vet;
+        resInput.dataset.autoCalculated = "true";
+      }
+      if (descEl) {
+        descEl.textContent = `Equação Resolvida (${gender}): ${gebFormulaText} = ${gebRounded} kcal | VET = ${gebRounded} × ${fa} (FA) × ${fi} (FI) = ${resInput?.value || vet} kcal/dia`;
+      }
+    } else {
+      if (gebDisp) gebDisp.textContent = "--";
+      if (gebRef) gebRef.textContent = "GEB (-- kcal)";
+      if (descEl) descEl.textContent = "Preencha peso, altura e idade do paciente.";
+    }
+  }
+  window.recalculateHarris = recalculateHarris;
+
+  // Recálculo da Fórmula de Mifflin-St Jeor (1990)
+  function recalculateMifflin() {
+    const gender = getSelectedCalcGender();
+    const isFem = gender === "Feminino";
+    const peso = parseFloat(document.getElementById(isFem ? "calcMifflinPesoFem" : "calcMifflinPeso")?.value);
+    const alt = parseFloat(document.getElementById(isFem ? "calcMifflinAlturaFem" : "calcMifflinAltura")?.value);
+    const idade = parseFloat(document.getElementById(isFem ? "calcMifflinIdadeFem" : "calcMifflinIdade")?.value);
+    const fa = parseFloat(document.getElementById("calcMifflinFa")?.value) || 1.0;
+    const fi = parseFloat(document.getElementById("calcMifflinFi")?.value) || 1.0;
+    const gebDisp = document.getElementById("calcMifflinGebDisp");
+    const gebRef = document.getElementById("calcMifflinGebRef");
+    const resInput = document.getElementById("calcMifflinResultadoKcal");
+    const descEl = document.getElementById("calcMifflinDescritivo");
+
+    if (!isNaN(peso) && !isNaN(alt) && !isNaN(idade) && peso > 0 && alt > 0 && idade > 0) {
+      let geb = 0;
+      let gebFormulaText = "";
+      if (!isFem) {
+        geb = (10 * peso) + (6.25 * alt) - (5 * idade) + 5;
+        gebFormulaText = `GEB = (10 × ${peso}) + (6,25 × ${alt}) - (5 × ${idade}) + 5`;
+      } else {
+        geb = (10 * peso) + (6.25 * alt) - (5 * idade) - 161;
+        gebFormulaText = `GEB = (10 × ${peso}) + (6,25 × ${alt}) - (5 × ${idade}) - 161`;
+      }
+      const gebRounded = Math.round(geb);
+      const vet = Math.round(geb * fa * fi);
+
+      if (gebDisp) gebDisp.textContent = gebRounded;
+      if (gebRef) gebRef.textContent = `GEB (${gebRounded} kcal)`;
+      if (resInput && (!resInput.value || resInput.dataset.autoCalculated === "true")) {
+        resInput.value = vet;
+        resInput.dataset.autoCalculated = "true";
+      }
+      if (descEl) {
+        descEl.textContent = `Equação Resolvida (${gender}): ${gebFormulaText} = ${gebRounded} kcal | VET = ${gebRounded} × ${fa} (FA) × ${fi} (FI) = ${resInput?.value || vet} kcal/dia`;
+      }
+    } else {
+      if (gebDisp) gebDisp.textContent = "--";
+      if (gebRef) gebRef.textContent = "GEB (-- kcal)";
+      if (descEl) descEl.textContent = "Preencha peso, altura e idade do paciente.";
+    }
+  }
+  window.recalculateMifflin = recalculateMifflin;
+
+  // Recálculo da Fórmula de FAO/OMS (1985)
+  function recalculateFao() {
+    const constIdade = parseFloat(document.getElementById("calcFaoConstIdade")?.value);
+    const peso = parseFloat(document.getElementById("calcFaoPeso")?.value);
+    const constFixa = parseFloat(document.getElementById("calcFaoConstFixa")?.value);
+    const fa = parseFloat(document.getElementById("calcFaoFa")?.value) || 1.0;
+    const fi = parseFloat(document.getElementById("calcFaoFi")?.value) || 1.0;
+    const gebDisp = document.getElementById("calcFaoGebDisp");
+    const gebRef = document.getElementById("calcFaoGebRef");
+    const resInput = document.getElementById("calcFaoResultadoKcal");
+    const descEl = document.getElementById("calcFaoDescritivo");
+
+    if (!isNaN(constIdade) && !isNaN(peso) && !isNaN(constFixa) && peso > 0) {
+      const geb = (constIdade * peso) + constFixa;
+      const gebRounded = Math.round(geb);
+      const vet = Math.round(geb * fa * fi);
+
+      if (gebDisp) gebDisp.textContent = gebRounded;
+      if (gebRef) gebRef.textContent = `GEB (${gebRounded} kcal)`;
+      if (resInput && (!resInput.value || resInput.dataset.autoCalculated === "true")) {
+        resInput.value = vet;
+        resInput.dataset.autoCalculated = "true";
+      }
+      if (descEl) {
+        descEl.textContent = `Equação Resolvida (FAO/OMS): GEB = (${constIdade} × ${peso}) + ${constFixa} = ${gebRounded} kcal | VET = ${gebRounded} × ${fa} (FA) × ${fi} (FI) = ${resInput?.value || vet} kcal/dia`;
+      }
+    } else {
+      if (gebDisp) gebDisp.textContent = "--";
+      if (gebRef) gebRef.textContent = "GEB (-- kcal)";
+      if (descEl) descEl.textContent = "Preencha a constante da idade, o peso e a constante fixa (ou utilize a tabela de apoio).";
+    }
+  }
+  window.recalculateFao = recalculateFao;
+
+  // Recálculo da Fórmula DRI / IOM (EER)
+  function recalculateEer() {
+    const constEer = parseFloat(document.getElementById("calcEerConst")?.value);
+    const fatIdade = parseFloat(document.getElementById("calcEerFatIdade")?.value);
+    const idade = parseFloat(document.getElementById("calcEerIdade")?.value);
+    const naf = parseFloat(document.getElementById("calcEerNaf")?.value) || 1.0;
+    const fatPeso = parseFloat(document.getElementById("calcEerFatPeso")?.value);
+    const peso = parseFloat(document.getElementById("calcEerPeso")?.value);
+    const fatAlt = parseFloat(document.getElementById("calcEerFatAltura")?.value);
+    const altM = parseFloat(document.getElementById("calcEerAlturaM")?.value);
+    const fa = parseFloat(document.getElementById("calcEerFa")?.value) || 1.0;
+    const fi = parseFloat(document.getElementById("calcEerFi")?.value) || 1.0;
+    const gebDisp = document.getElementById("calcEerGebDisp");
+    const gebRef = document.getElementById("calcEerGebRef");
+    const resInput = document.getElementById("calcEerResultadoKcal");
+    const descEl = document.getElementById("calcEerDescritivo");
+
+    if (!isNaN(constEer) && !isNaN(fatIdade) && !isNaN(idade) && !isNaN(fatPeso) && !isNaN(peso) && !isNaN(fatAlt) && !isNaN(altM) && peso > 0 && altM > 0) {
+      const eer = constEer - (fatIdade * idade) + (naf * ((fatPeso * peso) + (fatAlt * altM)));
+      const eerRounded = Math.round(eer);
+      const vet = Math.round(eer * fa * fi);
+
+      if (gebDisp) gebDisp.textContent = eerRounded;
+      if (gebRef) gebRef.textContent = `EER (${eerRounded} kcal)`;
+      if (resInput && (!resInput.value || resInput.dataset.autoCalculated === "true")) {
+        resInput.value = vet;
+        resInput.dataset.autoCalculated = "true";
+      }
+      if (descEl) {
+        descEl.textContent = `Equação Resolvida (DRI/IOM): EER = ${constEer} - (${fatIdade} × ${idade}) + ${naf} × ((${fatPeso} × ${peso}) + (${fatAlt} × ${altM})) = ${eerRounded} kcal | VET = ${eerRounded} × ${fa} (FA) × ${fi} (FI) = ${resInput?.value || vet} kcal/dia`;
+      }
+    } else {
+      if (gebDisp) gebDisp.textContent = "--";
+      if (gebRef) gebRef.textContent = "EER (-- kcal)";
+      if (descEl) descEl.textContent = "Preencha as constantes e variáveis da equação EER (ou utilize a tabela de apoio).";
+    }
+  }
+  window.recalculateEer = recalculateEer;
+
+  function recalculateAllFormulas() {
+    recalculateBolso();
+    recalculateHarris();
+    recalculateMifflin();
+    recalculateFao();
+    recalculateEer();
+  }
+  window.recalculateAllFormulas = recalculateAllFormulas;
+
   // Configura listeners da aba Cálculos de Necessidades (limite de 3 fórmulas, inputs dinâmicos, VET planejado)
   function setupCalculoNecessidadesListeners() {
     const formulaContainers = {
@@ -3134,6 +4904,259 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+
+    // Seletor de Gênero do Paciente
+    const generoSelect = document.getElementById("calcPacienteGeneroSelect");
+    if (generoSelect) {
+      generoSelect.addEventListener("change", () => {
+        applyCalcGenderVisuals(generoSelect.value);
+        recalculateHarris();
+        recalculateMifflin();
+      });
+    }
+
+    // Botão de Puxar Dados do Paciente (Antropometria)
+    const autoPreencherBtn = document.getElementById("calcAutoPreencherAntropometriaBtn");
+    if (autoPreencherBtn) {
+      autoPreencherBtn.addEventListener("click", () => {
+        const peso = getEffectivePatientWeight();
+        const alturaCm = getEffectivePatientHeight();
+        const idade = getEffectivePatientAge();
+        const genero = getEffectivePatientGender();
+
+        if (generoSelect && genero) {
+          generoSelect.value = genero;
+          applyCalcGenderVisuals(genero);
+        }
+
+        const preenchidos = [];
+
+        if (peso && peso > 0) {
+          preenchidos.push(`Peso: ${peso} kg`);
+          if (document.getElementById("calcBolsoPeso")) document.getElementById("calcBolsoPeso").value = peso;
+          if (document.getElementById("calcHarrisPeso")) document.getElementById("calcHarrisPeso").value = peso;
+          if (document.getElementById("calcHarrisPesoFem")) document.getElementById("calcHarrisPesoFem").value = peso;
+          if (document.getElementById("calcMifflinPeso")) document.getElementById("calcMifflinPeso").value = peso;
+          if (document.getElementById("calcMifflinPesoFem")) document.getElementById("calcMifflinPesoFem").value = peso;
+          if (document.getElementById("calcFaoPeso")) document.getElementById("calcFaoPeso").value = peso;
+          if (document.getElementById("calcEerPeso")) document.getElementById("calcEerPeso").value = peso;
+        }
+
+        if (alturaCm && alturaCm > 0) {
+          preenchidos.push(`Altura: ${alturaCm} cm`);
+          const alturaM = (alturaCm / 100).toFixed(2);
+          if (document.getElementById("calcHarrisAltura")) document.getElementById("calcHarrisAltura").value = alturaCm;
+          if (document.getElementById("calcHarrisAlturaFem")) document.getElementById("calcHarrisAlturaFem").value = alturaCm;
+          if (document.getElementById("calcMifflinAltura")) document.getElementById("calcMifflinAltura").value = alturaCm;
+          if (document.getElementById("calcMifflinAlturaFem")) document.getElementById("calcMifflinAlturaFem").value = alturaCm;
+          if (document.getElementById("calcEerAlturaM")) document.getElementById("calcEerAlturaM").value = alturaM;
+        }
+
+        if (idade && idade > 0) {
+          preenchidos.push(`Idade: ${idade} anos`);
+          if (document.getElementById("calcHarrisIdade")) document.getElementById("calcHarrisIdade").value = idade;
+          if (document.getElementById("calcHarrisIdadeFem")) document.getElementById("calcHarrisIdadeFem").value = idade;
+          if (document.getElementById("calcMifflinIdade")) document.getElementById("calcMifflinIdade").value = idade;
+          if (document.getElementById("calcMifflinIdadeFem")) document.getElementById("calcMifflinIdadeFem").value = idade;
+          if (document.getElementById("calcEerIdade")) document.getElementById("calcEerIdade").value = idade;
+
+          const isFem = (genero || "").toLowerCase().startsWith("fem");
+          const inputFaoConstIdade = document.getElementById("calcFaoConstIdade");
+          const inputFaoConstFixa = document.getElementById("calcFaoConstFixa");
+          if (inputFaoConstIdade && !inputFaoConstIdade.value) {
+            let cId = 0, cFx = 0;
+            if (!isFem) {
+              if (idade < 18) { cId = 17.5; cFx = 651; }
+              else if (idade <= 30) { cId = 15.3; cFx = 679; }
+              else if (idade <= 60) { cId = 11.6; cFx = 879; }
+              else { cId = 13.5; cFx = 487; }
+            } else {
+              if (idade < 18) { cId = 12.2; cFx = 746; }
+              else if (idade <= 30) { cId = 14.7; cFx = 496; }
+              else if (idade <= 60) { cId = 8.7; cFx = 829; }
+              else { cId = 10.5; cFx = 596; }
+            }
+            inputFaoConstIdade.value = cId;
+            if (inputFaoConstFixa) inputFaoConstFixa.value = cFx;
+          }
+
+          const elEerConst = document.getElementById("calcEerConst");
+          if (elEerConst && !elEerConst.value) {
+            elEerConst.value = isFem ? 354 : 662;
+            if (document.getElementById("calcEerFatIdade")) document.getElementById("calcEerFatIdade").value = isFem ? 6.91 : 9.53;
+            if (document.getElementById("calcEerNaf") && !document.getElementById("calcEerNaf").value) document.getElementById("calcEerNaf").value = "1.0";
+            if (document.getElementById("calcEerFatPeso")) document.getElementById("calcEerFatPeso").value = isFem ? 9.36 : 15.91;
+            if (document.getElementById("calcEerFatAltura")) document.getElementById("calcEerFatAltura").value = isFem ? 726 : 539.6;
+          }
+        }
+
+        recalculateAllFormulas();
+
+        if (preenchidos.length > 0) {
+          showToast(`✅ Dados aplicados nas fórmulas: ${preenchidos.join(", ")}.`);
+        } else {
+          showToast("⚠️ Nenhum dado antropométrico encontrado no prontuário.");
+        }
+      });
+    }
+
+    // Sincronização entre inputs Masc e Fem e recálculo
+    document.querySelectorAll(".calc-bolso-input").forEach(inp => {
+      inp.addEventListener("input", recalculateBolso);
+    });
+
+    document.querySelectorAll(".calc-harris-input").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        if (e.target.id === "calcHarrisPeso" && document.getElementById("calcHarrisPesoFem")) {
+          document.getElementById("calcHarrisPesoFem").value = e.target.value;
+        } else if (e.target.id === "calcHarrisPesoFem" && document.getElementById("calcHarrisPeso")) {
+          document.getElementById("calcHarrisPeso").value = e.target.value;
+        } else if (e.target.id === "calcHarrisAltura" && document.getElementById("calcHarrisAlturaFem")) {
+          document.getElementById("calcHarrisAlturaFem").value = e.target.value;
+        } else if (e.target.id === "calcHarrisAlturaFem" && document.getElementById("calcHarrisAltura")) {
+          document.getElementById("calcHarrisAltura").value = e.target.value;
+        } else if (e.target.id === "calcHarrisIdade" && document.getElementById("calcHarrisIdadeFem")) {
+          document.getElementById("calcHarrisIdadeFem").value = e.target.value;
+        } else if (e.target.id === "calcHarrisIdadeFem" && document.getElementById("calcHarrisIdade")) {
+          document.getElementById("calcHarrisIdade").value = e.target.value;
+        }
+        recalculateHarris();
+      });
+    });
+
+    document.querySelectorAll(".calc-mifflin-input").forEach(inp => {
+      inp.addEventListener("input", (e) => {
+        if (e.target.id === "calcMifflinPeso" && document.getElementById("calcMifflinPesoFem")) {
+          document.getElementById("calcMifflinPesoFem").value = e.target.value;
+        } else if (e.target.id === "calcMifflinPesoFem" && document.getElementById("calcMifflinPeso")) {
+          document.getElementById("calcMifflinPeso").value = e.target.value;
+        } else if (e.target.id === "calcMifflinAltura" && document.getElementById("calcMifflinAlturaFem")) {
+          document.getElementById("calcMifflinAlturaFem").value = e.target.value;
+        } else if (e.target.id === "calcMifflinAlturaFem" && document.getElementById("calcMifflinAltura")) {
+          document.getElementById("calcMifflinAltura").value = e.target.value;
+        } else if (e.target.id === "calcMifflinIdade" && document.getElementById("calcMifflinIdadeFem")) {
+          document.getElementById("calcMifflinIdadeFem").value = e.target.value;
+        } else if (e.target.id === "calcMifflinIdadeFem" && document.getElementById("calcMifflinIdade")) {
+          document.getElementById("calcMifflinIdade").value = e.target.value;
+        }
+        recalculateMifflin();
+      });
+    });
+
+    document.querySelectorAll(".calc-fao-input").forEach(inp => {
+      inp.addEventListener("input", recalculateFao);
+    });
+
+    document.querySelectorAll(".calc-eer-input").forEach(inp => {
+      inp.addEventListener("input", recalculateEer);
+    });
+
+    // Inputs de resultado manual (quando o aluno edita o resultado diretamente)
+    [
+      "calcBolsoResultadoKcal",
+      "calcHarrisResultadoKcal",
+      "calcMifflinResultadoKcal",
+      "calcFaoResultadoKcal",
+      "calcEerResultadoKcal"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", () => {
+          delete el.dataset.autoCalculated;
+        });
+      }
+    });
+
+    // Botões "Adotar este VET"
+    document.querySelectorAll(".btn-adotar-vet").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const targetInput = document.getElementById(targetId);
+        if (targetInput && targetInput.value) {
+          const vetInput = document.getElementById("prontCalcVetPlanejado");
+          if (vetInput) {
+            vetInput.value = targetInput.value;
+            updateCalculoNecessidadesDisplay();
+            showToast(`🎯 VET Planejado definido como ${targetInput.value} kcal/dia e espelhado na Prescrição.`);
+          }
+        } else {
+          showToast("⚠️ Preencha as variáveis da fórmula antes de adotar o VET.");
+        }
+      });
+    });
+
+    // Tabela FAO/OMS colapsável e atalhos
+    const toggleFaoBtn = document.getElementById("toggleFaoTableBtn");
+    const faoTable = document.getElementById("faoReferenceTable");
+    if (toggleFaoBtn && faoTable) {
+      toggleFaoBtn.addEventListener("click", () => {
+        faoTable.classList.toggle("hidden");
+        toggleFaoBtn.textContent = faoTable.classList.contains("hidden") ? "Ver Tabela de Consulta ▾" : "Ocultar Tabela ▴";
+      });
+    }
+
+    document.querySelectorAll(".btn-fill-fao").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const ageGroup = btn.dataset.ageGroup;
+        const isFem = getSelectedCalcGender() === "Feminino";
+        let cIdade = 0;
+        let cFixa = 0;
+        if (!isFem) {
+          if (ageGroup === "10-18") { cIdade = 17.5; cFixa = 651; }
+          else if (ageGroup === "18-30") { cIdade = 15.3; cFixa = 679; }
+          else if (ageGroup === "30-60") { cIdade = 11.6; cFixa = 879; }
+          else if (ageGroup === "60+") { cIdade = 13.5; cFixa = 487; }
+        } else {
+          if (ageGroup === "10-18") { cIdade = 12.2; cFixa = 746; }
+          else if (ageGroup === "18-30") { cIdade = 14.7; cFixa = 496; }
+          else if (ageGroup === "30-60") { cIdade = 8.7; cFixa = 829; }
+          else if (ageGroup === "60+") { cIdade = 10.5; cFixa = 596; }
+        }
+        const inputCIdade = document.getElementById("calcFaoConstIdade");
+        const inputCFixa = document.getElementById("calcFaoConstFixa");
+        if (inputCIdade) inputCIdade.value = cIdade;
+        if (inputCFixa) inputCFixa.value = cFixa;
+        recalculateFao();
+        showToast(`✅ Constantes FAO/OMS preenchidas: ${cIdade} × P + ${cFixa}`);
+      });
+    });
+
+    // Tabela DRI/IOM colapsável e atalhos
+    const toggleEerBtn = document.getElementById("toggleEerTableBtn");
+    const eerTable = document.getElementById("eerReferenceTable");
+    if (toggleEerBtn && eerTable) {
+      toggleEerBtn.addEventListener("click", () => {
+        eerTable.classList.toggle("hidden");
+        toggleEerBtn.textContent = eerTable.classList.contains("hidden") ? "Ver Tabela de Consulta ▾" : "Ocultar Tabela ▴";
+      });
+    }
+
+    const fillEerBtn = document.getElementById("btnFillEerAdultConsts");
+    if (fillEerBtn) {
+      fillEerBtn.addEventListener("click", () => {
+        const isFem = getSelectedCalcGender() === "Feminino";
+        const constEer = isFem ? 354 : 662;
+        const fatIdade = isFem ? 6.91 : 9.53;
+        const naf = 1.0;
+        const fatPeso = isFem ? 9.36 : 15.91;
+        const fatAlt = isFem ? 726 : 539.6;
+
+        const elConst = document.getElementById("calcEerConst");
+        const elFatIdade = document.getElementById("calcEerFatIdade");
+        const elNaf = document.getElementById("calcEerNaf");
+        const elFatPeso = document.getElementById("calcEerFatPeso");
+        const elFatAlt = document.getElementById("calcEerFatAltura");
+
+        if (elConst) elConst.value = constEer;
+        if (elFatIdade) elFatIdade.value = fatIdade;
+        if (elNaf && (!elNaf.value || elNaf.value === "1.0")) elNaf.value = naf;
+        if (elFatPeso) elFatPeso.value = fatPeso;
+        if (elFatAlt) elFatAlt.value = fatAlt;
+
+        recalculateEer();
+        showToast(`✅ Constantes EER DRI/IOM para Adultos (${isFem ? "Mulheres" : "Homens"}) aplicadas.`);
+      });
+    }
 
     const vetPlanejadoInput = document.getElementById("prontCalcVetPlanejado");
     if (vetPlanejadoInput) {
@@ -3180,22 +5203,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const exameNome = item.exame || `Exame ${idx + 1}`;
       const refStr = item.referencia || "-";
       const valorAchado = item.valor || "-";
-      const savedInterp = (interps && interps[exameNome] !== undefined)
+
+      // Aprendizado Ativo: Campo estritamente em branco. Não sugere textos, predições ou feedbacks automáticos.
+      const savedInterp = (interps && typeof interps[exameNome] === "string")
         ? interps[exameNome]
-        : (interps && interps[idx] !== undefined ? interps[idx] : "");
+        : (interps && typeof interps[idx] === "string" ? interps[idx] : "");
 
       const badgeHtml = (typeof renderBiochemicalValueCell === "function")
         ? renderBiochemicalValueCell(valorAchado, refStr)
         : `<span class="font-bold text-slate-800">${escapeHtml(valorAchado)}</span>`;
 
+      // Suporte à remoção de exames customizados / atendimento real
+      const isRemovable = !!(item.isCustom || appState.workflowMode === "real" || (appState.currentProntuario?.bioquimica?.listaCustom && appState.currentProntuario.bioquimica.listaCustom.some(c => c.exame === exameNome)));
+      const removeBtnHtml = isRemovable 
+        ? `<button type="button" class="text-slate-300 hover:text-rose-500 font-bold ml-1.5 remove-student-bio-row cursor-pointer" data-exam="${escapeHtml(exameNome)}" title="Remover este exame">✕</button>`
+        : '';
+
       tr.innerHTML = `
         <td class="py-3 px-4 align-top">
-          <div class="flex items-start space-x-2">
-            <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
-            <div>
-              <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
-              <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
+          <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-2">
+              <span class="text-indigo-600 text-xs mt-0.5">🧪</span>
+              <div>
+                <div class="font-bold text-slate-800 text-xs leading-snug">${escapeHtml(exameNome)}</div>
+                <div class="text-[10px] text-slate-400 font-medium">Marcador bioquímico</div>
+              </div>
             </div>
+            ${removeBtnHtml}
           </div>
         </td>
         <td class="py-3 px-3 align-top">
@@ -3212,7 +5246,11 @@ document.addEventListener("DOMContentLoaded", () => {
             rows="2" 
             data-exam="${escapeHtml(exameNome)}" 
             data-idx="${idx}" 
-            placeholder="Interprete este achado clínico (ex: diagnóstico provável, risco metabólico e impacto dietoterápico)..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="sentences"
+            spellcheck="false"
+            placeholder=""
           >${escapeHtml(savedInterp)}</textarea>
         </td>
       `;
@@ -3230,6 +5268,27 @@ document.addEventListener("DOMContentLoaded", () => {
           appState.currentProntuario.bioquimica.interpretacoes[exam] = val;
           syncBioquimicaExamesRelevantesText();
         }
+      });
+    });
+
+    // Event listener para remoção de exames customizados no aluno
+    tbody.querySelectorAll(".remove-student-bio-row").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const examToRemove = e.currentTarget.dataset.exam;
+        if (!examToRemove) return;
+        if (appState.currentCase && Array.isArray(appState.currentCase.bioquimica)) {
+          appState.currentCase.bioquimica = appState.currentCase.bioquimica.filter(b => b.exame !== examToRemove);
+        }
+        if (appState.currentProntuario && appState.currentProntuario.bioquimica) {
+          if (appState.currentProntuario.bioquimica.interpretacoes) {
+            delete appState.currentProntuario.bioquimica.interpretacoes[examToRemove];
+          }
+          if (Array.isArray(appState.currentProntuario.bioquimica.listaCustom)) {
+            appState.currentProntuario.bioquimica.listaCustom = appState.currentProntuario.bioquimica.listaCustom.filter(b => b.exame !== examToRemove);
+          }
+        }
+        renderStudentBioTable(appState.currentCase?.bioquimica, appState.currentProntuario?.bioquimica?.interpretacoes);
+        syncBioquimicaExamesRelevantesText();
       });
     });
   }
@@ -3315,11 +5374,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function setupEventListeners() {
     // Navegação no Cabeçalho
     if (navBrandBtn) {
-      navBrandBtn.addEventListener("click", () => backToStudentDisciplinePortal());
+      navBrandBtn.addEventListener("click", () => showStudentLandingDashboard());
     }
 
     if (navStudentCatalogBtn) {
-      navStudentCatalogBtn.addEventListener("click", () => backToStudentDisciplinePortal());
+      navStudentCatalogBtn.addEventListener("click", () => showStudentLandingDashboard());
+    }
+
+    // Botão Voltar à Escolha de Modos (Dashboard Inicial)
+    const backToLandingBtn = document.getElementById("studentBackToLandingBtn");
+    if (backToLandingBtn) {
+      backToLandingBtn.addEventListener("click", () => {
+        showStudentLandingDashboard();
+      });
     }
 
     // Botão Trocar de Disciplina (retorna ao portal de disciplinas sem casos)
@@ -3330,21 +5397,25 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Botão Voltar ao Catálogo dentro da Simulação
+    // Botão Voltar ao Catálogo dentro da Simulação ou Atendimento Real
     if (backToCatalogBtn) {
       backToCatalogBtn.addEventListener("click", () => {
         readProntuarioFromForm();
         if (appState.currentCaseId && appState.currentProntuario) {
           prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
         }
-        showStudentCatalog();
+        if (appState.workflowMode === "real" || appState.mode === "student-real") {
+          showStudentLandingDashboard();
+        } else {
+          showStudentCatalog();
+        }
       });
     }
 
     // Alternância de modo (Acesso restrito ao Painel do Professor)
     switchModeBtn.addEventListener("click", () => {
       if (appState.mode === "admin") {
-        showStudentCatalog();
+        showStudentLandingDashboard();
       } else {
         showTeacherPanel();
       }
@@ -3373,11 +5444,36 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Validação do formulário de senha do professor
-    teacherPasswordForm.addEventListener("submit", (e) => {
+    // Validação do formulário de acesso do professor (Firebase Auth e Senha Mestre)
+    teacherPasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const entered = teacherPasswordInput.value.trim();
-      if (entered === TEACHER_PASSWORD) {
+      const enteredPassword = teacherPasswordInput.value.trim();
+      const teacherEmailField = document.getElementById("teacherEmailInput");
+      const enteredEmail = teacherEmailField ? teacherEmailField.value.trim() : "professor@dietocase.edu.br";
+
+      let loginOk = false;
+
+      // 1. Tenta autenticação via Firebase Auth se o serviço estiver ativo
+      if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.loginTeacher === "function") {
+        try {
+          const fbResult = await firebaseSyncService.loginTeacher(enteredEmail, enteredPassword);
+          if (fbResult && fbResult.success) {
+            loginOk = true;
+          }
+        } catch (authErr) {
+          console.warn("Aviso ao autenticar docente no Firebase:", authErr);
+        }
+      }
+
+      // 2. Validação direta pela senha mestre local Nutri2@26 (resiliência offline)
+      if (!loginOk && enteredPassword === TEACHER_PASSWORD) {
+        loginOk = true;
+        if (typeof firebaseSyncService !== "undefined") {
+          firebaseSyncService.isTeacher = true;
+        }
+      }
+
+      if (loginOk) {
         isTeacherAuthenticated = true;
         teacherPasswordError.classList.add("hidden");
         teacherPasswordModal.classList.add("hidden");
@@ -3403,8 +5499,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Botão de Bloquear Sessão do Docente / Sair
     if (adminLockSessionBtn) {
-      adminLockSessionBtn.addEventListener("click", () => {
+      adminLockSessionBtn.addEventListener("click", async () => {
         isTeacherAuthenticated = false;
+        if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.logoutTeacher === "function") {
+          try {
+            await firebaseSyncService.logoutTeacher();
+          } catch (logoutErr) {
+            console.warn("Aviso ao deslogar docente:", logoutErr);
+          }
+        }
         showStudentCatalog();
         showToast("Sessão do professor bloqueada com sucesso.");
       });
@@ -3455,7 +5558,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Input listeners para cálculos antropométricos (Chumlea, IMC e Diagnóstico)
     [
-      "prontPesoAtual", "prontPesoHabitual", "prontEstatura", "prontAlturaJoelho",
+      "prontPesoAtual", "prontPesoHabitual", "prontPercentualPerda", "prontImcIdeal", "prontEstatura", "prontAlturaJoelho",
       "prontCircBraco", "prontCircCintura", "prontCircQuadril", "prontCircPanturrilha", "prontCircPunho",
       "prontDobraTricipital", "prontDobraSubescapular", "prontDobraBicipital", "prontDobraSuprailiaca", "prontDobraAbdominal", "prontDobraCoxa"
     ].forEach(id => {
@@ -3470,6 +5573,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (vetRecInput) {
       vetRecInput.addEventListener("input", updateVetAdequacyCalculations);
     }
+
+    // Input listeners para fracionamento lipídico (R24h e Cardápio)
+    [
+      "prontRecGorduraSaturadaPct", "prontRecGorduraMonoPct", "prontRecGorduraPoliPct"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateRecordatorioTotalsDisplay);
+    });
+
+    [
+      "prontCardapioGorduraSaturadaPct", "prontCardapioGorduraMonoPct", "prontCardapioGorduraPoliPct"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateCardapioTotalsDisplay);
+    });
 
     // Inicializa a ferramenta de busca oficial TACO
     setupTacoSearch();
@@ -3566,6 +5684,110 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Inserção de tópico (bullet point) nos Objetivos Dietoterápicos
+    const btnTopico = document.getElementById("btnInserirTopicoObjetivo");
+    const txtObjetivos = document.getElementById("prontObjetivosDietoterapicos");
+    if (btnTopico && txtObjetivos) {
+      btnTopico.addEventListener("click", () => {
+        const start = txtObjetivos.selectionStart;
+        const end = txtObjetivos.selectionEnd;
+        const val = txtObjetivos.value;
+        const prefix = (start > 0 && val[start - 1] !== "\n") ? "\n• " : "• ";
+        txtObjetivos.value = val.substring(0, start) + prefix + val.substring(end);
+        txtObjetivos.focus();
+        txtObjetivos.selectionStart = txtObjetivos.selectionEnd = start + prefix.length;
+        triggerProntuarioAutoSave();
+      });
+
+      txtObjetivos.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const start = txtObjetivos.selectionStart;
+          const val = txtObjetivos.value;
+          const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+          const currentLine = val.substring(lineStart, start);
+          if (currentLine.trim().startsWith("• ") || currentLine.trim().startsWith("* ")) {
+            if (currentLine.trim().length > 2) {
+              e.preventDefault();
+              const insertText = "\n• ";
+              txtObjetivos.value = val.substring(0, start) + insertText + val.substring(start);
+              txtObjetivos.selectionStart = txtObjetivos.selectionEnd = start + insertText.length;
+              triggerProntuarioAutoSave();
+            }
+          }
+        }
+      });
+    }
+
+    // Seletor de Via de Alimentação Prescrita: Dieta Oral vs TNE
+    document.querySelectorAll('input[name="prontViaAlimentacao"]').forEach(r => {
+      r.addEventListener("change", (e) => {
+        setNutritionRouteSelection(e.target.value);
+        triggerProntuarioAutoSave();
+      });
+    });
+
+    document.getElementById("labelViaOral")?.addEventListener("click", () => {
+      const r = document.getElementById("radioViaOral");
+      if (r && !r.checked) {
+        r.checked = true;
+        setNutritionRouteSelection("oral");
+        triggerProntuarioAutoSave();
+      }
+    });
+
+    document.getElementById("labelViaTne")?.addEventListener("click", () => {
+      const r = document.getElementById("radioViaTne");
+      if (r && !r.checked) {
+        r.checked = true;
+        setNutritionRouteSelection("tne");
+        triggerProntuarioAutoSave();
+      }
+    });
+
+    // Seletor de Via de Administração da TNE: Gravitacional vs Bomba de Infusão
+    const selectTneVia = document.getElementById("tneViaAdministracao");
+    if (selectTneVia) {
+      selectTneVia.addEventListener("change", (e) => {
+        updateTneAdministrationRouteDisplay(e.target.value);
+        triggerProntuarioAutoSave();
+      });
+    }
+
+    // Recálculo da consolidação nutricional para inputs da TNE manual
+    const tneManualInputIds = [
+      "tneManualVet", "tneManualCho", "tneManualPtn", "tneManualLip", 
+      "tneManualFibra", "tneManualSodio", "tneManualPotassio", "tneManualCalcio", "tneManualFosforo"
+    ];
+    tneManualInputIds.forEach(id => {
+      document.getElementById(id)?.addEventListener("input", () => {
+        updateCardapioTotalsDisplay();
+      });
+    });
+
+    // Sincronização e listener de consistência do cardápio oral
+    document.getElementById("prontCardapioConsistencia")?.addEventListener("change", (e) => {
+      const val = e.target.value;
+      const customInput = document.getElementById("prontCardapioConsistenciaCustom");
+      if (val === "Personalizada") {
+        if (customInput) {
+          customInput.focus();
+        }
+      }
+      const pCons = document.getElementById("prontConsistencia");
+      if (pCons && val !== "Personalizada") {
+        pCons.value = val;
+      }
+      triggerProntuarioAutoSave();
+    });
+
+    document.getElementById("prontCardapioConsistenciaCustom")?.addEventListener("input", (e) => {
+      const pCons = document.getElementById("prontConsistencia");
+      if (pCons && e.target.value.trim()) {
+        pCons.value = e.target.value.trim();
+      }
+      triggerProntuarioAutoSave();
+    });
+
     // Auto-salvamento debounced do prontuário
     let studentAutoSaveTimer = null;
     function triggerProntuarioAutoSave() {
@@ -3615,7 +5837,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 2. Salva o rascunho dos campos da aba atual antes de alternar
         readProntuarioFromForm();
-        if (appState.currentCaseId && appState.currentProntuario) {
+        if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+          saveRealPatientSession(false);
+        } else if (appState.currentCaseId && appState.currentProntuario) {
           prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
         }
 
@@ -3635,13 +5859,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Salvar rascunho
     saveDraftBtn.addEventListener("click", () => {
+      if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+        saveRealPatientSession(true);
+        return;
+      }
       readProntuarioFromForm();
+      const uid = (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.getUserId === "function") 
+        ? firebaseSyncService.getUserId() 
+        : "anon_user";
+      if (appState.currentProntuario) {
+        appState.currentProntuario.userId = appState.currentProntuario.userId || uid;
+      }
       prontuarioManager.saveDraft(appState.currentCaseId, appState.currentProntuario);
+      if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveProntuario === "function") {
+        firebaseSyncService.saveProntuario(appState.currentCaseId, appState.currentProntuario);
+      }
       showToast("Rascunho salvo com sucesso no navegador!");
     });
 
     // Finalizar caso e gerar Word (.docx)
     finalizeAndExportDocxBtn.addEventListener("click", () => {
+      if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+        exportRealPatientDocx();
+        return;
+      }
       const data = readProntuarioFromForm();
       if (!data) return;
 
@@ -3653,8 +5894,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const uid = (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.getUserId === "function") 
+        ? firebaseSyncService.getUserId() 
+        : "anon_user";
+      data.userId = data.userId || uid;
+
       // Salva rascunho final
       prontuarioManager.saveDraft(appState.currentCaseId, data);
+      if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveProntuario === "function") {
+        firebaseSyncService.saveProntuario(appState.currentCaseId, data);
+      }
 
       // REGRA SOLICITADA:
       // "A proposta é que o aluno não receba feedback final do que acertou ou do que errou."
@@ -3669,25 +5918,195 @@ document.addEventListener("DOMContentLoaded", () => {
       submissionConfirmModal.classList.remove("hidden");
     });
 
-    closeSubmissionModalBtn.addEventListener("click", () => {
-      submissionConfirmModal.classList.add("hidden");
+    // ==========================================
+    // MODO ATENDIMENTO REAL & DROGA-NUTRIENTE
+    // ==========================================
+
+    // Bifurcação: Modo Simulação
+    const selModeSimBtn = document.getElementById("selectModeSimulationBtn");
+    if (selModeSimBtn) {
+      selModeSimBtn.addEventListener("click", () => {
+        openSimulationMode();
+      });
+    }
+
+    // Bifurcação: Modo Atendimento Real
+    const selModeRealBtn = document.getElementById("selectModeRealBtn");
+    if (selModeRealBtn) {
+      selModeRealBtn.addEventListener("click", () => {
+        startRealPatientSession();
+      });
+    }
+
+    // Botão Salvar Prontuário no Topo do Atendimento Real
+    const realSaveTopBtn = document.getElementById("realSaveTopBtn");
+    if (realSaveTopBtn) {
+      realSaveTopBtn.addEventListener("click", () => {
+        saveRealPatientSession(true);
+      });
+    }
+
+    // Botão Gerar Relatório Word (.docx) no Topo do Atendimento Real
+    const realExportTopBtn = document.getElementById("realExportDocxTopBtn");
+    if (realExportTopBtn) {
+      realExportTopBtn.addEventListener("click", () => {
+        exportRealPatientDocx();
+      });
+    }
+
+    // Botão Adicionar Exame Dinâmico na Bioquímica
+    const studentAddBioBtn = document.getElementById("studentAddCustomBioExamBtn");
+    if (studentAddBioBtn) {
+      studentAddBioBtn.addEventListener("click", () => {
+        handleAddCustomBioExam();
+      });
+    }
+
+    // Botão Adicionar Fármaco / Interação na Aba Interação Droga-Nutriente
+    const addDrugBtn = document.getElementById("addDrugInteractionBtn");
+    if (addDrugBtn) {
+      addDrugBtn.addEventListener("click", () => {
+        const p = appState.currentProntuario;
+        if (!p) return;
+        prontuarioManager.addInteracaoDrogaNutriente(p, {
+          medicacao: "",
+          classificacao: "",
+          interacao: "",
+          medicamento: "",
+          nutrientes: "",
+          conduta: ""
+        });
+        renderDrugNutrientTable();
+      });
+    }
+
+    // Chips de Sugestão Rápida de Interações Farmacológicas (3 colunas)
+    document.querySelectorAll(".drug-chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        const p = appState.currentProntuario;
+        if (!p) return;
+        const med = chip.dataset.med || chip.textContent.trim();
+        const classe = chip.dataset.classe || chip.dataset.nutr || "";
+        const inter = chip.dataset.inter || chip.dataset.cond || "";
+        prontuarioManager.addInteracaoDrogaNutriente(p, {
+          medicacao: med,
+          classificacao: classe,
+          interacao: inter,
+          medicamento: med,
+          nutrientes: classe,
+          conduta: inter
+        });
+        renderDrugNutrientTable();
+        showToast(`Interação com "${med}" inserida na tabela!`, "success");
+      });
     });
 
-    // Modal de API Key Gemini
-    openApiKeyBtn.addEventListener("click", () => {
-      apiKeyInput.value = chatEngine.getApiKey();
-      apiKeyModal.classList.remove("hidden");
-    });
+    // Triagem Nutricional: Alternância condicional (Ambulatório vs Hospitalar)
+    const triagemAmbRadio = document.getElementById("prontTriagemTipoAmb");
+    const triagemHospRadio = document.getElementById("prontTriagemTipoHosp");
+    const triagemHospContainer = document.getElementById("triagemHospitalarContainer");
+    const triagemAmbMsg = document.getElementById("triagemAmbulatorialMsg");
+    function updateTriagemDisplay() {
+      const isHosp = triagemHospRadio?.checked;
+      if (triagemHospContainer) triagemHospContainer.classList.toggle("hidden", !isHosp);
+      if (triagemAmbMsg) triagemAmbMsg.classList.toggle("hidden", isHosp);
+      if (appState.currentProntuario) {
+        if (!appState.currentProntuario.antropometria) appState.currentProntuario.antropometria = {};
+        if (!appState.currentProntuario.antropometria.triagemNutricional) {
+          appState.currentProntuario.antropometria.triagemNutricional = { tipo: "ambulatorio", ferramenta: "", pontuacao: "", diagnostico: "" };
+        }
+        appState.currentProntuario.antropometria.triagemNutricional.tipo = isHosp ? "hospitalar" : "ambulatorio";
+      }
+    }
+    if (triagemAmbRadio) triagemAmbRadio.addEventListener("change", updateTriagemDisplay);
+    if (triagemHospRadio) triagemHospRadio.addEventListener("change", updateTriagemDisplay);
 
-    closeApiKeyModalBtn.addEventListener("click", () => {
-      apiKeyModal.classList.add("hidden");
+    // Sincronização bidirecional entre o Card do Paciente Real e a Anamnese
+    const syncPairs = [
+      ["realPatNaturalidade", "prontIdentNaturalidade"],
+      ["realPatProcedencia", "prontIdentProcedencia"],
+      ["realPatEstadoCivil", "prontSocialEstadoCivil"],
+      ["realPatRenda", "prontSocialRenda"],
+      ["realPatProfissao", "prontSocialProfissao"],
+      ["realPatMoradia", "prontSocialMoradia"],
+      ["realPatEscolaridade", "prontSocialEscolaridade"]
+    ];
+    syncPairs.forEach(([idA, idB]) => {
+      const elA = document.getElementById(idA);
+      const elB = document.getElementById(idB);
+      if (elA && elB) {
+        elA.addEventListener("input", (e) => { elB.value = e.target.value; });
+        elB.addEventListener("input", (e) => { elA.value = e.target.value; });
+      }
     });
+    const occInput = document.getElementById("realPatOccupation");
+    const profInput = document.getElementById("realPatProfissao");
+    if (occInput && profInput) {
+      occInput.addEventListener("input", (e) => { profInput.value = e.target.value; });
+      profInput.addEventListener("input", (e) => { occInput.value = e.target.value; });
+    }
 
-    saveApiKeyBtn.addEventListener("click", () => {
-      chatEngine.setApiKey(apiKeyInput.value);
-      apiKeyModal.classList.add("hidden");
-      showToast(apiKeyInput.value ? "Chave da Gemini API salva com sucesso!" : "Chave da Gemini API removida. Usando motor nativo offline.");
-    });
+    // Sincronização em tempo real da Hipótese Diagnóstica entre o Card e a Anamnese
+    const realHip = document.getElementById("realPatHipoteseDiagnostica");
+    const prontHip = document.getElementById("prontHipoteseDiagnostica");
+    if (realHip && prontHip) {
+      realHip.addEventListener("input", (e) => {
+        prontHip.value = e.target.value;
+      });
+      prontHip.addEventListener("input", (e) => {
+        realHip.value = e.target.value;
+      });
+    }
+
+    if (closeSubmissionModalBtn) {
+      closeSubmissionModalBtn.addEventListener("click", () => {
+        submissionConfirmModal.classList.add("hidden");
+      });
+    }
+
+    const modalDownloadDocxBtn = document.getElementById("modalDownloadDocxBtn");
+    if (modalDownloadDocxBtn) {
+      modalDownloadDocxBtn.addEventListener("click", () => {
+        const p = readProntuarioFromForm() || appState.currentProntuario;
+        const currentCase = appState.currentCase || { id: "caso", title: "Caso DietoCase" };
+        DietoterapiaDocxReport.generateReport(p, currentCase);
+        showToast("📄 Baixando documento Word (.docx)...", "info");
+      });
+    }
+
+    const modalPrintPdfBtn = document.getElementById("modalPrintPdfBtn");
+    if (modalPrintPdfBtn) {
+      modalPrintPdfBtn.addEventListener("click", () => {
+        const p = readProntuarioFromForm() || appState.currentProntuario;
+        const currentCase = appState.currentCase || { id: "caso", title: "Caso DietoCase" };
+        DietoterapiaDocxReport.openPrintableReport(p, currentCase);
+        showToast("🖨️ Abrindo relatório estruturado para impressão e PDF...", "info");
+      });
+    }
+
+    // Configuração de IA Segura no Servidor (AI_API_KEY)
+    if (openApiKeyBtn) {
+      openApiKeyBtn.addEventListener("click", () => {
+        if (apiKeyModal && apiKeyInput) {
+          apiKeyModal.classList.remove("hidden");
+        } else {
+          showToast("🔒 Segurança Ativa: A chave da API é configurada exclusivamente no servidor backend (/api/chat) via variável AI_API_KEY, sem exposição no frontend.", "info");
+        }
+      });
+    }
+
+    if (closeApiKeyModalBtn && apiKeyModal) {
+      closeApiKeyModalBtn.addEventListener("click", () => {
+        apiKeyModal.classList.add("hidden");
+      });
+    }
+
+    if (saveApiKeyBtn && apiKeyModal) {
+      saveApiKeyBtn.addEventListener("click", () => {
+        apiKeyModal.classList.add("hidden");
+        showToast("🔒 As chamadas ao LLM são processadas exclusivamente pelo lado do servidor via AI_API_KEY.", "info");
+      });
+    }
 
     // Modal de Aba Bloqueada (Aluno)
     const closeBlockedTabModalBtn = document.getElementById("closeBlockedTabModalBtn");
@@ -3701,29 +6120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Modal de Configuração do Firebase (Banco em Nuvem)
-    const closeFbModalBtn = document.getElementById("closeFirebaseConfigModalBtn");
-    if (closeFbModalBtn) {
-      closeFbModalBtn.addEventListener("click", () => closeFirebaseConfigModal());
-    }
-    const cancelFbBtn = document.getElementById("fbCancelConfigBtn");
-    if (cancelFbBtn) {
-      cancelFbBtn.addEventListener("click", () => closeFirebaseConfigModal());
-    }
-    const saveFbBtn = document.getElementById("fbSaveConfigBtn");
-    if (saveFbBtn) {
-      saveFbBtn.addEventListener("click", () => saveFirebaseConfigFromModal());
-    }
-    const clearFbBtn = document.getElementById("fbClearConfigBtn");
-    if (clearFbBtn) {
-      clearFbBtn.addEventListener("click", () => clearFirebaseConfigFromModal());
-    }
-    const firebaseConfigModal = document.getElementById("firebaseConfigModal");
-    if (firebaseConfigModal) {
-      firebaseConfigModal.addEventListener("click", (e) => {
-        if (e.target === firebaseConfigModal) closeFirebaseConfigModal();
-      });
-    }
+
   }
 
   // Setup do Painel do Professor / Administrador
@@ -3858,6 +6255,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (visCheckbox) {
       visCheckbox.addEventListener("change", (e) => {
         updateCaseVisibilityLabel(e.target.checked);
+      });
+    }
+
+    // Toggle de questões avaliativas dentro do editor (principal e espelho na aba 7)
+    const questionsCheckbox = document.getElementById("admCaseEnableQuestions");
+    if (questionsCheckbox) {
+      questionsCheckbox.addEventListener("change", (e) => {
+        updateCaseQuestionsLabel(e.target.checked);
+      });
+    }
+    const mirrorQuestionsCheckbox = document.getElementById("admTabQuestionsMirrorToggle");
+    if (mirrorQuestionsCheckbox) {
+      mirrorQuestionsCheckbox.addEventListener("change", (e) => {
+        updateCaseQuestionsLabel(e.target.checked);
       });
     }
 
@@ -4369,6 +6780,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Atualiza label do toggle de questões avaliativas do caso (principal e espelho na aba 7)
+  function updateCaseQuestionsLabel(isEnabled) {
+    const label = document.getElementById("admCaseEnableQuestionsLabel");
+    const mirrorLabel = document.getElementById("admTabQuestionsMirrorLabel");
+    const text = isEnabled ? "Habilitada" : "Desabilitada";
+    const className = isEnabled ? "ml-2.5 text-xs font-bold text-amber-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+    const mirrorClass = isEnabled ? "ml-2 text-xs font-bold text-amber-800 whitespace-nowrap" : "ml-2 text-xs font-bold text-slate-600 whitespace-nowrap";
+
+    if (label) {
+      label.textContent = text;
+      label.className = className;
+    }
+    if (mirrorLabel) {
+      mirrorLabel.textContent = text;
+      mirrorLabel.className = mirrorClass;
+    }
+
+    const mainCb = document.getElementById("admCaseEnableQuestions");
+    const mirrorCb = document.getElementById("admTabQuestionsMirrorToggle");
+    if (mainCb && mainCb.checked !== isEnabled) mainCb.checked = isEnabled;
+    if (mirrorCb && mirrorCb.checked !== isEnabled) mirrorCb.checked = isEnabled;
+  }
+  window.updateCaseQuestionsLabel = updateCaseQuestionsLabel;
+
   // Mapeamento amigável dos nomes das abas do prontuário
   const TAB_NAMES = {
     anamnese: "1. Anamnese e História Clínica",
@@ -4376,6 +6811,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bioquimica: "3. Bioquímica e Exames Laboratoriais",
     examefisico: "4. Exame Físico e Sinais Clínicos",
     consumo: "5. Avaliação do Consumo Alimentar (R24h)",
+    droganutriente: "Interações Droga-Nutriente",
     pes: "6. Diagnóstico Nutricional (PES)",
     necessidades: "7. Cálculos de Necessidades",
     prescricao: "8. Prescrição Dietética",
@@ -4386,6 +6822,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Verifica se uma aba está bloqueada para o aluno neste caso clínico
   function isStudentTabBlocked(tabId) {
     if (isTeacherAuthenticated) return false; // Professor tem acesso completo
+    if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) return false; // Modo Atendimento Real é totalmente livre
     const btn = document.querySelector(`.student-tab-btn[data-tab="${tabId}"]`);
     if (btn && btn.dataset.isBlocked === "true") return true;
     const currentCase = appState.currentCase;
@@ -4394,10 +6831,40 @@ document.addEventListener("DOMContentLoaded", () => {
     return blocked.includes(tabId);
   }
 
-  // Aplica classes visuais de bloqueio nos botões das abas do aluno
+  // Aplica classes visuais de bloqueio nos botões das abas do aluno e controla exibição de questões
   function applyStudentTabBlockingState(caseData) {
+    // No Atendimento Real, todas as abas clínicas ficam desimpedidas e a de questões avaliativas fica oculta
+    if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
+      const questionsTabBtn = document.querySelector('.student-tab-btn[data-tab="questoes"]');
+      if (questionsTabBtn) questionsTabBtn.classList.add("hidden");
+      document.querySelectorAll(".student-tab-btn").forEach(btn => {
+        btn.classList.remove("opacity-50", "bg-slate-100", "text-slate-400", "cursor-not-allowed");
+        delete btn.dataset.isBlocked;
+        btn.removeAttribute("title");
+        const lockSpan = btn.querySelector(".tab-lock-indicator");
+        if (lockSpan) lockSpan.remove();
+      });
+      return;
+    }
+
     if (!caseData) return;
     const blockedTabs = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
+    const questionsEnabled = caseData.habilitarQuestoesAvaliativas !== false;
+
+    // Controle de exibição da aba 'Questões Avaliativas' para o aluno
+    const questionsTabBtn = document.querySelector('.student-tab-btn[data-tab="questoes"]');
+    if (questionsTabBtn) {
+      if (!questionsEnabled) {
+        questionsTabBtn.classList.add("hidden");
+        // Se o aluno estiver na aba de questões e ela estiver desabilitada, redireciona
+        if (appState.activeStudentTab === "questoes") {
+          const targetBtn = document.querySelector('.student-tab-btn[data-tab="cardapio"]') || document.querySelector('.student-tab-btn[data-tab="anamnese"]');
+          if (targetBtn) targetBtn.click();
+        }
+      } else {
+        questionsTabBtn.classList.remove("hidden");
+      }
+    }
 
     document.querySelectorAll(".student-tab-btn").forEach(btn => {
       const tabId = btn.dataset.tab;
@@ -4424,7 +6891,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Se o aluno estiver atualmente em uma aba bloqueada, redireciona para a primeira desimpedida
     if (!isTeacherAuthenticated && appState.activeStudentTab && blockedTabs.includes(appState.activeStudentTab)) {
-      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "pes", "necessidades", "prescricao", "cardapio", "questoes"];
+      const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "droganutriente", "pes", "necessidades", "prescricao", "cardapio"];
+      if (questionsEnabled) allTabs.push("questoes");
       const firstAvailable = allTabs.find(t => !blockedTabs.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
       if (targetBtn) {
@@ -4486,115 +6954,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Modal de Configuração do Firebase
-  function openFirebaseConfigModal() {
-    const modal = document.getElementById("firebaseConfigModal");
-    if (!modal) return;
-
-    const currentCfg = (typeof firebaseSyncService !== "undefined" && firebaseSyncService.config)
-      ? firebaseSyncService.config
-      : (window.FIREBASE_CONFIG || {});
-
-    const apiKeyInput = document.getElementById("fbInputApiKey");
-    const projIdInput = document.getElementById("fbInputProjectId");
-    const authDomInput = document.getElementById("fbInputAuthDomain");
-    const bucketInput = document.getElementById("fbInputStorageBucket");
-    const appIdInput = document.getElementById("fbInputAppId");
-
-    if (apiKeyInput) apiKeyInput.value = currentCfg.apiKey || "";
-    if (projIdInput) projIdInput.value = currentCfg.projectId || "";
-    if (authDomInput) authDomInput.value = currentCfg.authDomain || "";
-    if (bucketInput) bucketInput.value = currentCfg.storageBucket || "";
-    if (appIdInput) appIdInput.value = currentCfg.appId || "";
-
-    const badge = document.getElementById("fbModalStatusBadge");
-    if (badge) {
-      const isConfigured = (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured());
-      if (isConfigured) {
-        badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800";
-        badge.textContent = "Conectado ao Firestore";
-      } else {
-        badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800";
-        badge.textContent = "Chaves Pendentes";
-      }
-    }
-
-    modal.classList.remove("hidden");
-  }
-
-  function closeFirebaseConfigModal() {
-    const modal = document.getElementById("firebaseConfigModal");
-    if (modal) modal.classList.add("hidden");
-  }
-
-  function saveFirebaseConfigFromModal() {
-    const apiKey = document.getElementById("fbInputApiKey")?.value.trim() || "";
-    const projectId = document.getElementById("fbInputProjectId")?.value.trim() || "";
-    const authDomain = document.getElementById("fbInputAuthDomain")?.value.trim() || "";
-    const storageBucket = document.getElementById("fbInputStorageBucket")?.value.trim() || "";
-    const appId = document.getElementById("fbInputAppId")?.value.trim() || "";
-
-    if (!apiKey || !projectId) {
-      alert("Por favor, preencha ao menos o 'API Key' e o 'Project ID' fornecidos pelo console do Firebase.");
-      return;
-    }
-
-    const newConfig = { apiKey, projectId, authDomain, storageBucket, appId };
-
-    try {
-      localStorage.setItem("dietocase_custom_firebase_config", JSON.stringify(newConfig));
-      if (window.FIREBASE_CONFIG) {
-        Object.assign(window.FIREBASE_CONFIG, newConfig);
-      }
-      if (typeof firebaseSyncService !== "undefined") {
-        firebaseSyncService.config = newConfig;
-        firebaseSyncService.init();
-      }
-      if (typeof dietoSyncEngine !== "undefined") {
-        dietoSyncEngine.init();
-      }
-      closeFirebaseConfigModal();
-      showToast("Configuração do Firebase salva com sucesso! Conectando à nuvem...");
-    } catch (e) {
-      console.error("Erro ao salvar configuração do Firebase:", e);
-      alert("Erro ao salvar credenciais no navegador: " + e.message);
-    }
-  }
-
-  function clearFirebaseConfigFromModal() {
-    if (!confirm("Deseja remover as credenciais personalizadas do Firebase? O aplicativo voltará a operar em modo local.")) {
-      return;
-    }
-
-    try {
-      localStorage.removeItem("dietocase_custom_firebase_config");
-      const emptyConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
-      if (window.FIREBASE_CONFIG) {
-        Object.assign(window.FIREBASE_CONFIG, emptyConfig);
-      }
-      if (typeof firebaseSyncService !== "undefined") {
-        firebaseSyncService.config = emptyConfig;
-        firebaseSyncService.status = "unconfigured";
-        firebaseSyncService.listeners.forEach(cb => cb("unconfigured_firebase"));
-      }
-
-      const apiKeyInput = document.getElementById("fbInputApiKey");
-      const projIdInput = document.getElementById("fbInputProjectId");
-      const authDomInput = document.getElementById("fbInputAuthDomain");
-      const bucketInput = document.getElementById("fbInputStorageBucket");
-      const appIdInput = document.getElementById("fbInputAppId");
-      if (apiKeyInput) apiKeyInput.value = "";
-      if (projIdInput) projIdInput.value = "";
-      if (authDomInput) authDomInput.value = "";
-      if (bucketInput) bucketInput.value = "";
-      if (appIdInput) appIdInput.value = "";
-
-      closeFirebaseConfigModal();
-      showToast("Credenciais do Firebase removidas. Operando em modo local.");
-    } catch (e) {
-      console.error("Erro ao limpar configuração do Firebase:", e);
-    }
-  }
+  // Compatibilidade: execução do Firebase 100% silenciosa em background (sem modais ou debug no frontend)
+  function openFirebaseConfigModal() {}
+  function closeFirebaseConfigModal() {}
 
   // Renderiza a lista dinâmica de profissionais na Aba 6 do editor de caso
   function renderAdminEquipeList(equipeList) {
@@ -4883,6 +7245,10 @@ document.addEventListener("DOMContentLoaded", () => {
       visCheckbox.checked = isVisible;
       updateCaseVisibilityLabel(isVisible);
     }
+
+    // Status de Questões Avaliativas (Habilitar / Desabilitar)
+    const isQuestionsEnabled = c.habilitarQuestoesAvaliativas !== false;
+    updateCaseQuestionsLabel(isQuestionsEnabled);
     
     // Bloqueio de Abas do Aluno (Tempo Real)
     populateBlockedTabsInEditor(c.blockedTabs || []);
@@ -4895,6 +7261,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("admPatMarital").value = c.patient?.maritalStatus || "";
     document.getElementById("admPatResidence").value = c.patient?.residence || "";
     document.getElementById("admPatAvatar").value = c.patient?.avatar || "👤";
+    if (document.getElementById("admHipoteseDiagnostica")) {
+      document.getElementById("admHipoteseDiagnostica").value = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || "";
+    }
 
     // História Clínica
     document.getElementById("admHistQP").value = c.history?.queixaPrincipal || "";
@@ -5209,6 +7578,7 @@ document.addEventListener("DOMContentLoaded", () => {
       description: document.getElementById("admCaseDesc").value.trim(),
       isLocked: !(document.getElementById("admCaseIsUnlocked")?.checked),
       visivel: document.getElementById("admCaseIsVisible") ? document.getElementById("admCaseIsVisible").checked : true,
+      habilitarQuestoesAvaliativas: document.getElementById("admCaseEnableQuestions") ? document.getElementById("admCaseEnableQuestions").checked : true,
       blockedTabs: readBlockedTabsFromEditor(),
       patient: {
         name: document.getElementById("admPatName").value.trim(),
@@ -5219,7 +7589,9 @@ document.addEventListener("DOMContentLoaded", () => {
         residence: document.getElementById("admPatResidence").value.trim(),
         avatar: document.getElementById("admPatAvatar").value.trim() || "👤"
       },
+      hipoteseDiagnostica: document.getElementById("admHipoteseDiagnostica") ? document.getElementById("admHipoteseDiagnostica").value.trim() : "",
       history: {
+        hipoteseDiagnostica: document.getElementById("admHipoteseDiagnostica") ? document.getElementById("admHipoteseDiagnostica").value.trim() : "",
         queixaPrincipal: document.getElementById("admHistQP").value.trim(),
         hda: document.getElementById("admHistHDA").value.trim(),
         hpp: document.getElementById("admHistHPP").value.trim(),

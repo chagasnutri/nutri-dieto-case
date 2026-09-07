@@ -1,0 +1,107 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================================================
+    // FUNÇÕES AUXILIARES DE AUTENTICAÇÃO E PAPÉIS
+    // ============================================================================
+    
+    // Verifica se a requisição possui qualquer autenticação válida no Firebase
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Verifica se o usuário é um aluno conectado via autenticação anônima
+    function isAnonymous() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+    
+    // Verifica se o usuário é o Professor / Administrador (autenticado por e-mail/senha ou credencial docente)
+    function isTeacher() {
+      return isAuthenticated() && (
+        request.auth.token.firebase.sign_in_provider == 'password' ||
+        request.auth.token.firebase.sign_in_provider != 'anonymous' ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // Verifica se o usuário autenticado é o proprietário legítimo do documento
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================================================
+    // COLEÇÃO: ATENDIMENTOS REAIS (Modo Atendimento Real)
+    // ============================================================================
+    match /atendimentos_reais/{atendimentoId} {
+      // LEITURA (read):
+      // - Aluno anônimo só lê os seus próprios atendimentos (onde userId == auth.uid)
+      // - Professor (admin) tem acesso de leitura a TODOS os atendimentos clínicos
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isTeacher()
+      );
+      
+      // CRIAÇÃO (create):
+      // - Aluno autenticado pode criar, desde que obrigatoriamente grave seu próprio uid no campo userId
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // EDIÇÃO (update):
+      // - Aluno só pode editar o documento do qual é proprietário (sem poder transferir o userId)
+      allow update: if isAuthenticated() && 
+                    resource.data.userId == request.auth.uid && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // EXCLUSÃO (delete):
+      // - Aluno dono do documento ou Professor docente
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isTeacher()
+      );
+    }
+
+    // ============================================================================
+    // COLEÇÃO: PRONTUÁRIOS E SUBMISSÕES ACADÊMICAS (Modo Simulação)
+    // ============================================================================
+    match /prontuarios/{prontuarioId} {
+      // LEITURA (read):
+      // - Aluno só lê suas próprias resoluções de casos
+      // - Professor (admin) tem acesso de leitura irrestrito a todos os prontuários dos alunos
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isTeacher()
+      );
+      
+      // CRIAÇÃO (create):
+      // - Aluno grava seu próprio uid no campo userId
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // EDIÇÃO (update):
+      // - Aluno proprietário pode atualizar o rascunho
+      allow update: if isAuthenticated() && 
+                    resource.data.userId == request.auth.uid && 
+                    request.resource.data.userId == request.auth.uid;
+      
+      // EXCLUSÃO (delete):
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isTeacher()
+      );
+    }
+
+    // ============================================================================
+    // COLEÇÃO: CONFIGURAÇÕES ACADÊMICAS (Disciplinas, Casos Clínicos e Bloqueios)
+    // ============================================================================
+    match /configuracoes/{configDoc} {
+      // LEITURA (read):
+      // - Qualquer usuário autenticado (incluindo alunos anônimos) pode ler o catálogo de casos, disciplinas e status de travas
+      allow read: if isAuthenticated();
+      
+      // ESCRITA (write):
+      // - Somente o Professor (admin) pode alterar casos, criar disciplinas, travar/destravar abas
+      allow write: if isTeacher();
+    }
+  }
+}

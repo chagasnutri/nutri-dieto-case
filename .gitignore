@@ -1,4 +1,4 @@
-﻿# Arquivos de log do servidor local
+# Arquivos de log do servidor local
 server.log
 *.log
 
@@ -21,3 +21,9 @@ desktop.ini
 scratch/
 *.tmp
 *.temp
+
+# Variáveis de ambiente seguras (chaves e credenciais do servidor)
+.env
+.env.local
+.env*.local
+

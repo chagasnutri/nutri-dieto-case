@@ -3,7 +3,8 @@
 
 class ClinicalChatEngine {
   constructor() {
-    this.apiKey = localStorage.getItem("dietoterapia_gemini_api_key") || "";
+    this.apiEndpoint = "/api/chat";
+    this.apiKey = ""; // Por segurança, chaves de API não são armazenadas nem expostas no frontend
     this.activeRole = "paciente"; // 'paciente', 'acompanhante', 'medico', 'enfermagem', 'fono', 'psicologia'
   }
 
@@ -239,13 +240,14 @@ class ClinicalChatEngine {
 
   // Processa a pergunta de forma estrita e humanizada contra a base de dados do caso
   async processQuestion(question, clinicalCase, role = "paciente") {
-    // Se houver chave Gemini API configurada, tenta chamar a IA com o prompt humanizado e restritivo
-    if (this.apiKey) {
-      try {
-        return await this.callGeminiWithStrictRules(question, clinicalCase, role);
-      } catch (err) {
-        console.warn("Falha na chamada Gemini API, utilizando motor humanizado local:", err);
+    // Tenta chamada ao LLM no backend (/api/chat) com chave AI_API_KEY no servidor (sem expor credenciais no cliente)
+    try {
+      const serverResponse = await this.callServerLlmWithStrictRules(question, clinicalCase, role);
+      if (serverResponse) {
+        return serverResponse;
       }
+    } catch (err) {
+      // Recorre suavemente ao motor humanizado estrito local caso o servidor esteja sem chave ou offline
     }
 
     // Processamento estrito e humanizado local (sem dependência de API externa e sem alucinação)
@@ -589,13 +591,13 @@ class ClinicalChatEngine {
          (q.includes("tfg") && examNorm.includes("tfg"))) {
         
         if (role === "paciente") {
-          return `Olha, doutor(a), no meu exame de ${item.exame} o resultado deu ${item.valor}. O médico me disse que o normal de referência era ${item.referencia}${item.interpretacao ? ' e que acusou ' + item.interpretacao.toLowerCase() : ''}.`;
+          return `Olha, doutor(a), no meu exame de ${item.exame} o resultado deu ${item.valor} (com referência de ${item.referencia} no laudo).`;
         }
         if (role === "acompanhante") {
-          return `Doutor(a), no laudo dele(a) o exame de ${item.exame} deu ${item.valor} (sendo a referência normal de ${item.referencia})${item.interpretacao ? ', indicando ' + item.interpretacao.toLowerCase() : ''}.`;
+          return `Doutor(a), no laudo do exame de ${item.exame} dele(a) deu ${item.valor} (a referência indicada é ${item.referencia}).`;
         }
         if (role === "medico") {
-          return `Colega, o laudo de ${item.exame} do paciente resultou em ${item.valor} (valor de referência: ${item.referencia})${item.interpretacao ? ', caracterizando ' + item.interpretacao.toLowerCase() : ''}.`;
+          return `Colega, o laudo de ${item.exame} do paciente resultou em ${item.valor} (valor de referência: ${item.referencia}). A análise clínica e dietoterápica fica a cargo da sua avaliação nutricional.`;
         }
         return `No sistema laboratorial, a dosagem de ${item.exame} consta em ${item.valor} (referência: ${item.referencia}).`;
       }
@@ -705,8 +707,8 @@ class ClinicalChatEngine {
     return this.getStrictUnknownResponse(role, question);
   }
 
-  // Integração com Gemini API com REGRA ESTRITA ANTI-ALUCINAÇÃO E TOM HUMANIZADO
-  async callGeminiWithStrictRules(question, c, role) {
+  // Chamada exclusiva do lado do servidor via rota /api/chat (segurança: sem expor chaves no cliente)
+  async callServerLlmWithStrictRules(question, c, role) {
     const roleInfo = this.getRoleInfo(role, c);
     const caseJson = JSON.stringify(c, null, 2);
 
@@ -734,25 +736,43 @@ DIRETRIZES DE COMUNICAÇÃO HUMANIZADA (SEM TOM ROBÓTICO):
    - JAMAIS deduza, suponha ou invente dados ausentes!
     `.trim();
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: `${systemPrompt}\n\nPERGUNTA DO ESTUDANTE DE NUTRIÇÃO: "${question}"` }] }
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 500
-        }
-      })
-    });
+    try {
+      const response = await fetch(this.apiEndpoint || "/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: question,
+          systemPrompt: systemPrompt,
+          clinicalContext: {
+            modalidade: "Simulação de Interlocutor Clínico",
+            paciente: {
+              nome: c?.patient?.name,
+              idade: c?.patient?.age,
+              genero: c?.patient?.gender,
+              patologiasHipoteses: c?.patient?.diagnosis
+            },
+            antropometria: c?.antropometria,
+            bioquimica: c?.bioquimica
+          }
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`Erro na API Gemini: ${response.statusText}`);
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      if (data.apiKeyConfigured && data.reply) {
+        return data.reply;
+      }
+      return null;
+    } catch (err) {
+      return null;
     }
+  }
 
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+  // Mantido para compatibilidade retroativa, delegando a chamada exclusivamente ao servidor
+  async callGeminiWithStrictRules(question, c, role) {
+    return this.callServerLlmWithStrictRules(question, c, role);
   }
 }

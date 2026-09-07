@@ -40,20 +40,51 @@ class StudentProntuarioManager {
 
   // Modelo de prontuário em branco
   getEmptyProntuario(caseId) {
+    const currentUid = (typeof window !== "undefined" && window.firebaseSyncService && typeof window.firebaseSyncService.getUserId === "function")
+      ? window.firebaseSyncService.getUserId()
+      : "";
     return {
       caseId: caseId,
+      userId: currentUid,
+      isRealPatient: false,
+      dadosPacienteReal: {
+        nome: "",
+        idade: "",
+        sexo: "Feminino",
+        genero: "Feminino",
+        ocupacao: "",
+        profissao: "",
+        naturalidade: "",
+        procedencia: "",
+        historicoSocial: {
+          estadoCivil: "",
+          renda: "",
+          profissao: "",
+          moradia: "",
+          escolaridade: ""
+        },
+        hipoteseDiagnostica: "",
+        dataAtendimento: new Date().toISOString().split("T")[0]
+      },
       aluno: {
         nome: "",
         matriculaTurma: "",
         data: new Date().toISOString().split("T")[0]
       },
       anamnese: {
+        hipoteseDiagnostica: "",
         queixaPrincipal: "",
         historiaClinica: "",
         antecedentesMedicamentos: "",
         habitosEstiloVida: ""
       },
       antropometria: {
+        triagemNutricional: {
+          tipo: "ambulatorio", // "ambulatorio" | "hospitalar"
+          ferramenta: "",
+          pontuacao: "",
+          diagnostico: ""
+        },
         pesoAtual: "",
         pesoHabitual: "",
         estatura: "",
@@ -64,6 +95,7 @@ class StudentProntuarioManager {
         estaturaEfetiva: "",
         origemDadosAntro: "",
         imc: "",
+        imcIdeal: "",
         classificacaoImc: "",
         diagnosticoNutricionalExtenso: "",
         criterioClassificacao: "",
@@ -87,7 +119,23 @@ class StudentProntuarioManager {
         interpretacaoNutricional: "",
         interpretacoes: {}
       },
+      interacaoDrogaNutriente: [],
+      observacoesFarmacoterapia: "",
       exameFisico: {
+        orgaosSistemas: {
+          neurologico: "",
+          respiratorio: "",
+          circulatorio: "",
+          digestorio: "",
+          urinario: "",
+          muscular: ""
+        },
+        compartimentos: {
+          cabeca: "",
+          tronco: "",
+          mmss: "",
+          mmii: ""
+        },
         sinaisClinicos: "",
         massaMuscularAdiposa: "",
         condicoesTGIeEdemas: ""
@@ -105,26 +153,72 @@ class StudentProntuarioManager {
         problema: "",
         etiologia: "",
         sinaisSintomas: "",
-        textoCompletoPES: ""
+        textoCompletoPES: "",
+        objetivosDietoterapicos: ""
       },
       calculoNecessidades: {
         formulasSelecionadas: [],
+        generoUtilizado: "Masculino",
         bolso: {
           minKcalKg: "",
           maxKcalKg: "",
-          resultadoKcal: ""
+          pesoKg: "",
+          faixaKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         harrisBenedict: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          pesoKg: "",
+          alturaCm: "",
+          idadeAnos: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         mifflin: {
-          resultadoKcal: ""
-        },
-        eerIom: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          pesoKg: "",
+          alturaCm: "",
+          idadeAnos: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         faoOms: {
-          resultadoKcal: ""
+          genero: "Masculino",
+          constanteIdade: "",
+          pesoKg: "",
+          constanteFixa: "",
+          gebKcal: "",
+          fa: "1.2",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
+        },
+        eerIom: {
+          genero: "Masculino",
+          constanteEer: "",
+          fatorIdade: "",
+          idadeAnos: "",
+          naf: "1.0",
+          fatorPeso: "",
+          pesoKg: "",
+          fatorAltura: "",
+          alturaM: "",
+          eerKcal: "",
+          fa: "1.0",
+          fi: "1.0",
+          vetKcal: "",
+          resultadoKcal: "",
+          equacaoDescritiva: ""
         },
         vetPlanejadoKcal: "",
         taxaMetabolicaCalculada: "",
@@ -181,6 +275,9 @@ class StudentProntuarioManager {
           proteinasPct: 0,
           lipidiosG: 0,
           lipidiosPct: 0,
+          gorduraSaturadaPct: "",
+          gorduraMonoinsaturadaPct: "",
+          gorduraPoliinsaturadaPct: "",
           fibrasG: 0,
           calcioMg: 0,
           ferroMg: 0,
@@ -211,11 +308,15 @@ class StudentProntuarioManager {
         proteinasPct: 0,
         lipidiosG: 0,
         lipidiosPct: 0,
+        gorduraSaturadaPct: "",
+        gorduraMonoinsaturadaPct: "",
+        gorduraPoliinsaturadaPct: "",
         fibrasG: 0,
         calcioMg: 0,
         ferroMg: 0,
         sodioMg: 0,
         potassioMg: 0,
+        fosforoMg: 0,
         adequacaoVetPct: 0,
         statusMacros: {
           cho: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -223,8 +324,38 @@ class StudentProntuarioManager {
           lip: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" }
         }
       },
+      consistenciaDietaOral: "Dieta Livre / Normal",
       orientacoesNutricionais: "",
-      respostasQuestoes: {} // id da questão -> resposta do aluno
+      respostasQuestoes: {}, // id da questão -> resposta do aluno
+      tne: {
+        viaAlimentacao: "oral", // "oral" | "tne"
+        nomeComercial: "",
+        tipoDieta: "",
+        densidadeCalorica: "",
+        fracionamento: "",
+        viaAdministracao: "gravitacional", // "gravitacional" | "bomba"
+        gravitacional: {
+          volumePorRefeicao: "",
+          quantidadeFrascosEtapas: "",
+          metaVazaoGotasMin: ""
+        },
+        bombaInfusao: {
+          tempoInfusaoHoras: "",
+          metaVazaoMlHora: ""
+        },
+        tabelaNutricionalManual: {
+          vet: "",
+          cho: "",
+          ptn: "",
+          lip: "",
+          fibra: "",
+          sodio: "",
+          potassio: "",
+          calcio: "",
+          fosforo: ""
+        },
+        moduloSuplementacaoProteica: ""
+      }
     };
   }
 
@@ -721,6 +852,71 @@ class StudentProntuarioManager {
     return this.calculateNutritionalTotals(planejamentoAlimentar, pesoPaciente, vetPrescrito, distribuicaoPrescrita);
   }
 
+  // Calcula consolidação nutricional para Terapia Nutricional Enteral (TNE) com base na tabela manual
+  calculateTneManualNutritionalTotals(manualData = {}, pesoPaciente = null, vetPrescrito = null, distribuicaoPrescrita = null) {
+    const parseNum = (val) => {
+      if (val === null || val === undefined || val === "") return 0;
+      const parsed = parseFloat(String(val).replace(",", "."));
+      return isNaN(parsed) ? 0 : parsed;
+    };
+    const round1 = (val) => Math.round(val * 10) / 10;
+
+    const totals = {
+      vetTotalKcal: round1(parseNum(manualData.vet)),
+      carboidratosG: round1(parseNum(manualData.cho)),
+      carboidratosPct: 0,
+      proteinasG: round1(parseNum(manualData.ptn)),
+      proteinasGKg: 0,
+      proteinasPct: 0,
+      lipidiosG: round1(parseNum(manualData.lip)),
+      lipidiosPct: 0,
+      fibrasG: round1(parseNum(manualData.fibra)),
+      calcioMg: round1(parseNum(manualData.calcio)),
+      ferroMg: 0,
+      sodioMg: round1(parseNum(manualData.sodio)),
+      potassioMg: round1(parseNum(manualData.potassio)),
+      fosforoMg: round1(parseNum(manualData.fosforo)),
+      adequacaoVetPct: 0,
+      classificacaoAdequacao: "Aguardando definição",
+      statusMacros: {
+        cho: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+        ptn: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" },
+        lip: { status: "Indefinido", label: "Aguardando Prescrição", badgeClass: "bg-slate-100 text-slate-700 border-slate-300" }
+      }
+    };
+
+    // Percentuais calóricos dos macronutrientes: CHO e PTN = 4 kcal/g, LIP = 9 kcal/g
+    if (totals.vetTotalKcal > 0) {
+      totals.carboidratosPct = round1(((totals.carboidratosG * 4) / totals.vetTotalKcal) * 100);
+      totals.proteinasPct = round1(((totals.proteinasG * 4) / totals.vetTotalKcal) * 100);
+      totals.lipidiosPct = round1(((totals.lipidiosG * 9) / totals.vetTotalKcal) * 100);
+    }
+
+    // g/kg de proteína
+    const pKg = pesoPaciente ? (typeof pesoPaciente === "string" ? parseFloat(pesoPaciente.replace(",", ".")) : parseFloat(pesoPaciente)) : null;
+    if (pKg && pKg > 0 && totals.proteinasG > 0) {
+      totals.proteinasGKg = round1(totals.proteinasG / pKg);
+    }
+
+    // % de adequação em relação ao VET planejado/prescrito
+    const vPresc = vetPrescrito ? (typeof vetPrescrito === "string" ? parseFloat(vetPrescrito.replace(",", ".")) : parseFloat(vetPrescrito)) : null;
+    if (vPresc && vPresc > 0 && totals.vetTotalKcal > 0) {
+      totals.adequacaoVetPct = round1((totals.vetTotalKcal / vPresc) * 100);
+      if (totals.adequacaoVetPct < 90) {
+        totals.classificacaoAdequacao = "Hipocalórico em relação à meta prescrita";
+      } else if (totals.adequacaoVetPct <= 110) {
+        totals.classificacaoAdequacao = "Adequado à meta prescrita (90% - 110%)";
+      } else {
+        totals.classificacaoAdequacao = "Hipercalórico em relação à meta prescrita";
+      }
+    }
+
+    // Status dos macros frente à prescrição
+    totals.statusMacros = this.compareTotalsWithPrescription(totals, distribuicaoPrescrita);
+
+    return totals;
+  }
+
   // Gera síntese textual da refeição unindo tipo de preparação, alimento, medida caseira livre e gramatura
   formatMealFoodsSummary(meal) {
     if (!meal) return "";
@@ -749,6 +945,37 @@ class StudentProntuarioManager {
       return prepPrefix + itemsStr;
     }
     return prepPrefix + (meal.alimentos || "");
+  }
+
+  // Adiciona interação droga-nutriente ao prontuário
+  addInteracaoDrogaNutriente(prontuario, item = {}) {
+    if (!prontuario) return [];
+    if (!Array.isArray(prontuario.interacaoDrogaNutriente)) {
+      prontuario.interacaoDrogaNutriente = [];
+    }
+    const med = (item.medicacao || item.medicamento || "").trim();
+    const classe = (item.classificacao || item.classe || item.nutrientes || "").trim();
+    const inter = (item.interacao || item.conduta || "").trim();
+
+    prontuario.interacaoDrogaNutriente.push({
+      medicacao: med,
+      classificacao: classe,
+      interacao: inter,
+      // Compatibilidade com propriedades legadas:
+      medicamento: med,
+      nutrientes: item.nutrientes || classe,
+      conduta: item.conduta || inter
+    });
+    return prontuario.interacaoDrogaNutriente;
+  }
+
+  // Remove interação droga-nutriente do prontuário
+  removeInteracaoDrogaNutriente(prontuario, index) {
+    if (!prontuario || !Array.isArray(prontuario.interacaoDrogaNutriente)) return [];
+    if (index >= 0 && index < prontuario.interacaoDrogaNutriente.length) {
+      prontuario.interacaoDrogaNutriente.splice(index, 1);
+    }
+    return prontuario.interacaoDrogaNutriente;
   }
 }
 

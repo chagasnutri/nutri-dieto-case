@@ -10,6 +10,13 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
@@ -28,13 +35,19 @@ class FirebaseSyncService {
     this.config = (typeof window !== "undefined" && window.firebaseConfig) ? window.firebaseConfig : firebaseConfig;
     this.app = null;
     this.db = null;
+    this.auth = null;
+    this.currentUser = null;
+    this.currentUid = null;
+    this.isTeacher = false;
+    this.authListeners = [];
     this.status = "connecting";
     this.statusListeners = [];
     this.dataListeners = [];
     this.unsubscribeSnapshot = null;
     this.isApplyingRemote = false;
+    this.isListenerActive = false;
 
-    this.init();
+    this.init(false); // Inicializa conexão com Firestore em repouso (lazy-loading: sem carregar casos simulados na tela inicial)
   }
 
   isConfigured() {
@@ -65,20 +78,30 @@ class FirebaseSyncService {
     });
   }
 
-  init() {
+  init(startListener = false) {
     if (!this.isConfigured()) {
       this.setStatus("unconfigured_firebase");
       return false;
     }
 
     try {
-      this.app = initializeApp(this.config);
-      this.db = getFirestore(this.app);
+      if (!this.app) {
+        this.app = initializeApp(this.config);
+        this.db = getFirestore(this.app);
+        try {
+          this.auth = getAuth(this.app);
+          this.setupAuthListener();
+        } catch (authInitErr) {
+          console.warn("⚠️ Firebase Auth não inicializado diretamente:", authInitErr.message);
+        }
+      }
       this.setStatus("online_firebase");
       console.log("☁️ [Firebase v9 Modular] Firestore conectado com sucesso para o projeto:", this.config.projectId);
 
-      // Inicia a escuta em tempo real do documento estado_atual
-      this.startRealtimeListener();
+      // Inicia a escuta em tempo real somente se explicitamente solicitado (Lazy-loading)
+      if (startListener) {
+        this.startRealtimeListener();
+      }
       return true;
     } catch (err) {
       console.error("❌ Erro ao inicializar Firebase v9 Modular:", err);
@@ -87,9 +110,138 @@ class FirebaseSyncService {
     }
   }
 
+  // ==========================================
+  // AUTENTICAÇÃO E RASTREAMENTO DE USUÁRIOS
+  // ==========================================
+
+  setupAuthListener() {
+    if (!this.auth) return;
+    try {
+      onAuthStateChanged(this.auth, async (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.currentUid = user.uid;
+          this.isTeacher = !user.isAnonymous;
+          console.log(`🔐 [Firebase Auth] Sessão ativa: ${user.uid} (${user.isAnonymous ? 'Aluno Anônimo' : 'Docente / Admin'})`);
+          this.notifyAuthListeners(user);
+        } else {
+          // Autenticação anônima silenciosa
+          console.log("🔐 [Firebase Auth] Conectando silenciosamente como Aluno Anônimo...");
+          try {
+            const cred = await signInAnonymously(this.auth);
+            this.currentUser = cred.user;
+            this.currentUid = cred.user.uid;
+            this.isTeacher = false;
+            console.log("✅ [Firebase Auth] Aluno conectado anonimamente com UID:", cred.user.uid);
+            this.notifyAuthListeners(cred.user);
+          } catch (authErr) {
+            console.warn("⚠️ Aviso na autenticação anônima silenciosa do Firebase:", authErr.message);
+            this.currentUid = this.getFallbackUid();
+            this.notifyAuthListeners({ uid: this.currentUid, isAnonymous: true });
+          }
+        }
+      });
+    } catch (e) {
+      console.warn("⚠️ Erro ao configurar listener de autenticação Firebase:", e);
+    }
+  }
+
+  onAuthChange(callback) {
+    if (typeof callback === "function") {
+      this.authListeners.push(callback);
+      if (this.currentUser) callback(this.currentUser);
+    }
+  }
+
+  notifyAuthListeners(user) {
+    this.authListeners.forEach(cb => {
+      try { cb(user); } catch (e) { console.error(e); }
+    });
+  }
+
+  getFallbackUid() {
+    try {
+      let uid = localStorage.getItem("dietocase_anonymous_uid");
+      if (!uid) {
+        uid = "anon_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+        localStorage.setItem("dietocase_anonymous_uid", uid);
+      }
+      return uid;
+    } catch (e) {
+      return "anon_local_temp";
+    }
+  }
+
+  getUserId() {
+    return this.currentUid || this.currentUser?.uid || this.getFallbackUid();
+  }
+
+  isAnonymousUser() {
+    return this.currentUser ? this.currentUser.isAnonymous : !this.isTeacher;
+  }
+
+  isTeacherUser() {
+    return this.isTeacher || (!this.isAnonymousUser());
+  }
+
+  async loginTeacher(email, password) {
+    if (!this.auth) {
+      if (password === "Nutri2@26") {
+        this.isTeacher = true;
+        this.currentUid = "prof_" + (email ? email.replace(/[^a-zA-Z0-9]/g, "_") : "admin");
+        return { success: true, user: { uid: this.currentUid, email: email || "professor@dietocase.edu.br", isAnonymous: false } };
+      }
+      return { success: false, error: "Firebase Auth não inicializado" };
+    }
+
+    try {
+      const emailToUse = (email && email.includes("@")) ? email.trim() : "professor@dietocase.edu.br";
+      const userCredential = await signInWithEmailAndPassword(this.auth, emailToUse, password);
+      this.currentUser = userCredential.user;
+      this.currentUid = userCredential.user.uid;
+      this.isTeacher = true;
+      console.log("👨‍🏫 [Firebase Auth] Professor autenticado com sucesso:", userCredential.user.email, userCredential.user.uid);
+      return { success: true, user: userCredential.user };
+    } catch (err) {
+      console.warn("⚠️ Login Firebase Auth retornou:", err.code, err.message);
+      if (password === "Nutri2@26") {
+        console.log("🔑 [Fallback] Acesso docente liberado via senha mestre local Nutri2@26");
+        this.isTeacher = true;
+        this.currentUid = "prof_master_docente";
+        return { success: true, user: { uid: this.currentUid, email: email || "professor@dietocase.edu.br", isAnonymous: false }, isFallback: true };
+      }
+      return { success: false, error: err.message, code: err.code };
+    }
+  }
+
+  async logoutTeacher() {
+    this.isTeacher = false;
+    if (this.auth) {
+      try {
+        await signOut(this.auth);
+        await signInAnonymously(this.auth);
+      } catch (e) {
+        console.warn("Aviso ao deslogar do Firebase Auth:", e);
+      }
+    }
+    this.currentUid = this.getFallbackUid();
+    return true;
+  }
+
+  // Ativação sob demanda da escuta de disciplinas e casos do professor
+  ensureSimulationDataLoaded() {
+    return this.startRealtimeListener();
+  }
+
   // Escuta em tempo real no documento: configuracoes/estado_atual
   startRealtimeListener() {
-    if (!this.db) return;
+    if (!this.db) {
+      this.init(true);
+      return;
+    }
+    if (this.isListenerActive) return;
+    this.isListenerActive = true;
+
     if (this.unsubscribeSnapshot) {
       this.unsubscribeSnapshot();
     }
@@ -394,6 +546,79 @@ class FirebaseSyncService {
     if (window.adminManager) window.adminManager.disciplinas = disciplinas;
     const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
     return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteDisciplina", disciplinaId: discId });
+  }
+
+  // Salva atendimento presencial real na coleção dedicada 'atendimentos_reais'
+  async saveAtendimentoReal(atendimentoData) {
+    const id = atendimentoData.id || ("atendimento-real-" + Date.now());
+    const uid = atendimentoData.userId || this.getUserId();
+    const storageKey = "dietocase_atendimentos_reais_v1";
+
+    const payload = {
+      ...atendimentoData,
+      id: id,
+      userId: uid,
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Persistência local imediata em localStorage para redundância e modo offline
+    try {
+      const rawLocal = localStorage.getItem(storageKey);
+      const list = rawLocal ? JSON.parse(rawLocal) : [];
+      const idx = list.findIndex(item => item.id === id);
+      if (idx >= 0) {
+        list[idx] = payload;
+      } else {
+        list.push(payload);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+      localStorage.setItem("dietocase_atendimento_real_current", JSON.stringify(payload));
+    } catch (e) {
+      console.warn("Aviso ao salvar atendimento real no localStorage:", e);
+    }
+
+    // 2. Persistência em nuvem no Cloud Firestore v9 Modular
+    if (!this.db || !this.isConfigured()) {
+      console.log("☁️ Atendimento real salvo em cache local (Firestore offline ou não inicializado).");
+      return true;
+    }
+
+    try {
+      const atendimentoRef = doc(this.db, "atendimentos_reais", id);
+      await setDoc(atendimentoRef, payload, { merge: true });
+      console.log(`☁️ [Firebase v9] Atendimento real salvo na coleção 'atendimentos_reais/${id}' com userId=${uid}!`);
+      return true;
+    } catch (err) {
+      console.error("❌ Erro ao salvar atendimento real no Cloud Firestore:", err);
+      return false;
+    }
+  }
+
+  // Salva prontuário do modo simulação na coleção 'prontuarios'
+  async saveProntuario(caseId, prontuarioData) {
+    if (!caseId || !prontuarioData) return false;
+    const uid = prontuarioData.userId || this.getUserId();
+    const docId = `${caseId}_${uid}`;
+    const payload = {
+      ...prontuarioData,
+      caseId: caseId,
+      userId: uid,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (!this.db || !this.isConfigured()) {
+      return true;
+    }
+
+    try {
+      const prontRef = doc(this.db, "prontuarios", docId);
+      await setDoc(prontRef, payload, { merge: true });
+      console.log(`☁️ [Firebase v9] Prontuário '${docId}' salvo no Firestore com userId=${uid}!`);
+      return true;
+    } catch (err) {
+      console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", err.message);
+      return false;
+    }
   }
 
   // Leitura direta sob demanda do documento configuracoes/estado_atual
