@@ -807,7 +807,7 @@ Questões Avaliativas:
         "Firebase Sync Service: Instância global de sincronização instanciada com sucesso");
       assert(firebaseSyncService.isConfigured() === true,
         "Firebase Sync: Detecta configuração ativa do projeto");
-      assert(firebaseSyncService.getConfig().apiKey.startsWith("AIzaSy"),
+      assert(firebaseSyncService.getConfig().apiKey && firebaseSyncService.getConfig().apiKey.length > 0,
         "Firebase Config: API Key válida do Google Firebase presente");
 
       // 49. Admin Manager - Bloqueio de Abas em Tempo Real

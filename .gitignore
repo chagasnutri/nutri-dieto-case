@@ -23,7 +23,9 @@ scratch/
 *.temp
 
 # Variáveis de ambiente seguras (chaves e credenciais do servidor)
-.env
-.env.local
-.env*.local
+.env*
 
+test-*.html
+syntax-output.html
+check-syntax.html
+preview-*.html
