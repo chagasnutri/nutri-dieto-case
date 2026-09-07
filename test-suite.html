@@ -2661,6 +2661,66 @@ Questões Avaliativas:
       const listaColaborativa = await fetchAlimentosColaborativos();
       assert(Array.isArray(listaColaborativa) && listaColaborativa.some(item => item.id === salvo.id),
         "Alimento cadastrado sincronizado na lista de alimentos colaborativos");
+
+      // 121. Identidade Visual, Subtítulo Oficial, Rodapé Global e Trava de Direitos Autorais em Relatórios
+      // 121.1. Verificação do Subtítulo Oficial
+      const subtituloEsperado = "Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual";
+      let indexHtmlText = "";
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "index.html", false);
+        xhr.send();
+        indexHtmlText = xhr.responseText || "";
+      } catch (e) {
+        try {
+          const indexResp = await fetch("index.html");
+          indexHtmlText = await indexResp.text();
+        } catch (e2) {}
+      }
+
+      assert(indexHtmlText.includes(subtituloEsperado),
+        `Subtítulo Oficial DietoCase verificado na tela principal: "${subtituloEsperado}"`);
+
+      // 121.2. Verificação do Rodapé Global e Direitos Autorais
+      const copyrightEsperado = "© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.";
+      assert(indexHtmlText.includes(copyrightEsperado) || (indexHtmlText.includes("DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.") && (indexHtmlText.includes("©") || indexHtmlText.includes("&copy;"))),
+        `Rodapé Global (Direitos Autorais) incluído na tela principal: "${copyrightEsperado}"`);
+
+      // 121.3. Trava de Segurança nos Relatórios Impressos e em PDF
+      assert(typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function",
+        "Módulo gerador de relatórios DietoterapiaDocxReport disponível");
+
+      const mockStudentReport = {
+        aluno: { nome: "Estudante Teste", matriculaTurma: "NUTRI-2026-A" },
+        anamnese: { queixaPrincipal: "Consulta de rotina", historiaClinica: "Sem comorbidades prévias" },
+        prescricaoDietoterapica: { vetKcal: 2000, choPct: 55, ptnPct: 15, lipPct: 30 },
+        planejamentoAlimentar: [
+          {
+            nome: "Desjejum",
+            horario: "07:30",
+            alimentos: [{ id: "taco-1", gramas: 100 }]
+          }
+        ]
+      };
+      const mockCaseReport = {
+        id: "caso-teste-branding",
+        title: "Caso Clínico Branding & Copyright",
+        patient: { name: "Paciente Teste", age: 35, gender: "Feminino", occupation: "Arquiteta" }
+      };
+
+      const htmlRelatorio = DietoterapiaDocxReport.buildHtmlReport(mockStudentReport, mockCaseReport);
+
+      assert(htmlRelatorio.includes(copyrightEsperado),
+        "Relatório HTML/PDF contém obrigatoriamente o rodapé com os Direitos Autorais");
+      assert(htmlRelatorio.includes("report-print-footer") || htmlRelatorio.includes("report-copyright-footer"),
+        "Relatório HTML/PDF contém o container com classe de travamento de impressão (.report-print-footer)");
+      assert(htmlRelatorio.includes("position: fixed !important") && htmlRelatorio.includes("bottom: 0 !important"),
+        "Estilo @media print trava o rodapé fixo na margem inferior do documento impresso/PDF");
+
+      // 121.4. Trava de Direitos Autorais no Documento Word (.docx)
+      const docxRelatorioBrand = DietoterapiaDocxReport.buildReportDocument(mockStudentReport, mockCaseReport);
+      assert(docxRelatorioBrand !== null && typeof docxRelatorioBrand.generateBlob === "function",
+        "Documento Word (.docx) construído com sucesso contendo seção obrigatória de Direitos Autorais");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

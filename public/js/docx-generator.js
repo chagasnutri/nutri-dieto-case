@@ -705,6 +705,11 @@ class DietoterapiaDocxReport {
         }
       }
     }
+
+    doc.addHeading("DIREITOS AUTORAIS & TERMOS DE USO", 2);
+    doc.addParagraph("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
+    doc.addParagraph(`Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual • Emissão em ${dataFormatada}`);
+
     return doc;
   }
 
@@ -853,10 +858,41 @@ class DietoterapiaDocxReport {
       font-size: 11px;
     }
     @media print {
-      body { padding: 0; }
+      @page {
+        margin: 12mm 15mm 22mm 15mm;
+      }
+      body {
+        padding: 0;
+        margin-bottom: 25mm !important;
+      }
       .no-print { display: none !important; }
       table { page-break-inside: auto; }
       tr { page-break-inside: avoid; page-break-after: auto; }
+
+      /* Trava de Segurança nos Direitos Autorais do Relatório (Impressão / PDF) */
+      .report-print-footer,
+      .report-copyright-footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border-top: 1.5px solid #0f172a !important;
+        padding: 6px 12px !important;
+        font-size: 9.5pt !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        z-index: 999999 !important;
+        pointer-events: none !important;
+        user-select: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
   </style>
 </head>
@@ -1237,9 +1273,15 @@ class DietoterapiaDocxReport {
     `
   }
 
-  <div style="margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 10px; color: #64748b; text-align: center;">
-    DietoCase • Simulador e Prontuário Clínico-Nutricional Baseado em Evidências • Emissão em ${dataFormatada}
-  </div>
+  <!-- TRAVA DE SEGURANÇA: RODAPÉ DE DIREITOS AUTORAIS OBRIGATÓRIO (IMPRESSÃO / PDF) -->
+  <footer class="report-print-footer report-copyright-footer" style="margin-top: 30px; border-top: 1.5px solid #0f172a; padding-top: 8px; font-size: 10px; color: #334155; text-align: center; width: 100%;">
+    <p style="margin: 0; font-size: 10pt; font-weight: 700; color: #0f172a;">
+      © 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.
+    </p>
+    <p style="margin: 2px 0 0 0; font-size: 8.5pt; color: #64748b;">
+      Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual • Emissão em ${dataFormatada}
+    </p>
+  </footer>
 </body>
 </html>
     `;

@@ -34,8 +34,8 @@ export default function Home() {
                 v2.5 Oficial
               </span>
             </h1>
-            <p className="text-xs text-slate-400 font-medium">
-              Simulador Clínico-Nutricional &amp; Prática Ambulatorial
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium leading-tight max-w-xs sm:max-w-md md:max-w-xl mt-0.5">
+              Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual
             </p>
           </div>
         </div>
@@ -202,18 +202,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Rodapé */}
-      <footer className="max-w-6xl w-full mx-auto pt-6 border-t border-slate-800/80 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-        <div>
-          &copy; {new Date().getFullYear()} DietoCase &bull; Todos os direitos reservados.
-        </div>
-        <div className="flex items-center space-x-4">
-          <span>Esqueleto Imutável</span>
-          <span>&bull;</span>
-          <span>Tabela TACO 4ª Edição</span>
-          <span>&bull;</span>
-          <span>PWA Standalone</span>
-        </div>
+      {/* Rodapé Global com Direitos Autorais */}
+      <footer className="max-w-6xl w-full mx-auto pt-6 border-t border-slate-800/80 text-center flex flex-col items-center justify-center gap-2 text-xs text-slate-400">
+        <p className="font-medium tracking-tight">
+          &copy; 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.
+        </p>
       </footer>
     </main>
   );

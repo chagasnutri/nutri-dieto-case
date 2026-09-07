@@ -841,6 +841,9 @@ export default function SimulationModule() {
         onClose={() => setIsPreceptorOpen(false)}
         clinicalContext={clinicalContext}
       />
+
+      {/* Rodapé Global Institucional */}
+      <Footer />
     </div>
   );
 }

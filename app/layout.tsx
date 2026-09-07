@@ -1,8 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
+import Footer from '../components/Footer';
 
 export const metadata = {
-  title: 'DietoCase - Simulador de Dietoterapia e Prática Clínica Nutricional',
-  description: 'Plataforma educacional para simulação clínica de casos e atendimento presencial supervisionado em nutrição.',
+  title: 'DietoCase - Laboratório interativo de Nutrição Clínica',
+  description: 'Laboratório interativo de Nutrição Clínica: Simulação clínica, anamnese interativa e prontuário virtual.',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png'
@@ -24,8 +25,11 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <script src="https://cdn.tailwindcss.com"></script>
       </head>
-      <body className="bg-slate-900 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white">
-        {children}
+      <body className="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-emerald-500 selection:text-white">
+        <div className="flex-1 w-full">
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   );
