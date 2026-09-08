@@ -19,7 +19,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
 const firebaseConfig = {
-  apiKey: "sua_chave_aqui",
+  apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
   authDomain: "simulador-dieto-e114c.firebaseapp.com",
   projectId: "simulador-dieto-e114c",
   storageBucket: "simulador-dieto-e114c.firebasestorage.app",
@@ -48,10 +48,12 @@ class FirebaseSyncService {
     this.statusListeners = [];
     this.dataListeners = [];
     this.unsubscribeSnapshot = null;
+    this.unsubscribeCasesSnapshot = null;
+    this.unsubscribeDiscSnapshot = null;
     this.isApplyingRemote = false;
     this.isListenerActive = false;
 
-    this.init(false); // Inicializa conexão com Firestore em repouso (lazy-loading: sem carregar casos simulados na tela inicial)
+    this.init(true); // Conecta imediatamente ao Firestore e ativa listeners em tempo real nas coleções
   }
 
   isConfigured() {
@@ -237,7 +239,7 @@ class FirebaseSyncService {
     return this.startRealtimeListener();
   }
 
-  // Escuta em tempo real no documento: configuracoes/estado_atual
+  // Escuta em tempo real nas coleções 'casos_clinicos', 'disciplinas' e 'configuracoes/estado_atual'
   startRealtimeListener() {
     if (!this.db) {
       this.init(true);
@@ -246,25 +248,185 @@ class FirebaseSyncService {
     if (this.isListenerActive) return;
     this.isListenerActive = true;
 
-    if (this.unsubscribeSnapshot) {
-      this.unsubscribeSnapshot();
+    // 1. Escuta em tempo real na coleção 'casos_clinicos' (Professor -> Aluno instantâneo)
+    try {
+      if (this.unsubscribeCasesSnapshot) this.unsubscribeCasesSnapshot();
+      const casesCol = collection(this.db, COLLECTION_CASES);
+      this.unsubscribeCasesSnapshot = onSnapshot(casesCol, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = [];
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data && data.id) {
+              list.push(data);
+            }
+          });
+          if (list.length > 0) {
+            console.log(`📡 [Firestore onSnapshot: casos_clinicos] ${list.length} caso(s) recebido(s) em tempo real da nuvem!`);
+            this.handleRemoteCasesUpdate(list);
+          }
+        } else {
+          console.log("ℹ️ Coleção 'casos_clinicos' vazia no Firestore. Semeando casos padrão...");
+          this.seedInitialCases();
+        }
+      }, (error) => {
+        console.warn("⚠️ Aviso no onSnapshot de casos_clinicos:", error.message);
+      });
+    } catch (errCases) {
+      console.warn("Erro ao configurar onSnapshot de casos_clinicos:", errCases);
     }
 
-    const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
+    // 2. Escuta em tempo real na coleção 'disciplinas'
+    try {
+      if (this.unsubscribeDiscSnapshot) this.unsubscribeDiscSnapshot();
+      const discCol = collection(this.db, COLLECTION_DISCIPLINAS);
+      this.unsubscribeDiscSnapshot = onSnapshot(discCol, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = [];
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data && data.id) {
+              list.push(data);
+            }
+          });
+          if (list.length > 0) {
+            console.log(`📡 [Firestore onSnapshot: disciplinas] ${list.length} disciplina(s) recebida(s) em tempo real da nuvem!`);
+            this.handleRemoteDisciplinasUpdate(list);
+          }
+        } else {
+          console.log("ℹ️ Coleção 'disciplinas' vazia no Firestore. Semeando disciplinas padrão...");
+          this.seedInitialDisciplinas();
+        }
+      }, (error) => {
+        console.warn("⚠️ Aviso no onSnapshot de disciplinas:", error.message);
+      });
+    } catch (errDisc) {
+      console.warn("Erro ao configurar onSnapshot de disciplinas:", errDisc);
+    }
 
-    this.unsubscribeSnapshot = onSnapshot(estadoRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log("📡 [Firestore onSnapshot] Alteração recebida em tempo real:", data.updatedAt);
-        this.handleRemoteUpdate(data);
-      } else {
-        console.log("ℹ️ Documento configuracoes/estado_atual não existe ainda. Criando com dados padrão (auto-seed)...");
-        this.seedInitialState();
+    // 3. Escuta no documento configuracoes/estado_atual (para travas e configurações globais)
+    try {
+      if (this.unsubscribeSnapshot) this.unsubscribeSnapshot();
+      const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
+      this.unsubscribeSnapshot = onSnapshot(estadoRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          console.log("📡 [Firestore onSnapshot: estado_atual] Sincronização de travas recebida:", data.updatedAt);
+          this.handleRemoteUpdate(data);
+        } else {
+          this.seedInitialState();
+        }
+      }, (error) => {
+        console.warn("⚠️ Aviso no onSnapshot do Firestore estado_atual:", error.message);
+        this.setStatus("error_firebase");
+      });
+    } catch (errConfig) {
+      console.warn("Erro ao configurar onSnapshot de configuracoes/estado_atual:", errConfig);
+    }
+  }
+
+  // Processa atualização recebida da coleção 'casos_clinicos' em tempo real
+  handleRemoteCasesUpdate(cloudCases) {
+    if (!Array.isArray(cloudCases) || cloudCases.length === 0) return;
+
+    if (typeof window !== "undefined") {
+      // 1. Atualiza stores em memória
+      if (typeof window.setCasesStore === "function") {
+        window.setCasesStore(cloudCases);
       }
-    }, (error) => {
-      console.warn("⚠️ Aviso no onSnapshot do Firestore:", error.message);
-      this.setStatus("error_firebase");
+      if (window.adminManager) {
+        window.adminManager.cases = cloudCases;
+      }
+
+      // 2. Se houver caso ativo no aluno, atualiza os dados em tempo real
+      let activeCaseId = null;
+      if (window.appState) {
+        activeCaseId = window.appState.currentCaseId || (window.appState.currentCase ? window.appState.currentCase.id : null);
+      }
+      if (activeCaseId) {
+        const updated = cloudCases.find(c => c.id === activeCaseId);
+        if (updated && window.appState) {
+          window.appState.currentCase = updated;
+          if (typeof this.applyPhysicalTabLocks === "function") {
+            this.applyPhysicalTabLocks(updated);
+          }
+        }
+      }
+
+      // 3. Re-renderiza a interface do Aluno imediatamente (sem recarregar a página)
+      if (typeof window.syncAppStateAndNotify === "function") {
+        window.syncAppStateAndNotify(null, false);
+      } else if (typeof window.renderStudentCatalog === "function") {
+        window.renderStudentCatalog();
+      }
+    }
+
+    // 4. Notifica listeners registrados
+    this.dataListeners.forEach(cb => {
+      try { cb({ cases: cloudCases, isRemote: true }); } catch (e) {}
     });
+  }
+
+  // Processa atualização recebida da coleção 'disciplinas' em tempo real
+  handleRemoteDisciplinasUpdate(cloudDisc) {
+    if (!Array.isArray(cloudDisc) || cloudDisc.length === 0) return;
+
+    if (typeof window !== "undefined") {
+      if (typeof window.setDisciplinasStore === "function") {
+        window.setDisciplinasStore(cloudDisc);
+      }
+      if (window.adminManager) {
+        window.adminManager.disciplinas = cloudDisc;
+      }
+
+      if (typeof window.syncAppStateAndNotify === "function") {
+        window.syncAppStateAndNotify(null, false);
+      } else if (typeof window.renderStudentDisciplinePortal === "function") {
+        window.renderStudentDisciplinePortal();
+      }
+    }
+
+    this.dataListeners.forEach(cb => {
+      try { cb({ disciplinas: cloudDisc, isRemote: true }); } catch (e) {}
+    });
+  }
+
+  // Semeia casos padrão diretamente na coleção 'casos_clinicos'
+  async seedInitialCases() {
+    if (!this.db) return;
+    try {
+      const initialCases = (typeof window !== "undefined" && window.adminManager)
+        ? window.adminManager.cases
+        : (typeof getCases === "function" ? getCases() : []);
+      for (const c of initialCases) {
+        if (c && c.id) {
+          const caseRef = doc(this.db, COLLECTION_CASES, c.id);
+          await setDoc(caseRef, c, { merge: true });
+        }
+      }
+      console.log(`✅ [Firestore Auto-Seed] ${initialCases.length} caso(s) padrão semeado(s) em 'casos_clinicos'`);
+    } catch (e) {
+      console.warn("Aviso ao semear casos no Firestore:", e);
+    }
+  }
+
+  // Semeia disciplinas padrão diretamente na coleção 'disciplinas'
+  async seedInitialDisciplinas() {
+    if (!this.db) return;
+    try {
+      const initialDisc = (typeof window !== "undefined" && window.adminManager)
+        ? window.adminManager.disciplinas
+        : (typeof getDisciplinas === "function" ? getDisciplinas() : []);
+      for (const d of initialDisc) {
+        if (d && d.id) {
+          const discRef = doc(this.db, COLLECTION_DISCIPLINAS, d.id);
+          await setDoc(discRef, d, { merge: true });
+        }
+      }
+      console.log(`✅ [Firestore Auto-Seed] ${initialDisc.length} disciplina(s) padrão semeada(s) em 'disciplinas'`);
+    } catch (e) {
+      console.warn("Aviso ao semear disciplinas no Firestore:", e);
+    }
   }
 
   // Processa atualização recebida da nuvem e bloqueia a tela do aluno em tempo real

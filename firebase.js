@@ -5,7 +5,7 @@
  */
 
 var firebaseConfig = (typeof window !== "undefined" && window.firebaseConfig) ? window.firebaseConfig : {
-  apiKey: "sua_chave_aqui",
+  apiKey: "AIzaSyC-XzknUM5OahuO_frNkMG9uFdvZRRB0pk",
   authDomain: "simulador-dieto-e114c.firebaseapp.com",
   projectId: "simulador-dieto-e114c",
   storageBucket: "simulador-dieto-e114c.firebasestorage.app",

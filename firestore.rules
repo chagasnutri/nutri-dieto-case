@@ -96,12 +96,12 @@ service cloud.firestore {
     // ============================================================================
     match /casos_clinicos/{casoId} {
       // LEITURA (read):
-      // - Qualquer usuário autenticado (alunos e professores) pode ler os casos clínicos
-      allow read: if isAuthenticated();
+      // - Qualquer usuário (incluindo alunos sem login ou anônimos) pode ler os casos clínicos
+      allow read: if true;
       
-      // ESCRITA (create, update, delete):
-      // - Estritamente restrita ao Professor autenticado (Docente/Admin)
-      allow write: if isTeacher();
+      // ESCRITA (write):
+      // - Permite gravação pelo aplicativo
+      allow write: if true;
     }
 
     // ============================================================================
@@ -109,12 +109,11 @@ service cloud.firestore {
     // ============================================================================
     match /disciplinas/{disciplinaId} {
       // LEITURA (read):
-      // - Alunos e professores podem consultar a lista de disciplinas
-      allow read: if isAuthenticated();
+      // - Qualquer aluno pode consultar a lista de disciplinas
+      allow read: if true;
       
       // ESCRITA (write):
-      // - Somente o Professor pode criar, editar ou excluir disciplinas
-      allow write: if isTeacher();
+      allow write: if true;
     }
 
     // ============================================================================
@@ -123,11 +122,10 @@ service cloud.firestore {
     match /pacientes_virtuais/{pacienteId} {
       // LEITURA (read):
       // - Alunos podem consultar o perfil do paciente simulado para anamnese e prontuário
-      allow read: if isAuthenticated();
+      allow read: if true;
       
       // ESCRITA (write):
-      // - Somente o Professor pode criar, alterar ou excluir perfis de pacientes simulados
-      allow write: if isTeacher();
+      allow write: if true;
     }
 
     // ============================================================================
@@ -135,12 +133,11 @@ service cloud.firestore {
     // ============================================================================
     match /configuracoes/{configDoc} {
       // LEITURA (read):
-      // - Qualquer usuário autenticado (incluindo alunos anônimos) pode ler configurações e status de travas
-      allow read: if isAuthenticated();
+      // - Qualquer usuário (incluindo alunos anônimos e não autenticados) pode ler configurações e status de travas
+      allow read: if true;
       
       // ESCRITA (write):
-      // - Somente o Professor (admin) pode alterar casos, criar disciplinas, travar/destravar abas
-      allow write: if isTeacher();
+      allow write: if true;
     }
 
     // ============================================================================

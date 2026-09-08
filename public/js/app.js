@@ -270,9 +270,15 @@ document.addEventListener("DOMContentLoaded", () => {
       dietoSyncEngine.onDataUpdated(({ disciplinas, cases, isInitial, isRemote }) => {
         syncAppStateAndNotify(null, false);
         if (!isTeacherAuthenticated && !isInitial) {
-          showToast("🔄 Disciplinas, casos e travas atualizados em tempo real pelo professor!");
+          showToast("✨ Disciplinas, casos e travas atualizados em tempo real pelo professor!");
         }
       });
+      if (typeof dietoSyncEngine.init === "function") {
+        dietoSyncEngine.init(true);
+      }
+    }
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.startRealtimeListener === "function") {
+      firebaseSyncService.startRealtimeListener();
     }
 
     // Ouvinte instantâneo de alterações realizadas em outras abas ou janelas
