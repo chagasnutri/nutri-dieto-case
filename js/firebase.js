@@ -60,19 +60,67 @@ var firebaseSyncService = {
   onStatusChange(cb) { if (typeof cb === "function") cb("online_firebase"); },
   onDataChange(cb) {},
   async fetchRemoteData() {
-    const discKey = typeof STORAGE_KEY_DISCIPLINAS !== "undefined" ? STORAGE_KEY_DISCIPLINAS : "dietocase_disciplinas_v1";
-    const casesKey = typeof STORAGE_KEY_CASES !== "undefined" ? STORAGE_KEY_CASES : "dietoterapia_casos_clinicos_v1";
     return {
-      disciplinas: JSON.parse(localStorage.getItem(discKey) || "[]"),
-      cases: JSON.parse(localStorage.getItem(casesKey) || "[]")
+      disciplinas: typeof getDisciplinas === "function" ? getDisciplinas() : [],
+      cases: typeof getCases === "function" ? getCases() : []
+    };
+  },
+  async fetchCloudCollections() {
+    return {
+      disciplinas: typeof getDisciplinas === "function" ? getDisciplinas() : [],
+      cases: typeof getCases === "function" ? getCases() : []
     };
   },
   async saveEstadoAtual(disciplinas, cases) { return true; },
-  async setCaseBlockedTabs(id, tabs) { return true; },
-  async setCaseLock(id, lock) { return true; },
-  async saveCase(c) { return true; },
-  async deleteCase(id) { return true; },
-  async setCaseVisibility(id, vis) { return true; },
+  async setCaseBlockedTabs(id, tabs) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem bloquear abas.");
+      return false;
+    }
+    return true;
+  },
+  async setCaseLock(id, lock) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem alterar trava de casos.");
+      return false;
+    }
+    return true;
+  },
+  async saveCase(c) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem salvar casos.");
+      return false;
+    }
+    return true;
+  },
+  async deleteCase(id) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem excluir casos.");
+      return false;
+    }
+    return true;
+  },
+  async saveDisciplina(d) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem salvar disciplinas.");
+      return false;
+    }
+    return true;
+  },
+  async deleteDisciplina(id) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem excluir disciplinas.");
+      return false;
+    }
+    return true;
+  },
+  async setCaseVisibility(id, vis) {
+    if (!this.isTeacherUser()) {
+      console.warn("⚠️ Permissão negada: Somente professores autenticados podem alterar visibilidade.");
+      return false;
+    }
+    return true;
+  },
   ensureSimulationDataLoaded() { return true; },
   async saveAtendimentoReal(p) {
     if (!p) return false;
@@ -178,8 +226,7 @@ var firebaseSyncService = {
       return [];
     }
   },
-  async saveDisciplina(d) { return true; },
-  async deleteDisciplina(id) { return true; },
+
   applyPhysicalTabLocks(caseData) {
     if (!caseData || typeof document === "undefined") return;
     const blocked = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];

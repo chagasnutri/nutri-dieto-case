@@ -82,10 +82,56 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentCatalogFilter = "all"; // 'all', 'available', 'locked'
   let currentCatalogSearch = "";
 
+  // Funções para exibição e remoção do spinner de carregamento de dados em nuvem
+  function showCasesLoadingSpinner() {
+    const discContainer = document.getElementById("studentDisciplinesCardsContainer");
+    if (discContainer && !document.getElementById("disciplinesLoadingSpinner")) {
+      const sp = document.createElement("div");
+      sp.id = "disciplinesLoadingSpinner";
+      sp.className = "col-span-full py-12 flex flex-col items-center justify-center text-slate-500";
+      sp.innerHTML = `
+        <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-sm font-semibold text-slate-700">Carregando dados da nuvem (Firestore)...</p>
+        <span class="text-xs text-slate-400 mt-1">Sincronizando disciplinas e casos clínicos em tempo real</span>
+      `;
+      discContainer.prepend(sp);
+    }
+    const casesContainer = document.getElementById("studentCasesGrid");
+    if (casesContainer && !document.getElementById("casesLoadingSpinner")) {
+      const spCases = document.createElement("div");
+      spCases.id = "casesLoadingSpinner";
+      spCases.className = "col-span-full py-12 flex flex-col items-center justify-center text-slate-500";
+      spCases.innerHTML = `
+        <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-sm font-semibold text-slate-700">Buscando casos clínicos na nuvem...</p>
+      `;
+      casesContainer.prepend(spCases);
+    }
+  }
+
+  function hideCasesLoadingSpinner() {
+    const sp1 = document.getElementById("disciplinesLoadingSpinner");
+    if (sp1) sp1.remove();
+    const sp2 = document.getElementById("casesLoadingSpinner");
+    if (sp2) sp2.remove();
+  }
+
   // Carregamento sob demanda (lazy-loading) de disciplinas e casos simulados do Firestore
-  function ensureSimulationDataLoaded() {
+  async function ensureSimulationDataLoaded() {
     if (isSimulationDataLoaded) return;
     isSimulationDataLoaded = true;
+
+    showCasesLoadingSpinner();
+
+    try {
+      if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.fetchCloudCollections === "function") {
+        await firebaseSyncService.fetchCloudCollections();
+      }
+    } catch (errSync) {
+      console.warn("Aviso ao sincronizar dados do Firebase:", errSync);
+    } finally {
+      hideCasesLoadingSpinner();
+    }
 
     loadCasesIntoDropdown();
     renderStudentDisciplinePortal();
@@ -231,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Ouvinte instantâneo de alterações realizadas em outras abas ou janelas
     window.addEventListener("storage", (e) => {
-      if (e.key === STORAGE_KEY_CASES || e.key === STORAGE_KEY_DISCIPLINAS) {
+      if (e.key === "dietoterapia_casos_clinicos_v1" || e.key === "dietocase_disciplinas_v1") {
         console.log("⚡ Alteração sincronizada via storage event:", e.key);
         syncAppStateAndNotify();
       }

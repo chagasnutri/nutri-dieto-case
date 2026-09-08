@@ -359,14 +359,25 @@ const DEFAULT_CASES = [
   }
 ];
 
-// Salva e recupera casos e disciplinas do LocalStorage
-const STORAGE_KEY_CASES = "dietoterapia_casos_clinicos_v1";
-const STORAGE_KEY_DISCIPLINAS = "dietocase_disciplinas_v1";
-
-if (typeof window !== "undefined") {
-  window.STORAGE_KEY_CASES = STORAGE_KEY_CASES;
-  window.STORAGE_KEY_DISCIPLINAS = STORAGE_KEY_DISCIPLINAS;
-}
+// Gerenciamento e Armazenamento em Memória Global de Casos e Disciplinas
+// Migrado integralmente para o Google Cloud Firestore (SEM dependência de localStorage)
+let CASES_STORE = JSON.parse(JSON.stringify(DEFAULT_CASES));
+let DISCIPLINAS_STORE = [
+  {
+    id: "dietoterapia",
+    nome: "Dietoterapia",
+    codigo: "NUT-301",
+    icone: "🥗",
+    descricao: "Manejo dietoterápico nas patologias e doenças crônicas não transmissíveis."
+  },
+  {
+    id: "estagios",
+    nome: "Estágios Curriculares",
+    codigo: "NUT-EST",
+    icone: "🏥",
+    descricao: "Atendimento clínico supervisionado, ambulatório escola e enfermaria hospitalar."
+  }
+];
 
 // Disciplinas acadêmicas predefinidas
 const DEFAULT_DISCIPLINAS = [
@@ -387,71 +398,74 @@ const DEFAULT_DISCIPLINAS = [
 ];
 
 function getDisciplinas() {
-  const stored = localStorage.getItem(STORAGE_KEY_DISCIPLINAS);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(DEFAULT_DISCIPLINAS));
-    return DEFAULT_DISCIPLINAS;
-  }
-  try {
-    const parsed = JSON.parse(stored);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
-    return DEFAULT_DISCIPLINAS;
-  } catch (e) {
-    console.error("Erro ao carregar disciplinas do localStorage:", e);
-    return DEFAULT_DISCIPLINAS;
+  return Array.isArray(DISCIPLINAS_STORE) && DISCIPLINAS_STORE.length > 0
+    ? DISCIPLINAS_STORE
+    : DEFAULT_DISCIPLINAS;
+}
+
+function setDisciplinasStore(disciplinas) {
+  if (Array.isArray(disciplinas) && disciplinas.length > 0) {
+    DISCIPLINAS_STORE = disciplinas;
   }
 }
 
 function saveDisciplinas(disciplinas) {
-  localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(disciplinas));
+  setDisciplinasStore(disciplinas);
+  // Persistência em nuvem direta no Google Cloud Firestore (sem localStorage)
+  if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
+    firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "saveDisciplinas" });
+  }
 }
 
 function resetDefaultDisciplinas() {
-  localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(DEFAULT_DISCIPLINAS));
-  return DEFAULT_DISCIPLINAS;
+  DISCIPLINAS_STORE = JSON.parse(JSON.stringify(DEFAULT_DISCIPLINAS));
+  if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
+    firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "resetDefaultDisciplinas" });
+  }
+  return DISCIPLINAS_STORE;
 }
 
 function getCases() {
-  const stored = localStorage.getItem(STORAGE_KEY_CASES);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(DEFAULT_CASES));
-    return DEFAULT_CASES;
-  }
-  try {
-    const parsed = JSON.parse(stored);
-    // Garante que isLocked, visivel, blockedTabs, hipoteseDiagnostica e disciplinaId existam com compatibilidade retroativa
-    return parsed.map(c => {
-      const def = DEFAULT_CASES.find(d => d.id === c.id);
-      const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
-      return {
-        ...c,
-        hipoteseDiagnostica: hip,
-        history: {
-          ...(c.history || {}),
-          hipoteseDiagnostica: hip
-        },
-        isLocked: c.isLocked === true,
-        visivel: c.visivel !== false,
-        blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
-        disciplinaId: c.disciplinaId || "dietoterapia"
-      };
-    });
-  } catch (e) {
-    console.error("Erro ao carregar casos do localStorage, recarregando padrões:", e);
-    return DEFAULT_CASES;
+  const currentList = Array.isArray(CASES_STORE) && CASES_STORE.length > 0
+    ? CASES_STORE
+    : DEFAULT_CASES;
+
+  return currentList.map(c => {
+    const def = DEFAULT_CASES.find(d => d.id === c.id);
+    const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
+    return {
+      ...c,
+      hipoteseDiagnostica: hip,
+      history: {
+        ...(c.history || {}),
+        hipoteseDiagnostica: hip
+      },
+      isLocked: c.isLocked === true,
+      visivel: c.visivel !== false,
+      blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
+      disciplinaId: c.disciplinaId || "dietoterapia"
+    };
+  });
+}
+
+function setCasesStore(cases) {
+  if (Array.isArray(cases) && cases.length > 0) {
+    CASES_STORE = cases;
   }
 }
 
 function saveCases(cases) {
-  localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(cases));
+  setCasesStore(cases);
+  // Persistência em nuvem direta no Google Cloud Firestore (sem localStorage)
+  if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
+    firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "saveCases" });
+  }
 }
 
 function resetDefaultCases() {
-  localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(DEFAULT_CASES));
+  CASES_STORE = JSON.parse(JSON.stringify(DEFAULT_CASES));
   resetDefaultDisciplinas();
-  return DEFAULT_CASES;
+  return CASES_STORE;
 }
 
 // Catálogo de modelos predefinidos de profissionais para adição rápida
@@ -518,5 +532,13 @@ if (typeof window !== "undefined") {
   window.PROFESSIONAL_PRESETS = PROFESSIONAL_PRESETS;
   window.normalizeEquipeMultiprofissional = normalizeEquipeMultiprofissional;
   window.TACO_FOODS_DATABASE = TACO_FOODS_DATABASE;
+  window.getCases = getCases;
+  window.saveCases = saveCases;
+  window.getDisciplinas = getDisciplinas;
+  window.saveDisciplinas = saveDisciplinas;
+  window.setCasesStore = setCasesStore;
+  window.setDisciplinasStore = setDisciplinasStore;
+  window.CASES_STORE = CASES_STORE;
+  window.DISCIPLINAS_STORE = DISCIPLINAS_STORE;
 }
 

@@ -33,18 +33,16 @@ class DietoSyncEngine {
     });
   }
 
-  // Notifica os ouvintes a partir dos dados locais
+  // Notifica os ouvintes a partir dos dados em memória
   notifyDataListenersFromStorage() {
     try {
-      const rawCases = localStorage.getItem(STORAGE_KEY_CASES);
-      const rawDisc = localStorage.getItem(STORAGE_KEY_DISCIPLINAS);
-      if (rawCases && rawDisc) {
-        const cases = JSON.parse(rawCases);
-        const disciplinas = JSON.parse(rawDisc);
+      const cases = typeof getCases === "function" ? getCases() : [];
+      const disciplinas = typeof getDisciplinas === "function" ? getDisciplinas() : [];
+      if (cases.length > 0 || disciplinas.length > 0) {
         this.notifyDataListeners({ disciplinas, cases, isInitial: false, isRemote: false });
       }
     } catch (e) {
-      console.error("Erro ao ler dados locais para sincronização:", e);
+      console.error("Erro ao ler dados para sincronização:", e);
     }
   }
 
@@ -110,16 +108,18 @@ class DietoSyncEngine {
     });
   }
 
-  // Busca dados diretamente do Firestore (ou cache local) sem qualquer chamada fetch HTTP
+  // Busca dados diretamente do Firestore (ou memória) sem qualquer chamada fetch HTTP
   async pullFromServer(isInitial = false) {
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
       const remote = await firebaseSyncService.fetchRemoteData();
       if (remote && Array.isArray(remote.disciplinas) && Array.isArray(remote.cases)) {
-        if (remote.disciplinas.length > 0) {
-          localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(remote.disciplinas));
-        }
-        if (remote.cases.length > 0) {
-          localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(remote.cases));
+        if (typeof window !== "undefined") {
+          if (typeof window.setDisciplinasStore === "function" && remote.disciplinas.length > 0) {
+            window.setDisciplinasStore(remote.disciplinas);
+          }
+          if (typeof window.setCasesStore === "function" && remote.cases.length > 0) {
+            window.setCasesStore(remote.cases);
+          }
         }
         this.notifyDataListeners({ disciplinas: remote.disciplinas, cases: remote.cases, isInitial, isRemote: true });
         return { success: true, serverOnline: true };
@@ -143,12 +143,14 @@ class DietoSyncEngine {
 
     this.setStatus("syncing");
 
-    // Atualiza o cache local imediatamente por segurança
-    if (Array.isArray(disciplinas)) {
-      localStorage.setItem(STORAGE_KEY_DISCIPLINAS, JSON.stringify(disciplinas));
-    }
-    if (Array.isArray(cases)) {
-      localStorage.setItem(STORAGE_KEY_CASES, JSON.stringify(cases));
+    // Atualiza as stores em memória
+    if (typeof window !== "undefined") {
+      if (Array.isArray(disciplinas) && typeof window.setDisciplinasStore === "function") {
+        window.setDisciplinasStore(disciplinas);
+      }
+      if (Array.isArray(cases) && typeof window.setCasesStore === "function") {
+        window.setCasesStore(cases);
+      }
     }
 
     if (this.broadcastChannel) {

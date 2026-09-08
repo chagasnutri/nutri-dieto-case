@@ -2808,6 +2808,132 @@ Questões Avaliativas:
         "app.js configura registro do Service Worker com skipWaiting: true e clientsClaim: true");
       assert(appJsSource.includes("controllerchange") && appJsSource.includes("window.location.reload()"),
         "app.js escuta evento controllerchange para recarregar automaticamente a aplicação após novo deploy");
+
+      // 124. Teste de Eliminação Total de localStorage no Gerenciamento do Professor (Casos e Disciplinas)
+      localStorage.removeItem("dietoterapia_casos_clinicos_v1");
+      localStorage.removeItem("dietocase_disciplinas_v1");
+      localStorage.removeItem("dietocase_cases_data");
+      localStorage.removeItem("dietocase_disciplinas_data");
+
+      const casosAtuais = getCases();
+      const discAtuais = getDisciplinas();
+      assert(Array.isArray(casosAtuais) && casosAtuais.length > 0, "Casos clínicos disponíveis em memória via CASES_STORE");
+      assert(Array.isArray(discAtuais) && discAtuais.length > 0, "Disciplinas acadêmicas disponíveis em memória via DISCIPLINAS_STORE");
+
+      saveCases(casosAtuais);
+      saveDisciplinas(discAtuais);
+
+      assert(localStorage.getItem("dietoterapia_casos_clinicos_v1") === null,
+        "saveCases NÃO grava no localStorage (migrado 100% para memória/nuvem)");
+      assert(localStorage.getItem("dietocase_disciplinas_v1") === null,
+        "saveDisciplinas NÃO grava no localStorage (migrado 100% para memória/nuvem)");
+      assert(localStorage.getItem("dietocase_cases_data") === null,
+        "Nenhuma chave legada de casos ('dietocase_cases_data') é gravada no localStorage");
+      assert(localStorage.getItem("dietocase_disciplinas_data") === null,
+        "Nenhuma chave legada de disciplinas ('dietocase_disciplinas_data') é gravada no localStorage");
+
+      // 125. Varredura Estática no Código de cases-data.js e firebase-sync.js (Sem localStorage para Casos/Disciplinas)
+      let casesDataJsSource = "";
+      let firebaseSyncJsSource = "";
+      try {
+        const xhrCd = new XMLHttpRequest();
+        xhrCd.open("GET", "js/cases-data.js", false);
+        xhrCd.send();
+        casesDataJsSource = xhrCd.responseText || "";
+      } catch (e) {}
+
+      try {
+        const xhrFs = new XMLHttpRequest();
+        xhrFs.open("GET", "js/firebase-sync.js", false);
+        xhrFs.send();
+        firebaseSyncJsSource = xhrFs.responseText || "";
+      } catch (e) {}
+
+      assert(!casesDataJsSource.includes('localStorage.setItem("dietoterapia_casos_clinicos'),
+        "js/cases-data.js não possui localStorage.setItem para casos clínicos");
+      assert(!casesDataJsSource.includes('localStorage.setItem("dietocase_disciplinas'),
+        "js/cases-data.js não possui localStorage.setItem para disciplinas");
+      assert(!firebaseSyncJsSource.includes('localStorage.setItem("dietoterapia_casos_clinicos'),
+        "js/firebase-sync.js não possui localStorage.setItem para casos clínicos");
+      assert(!firebaseSyncJsSource.includes('localStorage.setItem("dietocase_disciplinas'),
+        "js/firebase-sync.js não possui localStorage.setItem para disciplinas");
+
+      // 126. Validação das Coleções Dedicadas do Firestore no firestore.rules
+      let rulesSource = "";
+      try {
+        const xhrRules = new XMLHttpRequest();
+        xhrRules.open("GET", "firestore.rules", false);
+        xhrRules.send();
+        rulesSource = xhrRules.responseText || "";
+      } catch (e) {}
+
+      assert(rulesSource.includes("match /casos_clinicos/{casoId}"),
+        "firestore.rules define a coleção dedicada 'casos_clinicos'");
+      assert(rulesSource.includes("match /disciplinas/{disciplinaId}"),
+        "firestore.rules define a coleção dedicada 'disciplinas'");
+      assert(rulesSource.includes("match /pacientes_virtuais/{pacienteId}"),
+        "firestore.rules define a coleção dedicada 'pacientes_virtuais'");
+      assert(rulesSource.includes("match /configuracoes/{configDoc}"),
+        "firestore.rules define a coleção dedicada 'configuracoes'");
+
+      assert(rulesSource.includes("allow read: if isAuthenticated();") && rulesSource.includes("allow write: if isTeacher();"),
+        "firestore.rules restringe estritamente escrita das coleções ao professor docente (isTeacher)");
+
+      // 127. Validação de Permissões de Acesso (Aluno em Read-Only / Escrita Exclusiva do Professor)
+      await firebaseSyncService.logoutTeacher();
+      assert(firebaseSyncService.isTeacherUser() === false,
+        "Usuário aluno não-autenticado possui status isTeacherUser() == false");
+
+      const blockedCaseSave = await firebaseSyncService.saveCase({ id: "teste-aluno-bloq", title: "Tentativa Bloqueada" });
+      assert(blockedCaseSave === false,
+        "Aluno é impedido de salvar casos (Read-Only ativo): retorno falso");
+
+      const blockedCaseDelete = await firebaseSyncService.deleteCase("caso-dm2-has");
+      assert(blockedCaseDelete === false,
+        "Aluno é impedido de excluir casos: retorno falso");
+
+      const blockedDiscSave = await firebaseSyncService.saveDisciplina({ id: "teste-disc-bloq", nome: "Tentativa Bloqueada" });
+      assert(blockedDiscSave === false,
+        "Aluno é impedido de criar ou salvar disciplinas: retorno falso");
+
+      const blockedDiscDelete = await firebaseSyncService.deleteDisciplina("dietoterapia");
+      assert(blockedDiscDelete === false,
+        "Aluno é impedido de excluir disciplinas: retorno falso");
+
+      const blockedLock = await firebaseSyncService.setCaseLock("caso-dm2-has", true);
+      assert(blockedLock === false,
+        "Aluno é impedido de travar ou destravar casos: retorno falso");
+
+      const blockedTabs = await firebaseSyncService.setCaseBlockedTabs("caso-dm2-has", ["anamnese"]);
+      assert(blockedTabs === false,
+        "Aluno é impedido de bloquear abas de casos: retorno falso");
+
+      // Autentica como professor e valida liberação
+      const loginProf = await firebaseSyncService.loginTeacher("prof@dietocase.edu.br", "Nutri2@26");
+      assert(loginProf.success === true && firebaseSyncService.isTeacherUser() === true,
+        "Professor autenticado com sucesso via credencial docente Nutri2@26");
+
+      const profCaseSave = await firebaseSyncService.saveCase({ id: "teste-prof-perm", title: "Caso Salvo pelo Docente" });
+      assert(profCaseSave === true,
+        "Professor autenticado tem permissão liberada para salvar casos");
+
+      // 128. Validação do Método fetchCloudCollections e Leitura Global em Nuvem
+      assert(typeof firebaseSyncService.fetchCloudCollections === "function",
+        "firebaseSyncService expõe método fetchCloudCollections() para sincronização direta das coleções");
+
+      const cloudData = await firebaseSyncService.fetchCloudCollections();
+      assert(cloudData && Array.isArray(cloudData.cases) && Array.isArray(cloudData.disciplinas),
+        "fetchCloudCollections() retorna com sucesso objetos com arrays de cases e disciplinas");
+
+      // 129. Validação de Estados de Carregamento (Loading Spinners) durante Busca na Nuvem
+      assert(appJsSource.includes("showCasesLoadingSpinner") && appJsSource.includes("hideCasesLoadingSpinner"),
+        "js/app.js implementa funções showCasesLoadingSpinner() e hideCasesLoadingSpinner()");
+      assert(appJsSource.includes("disciplinesLoadingSpinner") && appJsSource.includes("animate-spin"),
+        "js/app.js cria spinner animado ('disciplinesLoadingSpinner') no portal de disciplinas durante fetch");
+      assert(appJsSource.includes("casesLoadingSpinner") && appJsSource.includes("animate-spin"),
+        "js/app.js cria spinner animado ('casesLoadingSpinner') no grid de casos durante sincronização da nuvem");
+      assert(appJsSource.includes("await firebaseSyncService.fetchCloudCollections()"),
+        "ensureSimulationDataLoaded() consome dados diretamente do Firestore via fetchCloudCollections()");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

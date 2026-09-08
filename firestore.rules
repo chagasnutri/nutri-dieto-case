@@ -92,11 +92,50 @@ service cloud.firestore {
     }
 
     // ============================================================================
-    // COLEÇÃO: CONFIGURAÇÕES ACADÊMICAS (Disciplinas, Casos Clínicos e Bloqueios)
+    // COLEÇÃO: CASOS CLÍNICOS (Banco de Casos do Professor em Nuvem)
+    // ============================================================================
+    match /casos_clinicos/{casoId} {
+      // LEITURA (read):
+      // - Qualquer usuário autenticado (alunos e professores) pode ler os casos clínicos
+      allow read: if isAuthenticated();
+      
+      // ESCRITA (create, update, delete):
+      // - Estritamente restrita ao Professor autenticado (Docente/Admin)
+      allow write: if isTeacher();
+    }
+
+    // ============================================================================
+    // COLEÇÃO: DISCIPLINAS (Disciplinas Acadêmicas em Nuvem)
+    // ============================================================================
+    match /disciplinas/{disciplinaId} {
+      // LEITURA (read):
+      // - Alunos e professores podem consultar a lista de disciplinas
+      allow read: if isAuthenticated();
+      
+      // ESCRITA (write):
+      // - Somente o Professor pode criar, editar ou excluir disciplinas
+      allow write: if isTeacher();
+    }
+
+    // ============================================================================
+    // COLEÇÃO: PACIENTES VIRTUAIS (Perfis dos Pacientes Simulados em Nuvem)
+    // ============================================================================
+    match /pacientes_virtuais/{pacienteId} {
+      // LEITURA (read):
+      // - Alunos podem consultar o perfil do paciente simulado para anamnese e prontuário
+      allow read: if isAuthenticated();
+      
+      // ESCRITA (write):
+      // - Somente o Professor pode criar, alterar ou excluir perfis de pacientes simulados
+      allow write: if isTeacher();
+    }
+
+    // ============================================================================
+    // COLEÇÃO: CONFIGURAÇÕES ACADÊMICAS (Módulos, Travas e Estado Geral)
     // ============================================================================
     match /configuracoes/{configDoc} {
       // LEITURA (read):
-      // - Qualquer usuário autenticado (incluindo alunos anônimos) pode ler o catálogo de casos, disciplinas e status de travas
+      // - Qualquer usuário autenticado (incluindo alunos anônimos) pode ler configurações e status de travas
       allow read: if isAuthenticated();
       
       // ESCRITA (write):
