@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await firebaseSyncService.fetchCloudCollections();
       }
     } catch (errSync) {
-      console.warn("Aviso ao sincronizar dados do Firebase:", errSync);
+      console.error("❌ [App ERROR em ensureSimulationDataLoaded] Falha ao sincronizar casos do Firebase:", errSync);
     } finally {
       hideCasesLoadingSpinner();
     }
@@ -6652,17 +6652,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Botão Salvar Caso no Editor
     document.getElementById("adminSaveCaseBtn").addEventListener("click", () => {
-      let savedCase = readCaseFromAdminEditor();
-      if (!savedCase.title) {
-        alert("Por favor, preencha o título do caso.");
-        return;
+      try {
+        let savedCase = readCaseFromAdminEditor();
+        if (!savedCase.title) {
+          alert("Por favor, preencha o título do caso.");
+          return;
+        }
+        if (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase) {
+          savedCase = ClinicalPortugueseReviser.reviewCase(savedCase);
+        }
+        adminManager.saveCase(savedCase);
+        closeAdminEditor();
+        syncAppStateAndNotify("✨ Caso clínico salvo e atualizado para os alunos!");
+      } catch (errSave) {
+        console.error("❌ [App ERROR ao salvar caso clínico no Painel do Professor]:", errSave);
+        alert("Erro ao salvar caso clínico: " + (errSave.message || errSave));
       }
-      if (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase) {
-        savedCase = ClinicalPortugueseReviser.reviewCase(savedCase);
-      }
-      adminManager.saveCase(savedCase);
-      closeAdminEditor();
-      syncAppStateAndNotify("✨ Caso clínico salvo e atualizado para os alunos!");
     });
 
     // Botão Revisar Português & Verbos no Editor

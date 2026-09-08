@@ -426,26 +426,31 @@ function resetDefaultDisciplinas() {
 }
 
 function getCases() {
-  const currentList = Array.isArray(CASES_STORE) && CASES_STORE.length > 0
-    ? CASES_STORE
-    : DEFAULT_CASES;
+  try {
+    const currentList = Array.isArray(CASES_STORE) && CASES_STORE.length > 0
+      ? CASES_STORE
+      : DEFAULT_CASES;
 
-  return currentList.map(c => {
-    const def = DEFAULT_CASES.find(d => d.id === c.id);
-    const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
-    return {
-      ...c,
-      hipoteseDiagnostica: hip,
-      history: {
-        ...(c.history || {}),
-        hipoteseDiagnostica: hip
-      },
-      isLocked: c.isLocked === true,
-      visivel: c.visivel !== false,
-      blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
-      disciplinaId: c.disciplinaId || "dietoterapia"
-    };
-  });
+    return currentList.map(c => {
+      const def = DEFAULT_CASES.find(d => d.id === c.id);
+      const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
+      return {
+        ...c,
+        hipoteseDiagnostica: hip,
+        history: {
+          ...(c.history || {}),
+          hipoteseDiagnostica: hip
+        },
+        isLocked: c.isLocked === true,
+        visivel: c.visivel !== false,
+        blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
+        disciplinaId: c.disciplinaId || "dietoterapia"
+      };
+    });
+  } catch (err) {
+    console.error("❌ [cases-data ERROR em getCases]:", err);
+    return DEFAULT_CASES;
+  }
 }
 
 function setCasesStore(cases) {
@@ -455,10 +460,16 @@ function setCasesStore(cases) {
 }
 
 function saveCases(cases) {
-  setCasesStore(cases);
-  // Persistência em nuvem direta no Google Cloud Firestore (sem localStorage)
-  if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
-    firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "saveCases" });
+  try {
+    setCasesStore(cases);
+    // Persistência em nuvem direta no Google Cloud Firestore (sem localStorage)
+    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
+      firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "saveCases" }).catch(err => {
+        console.error("❌ [cases-data ERROR ao salvar casos no Firestore]:", err);
+      });
+    }
+  } catch (err) {
+    console.error("❌ [cases-data ERROR em saveCases]:", err);
   }
 }
 

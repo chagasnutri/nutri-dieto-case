@@ -153,39 +153,48 @@ class AdminManager {
   }
 
   saveCase(caseData) {
-    this.refreshCases();
-    // Sempre revisa o português e adequa os tempos verbais antes de persistir o caso clínico
-    const reviewedCase = (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase)
-      ? ClinicalPortugueseReviser.reviewCase(caseData)
-      : caseData;
+    try {
+      this.refreshCases();
+      // Sempre revisa o português e adequa os tempos verbais antes de persistir o caso clínico
+      const reviewedCase = (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase)
+        ? ClinicalPortugueseReviser.reviewCase(caseData)
+        : caseData;
 
-    reviewedCase.blockedTabs = Array.isArray(reviewedCase.blockedTabs) ? reviewedCase.blockedTabs : [];
-    reviewedCase.isLocked = reviewedCase.isLocked === true;
-    reviewedCase.visivel = reviewedCase.visivel !== false;
-    reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
+      reviewedCase.blockedTabs = Array.isArray(reviewedCase.blockedTabs) ? reviewedCase.blockedTabs : [];
+      reviewedCase.isLocked = reviewedCase.isLocked === true;
+      reviewedCase.visivel = reviewedCase.visivel !== false;
+      reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
 
-    const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
-    if (existingIndex >= 0) {
-      this.cases[existingIndex] = reviewedCase;
-    } else {
-      this.cases.push(reviewedCase);
+      const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
+      if (existingIndex >= 0) {
+        this.cases[existingIndex] = reviewedCase;
+      } else {
+        this.cases.push(reviewedCase);
+      }
+      saveCases(this.cases);
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+        firebaseSyncService.saveCase(reviewedCase);
+      }
+      this.triggerServerSync();
+      return reviewedCase;
+    } catch (err) {
+      console.error("❌ [AdminManager ERROR em saveCase]:", err);
+      return caseData;
     }
-    saveCases(this.cases);
-    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.saveCase(reviewedCase);
-    }
-    this.triggerServerSync();
-    return reviewedCase;
   }
 
   deleteCase(id) {
-    this.refreshCases();
-    this.cases = this.cases.filter(c => c.id !== id);
-    saveCases(this.cases);
-    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.deleteCase(id);
+    try {
+      this.refreshCases();
+      this.cases = this.cases.filter(c => c.id !== id);
+      saveCases(this.cases);
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+        firebaseSyncService.deleteCase(id);
+      }
+      this.triggerServerSync();
+    } catch (err) {
+      console.error("❌ [AdminManager ERROR em deleteCase]:", err);
     }
-    this.triggerServerSync();
   }
 
   duplicateCase(id) {

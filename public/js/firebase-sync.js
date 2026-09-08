@@ -270,10 +270,10 @@ class FirebaseSyncService {
           this.seedInitialCases();
         }
       }, (error) => {
-        console.warn("⚠️ Aviso no onSnapshot de casos_clinicos:", error.message);
+        console.error("❌ [Firestore onSnapshot ERROR em casos_clinicos] Erro de permissão ou conexão:", error);
       });
     } catch (errCases) {
-      console.warn("Erro ao configurar onSnapshot de casos_clinicos:", errCases);
+      console.error("❌ [Firestore ERROR ao configurar onSnapshot de casos_clinicos]:", errCases);
     }
 
     // 2. Escuta em tempo real na coleção 'disciplinas'
@@ -301,7 +301,7 @@ class FirebaseSyncService {
         console.warn("⚠️ Aviso no onSnapshot de disciplinas:", error.message);
       });
     } catch (errDisc) {
-      console.warn("Erro ao configurar onSnapshot de disciplinas:", errDisc);
+      console.error("âŒ [Firestore ERROR ao configurar onSnapshot de disciplinas]:", errDisc);
     }
 
     // 3. Escuta no documento configuracoes/estado_atual (para travas e configurações globais)
@@ -321,7 +321,7 @@ class FirebaseSyncService {
         this.setStatus("error_firebase");
       });
     } catch (errConfig) {
-      console.warn("Erro ao configurar onSnapshot de configuracoes/estado_atual:", errConfig);
+      console.error("âŒ [Firestore ERROR ao configurar onSnapshot de configuracoes/estado_atual]:", errConfig);
     }
   }
 
@@ -406,7 +406,7 @@ class FirebaseSyncService {
       }
       console.log(`✅ [Firestore Auto-Seed] ${initialCases.length} caso(s) padrão semeado(s) em 'casos_clinicos'`);
     } catch (e) {
-      console.warn("Aviso ao semear casos no Firestore:", e);
+      console.error("âŒ [Firestore ERROR em seedInitialCases] Falha ao semear casos no Firestore:", e);
     }
   }
 
@@ -425,7 +425,7 @@ class FirebaseSyncService {
       }
       console.log(`✅ [Firestore Auto-Seed] ${initialDisc.length} disciplina(s) padrão semeada(s) em 'disciplinas'`);
     } catch (e) {
-      console.warn("Aviso ao semear disciplinas no Firestore:", e);
+      console.error("âŒ [Firestore ERROR em seedInitialDisciplinas] Falha ao semear disciplinas no Firestore:", e);
     }
   }
 
@@ -732,14 +732,19 @@ class FirebaseSyncService {
           updatedAt: new Date().toISOString()
         };
         await setDoc(pacienteRef, pacienteData, { merge: true });
-        console.log(`☁️ [Firestore] Caso '${caseData.id}' salvo em '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
+        console.log(`✅ [Firestore] Caso '${caseData.id}' salvo em '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
       } catch (e) {
-        console.warn("Aviso ao salvar caso nas coleções dedicadas do Firestore:", e);
+        console.error("❌ [Firestore ERROR em saveCase] Falha ao salvar caso nas coleções dedicadas do Firestore (verifique permissões):", e);
       }
     }
 
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "saveCase", caseId: caseData.id });
+    try {
+      const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      return await this.saveEstadoAtual(disciplinas, cases, { action: "saveCase", caseId: caseData.id });
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em saveCase:saveEstadoAtual] Falha ao atualizar estado consolidado:", e);
+      return false;
+    }
   }
 
   // Aba do Professor: Excluir caso (remover de 'casos_clinicos' e 'pacientes_virtuais')
@@ -762,14 +767,19 @@ class FirebaseSyncService {
 
         const pacienteRef = doc(this.db, COLLECTION_PACIENTES, caseId);
         await deleteDoc(pacienteRef);
-        console.log(`☁️ [Firestore] Caso '${caseId}' removido de '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
+        console.log(`✅ [Firestore] Caso '${caseId}' removido de '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
       } catch (e) {
-        console.warn("Aviso ao excluir caso nas coleções dedicadas do Firestore:", e);
+        console.error("❌ [Firestore ERROR em deleteCase] Falha ao excluir caso clínico nas coleções dedicadas do Firestore:", e);
       }
     }
 
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteCase", caseId });
+    try {
+      const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteCase", caseId });
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em deleteCase:saveEstadoAtual] Falha ao excluir do estado consolidado:", e);
+      return false;
+    }
   }
 
   // Aba do Professor: Salvar disciplina (salvar em 'disciplinas')
@@ -1068,7 +1078,7 @@ class FirebaseSyncService {
         return { disciplinas: disc, cases: cList };
       }
     } catch (err) {
-      console.warn("⚠️ Aviso ao buscar coleções dedicadas do Firestore:", err.message);
+      console.error("❌ [Firestore ERROR em fetchCloudCollections] Erro ao buscar casos clínicos/disciplinas do Firestore (verifique permissões ou conexão):", err);
     }
 
     return {
@@ -1087,7 +1097,7 @@ class FirebaseSyncService {
         return snap.data();
       }
     } catch (e) {
-      console.warn("Aviso ao buscar estado no Firestore:", e.message);
+      console.error("âŒ [Firestore ERROR em fetchRemoteData] Erro ao buscar estado no Firestore:", e);
     }
     return null;
   }
