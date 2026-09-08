@@ -1,5 +1,5 @@
 // DietoCase Service Worker - Offline & PWA Support
-const CACHE_NAME = 'dietocase-pwa-v6';
+const CACHE_NAME = 'dietocase-pwa-v7';
 
 // Configurações do PWA para forçar atualização automática de cache no cliente
 const pwaConfig = {
@@ -82,13 +82,21 @@ self.addEventListener('message', (event) => {
 });
 
 // Estratégia Stale-While-Revalidate com fallback para cache
-// Ignora conexões do Firebase Firestore para não interferir com o onSnapshot em tempo real
+// Prevenção de Cache Agressivo no PWA: não interceptar conexões do Firebase/Firestore/Google APIs
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
 
-  // Não interceptar requisições em tempo real do Firestore
-  if (url.includes('firestore.googleapis.com') || url.includes('google.firestore')) {
+  // Não interceptar requisições em tempo real e APIs do Firebase/Google
+  if (
+    url.includes('firestore.googleapis.com') ||
+    url.includes('google.firestore') ||
+    url.includes('firebase') ||
+    url.includes('googleapis.com') ||
+    url.includes('identitytoolkit') ||
+    url.includes('securetoken') ||
+    url.includes('firebaseio.com')
+  ) {
     return;
   }
   

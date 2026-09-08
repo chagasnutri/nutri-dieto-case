@@ -281,13 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
       firebaseSyncService.startRealtimeListener();
     }
 
-    // Ouvinte instantâneo de alterações realizadas em outras abas ou janelas
-    window.addEventListener("storage", (e) => {
-      if (e.key === "dietoterapia_casos_clinicos_v1" || e.key === "dietocase_disciplinas_v1") {
-        console.log("⚡ Alteração sincronizada via storage event:", e.key);
-        syncAppStateAndNotify();
-      }
-    });
+
 
     // Suporte a parâmetro de visualização na URL (ex: ?view=simulation, ?view=password, ?view=admin, ?view=upload)
     const urlParams = new URLSearchParams(window.location.search);
@@ -6650,8 +6644,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Botão Salvar Caso no Editor
-    document.getElementById("adminSaveCaseBtn").addEventListener("click", () => {
+    // Botão Salvar Caso no Editor (Persistência em Nuvem Firestore)
+    document.getElementById("adminSaveCaseBtn").addEventListener("click", async () => {
+      const saveBtn = document.getElementById("adminSaveCaseBtn");
+      const originalHtml = saveBtn ? saveBtn.innerHTML : "";
       try {
         let savedCase = readCaseFromAdminEditor();
         if (!savedCase.title) {
@@ -6661,12 +6657,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase) {
           savedCase = ClinicalPortugueseReviser.reviewCase(savedCase);
         }
-        adminManager.saveCase(savedCase);
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = "<span>Salvando na Nuvem...</span>";
+        }
+        await adminManager.saveCase(savedCase);
         closeAdminEditor();
         syncAppStateAndNotify("✨ Caso clínico salvo e atualizado para os alunos!");
       } catch (errSave) {
         console.error("❌ [App ERROR ao salvar caso clínico no Painel do Professor]:", errSave);
-        alert("Erro ao salvar caso clínico: " + (errSave.message || errSave));
+        alert("Erro ao salvar caso clínico no Firestore: " + (errSave.message || errSave));
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml || "<span>Salvar Caso Clínico</span>";
+        }
       }
     });
 
@@ -6999,7 +7004,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Confirmação de exclusão da disciplina no modal inteligente
     const confirmDelBtn = document.getElementById("adminConfirmDeleteDiscBtn");
     if (confirmDelBtn) {
-      confirmDelBtn.addEventListener("click", () => {
+      confirmDelBtn.addEventListener("click", async () => {
         const currentDisc = adminManager.getDisciplinaById(adminManager.activeDisciplinaId);
         if (!currentDisc) return;
 
@@ -7016,13 +7021,23 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        const res = adminManager.deleteDisciplina(currentDisc.id, options);
-        document.getElementById("adminDeleteDisciplineModal")?.classList.add("hidden");
+        confirmDelBtn.disabled = true;
+        confirmDelBtn.textContent = "Excluindo...";
+        try {
+          const res = await adminManager.deleteDisciplina(currentDisc.id, options);
+          document.getElementById("adminDeleteDisciplineModal")?.classList.add("hidden");
 
-        if (!res.success) {
-          alert(res.message);
-        } else {
-          syncAppStateAndNotify(res.message);
+          if (!res.success) {
+            alert(res.message);
+          } else {
+            syncAppStateAndNotify(res.message);
+          }
+        } catch (errDel) {
+          console.error("Erro ao excluir disciplina:", errDel);
+          alert("Erro ao excluir disciplina no Firestore: " + (errDel.message || errDel));
+        } finally {
+          confirmDelBtn.disabled = false;
+          confirmDelBtn.textContent = "Confirmar Exclusão";
         }
       });
     }
@@ -7041,7 +7056,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const discForm = document.getElementById("adminDisciplineForm");
     if (discForm) {
-      discForm.addEventListener("submit", (e) => {
+      discForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const id = document.getElementById("adminDisciplineId").value;
         const nome = document.getElementById("adminDisciplineName").value.trim();
@@ -7054,17 +7069,33 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        let msg = "";
-        if (id) {
-          adminManager.updateDisciplina(id, { nome, codigo, icone, descricao });
-          msg = `Disciplina "${nome}" atualizada com sucesso!`;
-        } else {
-          const created = adminManager.createDisciplina({ nome, codigo, icone, descricao });
-          msg = `Disciplina "${created.nome}" criada com sucesso!`;
+        const submitBtn = discForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Salvando...";
         }
 
-        document.getElementById("adminDisciplineModal").classList.add("hidden");
-        syncAppStateAndNotify(msg);
+        try {
+          let msg = "";
+          if (id) {
+            await adminManager.updateDisciplina(id, { nome, codigo, icone, descricao });
+            msg = `Disciplina "${nome}" atualizada com sucesso!`;
+          } else {
+            const created = await adminManager.createDisciplina({ nome, codigo, icone, descricao });
+            msg = `Disciplina "${created.nome}" criada com sucesso!`;
+          }
+
+          document.getElementById("adminDisciplineModal").classList.add("hidden");
+          syncAppStateAndNotify(msg);
+        } catch (errDisc) {
+          console.error("Erro ao salvar disciplina:", errDisc);
+          alert("Erro ao salvar disciplina no Firestore: " + (errDisc.message || errDisc));
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Salvar Disciplina";
+          }
+        }
       });
     }
 
@@ -7610,23 +7641,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Listeners do botão Ocultar / Mostrar caso (Visibilidade)
     container.querySelectorAll(".adm-vis-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const btnEl = e.currentTarget || e.target.closest(".adm-vis-btn");
         const id = btnEl?.dataset?.id;
         if (!id) return;
-        const isNowVisible = adminManager.toggleCaseVisibility(id);
-        syncAppStateAndNotify(isNowVisible ? "Caso agora visível para os alunos!" : "Caso ocultado para os alunos!");
+        try {
+          btnEl.disabled = true;
+          const isNowVisible = await adminManager.toggleCaseVisibility(id);
+          syncAppStateAndNotify(isNowVisible ? "Caso agora visível para os alunos!" : "Caso ocultado para os alunos!");
+        } catch (errVis) {
+          console.error("Erro ao alterar visibilidade:", errVis);
+          alert("Erro ao alterar visibilidade no Firestore: " + (errVis.message || errVis));
+        } finally {
+          btnEl.disabled = false;
+        }
       });
     });
 
     // Listeners do botão Travar / Liberar caso
     container.querySelectorAll(".adm-lock-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const btnEl = e.currentTarget || e.target.closest(".adm-lock-btn");
         const id = btnEl?.dataset?.id;
         if (!id) return;
-        const isNowLocked = adminManager.toggleCaseLock(id);
-        syncAppStateAndNotify(isNowLocked ? "Caso travado (bloqueado para os alunos)!" : "Caso liberado para os alunos com sucesso!");
+        try {
+          btnEl.disabled = true;
+          const isNowLocked = await adminManager.toggleCaseLock(id);
+          syncAppStateAndNotify(isNowLocked ? "Caso travado (bloqueado para os alunos)!" : "Caso liberado para os alunos com sucesso!");
+        } catch (errLock) {
+          console.error("Erro ao alterar trava do caso:", errLock);
+          alert("Erro ao alterar trava no Firestore: " + (errLock.message || errLock));
+        } finally {
+          btnEl.disabled = false;
+        }
       });
     });
 
@@ -7646,23 +7693,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     container.querySelectorAll(".adm-dup-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const btnEl = e.currentTarget || e.target.closest(".adm-dup-btn");
         const id = btnEl?.dataset?.id;
         if (!id) return;
-        adminManager.duplicateCase(id);
-        syncAppStateAndNotify("Caso duplicado com sucesso!");
+        try {
+          btnEl.disabled = true;
+          await adminManager.duplicateCase(id);
+          syncAppStateAndNotify("Caso duplicado com sucesso!");
+        } catch (errDup) {
+          console.error("Erro ao duplicar caso:", errDup);
+          alert("Erro ao duplicar caso no Firestore: " + (errDup.message || errDup));
+        } finally {
+          btnEl.disabled = false;
+        }
       });
     });
 
     container.querySelectorAll(".adm-del-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const btnEl = e.currentTarget || e.target.closest(".adm-del-btn");
         const id = btnEl?.dataset?.id;
         if (!id) return;
         if (confirm("Tem certeza que deseja excluir este caso clínico?")) {
-          adminManager.deleteCase(id);
-          syncAppStateAndNotify("Caso clínico excluído com sucesso.");
+          try {
+            btnEl.disabled = true;
+            btnEl.textContent = "Excluindo...";
+            await adminManager.deleteCase(id);
+            syncAppStateAndNotify("Caso clínico excluído com sucesso.");
+          } catch (errDel) {
+            console.error("❌ Erro ao excluir caso clínico:", errDel);
+            alert("Erro ao excluir caso no Firestore: " + (errDel.message || errDel));
+            syncAppStateAndNotify();
+          }
         }
       });
     });

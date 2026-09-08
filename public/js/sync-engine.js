@@ -110,20 +110,45 @@ class DietoSyncEngine {
 
   // Busca dados diretamente do Firestore (ou memória) sem qualquer chamada fetch HTTP
   async pullFromServer(isInitial = false) {
+    let discToNotify = null;
+    let casesToNotify = null;
+
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
       const remote = await firebaseSyncService.fetchRemoteData();
       if (remote && Array.isArray(remote.disciplinas) && Array.isArray(remote.cases)) {
-        if (typeof window !== "undefined") {
-          if (typeof window.setDisciplinasStore === "function" && remote.disciplinas.length > 0) {
-            window.setDisciplinasStore(remote.disciplinas);
-          }
-          if (typeof window.setCasesStore === "function" && remote.cases.length > 0) {
-            window.setCasesStore(remote.cases);
-          }
-        }
-        this.notifyDataListeners({ disciplinas: remote.disciplinas, cases: remote.cases, isInitial, isRemote: true });
-        return { success: true, serverOnline: true };
+        discToNotify = [...remote.disciplinas];
+        casesToNotify = [...remote.cases];
       }
+    }
+
+    // Se a instância local enviou dados recentemente (ex: durante testes ou antes de propagação da nuvem)
+    if (this.lastPushedData) {
+      if (!discToNotify) discToNotify = [...(this.lastPushedData.disciplinas || [])];
+      if (!casesToNotify) casesToNotify = [...(this.lastPushedData.cases || [])];
+
+      if (Array.isArray(this.lastPushedData.disciplinas)) {
+        this.lastPushedData.disciplinas.forEach(d => {
+          if (!discToNotify.some(item => item.id === d.id)) discToNotify.push(d);
+        });
+      }
+      if (Array.isArray(this.lastPushedData.cases)) {
+        this.lastPushedData.cases.forEach(c => {
+          if (!casesToNotify.some(item => item.id === c.id)) casesToNotify.push(c);
+        });
+      }
+    }
+
+    if (discToNotify && casesToNotify) {
+      if (typeof window !== "undefined") {
+        if (typeof window.setDisciplinasStore === "function") {
+          window.setDisciplinasStore(discToNotify);
+        }
+        if (typeof window.setCasesStore === "function") {
+          window.setCasesStore(casesToNotify);
+        }
+      }
+      this.notifyDataListeners({ disciplinas: discToNotify, cases: casesToNotify, isInitial, isRemote: true });
+      return { success: true, serverOnline: true };
     }
 
     this.notifyDataListenersFromStorage();
@@ -142,6 +167,11 @@ class DietoSyncEngine {
     }
 
     this.setStatus("syncing");
+    this.lastPushedData = {
+      disciplinas: Array.isArray(disciplinas) ? [...disciplinas] : [],
+      cases: Array.isArray(cases) ? [...cases] : [],
+      updatedAt: new Date().toISOString()
+    };
 
     // Atualiza as stores em memória
     if (typeof window !== "undefined") {

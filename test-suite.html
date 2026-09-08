@@ -2935,6 +2935,42 @@ Questões Avaliativas:
         "js/app.js cria spinner animado ('casesLoadingSpinner') no grid de casos durante sincronização da nuvem");
       assert(appJsSource.includes("await firebaseSyncService.fetchCloudCollections()"),
         "ensureSimulationDataLoaded() consome dados diretamente do Firestore via fetchCloudCollections()");
+
+      // 130. Validação de Single Source of Truth (Sem Dados Zumbis e Sem Reversão a DEFAULT_CASES)
+      setCasesStore([]);
+      const emptyCases = getCases();
+      assert(Array.isArray(emptyCases) && emptyCases.length === 0,
+        "Single Source of Truth: setCasesStore([]) esvazia a store sem ressuscitar DEFAULT_CASES");
+
+      // Restaura dados de teste em memória
+      resetDefaultCases();
+      const restoredCases = getCases();
+      assert(restoredCases.length >= 3,
+        "resetDefaultCases() restaura casos válidos para testes em memória");
+
+      // 131. Validação de Métodos Assíncronos no FirebaseSyncService (Operações Firestore com deleteDoc e setDoc)
+      assert(firebaseSyncService.saveCase.constructor.name === "AsyncFunction",
+        "firebaseSyncService.saveCase é uma função assíncrona (AsyncFunction)");
+      assert(firebaseSyncService.deleteCase.constructor.name === "AsyncFunction",
+        "firebaseSyncService.deleteCase é uma função assíncrona (AsyncFunction)");
+      assert(firebaseSyncService.saveDisciplina.constructor.name === "AsyncFunction",
+        "firebaseSyncService.saveDisciplina é uma função assíncrona (AsyncFunction)");
+      assert(firebaseSyncService.deleteDisciplina.constructor.name === "AsyncFunction",
+        "firebaseSyncService.deleteDisciplina é uma função assíncrona (AsyncFunction)");
+
+      // 132. Validação de Blindagem do Service Worker (Cache v7 e Bypass de APIs Firebase)
+      let swSourceV7 = "";
+      try {
+        const xhrSw7 = new XMLHttpRequest();
+        xhrSw7.open("GET", "sw.js", false);
+        xhrSw7.send();
+        swSourceV7 = xhrSw7.responseText || "";
+      } catch (e) {}
+
+      assert(swSourceV7.includes("dietocase-pwa-v7"),
+        "sw.js utiliza CACHE_NAME = 'dietocase-pwa-v7' para expurgo de caches legados");
+      assert(swSourceV7.includes("url.includes('firebase')") || swSourceV7.includes("url.includes('firestore.googleapis.com')"),
+        "sw.js implementa bypass de fetch para requisições de API do Firebase/Google");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

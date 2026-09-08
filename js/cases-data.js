@@ -360,8 +360,10 @@ const DEFAULT_CASES = [
 ];
 
 // Gerenciamento e Armazenamento em Memória Global de Casos e Disciplinas
-// Migrado integralmente para o Google Cloud Firestore (SEM dependência de localStorage)
+// Migrado integralmente para o Google Cloud Firestore (Single Source of Truth)
 let CASES_STORE = JSON.parse(JSON.stringify(DEFAULT_CASES));
+let isCasesStoreExplicitlySet = false;
+
 let DISCIPLINAS_STORE = [
   {
     id: "dietoterapia",
@@ -378,6 +380,7 @@ let DISCIPLINAS_STORE = [
     descricao: "Atendimento clínico supervisionado, ambulatório escola e enfermaria hospitalar."
   }
 ];
+let isDisciplinasStoreExplicitlySet = false;
 
 // Disciplinas acadêmicas predefinidas
 const DEFAULT_DISCIPLINAS = [
@@ -398,14 +401,18 @@ const DEFAULT_DISCIPLINAS = [
 ];
 
 function getDisciplinas() {
+  if (isDisciplinasStoreExplicitlySet) {
+    return Array.isArray(DISCIPLINAS_STORE) ? DISCIPLINAS_STORE : [];
+  }
   return Array.isArray(DISCIPLINAS_STORE) && DISCIPLINAS_STORE.length > 0
     ? DISCIPLINAS_STORE
     : DEFAULT_DISCIPLINAS;
 }
 
 function setDisciplinasStore(disciplinas) {
-  if (Array.isArray(disciplinas) && disciplinas.length > 0) {
+  if (Array.isArray(disciplinas)) {
     DISCIPLINAS_STORE = disciplinas;
+    isDisciplinasStoreExplicitlySet = true;
   }
 }
 
@@ -419,6 +426,7 @@ function saveDisciplinas(disciplinas) {
 
 function resetDefaultDisciplinas() {
   DISCIPLINAS_STORE = JSON.parse(JSON.stringify(DEFAULT_DISCIPLINAS));
+  isDisciplinasStoreExplicitlySet = true;
   if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
     firebaseSyncService.saveEstadoAtual(DISCIPLINAS_STORE, CASES_STORE, { source: "resetDefaultDisciplinas" });
   }
@@ -427,13 +435,12 @@ function resetDefaultDisciplinas() {
 
 function getCases() {
   try {
-    const currentList = Array.isArray(CASES_STORE) && CASES_STORE.length > 0
-      ? CASES_STORE
-      : DEFAULT_CASES;
+    const currentList = isCasesStoreExplicitlySet
+      ? (Array.isArray(CASES_STORE) ? CASES_STORE : [])
+      : (Array.isArray(CASES_STORE) && CASES_STORE.length > 0 ? CASES_STORE : DEFAULT_CASES);
 
     return currentList.map(c => {
-      const def = DEFAULT_CASES.find(d => d.id === c.id);
-      const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || (def ? (def.hipoteseDiagnostica || def.history?.hipoteseDiagnostica || "") : "");
+      const hip = c.hipoteseDiagnostica || c.history?.hipoteseDiagnostica || "";
       return {
         ...c,
         hipoteseDiagnostica: hip,
@@ -443,19 +450,21 @@ function getCases() {
         },
         isLocked: c.isLocked === true,
         visivel: c.visivel !== false,
+        habilitarQuestoesAvaliativas: c.habilitarQuestoesAvaliativas !== false,
         blockedTabs: Array.isArray(c.blockedTabs) ? c.blockedTabs : [],
         disciplinaId: c.disciplinaId || "dietoterapia"
       };
     });
   } catch (err) {
     console.error("❌ [cases-data ERROR em getCases]:", err);
-    return DEFAULT_CASES;
+    return isCasesStoreExplicitlySet ? [] : DEFAULT_CASES;
   }
 }
 
 function setCasesStore(cases) {
-  if (Array.isArray(cases) && cases.length > 0) {
+  if (Array.isArray(cases)) {
     CASES_STORE = cases;
+    isCasesStoreExplicitlySet = true;
   }
 }
 
@@ -475,6 +484,7 @@ function saveCases(cases) {
 
 function resetDefaultCases() {
   CASES_STORE = JSON.parse(JSON.stringify(DEFAULT_CASES));
+  isCasesStoreExplicitlySet = true;
   resetDefaultDisciplinas();
   return CASES_STORE;
 }

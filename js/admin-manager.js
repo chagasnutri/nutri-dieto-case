@@ -52,11 +52,14 @@ class AdminManager {
     if (typeof saveDisciplinas === "function") {
       saveDisciplinas(this.disciplinas);
     }
-    this.activeDisciplinaId = finalId;
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.saveDisciplina(nova);
+      firebaseSyncService.saveDisciplina(nova).catch(err => {
+        console.warn("⚠️ [AdminManager] Persistência de disciplina em nuvem:", err);
+      });
     }
+    this.activeDisciplinaId = finalId;
     this.triggerServerSync();
+    this.refreshDisciplinas();
     return nova;
   }
 
@@ -64,21 +67,25 @@ class AdminManager {
     this.refreshDisciplinas();
     const idx = this.disciplinas.findIndex(d => d.id === id);
     if (idx >= 0) {
-      this.disciplinas[idx] = {
+      const updated = {
         ...this.disciplinas[idx],
         nome: data.nome !== undefined ? data.nome.trim() : this.disciplinas[idx].nome,
         codigo: data.codigo !== undefined ? data.codigo.trim().toUpperCase() : this.disciplinas[idx].codigo,
         icone: data.icone || this.disciplinas[idx].icone,
         descricao: data.descricao !== undefined ? data.descricao.trim() : this.disciplinas[idx].descricao
       };
+      this.disciplinas[idx] = updated;
       if (typeof saveDisciplinas === "function") {
         saveDisciplinas(this.disciplinas);
       }
       if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        firebaseSyncService.saveDisciplina(this.disciplinas[idx]);
+        firebaseSyncService.saveDisciplina(updated).catch(err => {
+          console.warn("⚠️ [AdminManager] Atualização de disciplina em nuvem:", err);
+        });
       }
       this.triggerServerSync();
-      return this.disciplinas[idx];
+      this.refreshDisciplinas();
+      return updated;
     }
     return null;
   }
@@ -108,10 +115,22 @@ class AdminManager {
         casosVinculados.forEach(c => {
           c.disciplinaId = targetDisc.id;
         });
-        saveCases(this.cases);
+        if (typeof saveCases === "function") {
+          saveCases(this.cases);
+        }
+        if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+          for (const c of casosVinculados) {
+            firebaseSyncService.saveCase(c).catch(err => console.warn("⚠️ [AdminManager] Move case sync:", err));
+          }
+        }
       } else if (action === "cascade") {
         this.cases = this.cases.filter(c => (c.disciplinaId || "dietoterapia") !== id);
-        saveCases(this.cases);
+        if (typeof saveCases === "function") saveCases(this.cases);
+        if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+          for (const c of casosVinculados) {
+            firebaseSyncService.deleteCase(c.id).catch(err => console.warn("⚠️ [AdminManager] Cascade delete case sync:", err));
+          }
+        }
       } else {
         return {
           success: false,
@@ -127,13 +146,19 @@ class AdminManager {
     if (typeof saveDisciplinas === "function") {
       saveDisciplinas(this.disciplinas);
     }
-    if (this.activeDisciplinaId === id) {
-      this.activeDisciplinaId = this.disciplinas[0].id;
-    }
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.deleteDisciplina(id);
+      firebaseSyncService.deleteDisciplina(id).catch(err => {
+        console.warn("⚠️ [AdminManager] Exclusão de disciplina em nuvem:", err);
+      });
     }
+
     this.triggerServerSync();
+    this.refreshDisciplinas();
+    this.refreshCases();
+    if (this.activeDisciplinaId === id) {
+      this.activeDisciplinaId = this.disciplinas[0]?.id || "dietoterapia";
+    }
+
     return {
       success: true,
       message: casosVinculados.length > 0 && options.action === "move"
@@ -153,53 +178,53 @@ class AdminManager {
   }
 
   saveCase(caseData) {
-    try {
-      this.refreshCases();
-      // Sempre revisa o português e adequa os tempos verbais antes de persistir o caso clínico
-      const reviewedCase = (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase)
-        ? ClinicalPortugueseReviser.reviewCase(caseData)
-        : caseData;
+    this.refreshCases();
+    // Sempre revisa o português e adequa os tempos verbais antes de persistir o caso clínico
+    const reviewedCase = (typeof ClinicalPortugueseReviser !== "undefined" && ClinicalPortugueseReviser.reviewCase)
+      ? ClinicalPortugueseReviser.reviewCase(caseData)
+      : caseData;
 
-      reviewedCase.blockedTabs = Array.isArray(reviewedCase.blockedTabs) ? reviewedCase.blockedTabs : [];
-      reviewedCase.isLocked = reviewedCase.isLocked === true;
-      reviewedCase.visivel = reviewedCase.visivel !== false;
-      reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
+    reviewedCase.blockedTabs = Array.isArray(reviewedCase.blockedTabs) ? reviewedCase.blockedTabs : [];
+    reviewedCase.isLocked = reviewedCase.isLocked === true;
+    reviewedCase.visivel = reviewedCase.visivel !== false;
+    reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
 
-      const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
-      if (existingIndex >= 0) {
-        this.cases[existingIndex] = reviewedCase;
-      } else {
-        this.cases.push(reviewedCase);
-      }
-      saveCases(this.cases);
-      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        firebaseSyncService.saveCase(reviewedCase);
-      }
-      this.triggerServerSync();
-      return reviewedCase;
-    } catch (err) {
-      console.error("❌ [AdminManager ERROR em saveCase]:", err);
-      return caseData;
+    const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
+    if (existingIndex >= 0) {
+      this.cases[existingIndex] = reviewedCase;
+    } else {
+      this.cases.push(reviewedCase);
     }
+    if (typeof saveCases === "function") saveCases(this.cases);
+
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.saveCase(reviewedCase).catch(err => {
+        console.warn("⚠️ [AdminManager] Persistência de caso no Firestore:", err);
+      });
+    }
+    this.triggerServerSync();
+    this.refreshCases();
+    return reviewedCase;
   }
 
   deleteCase(id) {
-    try {
-      this.refreshCases();
-      this.cases = this.cases.filter(c => c.id !== id);
-      saveCases(this.cases);
-      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        firebaseSyncService.deleteCase(id);
-      }
-      this.triggerServerSync();
-    } catch (err) {
-      console.error("❌ [AdminManager ERROR em deleteCase]:", err);
+    this.refreshCases();
+    this.cases = this.cases.filter(c => c.id !== id);
+    if (typeof saveCases === "function") saveCases(this.cases);
+
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
+      firebaseSyncService.deleteCase(id).catch(err => {
+        console.warn("⚠️ [AdminManager] Exclusão de caso no Firestore:", err);
+      });
     }
+    this.triggerServerSync();
+    this.refreshCases();
+    return true;
   }
 
   duplicateCase(id) {
     const original = this.getCaseById(id);
-    if (!original) return;
+    if (!original) return null;
     const copy = JSON.parse(JSON.stringify(original));
     copy.id = "caso-" + Date.now();
     copy.title = `${copy.title} (Cópia)`;
@@ -208,12 +233,17 @@ class AdminManager {
     copy.habilitarQuestoesAvaliativas = original.habilitarQuestoesAvaliativas !== false;
     copy.blockedTabs = Array.isArray(original.blockedTabs) ? [...original.blockedTabs] : [];
     copy.disciplinaId = original.disciplinaId || this.activeDisciplinaId || "dietoterapia";
+
     this.cases.push(copy);
-    saveCases(this.cases);
+    if (typeof saveCases === "function") saveCases(this.cases);
+
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.saveCase(copy);
+      firebaseSyncService.saveCase(copy).catch(err => {
+        console.warn("⚠️ [AdminManager] Duplicação de caso no Firestore:", err);
+      });
     }
     this.triggerServerSync();
+    this.refreshCases();
     return copy;
   }
 
@@ -222,11 +252,14 @@ class AdminManager {
     const c = this.cases.find(item => item.id === id);
     if (c) {
       c.isLocked = !c.isLocked;
-      saveCases(this.cases);
+      if (typeof saveCases === "function") saveCases(this.cases);
       if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        firebaseSyncService.setCaseLock(id, c.isLocked);
+        firebaseSyncService.setCaseLock(id, c.isLocked).catch(err => {
+          console.warn("⚠️ [AdminManager] Trava de caso no Firestore:", err);
+        });
       }
       this.triggerServerSync();
+      this.refreshCases();
       return c.isLocked;
     }
     return false;
@@ -238,15 +271,14 @@ class AdminManager {
     const c = this.cases.find(item => item.id === id);
     if (c) {
       c.visivel = c.visivel === false ? true : false;
-      saveCases(this.cases);
+      if (typeof saveCases === "function") saveCases(this.cases);
       if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        if (typeof firebaseSyncService.setCaseVisibility === "function") {
-          firebaseSyncService.setCaseVisibility(id, c.visivel);
-        } else {
-          firebaseSyncService.saveCase(c);
-        }
+        firebaseSyncService.setCaseVisibility(id, c.visivel).catch(err => {
+          console.warn("⚠️ [AdminManager] Visibilidade de caso no Firestore:", err);
+        });
       }
       this.triggerServerSync();
+      this.refreshCases();
       return c.visivel;
     }
     return true;
@@ -258,11 +290,14 @@ class AdminManager {
     const c = this.cases.find(item => item.id === id);
     if (c) {
       c.habilitarQuestoesAvaliativas = c.habilitarQuestoesAvaliativas === false ? true : false;
-      saveCases(this.cases);
+      if (typeof saveCases === "function") saveCases(this.cases);
       if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-        firebaseSyncService.saveCase(c);
+        firebaseSyncService.saveCase(c).catch(err => {
+          console.warn("⚠️ [AdminManager] Habilitação de questões no Firestore:", err);
+        });
       }
       this.triggerServerSync();
+      this.refreshCases();
       return c.habilitarQuestoesAvaliativas;
     }
     return true;
@@ -273,18 +308,21 @@ class AdminManager {
     this.refreshCases();
     const c = this.cases.find(item => item.id === id);
     if (!c) return false;
-    c.blockedTabs = Array.isArray(c.blockedTabs) ? c.blockedTabs : [];
+    c.blockedTabs = Array.isArray(c.blockedTabs) ? [...c.blockedTabs] : [];
     const idx = c.blockedTabs.indexOf(tabId);
     if (idx >= 0) {
       c.blockedTabs.splice(idx, 1);
     } else {
       c.blockedTabs.push(tabId);
     }
-    saveCases(this.cases);
+    if (typeof saveCases === "function") saveCases(this.cases);
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs);
+      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs).catch(err => {
+        console.warn("⚠️ [AdminManager] Bloqueio de aba no Firestore:", err);
+      });
     }
     this.triggerServerSync();
+    this.refreshCases();
     return c.blockedTabs.includes(tabId);
   }
 
@@ -293,22 +331,25 @@ class AdminManager {
     this.refreshCases();
     const c = this.cases.find(item => item.id === id);
     if (!c) return [];
-    c.blockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
-    saveCases(this.cases);
+    c.blockedTabs = Array.isArray(blockedTabs) ? [...blockedTabs] : [];
+    if (typeof saveCases === "function") saveCases(this.cases);
     if (typeof firebaseSyncService !== "undefined" && firebaseSyncService.isConfigured()) {
-      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs);
+      firebaseSyncService.setCaseBlockedTabs(id, c.blockedTabs).catch(err => {
+        console.warn("⚠️ [AdminManager] Atualização de abas no Firestore:", err);
+      });
     }
     this.triggerServerSync();
+    this.refreshCases();
     return c.blockedTabs;
   }
 
-  // Dispara sincronização em segundo plano com o Firebase Firestore (configuracoes/estado_atual)
-  triggerServerSync() {
+  // Dispara sincronização com o Firebase Firestore (configuracoes/estado_atual)
+  async triggerServerSync() {
     if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveEstadoAtual === "function") {
-      firebaseSyncService.saveEstadoAtual(this.disciplinas, this.cases);
+      await firebaseSyncService.saveEstadoAtual(this.disciplinas, this.cases);
     }
     if (typeof window !== "undefined" && window.dietoSyncEngine && typeof window.dietoSyncEngine.pushToServer === "function") {
-      window.dietoSyncEngine.pushToServer(this.disciplinas, this.cases);
+      await window.dietoSyncEngine.pushToServer(this.disciplinas, this.cases);
     }
   }
 

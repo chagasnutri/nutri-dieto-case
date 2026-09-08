@@ -253,22 +253,17 @@ class FirebaseSyncService {
       if (this.unsubscribeCasesSnapshot) this.unsubscribeCasesSnapshot();
       const casesCol = collection(this.db, COLLECTION_CASES);
       this.unsubscribeCasesSnapshot = onSnapshot(casesCol, (snapshot) => {
+        const list = [];
         if (!snapshot.empty) {
-          const list = [];
           snapshot.forEach(docSnap => {
             const data = docSnap.data();
             if (data && data.id) {
               list.push(data);
             }
           });
-          if (list.length > 0) {
-            console.log(`📡 [Firestore onSnapshot: casos_clinicos] ${list.length} caso(s) recebido(s) em tempo real da nuvem!`);
-            this.handleRemoteCasesUpdate(list);
-          }
-        } else {
-          console.log("ℹ️ Coleção 'casos_clinicos' vazia no Firestore. Semeando casos padrão...");
-          this.seedInitialCases();
         }
+        console.log(`📡 [Firestore onSnapshot: casos_clinicos] ${list.length} caso(s) recebido(s) em tempo real da nuvem!`);
+        this.handleRemoteCasesUpdate(list);
       }, (error) => {
         console.error("❌ [Firestore onSnapshot ERROR em casos_clinicos] Erro de permissão ou conexão:", error);
       });
@@ -281,27 +276,22 @@ class FirebaseSyncService {
       if (this.unsubscribeDiscSnapshot) this.unsubscribeDiscSnapshot();
       const discCol = collection(this.db, COLLECTION_DISCIPLINAS);
       this.unsubscribeDiscSnapshot = onSnapshot(discCol, (snapshot) => {
+        const list = [];
         if (!snapshot.empty) {
-          const list = [];
           snapshot.forEach(docSnap => {
             const data = docSnap.data();
             if (data && data.id) {
               list.push(data);
             }
           });
-          if (list.length > 0) {
-            console.log(`📡 [Firestore onSnapshot: disciplinas] ${list.length} disciplina(s) recebida(s) em tempo real da nuvem!`);
-            this.handleRemoteDisciplinasUpdate(list);
-          }
-        } else {
-          console.log("ℹ️ Coleção 'disciplinas' vazia no Firestore. Semeando disciplinas padrão...");
-          this.seedInitialDisciplinas();
         }
+        console.log(`📡 [Firestore onSnapshot: disciplinas] ${list.length} disciplina(s) recebida(s) em tempo real da nuvem!`);
+        this.handleRemoteDisciplinasUpdate(list);
       }, (error) => {
         console.warn("⚠️ Aviso no onSnapshot de disciplinas:", error.message);
       });
     } catch (errDisc) {
-      console.error("âŒ [Firestore ERROR ao configurar onSnapshot de disciplinas]:", errDisc);
+      console.error("❌ [Firestore ERROR ao configurar onSnapshot de disciplinas]:", errDisc);
     }
 
     // 3. Escuta no documento configuracoes/estado_atual (para travas e configurações globais)
@@ -313,32 +303,30 @@ class FirebaseSyncService {
           const data = docSnap.data();
           console.log("📡 [Firestore onSnapshot: estado_atual] Sincronização de travas recebida:", data.updatedAt);
           this.handleRemoteUpdate(data);
-        } else {
-          this.seedInitialState();
         }
       }, (error) => {
         console.warn("⚠️ Aviso no onSnapshot do Firestore estado_atual:", error.message);
         this.setStatus("error_firebase");
       });
     } catch (errConfig) {
-      console.error("âŒ [Firestore ERROR ao configurar onSnapshot de configuracoes/estado_atual]:", errConfig);
+      console.error("❌ [Firestore ERROR ao configurar onSnapshot de configuracoes/estado_atual]:", errConfig);
     }
   }
 
   // Processa atualização recebida da coleção 'casos_clinicos' em tempo real
   handleRemoteCasesUpdate(cloudCases) {
-    if (!Array.isArray(cloudCases) || cloudCases.length === 0) return;
+    if (!Array.isArray(cloudCases)) return;
 
     if (typeof window !== "undefined") {
-      // 1. Atualiza stores em memória
+      // 1. Atualiza stores em memória (Substituição Total - Single Source of Truth)
       if (typeof window.setCasesStore === "function") {
         window.setCasesStore(cloudCases);
       }
       if (window.adminManager) {
-        window.adminManager.cases = cloudCases;
+        window.adminManager.cases = [...cloudCases];
       }
 
-      // 2. Se houver caso ativo no aluno, atualiza os dados em tempo real
+      // 2. Se houver caso ativo no aluno, atualiza os dados em tempo real ou redefine se foi excluído
       let activeCaseId = null;
       if (window.appState) {
         activeCaseId = window.appState.currentCaseId || (window.appState.currentCase ? window.appState.currentCase.id : null);
@@ -350,7 +338,14 @@ class FirebaseSyncService {
           if (typeof this.applyPhysicalTabLocks === "function") {
             this.applyPhysicalTabLocks(updated);
           }
+        } else if (window.appState) {
+          // O caso ativo foi excluído na nuvem
+          window.appState.currentCase = cloudCases[0] || null;
+          window.appState.currentCaseId = cloudCases[0]?.id || null;
         }
+      } else if (cloudCases.length > 0 && window.appState && !window.appState.currentCase) {
+        window.appState.currentCase = cloudCases[0];
+        window.appState.currentCaseId = cloudCases[0].id;
       }
 
       // 3. Re-renderiza a interface do Aluno imediatamente (sem recarregar a página)
@@ -369,14 +364,14 @@ class FirebaseSyncService {
 
   // Processa atualização recebida da coleção 'disciplinas' em tempo real
   handleRemoteDisciplinasUpdate(cloudDisc) {
-    if (!Array.isArray(cloudDisc) || cloudDisc.length === 0) return;
+    if (!Array.isArray(cloudDisc)) return;
 
     if (typeof window !== "undefined") {
       if (typeof window.setDisciplinasStore === "function") {
         window.setDisciplinasStore(cloudDisc);
       }
       if (window.adminManager) {
-        window.adminManager.disciplinas = cloudDisc;
+        window.adminManager.disciplinas = [...cloudDisc];
       }
 
       if (typeof window.syncAppStateAndNotify === "function") {
@@ -585,17 +580,17 @@ class FirebaseSyncService {
     }
   }
 
-  // Salva o estado completo no Firestore: configuracoes/estado_atual e sincroniza coleções dedicadas
+  // Salva o estado completo no Firestore: configuracoes/estado_atual
   async saveEstadoAtual(disciplinas, cases, meta = {}) {
     const safeDisciplinas = Array.isArray(disciplinas) ? disciplinas : [];
     const safeCases = Array.isArray(cases) ? cases : [];
 
     // Atualiza stores em memória
     if (typeof window !== "undefined") {
-      if (typeof window.setDisciplinasStore === "function" && safeDisciplinas.length > 0) {
+      if (typeof window.setDisciplinasStore === "function") {
         window.setDisciplinasStore(safeDisciplinas);
       }
-      if (typeof window.setCasesStore === "function" && safeCases.length > 0) {
+      if (typeof window.setCasesStore === "function") {
         window.setCasesStore(safeCases);
       }
     }
@@ -615,35 +610,8 @@ class FirebaseSyncService {
         ...meta
       };
 
-      await setDoc(estadoRef, payload, { merge: true });
+      await setDoc(estadoRef, payload);
       console.log("☁️ [Firestore] Estado salvo com sucesso em configuracoes/estado_atual:", payload.updatedAt);
-
-      // Sincroniza em segundo plano nas coleções dedicadas (casos_clinicos, disciplinas, pacientes_virtuais)
-      for (const c of safeCases) {
-        if (c && c.id) {
-          const caseRef = doc(this.db, COLLECTION_CASES, c.id);
-          setDoc(caseRef, c, { merge: true }).catch(() => {});
-
-          const pacienteRef = doc(this.db, COLLECTION_PACIENTES, c.id);
-          const pacienteData = {
-            caseId: c.id,
-            disciplinaId: c.disciplinaId || "dietoterapia",
-            paciente: c.patient || c.paciente || {},
-            historiaClinica: c.history?.hda || c.anamnese?.historiaClinica || "",
-            queixaPrincipal: c.history?.queixaPrincipal || c.anamnese?.queixaPrincipal || "",
-            diagnosticoClinico: c.hipoteseDiagnostica || c.paciente?.diagnosticoClinico || "",
-            updatedAt: new Date().toISOString()
-          };
-          setDoc(pacienteRef, pacienteData, { merge: true }).catch(() => {});
-        }
-      }
-
-      for (const d of safeDisciplinas) {
-        if (d && d.id) {
-          const discRef = doc(this.db, COLLECTION_DISCIPLINAS, d.id);
-          setDoc(discRef, d, { merge: true }).catch(() => {});
-        }
-      }
 
       this.setStatus("online_firebase");
       return true;
@@ -660,13 +628,25 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem bloquear abas.");
       return false;
     }
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    const c = cases.find(item => item.id === caseId);
-    if (c) {
-      c.blockedTabs = Array.isArray(blockedTabs) ? blockedTabs : [];
+    if (!this.db) return false;
+
+    try {
+      const safeBlocked = Array.isArray(blockedTabs) ? blockedTabs : [];
+      const caseRef = doc(this.db, COLLECTION_CASES, caseId);
+      await setDoc(caseRef, { blockedTabs: safeBlocked }, { merge: true });
+
+      const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        c.blockedTabs = safeBlocked;
+      }
+      const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      await this.saveEstadoAtual(disciplinas, cases, { action: "setBlockedTabs", caseId, blockedTabs: safeBlocked });
+      return true;
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em setCaseBlockedTabs]:", e);
+      throw e;
     }
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "setBlockedTabs", caseId });
   }
 
   // Aba do Professor: Trancar ou liberar um caso clínico (Exclusivo Docente)
@@ -675,13 +655,24 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem travar casos.");
       return false;
     }
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    const c = cases.find(item => item.id === caseId);
-    if (c) {
-      c.isLocked = isLocked === true;
+    if (!this.db) return false;
+
+    try {
+      const caseRef = doc(this.db, COLLECTION_CASES, caseId);
+      await setDoc(caseRef, { isLocked: isLocked === true }, { merge: true });
+
+      const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        c.isLocked = isLocked === true;
+      }
+      const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      await this.saveEstadoAtual(disciplinas, cases, { action: "setLock", caseId, isLocked });
+      return true;
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em setCaseLock]:", e);
+      throw e;
     }
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "setLock", caseId });
   }
 
   // Aba do Professor: Ocultar ou mostrar um caso clínico para os alunos (Exclusivo Docente)
@@ -690,13 +681,24 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem alterar visibilidade de casos.");
       return false;
     }
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    const c = cases.find(item => item.id === caseId);
-    if (c) {
-      c.visivel = visivel === true;
+    if (!this.db) return false;
+
+    try {
+      const caseRef = doc(this.db, COLLECTION_CASES, caseId);
+      await setDoc(caseRef, { visivel: visivel === true }, { merge: true });
+
+      const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        c.visivel = visivel === true;
+      }
+      const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      await this.saveEstadoAtual(disciplinas, cases, { action: "setVisibility", caseId, visivel });
+      return true;
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em setCaseVisibility]:", e);
+      throw e;
     }
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "setVisibility", caseId, visivel });
   }
 
   // Aba do Professor: Salvar caso (criar ou editar na coleção 'casos_clinicos' e 'pacientes_virtuais')
@@ -705,45 +707,56 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem criar ou editar casos clínicos.");
       return false;
     }
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    const idx = cases.findIndex(c => c.id === caseData.id);
-    if (idx >= 0) {
-      cases[idx] = caseData;
-    } else {
-      cases.push(caseData);
-    }
-    if (typeof window !== "undefined" && typeof window.setCasesStore === "function") {
-      window.setCasesStore(cases);
-    }
-
-    if (this.db) {
-      try {
-        const caseRef = doc(this.db, COLLECTION_CASES, caseData.id);
-        await setDoc(caseRef, caseData, { merge: true });
-
-        const pacienteRef = doc(this.db, COLLECTION_PACIENTES, caseData.id);
-        const pacienteData = {
-          caseId: caseData.id,
-          disciplinaId: caseData.disciplinaId || "dietoterapia",
-          paciente: caseData.patient || caseData.paciente || {},
-          historiaClinica: caseData.history?.hda || caseData.anamnese?.historiaClinica || "",
-          queixaPrincipal: caseData.history?.queixaPrincipal || caseData.anamnese?.queixaPrincipal || "",
-          diagnosticoClinico: caseData.hipoteseDiagnostica || caseData.paciente?.diagnosticoClinico || "",
-          updatedAt: new Date().toISOString()
-        };
-        await setDoc(pacienteRef, pacienteData, { merge: true });
-        console.log(`✅ [Firestore] Caso '${caseData.id}' salvo em '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
-      } catch (e) {
-        console.error("❌ [Firestore ERROR em saveCase] Falha ao salvar caso nas coleções dedicadas do Firestore (verifique permissões):", e);
-      }
+    if (!this.db) {
+      console.warn("Firestore não inicializado para gravação.");
+      return false;
     }
 
     try {
+      // 1. Grava no documento do caso clínico
+      const caseRef = doc(this.db, COLLECTION_CASES, caseData.id);
+      await setDoc(caseRef, caseData);
+
+      // 2. Grava no documento do paciente virtual
+      const pacienteRef = doc(this.db, COLLECTION_PACIENTES, caseData.id);
+      const pacienteData = {
+        caseId: caseData.id,
+        disciplinaId: caseData.disciplinaId || "dietoterapia",
+        paciente: caseData.patient || caseData.paciente || {},
+        historiaClinica: caseData.history?.hda || caseData.anamnese?.historiaClinica || "",
+        queixaPrincipal: caseData.history?.queixaPrincipal || caseData.anamnese?.queixaPrincipal || "",
+        diagnosticoClinico: caseData.hipoteseDiagnostica || caseData.paciente?.diagnosticoClinico || "",
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(pacienteRef, pacienteData, { merge: true });
+      console.log(`✅ [Firestore] Caso '${caseData.id}' salvo em '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
+
+      // 3. Atualiza estado consolidado em configuracoes/estado_atual
+      const currentCases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      const idx = currentCases.findIndex(c => c.id === caseData.id);
+      let updatedCases;
+      if (idx >= 0) {
+        updatedCases = [...currentCases];
+        updatedCases[idx] = caseData;
+      } else {
+        updatedCases = [...currentCases, caseData];
+      }
+
       const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-      return await this.saveEstadoAtual(disciplinas, cases, { action: "saveCase", caseId: caseData.id });
+      await this.saveEstadoAtual(disciplinas, updatedCases, { action: "saveCase", caseId: caseData.id });
+
+      // 4. Atualiza stores em memória e modelos locais SOMENTE após confirmação
+      if (typeof window !== "undefined" && typeof window.setCasesStore === "function") {
+        window.setCasesStore(updatedCases);
+      }
+      if (window.adminManager) {
+        window.adminManager.cases = updatedCases;
+      }
+
+      return true;
     } catch (e) {
-      console.error("❌ [Firestore ERROR em saveCase:saveEstadoAtual] Falha ao atualizar estado consolidado:", e);
-      return false;
+      console.error("❌ [Firestore ERROR em saveCase] Falha ao salvar caso:", e);
+      throw e;
     }
   }
 
@@ -753,32 +766,40 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem excluir casos clínicos.");
       return false;
     }
-    let cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    cases = cases.filter(c => c.id !== caseId);
-    if (window.adminManager) window.adminManager.cases = cases;
-    if (typeof window !== "undefined" && typeof window.setCasesStore === "function") {
-      window.setCasesStore(cases);
-    }
-
-    if (this.db) {
-      try {
-        const caseRef = doc(this.db, COLLECTION_CASES, caseId);
-        await deleteDoc(caseRef);
-
-        const pacienteRef = doc(this.db, COLLECTION_PACIENTES, caseId);
-        await deleteDoc(pacienteRef);
-        console.log(`✅ [Firestore] Caso '${caseId}' removido de '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
-      } catch (e) {
-        console.error("❌ [Firestore ERROR em deleteCase] Falha ao excluir caso clínico nas coleções dedicadas do Firestore:", e);
-      }
+    if (!this.db) {
+      console.warn("Firestore não inicializado para exclusão.");
+      return false;
     }
 
     try {
+      // 1. Exclui o documento da coleção casos_clinicos
+      const caseRef = doc(this.db, COLLECTION_CASES, caseId);
+      await deleteDoc(caseRef);
+
+      // 2. Exclui o documento da coleção pacientes_virtuais
+      const pacienteRef = doc(this.db, COLLECTION_PACIENTES, caseId);
+      await deleteDoc(pacienteRef).catch(() => {});
+      console.log(`✅ [Firestore] Caso '${caseId}' removido de '${COLLECTION_CASES}' e '${COLLECTION_PACIENTES}'`);
+
+      // 3. Atualiza estado consolidado em configuracoes/estado_atual
+      const currentCases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      const updatedCases = currentCases.filter(c => c.id !== caseId);
+
       const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-      return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteCase", caseId });
+      await this.saveEstadoAtual(disciplinas, updatedCases, { action: "deleteCase", caseId });
+
+      // 4. Atualiza stores em memória SOMENTE após confirmação da exclusão
+      if (typeof window !== "undefined" && typeof window.setCasesStore === "function") {
+        window.setCasesStore(updatedCases);
+      }
+      if (window.adminManager) {
+        window.adminManager.cases = updatedCases;
+      }
+
+      return true;
     } catch (e) {
-      console.error("❌ [Firestore ERROR em deleteCase:saveEstadoAtual] Falha ao excluir do estado consolidado:", e);
-      return false;
+      console.error("❌ [Firestore ERROR em deleteCase] Falha ao excluir caso clínico:", e);
+      throw e;
     }
   }
 
@@ -788,29 +809,37 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem criar ou editar disciplinas.");
       return false;
     }
-    const disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    const idx = disciplinas.findIndex(d => d.id === discData.id);
-    if (idx >= 0) {
-      disciplinas[idx] = discData;
-    } else {
-      disciplinas.push(discData);
-    }
-    if (typeof window !== "undefined" && typeof window.setDisciplinasStore === "function") {
-      window.setDisciplinasStore(disciplinas);
-    }
+    if (!this.db) return false;
 
-    if (this.db) {
-      try {
-        const discRef = doc(this.db, COLLECTION_DISCIPLINAS, discData.id);
-        await setDoc(discRef, discData, { merge: true });
-        console.log(`☁️ [Firestore] Disciplina '${discData.id}' salva na coleção '${COLLECTION_DISCIPLINAS}'`);
-      } catch (e) {
-        console.warn("Aviso ao salvar disciplina na coleção do Firestore:", e);
+    try {
+      const discRef = doc(this.db, COLLECTION_DISCIPLINAS, discData.id);
+      await setDoc(discRef, discData, { merge: true });
+      console.log(`☁️ [Firestore] Disciplina '${discData.id}' salva na coleção '${COLLECTION_DISCIPLINAS}'`);
+
+      const currentDisc = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      const idx = currentDisc.findIndex(d => d.id === discData.id);
+      let updatedDisc;
+      if (idx >= 0) {
+        updatedDisc = [...currentDisc];
+        updatedDisc[idx] = discData;
+      } else {
+        updatedDisc = [...currentDisc, discData];
       }
-    }
 
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "saveDisciplina", disciplinaId: discData.id });
+      const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      await this.saveEstadoAtual(updatedDisc, cases, { action: "saveDisciplina", disciplinaId: discData.id });
+
+      if (typeof window !== "undefined" && typeof window.setDisciplinasStore === "function") {
+        window.setDisciplinasStore(updatedDisc);
+      }
+      if (window.adminManager) {
+        window.adminManager.disciplinas = updatedDisc;
+      }
+      return true;
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em saveDisciplina]:", e);
+      throw e;
+    }
   }
 
   // Aba do Professor: Excluir disciplina (remover de 'disciplinas')
@@ -819,25 +848,30 @@ class FirebaseSyncService {
       console.warn("⚠️ Permissão negada: Somente professores autenticados podem excluir disciplinas.");
       return false;
     }
-    let disciplinas = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
-    disciplinas = disciplinas.filter(d => d.id !== discId);
-    if (window.adminManager) window.adminManager.disciplinas = disciplinas;
-    if (typeof window !== "undefined" && typeof window.setDisciplinasStore === "function") {
-      window.setDisciplinasStore(disciplinas);
-    }
+    if (!this.db) return false;
 
-    if (this.db) {
-      try {
-        const discRef = doc(this.db, COLLECTION_DISCIPLINAS, discId);
-        await deleteDoc(discRef);
-        console.log(`☁️ [Firestore] Disciplina '${discId}' removida da coleção '${COLLECTION_DISCIPLINAS}'`);
-      } catch (e) {
-        console.warn("Aviso ao excluir disciplina do Firestore:", e);
+    try {
+      const discRef = doc(this.db, COLLECTION_DISCIPLINAS, discId);
+      await deleteDoc(discRef);
+      console.log(`☁️ [Firestore] Disciplina '${discId}' removida da coleção '${COLLECTION_DISCIPLINAS}'`);
+
+      let currentDisc = (window.adminManager ? window.adminManager.disciplinas : (typeof getDisciplinas === "function" ? getDisciplinas() : []));
+      const updatedDisc = currentDisc.filter(d => d.id !== discId);
+
+      const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
+      await this.saveEstadoAtual(updatedDisc, cases, { action: "deleteDisciplina", disciplinaId: discId });
+
+      if (typeof window !== "undefined" && typeof window.setDisciplinasStore === "function") {
+        window.setDisciplinasStore(updatedDisc);
       }
+      if (window.adminManager) {
+        window.adminManager.disciplinas = updatedDisc;
+      }
+      return true;
+    } catch (e) {
+      console.error("❌ [Firestore ERROR em deleteDisciplina]:", e);
+      throw e;
     }
-
-    const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
-    return await this.saveEstadoAtual(disciplinas, cases, { action: "deleteDisciplina", disciplinaId: discId });
   }
 
   // Salva atendimento presencial real na coleção dedicada 'atendimentos_reais'
@@ -1038,45 +1072,31 @@ class FirebaseSyncService {
     try {
       const discSnap = await getDocs(collection(this.db, COLLECTION_DISCIPLINAS));
       const cloudDisc = [];
-      discSnap.forEach(d => cloudDisc.push(d.data()));
+      discSnap.forEach(d => {
+        const data = d.data();
+        if (data && data.id) cloudDisc.push(data);
+      });
 
       const casesSnap = await getDocs(collection(this.db, COLLECTION_CASES));
       const cloudCases = [];
-      casesSnap.forEach(d => cloudCases.push(d.data()));
+      casesSnap.forEach(d => {
+        const data = d.data();
+        if (data && data.id) cloudCases.push(data);
+      });
 
-      if (cloudDisc.length > 0 || cloudCases.length > 0) {
-        if (typeof window !== "undefined") {
-          if (cloudDisc.length > 0 && typeof window.setDisciplinasStore === "function") {
-            window.setDisciplinasStore(cloudDisc);
-          }
-          if (cloudCases.length > 0 && typeof window.setCasesStore === "function") {
-            window.setCasesStore(cloudCases);
-          }
-          if (window.adminManager) {
-            if (cloudDisc.length > 0) window.adminManager.disciplinas = cloudDisc;
-            if (cloudCases.length > 0) window.adminManager.cases = cloudCases;
-          }
+      if (typeof window !== "undefined") {
+        if (typeof window.setDisciplinasStore === "function") {
+          window.setDisciplinasStore(cloudDisc);
         }
-        return { disciplinas: cloudDisc, cases: cloudCases };
-      }
-
-      // Fallback para estado consolidado se as coleções estiverem vazias
-      const estadoRef = doc(this.db, COLLECTION_NAME, DOCUMENT_ID);
-      const snap = await getDoc(estadoRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const disc = Array.isArray(data.disciplinas) ? data.disciplinas : [];
-        const cList = Array.isArray(data.cases) ? data.cases : [];
-        if (typeof window !== "undefined") {
-          if (disc.length > 0 && typeof window.setDisciplinasStore === "function") {
-            window.setDisciplinasStore(disc);
-          }
-          if (cList.length > 0 && typeof window.setCasesStore === "function") {
-            window.setCasesStore(cList);
-          }
+        if (typeof window.setCasesStore === "function") {
+          window.setCasesStore(cloudCases);
         }
-        return { disciplinas: disc, cases: cList };
+        if (window.adminManager) {
+          window.adminManager.disciplinas = [...cloudDisc];
+          window.adminManager.cases = [...cloudCases];
+        }
       }
+      return { disciplinas: cloudDisc, cases: cloudCases };
     } catch (err) {
       console.error("❌ [Firestore ERROR em fetchCloudCollections] Erro ao buscar casos clínicos/disciplinas do Firestore (verifique permissões ou conexão):", err);
     }

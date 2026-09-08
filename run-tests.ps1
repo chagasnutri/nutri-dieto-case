@@ -10,25 +10,42 @@ Start-Process -FilePath $edgePath -ArgumentList "--headless=new", "--disable-gpu
 
 if (Test-Path $outputHtml) {
     $raw = Get-Content -Path $outputHtml -Raw
-    if ($raw -match '<div id="results">([\s\S]*?)<\/div>') {
-        $matchesResults = $matches[1]
-        Write-Host "=================== RESULTADOS DOS TESTES ==================="
-        $matchesResults -split '<div' | ForEach-Object {
-            $line = $_ -replace '<[^>]+>', '' -replace '\s+', ' '
-            $line = $line.Trim()
-            if ($line -match 'PASS:' -or $line -match 'FAIL:') {
-                Write-Host $line
-            }
-        }
-        Write-Host "============================================================="
-        if ($matchesResults -match 'FAIL') {
-            Write-Error "Algum teste falhou!"
-            exit 1
-        } else {
-            Write-Host "TODOS OS TESTES FORAM EXECUTADOS E PASSARAM COM SUCESSO!"
-            exit 0
-        }
+    $resultsBlock = ""
+    if ($raw -match '(?s)<div id="results">(.*?)<\/body>') {
+        $resultsBlock = $matches[1]
     } else {
-        Write-Warning "Tag #results não continha resultados."
+        $resultsBlock = $raw
+    }
+    $allMatches = [regex]::Matches($resultsBlock, '(PASS:|FAIL:|GLOBAL ERROR:|UNHANDLED REJECTION:)[^<]+')
+
+    Write-Host "=================== RESULTADOS DOS TESTES ==================="
+    $passCount = 0
+    $failCount = 0
+    $errorCount = 0
+
+    foreach ($m in $allMatches) {
+        $val = $m.Value.Trim()
+        if ($val -match 'PASS:') {
+            $passCount++
+        } elseif ($val -match 'FAIL:') {
+            $failCount++
+            Write-Host "FALHA: $val" -ForegroundColor Red
+        } else {
+            $errorCount++
+            Write-Host "ERRO: $val" -ForegroundColor Red
+        }
+    }
+
+    Write-Host "============================================================="
+    Write-Host "Total de testes aprovados: $passCount"
+    Write-Host "Total de falhas: $failCount"
+    Write-Host "Total de erros globais: $errorCount"
+
+    if ($failCount -gt 0 -or $errorCount -gt 0 -or $passCount -eq 0) {
+        Write-Error "A suíte de testes falhou!"
+        exit 1
+    } else {
+        Write-Host "TODOS OS $passCount TESTES FORAM EXECUTADOS E PASSARAM COM SUCESSO!"
+        exit 0
     }
 }
