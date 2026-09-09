@@ -95,7 +95,9 @@ self.addEventListener('fetch', (event) => {
     url.includes('googleapis.com') ||
     url.includes('identitytoolkit') ||
     url.includes('securetoken') ||
-    url.includes('firebaseio.com')
+    url.includes('firebaseio.com') ||
+    url.includes('_vercel') ||
+    url.includes('vercel')
   ) {
     return;
   }
