@@ -1,5 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import Footer from '../components/Footer';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
   title: 'DietoCase - Laboratório interativo de Nutrição Clínica',
@@ -30,6 +31,7 @@ export default function RootLayout({
           {children}
         </div>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

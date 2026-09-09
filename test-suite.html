@@ -2971,6 +2971,40 @@ Questões Avaliativas:
         "sw.js utiliza CACHE_NAME = 'dietocase-pwa-v7' para expurgo de caches legados");
       assert(swSourceV7.includes("url.includes('firebase')") || swSourceV7.includes("url.includes('firestore.googleapis.com')"),
         "sw.js implementa bypass de fetch para requisições de API do Firebase/Google");
+
+      // 133. Validação do Vercel Web Analytics (@vercel/analytics e <Analytics/>)
+      let packageJsonText = "";
+      let appLayoutText = "";
+      let indexHtmlAnalyticsText = "";
+      try {
+        const xhrPkg = new XMLHttpRequest();
+        xhrPkg.open("GET", "package.json", false);
+        xhrPkg.send();
+        packageJsonText = xhrPkg.responseText || "";
+      } catch (e) {}
+
+      try {
+        const xhrLayout = new XMLHttpRequest();
+        xhrLayout.open("GET", "app/layout.tsx", false);
+        xhrLayout.send();
+        appLayoutText = xhrLayout.responseText || "";
+      } catch (e) {}
+
+      try {
+        const xhrIdx = new XMLHttpRequest();
+        xhrIdx.open("GET", "index.html", false);
+        xhrIdx.send();
+        indexHtmlAnalyticsText = xhrIdx.responseText || "";
+      } catch (e) {}
+
+      assert(packageJsonText.includes("@vercel/analytics"),
+        "package.json inclui a dependência oficial '@vercel/analytics'");
+      assert(appLayoutText.includes("import { Analytics } from '@vercel/analytics/react'") || appLayoutText.includes('import { Analytics } from "@vercel/analytics/react"'),
+        "app/layout.tsx importa o componente Analytics de '@vercel/analytics/react'");
+      assert(appLayoutText.includes("<Analytics />") || appLayoutText.includes("<Analytics/>"),
+        "app/layout.tsx renderiza o componente <Analytics /> no arquivo raiz da aplicação");
+      assert(indexHtmlAnalyticsText.includes("/_vercel/insights/script.js"),
+        "index.html injeta o script oficial do Vercel Web Analytics para rastreamento de estagiários");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
