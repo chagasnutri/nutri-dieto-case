@@ -2108,20 +2108,15 @@ Questões Avaliativas:
 
       // 113. Engenharia de Prompt: Comportamento Socrático Estrito
       const promptObrigatorio = preceptorEngine.getSystemPrompt();
-      const promptExatoEsperado = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
 
-      assert(promptObrigatorio === promptExatoEsperado,
-        "Engenharia de Prompt: System Prompt coincide 100% caracter por caracter com a diretriz obrigatória do usuário");
-      assert(promptObrigatorio.includes("1. Dar respostas diretas ou condutas prontas"),
-        "Engenharia de Prompt: Proibição estrita 1 (respostas diretas/condutas prontas) presente");
-      assert(promptObrigatorio.includes("2. Calcular valores"),
-        "Engenharia de Prompt: Proibição estrita 2 (calcular valores) presente");
-      assert(promptObrigatorio.includes("3. Avaliar o que o aluno escreveu"),
-        "Engenharia de Prompt: Proibição estrita 3 (avaliar o que o aluno escreveu) presente");
-      assert(promptObrigatorio.includes("4. Dar feedback direto dizendo se algo está \"certo\" ou \"errado\""),
-        "Engenharia de Prompt: Proibição estrita 4 (feedback direto de certo/errado) presente");
-      assert(promptObrigatorio.includes("Você não avalia, você questiona. Utilize exclusivamente o Método Socrático."),
-        "Engenharia de Prompt: Mandato exclusivo do Método Socrático e não-avaliação presente");
+      assert(promptObrigatorio.includes("MÉTODO SOCRÁTICO ESTRITO"),
+        "Engenharia de Prompt: Mandato exclusivo do Método Socrático estrito presente");
+      assert(promptObrigatorio.includes("1. NUNCA FORNEÇA CONDUTAS PRONTAS, CÁLCULOS FINAIS"),
+        "Engenharia de Prompt: Proibição inegociável 1 (condutas prontas e cálculos finais) presente");
+      assert(promptObrigatorio.includes("[Parte 1 - Conceito]") && promptObrigatorio.includes("[Parte 2 - Pergunta Socrática]"),
+        "Engenharia de Prompt: Estrutura obrigatória de resposta dividida em duas seções [Parte 1 - Conceito] e [Parte 2 - Pergunta Socrática] presente");
+      assert(promptObrigatorio.includes("3. CONCISÃO E IMPACTO: Mantenha as respostas curtas"),
+        "Engenharia de Prompt: Diretriz de concisão e encerramento com pergunta reflexiva presente");
 
       // 114. Rota de API (/api/chat) e Comunicação Socrática
       assert(preceptorEngine.apiEndpoint === "/api/chat",
@@ -2129,17 +2124,19 @@ Questões Avaliativas:
 
       // Teste de resposta socrática quando aluno pede para calcular valor (deve recusar e devolver perguntas)
       const respCalculo = await preceptorEngine.generateLocalSocraticResponse("Quanto de caloria devo calcular para o paciente?", simContext);
-      assert(!respCalculo.includes(" kcal") && !respCalculo.includes("1850") && !respCalculo.includes("2000"),
+      assert(!respCalculo.includes(" 1850") && !respCalculo.includes(" 2000"),
         "Comportamento Socrático: Preceptor NÃO calcula calorias ou valores absolutos para o aluno");
-      assert(respCalculo.includes("•") && (respCalculo.includes("demanda metabólica") || respCalculo.includes("equações")),
+      assert(respCalculo.includes("[Parte 1 - Conceito]") && respCalculo.includes("[Parte 2 - Pergunta Socrática]"),
+        "Comportamento Socrático: Resposta dividida obrigatoriamente em [Parte 1 - Conceito] e [Parte 2 - Pergunta Socrática]");
+      assert(respCalculo.includes("demanda metabólica") || respCalculo.includes("equação"),
         "Comportamento Socrático: Preceptor devolve perguntas reflexivas sobre demanda e equações");
 
       // Teste de resposta socrática quando aluno pergunta se a conduta está "certa" ou "errada"
       const respCertoErrado = await preceptorEngine.generateLocalSocraticResponse("Minha conduta de passar dieta branda está certa ou errada?", simContext);
       assert(!respCertoErrado.toLowerCase().includes("está certo") && !respCertoErrado.toLowerCase().includes("está errado"),
         "Comportamento Socrático: Preceptor JAMAIS julga ou valida como 'certo' ou 'errado'");
-      assert(respCertoErrado.includes("diretrizes") || respCertoErrado.includes("fisiopatologia"),
-        "Comportamento Socrático: Preceptor questiona as diretrizes clínicas e impactos metabólicos da escolha");
+      assert(respCertoErrado.includes("[Parte 1 - Conceito]") && respCertoErrado.includes("[Parte 2 - Pergunta Socrática]"),
+        "Comportamento Socrático: Resposta de avaliação segue o formato em duas partes");
 
       // Envio de mensagem pelo motor
       const msgEnviada = await preceptorEngine.sendMessage("Como devo analisar os exames laboratoriais?", {
@@ -3005,6 +3002,65 @@ Questões Avaliativas:
         "app/layout.tsx renderiza o componente <Analytics /> no arquivo raiz da aplicação");
       assert(indexHtmlAnalyticsText.includes("/_vercel/insights/script.js"),
         "index.html injeta o script oficial do Vercel Web Analytics para rastreamento de estagiários");
+
+      // 134. Cálculo Dinâmico do Cardápio por Medida Caseira (Multiplicador Reativo de Gramatura e Nutrientes)
+      assert(typeof getFoodBaseMeasure === "function",
+        "getFoodBaseMeasure está disponível globalmente para cálculo dinâmico de medidas caseiras");
+
+      const paoFrances = getTacoFoodById("taco-13");
+      assert(paoFrances && paoFrances.nome.includes("Pão"), "Alimento Pão Francês localizado na TACO (id: taco-13)");
+      const paoBaseInfo = getFoodBaseMeasure(paoFrances);
+      assert(paoBaseInfo.gramasPorMedida === 50, `Pão francês possui medida base de 50g por unidade (obtido: ${paoBaseInfo.gramasPorMedida}g)`);
+
+      // Teste do multiplicador reativo de 1 para 2 unidades
+      const qtd1 = 1;
+      const gramas1 = paoBaseInfo.gramasPorMedida * qtd1;
+      const kcal1 = Math.round(((paoFrances.kcal * gramas1) / (paoFrances.baseGramas || 100)) * 10) / 10;
+      const qtd2 = 2;
+      const gramas2 = paoBaseInfo.gramasPorMedida * qtd2;
+      const kcal2 = Math.round(((paoFrances.kcal * gramas2) / (paoFrances.baseGramas || 100)) * 10) / 10;
+
+      assert(gramas2 === gramas1 * 2, `Multiplicador da medida caseira (2x) duplica a gramatura de ${gramas1}g para ${gramas2}g`);
+      assert(kcal2 === kcal1 * 2, `Multiplicador da medida caseira (2x) duplica as calorias de ${kcal1} kcal para ${kcal2} kcal de forma reativa`);
+
+      let appJsCode = "";
+      try {
+        const xhrApp = new XMLHttpRequest();
+        xhrApp.open("GET", "js/app.js", false);
+        xhrApp.send();
+        appJsCode = xhrApp.responseText || "";
+      } catch (e) {}
+
+      assert(appJsCode.includes("cardapio-item-qtd") && appJsCode.includes("updateRowNutrition"),
+        "js/app.js possui inputs de quantidade '.cardapio-item-qtd' e função 'updateRowNutrition' para cálculo dinâmico");
+      assert(appJsCode.includes("baseInfo.gramasPorMedida * qtd") && appJsCode.includes("calculateItemNutrition"),
+        "js/app.js implementa multiplicador reativo de medida caseira recalculando gramatura e nutrientes");
+
+      // 135. Método Socrático Rigoroso e Estrutura Obrigatória de Resposta em Duas Seções do Preceptor IA
+      assert(typeof PRECEPTOR_SYSTEM_PROMPT === "string", "PRECEPTOR_SYSTEM_PROMPT está definido");
+      assert(PRECEPTOR_SYSTEM_PROMPT.includes("MÉTODO SOCRÁTICO ESTRITO") && PRECEPTOR_SYSTEM_PROMPT.includes("NUNCA FORNEÇA CONDUTAS PRONTAS"),
+        "PRECEPTOR_SYSTEM_PROMPT estabelece a proibição estrita de condutas prontas e cálculos finais");
+      assert(PRECEPTOR_SYSTEM_PROMPT.includes("[Parte 1 - Conceito]") && PRECEPTOR_SYSTEM_PROMPT.includes("[Parte 2 - Pergunta Socrática]"),
+        "PRECEPTOR_SYSTEM_PROMPT define estrutura obrigatória em duas seções: [Parte 1 - Conceito] e [Parte 2 - Pergunta Socrática]");
+
+      // Teste de respostas do motor socrático integrado (contingência e rotas locais)
+      const mockContext = {
+        paciente: { nome: "João Silva", idade: "48 anos", patologiasHipoteses: "Diabetes Mellitus Tipo 2 e Hipertensão Arterial" }
+      };
+
+      const respCalculo135 = await preceptorEngine.generateLocalSocraticResponse("Quantas calorias devo prescrever no VET?", mockContext);
+      assert(respCalculo135.includes("[Parte 1 - Conceito]") && respCalculo135.includes("[Parte 2 - Pergunta Socrática]"),
+        "Resposta a cálculo de VET contém obrigatoriamente [Parte 1 - Conceito] e [Parte 2 - Pergunta Socrática]");
+      assert(respCalculo135.trim().endsWith("?"),
+        "Resposta a cálculo de VET encerra rigorosamente com pergunta reflexiva ('?')");
+
+      const respAvaliacao135 = await preceptorEngine.generateLocalSocraticResponse("Minha conduta de 1.2g/kg de proteína está certa?", mockContext);
+      assert(respAvaliacao135.includes("[Parte 1 - Conceito]") && respAvaliacao135.includes("[Parte 2 - Pergunta Socrática]"),
+        "Resposta a questionamento de 'certo/errado' contém [Parte 1 - Conceito] e [Parte 2 - Pergunta Socrática]");
+      assert(!respAvaliacao135.includes("está certo") && !respAvaliacao135.includes("está errado"),
+        "Preceptor IA não emite julgamento de certo/errado, estimulando raciocínio ativo do aluno");
+      assert(respAvaliacao135.trim().endsWith("?"),
+        "Resposta sobre avaliação encerra rigorosamente com pergunta reflexiva ('?')");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

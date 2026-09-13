@@ -2,7 +2,21 @@
 // Executada exclusivamente pelo lado do servidor.
 // Suporta a injeção da variável de ambiente segura AI_API_KEY (sem prefixo NEXT_PUBLIC_).
 
-const MANDATORY_SYSTEM_PROMPT = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
+const MANDATORY_SYSTEM_PROMPT = `Você é o Preceptor Virtual do DietoCase, um preceptor clínico docente de nutrição clínica de excelência (padrão USP/Unifesp/HC-FMUSP).
+Sua missão pedagógica é guiar estagiários e estudantes de nutrição através do MÉTODO SOCRÁTICO ESTRITO.
+
+DIRETRIZES PEDAGÓGICAS INEGOCIÁVEIS:
+1. NUNCA FORNEÇA CONDUTAS PRONTAS, CÁLCULOS FINAIS, PRESCRIÇÕES DIETÉTICAS OU RESPOSTAS DIRETAS. O aprendizado deve ser ativo.
+2. ESTRUTURA OBRIGATÓRIA DA RESPOSTA:
+Toda resposta sua DEVE conter obrigatoriamente e exatamente duas seções bem demarcadas:
+
+[Parte 1 - Conceito]
+Faça uma validação breve do raciocínio trazido pelo estudante e fundamente sucintamente a base fisiológica, bioquímica ou fisiopatológica subjacente. Destaque se o raciocínio clínico caminha na direção correta ou se há pontos de atenção fisiopatológica.
+
+[Parte 2 - Pergunta Socrática]
+Formule UMA pergunta reflexiva, instigante e precisa que estimule o estagiário a investigar, calcular ou deduzir por conta própria o próximo passo da conduta, a necessidade de ajuste de macronutriente, micronutriente, fração lipídica ou interação fármaco-nutriente.
+
+3. CONCISÃO E IMPACTO: Mantenha as respostas curtas, densas em ciência da nutrição e termine SEMPRE com a pergunta reflexiva.`;
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -126,11 +140,23 @@ exports.handler = async (event, context) => {
 
     let socraticReply = "";
     if (qLower.includes("calcul") || qLower.includes("vet") || qLower.includes("caloria") || qLower.includes("quantas") || qLower.includes("quanto")) {
-      socraticReply = `Como seu preceptor de nutrição clínica, meu papel não é realizar cálculos por você, mas instigar seu raciocínio.\n\nObserve o paciente (${pNome}, ${pIdade}) e o quadro clínico relatado: **${pPatol}**.\n\n• Qual é o estado nutricional e a demanda metabólica atual dele?\n• Você busca uma conduta hipocalórica, normocalórica ou hipercalórica neste momento?\n• Que equações preditivas você considera mais adequadas para essa faixa etária e por que fatores de atividade e injúria seriam justificados?`;
+      socraticReply = `[Parte 1 - Conceito]
+A determinação das necessidades energéticas e de macronutrientes depende da taxa metabólica basal, do nível de atividade física e do estresse metabólico gerado pelo quadro de ${pPatol}. Em ${pNome} (${pIdade}), o VET dita o anabolismo e a resposta clínica esperada.
+
+[Parte 2 - Pergunta Socrática]
+Considerando a condição metabólica de ${pNome}, que equação preditiva você selecionaria e qual meta calórica (hipo, normo ou hipercalórica) se fundamenta na fisiopatologia sem sobrecarregar o organismo?`;
     } else if (qLower.includes("certo") || qLower.includes("errad") || qLower.includes("avalia") || qLower.includes("o que acha")) {
-      socraticReply = `Em nutrição clínica não procuramos respostas prontas de "certo" ou "errado", mas sim condutas cientificamente fundamentadas.\n\nReflita comigo:\n1. Quais diretrizes clínicas embasam essa sua proposta para um quadro de **${pPatol}**?\n2. Se adotarmos essa conduta, qual é o impacto metabólico esperado nos parâmetros laboratoriais e no peso corporal dele nas próximas semanas?\n3. O que faria você reavaliar ou ajustar essa decisão?`;
+      socraticReply = `[Parte 1 - Conceito]
+Na prática clínica baseada em evidências, não existem respostas binárias descontextualizadas de certo ou errado, mas sim hipóteses terapêuticas fundamentadas na fisiopatologia de ${pPatol} e nas diretrizes vigentes.
+
+[Parte 2 - Pergunta Socrática]
+Se implementarmos essa conduta em ${pNome}, qual impacto fisiológico e metabólico você prevê nos exames bioquímicos e no peso corporal nas próximas semanas, e quais sinais clínicos fariam você reavaliar?`;
     } else {
-      socraticReply = `Essa é uma reflexão fundamental para o manejo de ${pNome} (${pIdade}, ${pPatol}).\n\nPara guiar sua tomada de decisão:\n• Quais são os principais objetivos dietoterápicos que devem nortear o cuidado deste paciente?\n• Que riscos metabólicos ou de desnutrição devem ser prevenidos em primeiro lugar?\n• Como sua conduta atua diretamente na etiologia que você identificou no diagnóstico PES?`;
+      socraticReply = `[Parte 1 - Conceito]
+O raciocínio clínico nutricional requer articular a anamnese, o diagnóstico PES e a fisiopatologia de ${pPatol} de ${pNome} (${pIdade}), assegurando intervenção direta na causa-raiz do problema.
+
+[Parte 2 - Pergunta Socrática]
+Quais são os objetivos dietoterápicos prioritários neste momento para ${pNome} e de que forma sua proposta atua diretamente sobre a etiologia identificada no diagnóstico PES?`;
     }
 
     return {

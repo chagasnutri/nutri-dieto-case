@@ -46,6 +46,32 @@ export default function SimulationModule() {
     vitC: ''
   });
 
+  // Estado reativo do cardápio com multiplicador dinâmico de medida caseira
+  const [cardapioItems, setCardapioItems] = useState([
+    { id: '1', nome: 'Pão de forma integral', medida: 'fatia', baseGramasMedida: 25, qtd: 2, gramas: 50, kcal: 126.5, cho: 24.9, ptn: 4.7, lip: 1.8 },
+    { id: '2', nome: 'Queijo minas frescal', medida: 'fatia média', baseGramasMedida: 30, qtd: 1, gramas: 30, kcal: 79.2, cho: 1.0, ptn: 5.2, lip: 6.1 },
+    { id: '3', nome: 'Mamão papaia', medida: 'fatia / porção', baseGramasMedida: 100, qtd: 1, gramas: 100, kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1 }
+  ]);
+
+  const handleCardapioQtdChange = (idx: number, newQtdVal: string) => {
+    const q = parseFloat(newQtdVal) || 0;
+    setCardapioItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      const g = Math.round((item.baseGramasMedida * q) * 10) / 10;
+      const baseRef = item.gramas > 0 ? item.gramas : item.baseGramasMedida;
+      const factor = g / (baseRef || 1);
+      return {
+        ...item,
+        qtd: q,
+        gramas: g,
+        kcal: Math.round((item.kcal * factor) * 10) / 10,
+        cho: Math.round((item.cho * factor) * 10) / 10,
+        ptn: Math.round((item.ptn * factor) * 10) / 10,
+        lip: Math.round((item.lip * factor) * 10) / 10
+      };
+    }));
+  };
+
   const addExamRow = () => {
     setExams(prev => [...prev, { id: Date.now().toString(), name: '', ref: '', value: '', interp: '' }]);
   };
@@ -528,19 +554,53 @@ export default function SimulationModule() {
                 </div>
               </div>
 
-              <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-2">
-                <div className="font-bold text-slate-200">Exemplo de Refeicao: Desjejum (07:30)</div>
-                <div className="text-slate-300 flex justify-between border-b border-slate-800 py-1">
-                  <span>Pao de forma integral (50g)</span>
-                  <span className="font-mono">124 kcal | 23.5g CHO | 4.8g PTN</span>
+              <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="font-bold text-slate-200">Refeição Modelo: Desjejum (07:30) • Cálculo Dinâmico Reativo</div>
+                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
+                    Total: {Math.round(cardapioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(cardapioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(cardapioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(cardapioItems.reduce((acc, it) => acc + it.lip, 0))}g
+                  </span>
                 </div>
-                <div className="text-slate-300 flex justify-between border-b border-slate-800 py-1">
-                  <span>Queijo minas frescal (30g)</span>
-                  <span className="font-mono">79 kcal | 1.0g CHO | 5.2g PTN</span>
-                </div>
-                <div className="text-slate-300 flex justify-between py-1">
-                  <span>Mamao papaia (100g)</span>
-                  <span className="font-mono">40 kcal | 10.4g CHO | 0.5g PTN</span>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+                      <tr>
+                        <th className="py-1.5 px-2">Alimento</th>
+                        <th className="py-1.5 px-2">Medida Base</th>
+                        <th className="py-1.5 px-2 text-center w-20 text-emerald-400 font-bold">Qtd</th>
+                        <th className="py-1.5 px-2 text-right w-24">Gramas</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-emerald-400 font-bold">Kcal</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-amber-400">CHO</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-sky-400">PTN</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-rose-400">LIP</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-850">
+                      {cardapioItems.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-slate-850/50 transition">
+                          <td className="py-2 px-2 font-medium text-slate-200">{item.nome}</td>
+                          <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.baseGramasMedida}g)</td>
+                          <td className="py-2 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="0.5"
+                              value={item.qtd}
+                              onChange={(e) => handleCardapioQtdChange(idx, e.target.value)}
+                              className="w-16 bg-slate-950 border border-emerald-500/60 rounded px-1.5 py-1 text-center font-bold text-emerald-300 focus:border-emerald-400 outline-none"
+                              title="Altere a quantidade da medida caseira para recalcular gramas e nutrientes instantaneamente"
+                            />
+                          </td>
+                          <td className="py-2 px-2 text-right font-bold text-slate-300">{item.gramas}g</td>
+                          <td className="py-2 px-2 text-right font-bold text-emerald-400">{item.kcal}</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.cho}g</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.ptn}g</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.lip}g</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

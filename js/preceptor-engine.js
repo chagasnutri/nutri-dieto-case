@@ -1,7 +1,21 @@
 // Preceptor IA - Assistente Virtual Socrático de Nutrição Clínica
 // Atua com exclusividade pedagógica através do Método Socrático, estimulando o raciocínio sem dar respostas prontas.
 
-const PRECEPTOR_SYSTEM_PROMPT = `Você é um professor experiente de Nutrição Clínica atuando como preceptor de estágio. Seu único objetivo é instigar o raciocínio clínico e a tomada de decisão do estudante. Você É ESTRITAMENTE PROIBIDO de: 1. Dar respostas diretas ou condutas prontas. 2. Calcular valores. 3. Avaliar o que o aluno escreveu. 4. Dar feedback direto dizendo se algo está "certo" ou "errado". Você não avalia, você questiona. Utilize exclusivamente o Método Socrático. Se o aluno perguntar algo ou apresentar uma conduta, devolva com perguntas que o façam refletir sobre a fisiopatologia, as diretrizes e os impactos metabólicos de sua escolha, guiando-o para que ele mesmo chegue à conclusão e julgue a própria conduta.`;
+const PRECEPTOR_SYSTEM_PROMPT = `Você é o Preceptor Virtual do DietoCase, um preceptor clínico docente de nutrição clínica de excelência (padrão USP/Unifesp/HC-FMUSP).
+Sua missão pedagógica é guiar estagiários e estudantes de nutrição através do MÉTODO SOCRÁTICO ESTRITO.
+
+DIRETRIZES PEDAGÓGICAS INEGOCIÁVEIS:
+1. NUNCA FORNEÇA CONDUTAS PRONTAS, CÁLCULOS FINAIS, PRESCRIÇÕES DIETÉTICAS OU RESPOSTAS DIRETAS. O aprendizado deve ser ativo.
+2. ESTRUTURA OBRIGATÓRIA DA RESPOSTA:
+Toda resposta sua DEVE conter obrigatoriamente e exatamente duas seções bem demarcadas:
+
+[Parte 1 - Conceito]
+Faça uma validação breve do raciocínio trazido pelo estudante e fundamente sucintamente a base fisiológica, bioquímica ou fisiopatológica subjacente. Destaque se o raciocínio clínico caminha na direção correta ou se há pontos de atenção fisiopatológica.
+
+[Parte 2 - Pergunta Socrática]
+Formule UMA pergunta reflexiva, instigante e precisa que estimule o estagiário a investigar, calcular ou deduzir por conta própria o próximo passo da conduta, a necessidade de ajuste de macronutriente, micronutriente, fração lipídica ou interação fármaco-nutriente.
+
+3. CONCISÃO E IMPACTO: Mantenha as respostas curtas, densas em ciência da nutrição e termine SEMPRE com a pergunta reflexiva.`;
 
 class PreceptorEngine {
   constructor() {
@@ -223,9 +237,9 @@ class PreceptorEngine {
    * Usada quando rodando localmente sem servidor backend ou com chave de API pendente.
    */
   async generateLocalSocraticResponse(userText, context) {
-    const pNome = context.paciente.nome || "o paciente";
-    const pIdade = context.paciente.idade || "idade a apurar";
-    const pPatol = context.paciente.patologiasHipoteses || "quadro clínico atual";
+    const pNome = context?.paciente?.nome || "o paciente";
+    const pIdade = context?.paciente?.idade || "idade a apurar";
+    const pPatol = context?.paciente?.patologiasHipoteses || "quadro clínico atual";
     const qLower = userText.toLowerCase();
 
     // Simula tempo de reflexão do preceptor
@@ -233,26 +247,46 @@ class PreceptorEngine {
 
     // Perguntas sobre cálculos ou valores
     if (qLower.includes("calcul") || qLower.includes("vet") || qLower.includes("caloria") || qLower.includes("quantas") || qLower.includes("quanto")) {
-      return `Como seu preceptor, meu papel é fazer você pensar e não realizar a conta por você.\n\nObserve o paciente (${pNome}, ${pIdade}) e as condições relatadas: **${pPatol}**.\n\n• Qual é o estado nutricional e a demanda metabólica atual dele?\n• Você busca uma conduta hipocalórica, normocalórica ou hipercalórica neste momento?\n• Que equações preditivas você considera mais adequadas para essa faixa etária e por que fatores de atividade e injúria seriam justificados?`;
+      return `[Parte 1 - Conceito]
+A determinação das necessidades energéticas e de macronutrientes depende da taxa metabólica basal, do nível de atividade física e do fator de estresse metabólico gerado pelo quadro de ${pPatol}. Em ${pNome} (${pIdade}), a modulação calórica orienta diretamente o anabolismo tecidual ou a perda ponderal controlada.
+
+[Parte 2 - Pergunta Socrática]
+Considerando o estado nutricional e a demanda metabólica atual de ${pNome}, que equação preditiva você selecionaria e qual meta calórica (hipo, normo ou hipercalórica) melhor atende à fisiopatologia sem induzir sobrecarga metabólica?`;
     }
 
     // Perguntas sobre "certo ou errado" / avaliação
     if (qLower.includes("certo") || qLower.includes("errad") || qLower.includes("ta bom") || qLower.includes("está bom") || qLower.includes("avalia") || qLower.includes("o que acha")) {
-      return `Em nutrição clínica não procuramos respostas prontas de "certo" ou "errado", mas sim condutas cientificamente fundamentadas.\n\nReflita comigo:\n1. Quais diretrizes clínicas nacionais ou internacionais embasam essa sua proposta para um quadro de **${pPatol}**?\n2. Se adotarmos essa conduta, qual é o impacto metabólico esperado nos parâmetros laboratoriais e no peso corporal dele nas próximas semanas?\n3. O que faria você reavaliar ou ajustar essa decisão?`;
+      return `[Parte 1 - Conceito]
+Na prática clínica baseada em evidências, não existem respostas absolutas de certo ou errado desvinculadas do contexto clínico, mas sim hipóteses terapêuticas embasadas na fisiopatologia de ${pPatol} e nas diretrizes vigentes (ex: BRASPEN, ESPEN, SBC, SBD).
+
+[Parte 2 - Pergunta Socrática]
+Se implementarmos essa conduta em ${pNome}, qual impacto fisiológico e metabólico você prevê nos exames bioquímicos e na composição corporal nas próximas semanas, e quais critérios clínicos levariam você a ajustar esse plano?`;
     }
 
     // Perguntas sobre exames bioquímicos
     if (qLower.includes("exame") || qLower.includes("glicem") || qLower.includes("creatin") || qLower.includes("lip") || qLower.includes("hba1c") || qLower.includes("ureia")) {
-      return `Muito bem apontado. Os exames laboratoriais traduzem a fisiopatologia silenciosa do paciente.\n\nAnalisando os achados de **${pNome}**:\n• De que forma essas alterações bioquímicas dialogam com o diagnóstico de **${pPatol}**?\n• Quais nutrientes da prescrição exigem modulação estrita para evitar sobrecarga orgânica ou descompensação?\n• Que meta clínica prioritária você estabelece para esses marcadores?`;
+      return `[Parte 1 - Conceito]
+Os biomarcadores laboratoriais refletem a resposta inflamatória, a integridade da função hepática/renal e o equilíbrio hidroeletrolítico na vigência de ${pPatol}. A interpretação integrada desses parâmetros com a clínica de ${pNome} previne descompensações iatrogênicas.
+
+[Parte 2 - Pergunta Socrática]
+Analisando essas alterações bioquímicas em conjunto, quais nutrientes ou frações lipídicas exigem modulação prioritária na sua prescrição dietoterápica para restabelecer a homeostase do paciente?`;
     }
 
     // Perguntas sobre prescrição, macronutrientes ou consistência
     if (qLower.includes("prescri") || qLower.includes("proteina") || qLower.includes("carboidrato") || qLower.includes("lipidio") || qLower.includes("dieta") || qLower.includes("pastosa") || qLower.includes("consistencia")) {
-      return `Ao desenhar a prescrição para ${pNome}, considere a integridade do trato gastrointestinal e a tolerância individual.\n\n• Qual é a justificativa fisiopatológica para a distribuição de macronutrientes que você está cogitando?\n• Essa distribuição atende às recomendações para **${pPatol}**?\n• Como você planeja o fracionamento e a consistência para garantir a adesão do paciente à conduta?`;
+      return `[Parte 1 - Conceito]
+A distribuição percentual e em gramas por quilo de macronutrientes deve respeitar a capacidade de metabolização de substratos, a sensibilidade insulínica e a preservação de massa magra frente ao quadro de ${pPatol} em ${pNome}.
+
+[Parte 2 - Pergunta Socrática]
+Qual é a sua justificativa metabólica para essa proporção de macronutrientes e fracionamento dietético, e de que maneira ela previne os riscos nutricionais identificados no diagnóstico PES?`;
     }
 
     // Resposta socrática genérica ancorada no paciente
-    return `Essa é uma questão central no manejo deste caso (${pNome}, ${pIdade}, portador de ${pPatol}).\n\nPara que você mesmo consolide essa conduta, devolvo-lhe uma reflexão:\n• Quais são os principais objetivos dietoterápicos que devem nortear o cuidado deste paciente?\n• Que riscos metabólicos ou de desnutrição devem ser prevenidos em primeiro lugar?\n• Como sua conduta atua diretamente na etiologia que você identificou no diagnóstico PES?`;
+    return `[Parte 1 - Conceito]
+O raciocínio clínico nutricional exige a integração da anamnese, do diagnóstico PES e da fisiopatologia de ${pPatol} apresentada por ${pNome} (${pIdade}), assegurando que cada conduta intervenha diretamente na etiologia nutricional.
+
+[Parte 2 - Pergunta Socrática]
+Quais são os objetivos dietoterápicos prioritários para este momento do atendimento de ${pNome} e qual parâmetro clínico-laboratorial você monitorará para confirmar a eficácia da sua conduta?`;
   }
 
   openDrawer() {

@@ -3629,8 +3629,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
               <tr>
-                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO)</th>
-                <th class="py-1.5 px-2 min-w-[170px]">Medida Caseira (Texto Livre)</th>
+                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO / Decisão)</th>
+                <th class="py-1.5 px-2 min-w-[140px]">Medida Caseira</th>
+                <th class="py-1.5 px-2 text-center w-16 text-indigo-900 font-bold" title="Quantidade de medidas caseiras">Qtd</th>
                 <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
                 <th class="py-1.5 px-2 text-right w-16 text-indigo-900 font-bold">Kcal</th>
                 <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
@@ -3645,7 +3646,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (meal.itens.length === 0) {
         itemsTableHtml += `
           <tr class="empty-rec-items-row">
-            <td colspan="8" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+            <td colspan="9" class="text-center py-2.5 text-slate-400 italic text-[11px]">
               Nenhum alimento referido nesta refeição. Clique no botão abaixo para adicionar itens da TACO.
             </td>
           </tr>
@@ -3660,10 +3661,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </select>
               </td>
               <td class="py-1.5 px-2">
-                <input type="text" class="rec-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: 1 xícara, 2 colheres..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira: texto descritivo livre, não interfere nos cálculos">
+                <input type="text" class="rec-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: unidade, colher..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
+              </td>
+              <td class="py-1.5 px-2 text-center">
+                <input type="number" min="0.1" step="0.5" class="rec-item-qtd w-16 border border-indigo-300 bg-indigo-50/50 rounded px-1.5 py-1 text-xs text-center font-bold text-indigo-950 focus:border-indigo-600 focus:bg-white focus:ring-1 focus:ring-indigo-600 shadow-2xs" placeholder="1" value="${it.quantidadeMedida !== undefined && it.quantidadeMedida !== null && it.quantidadeMedida !== '' ? it.quantidadeMedida : (it.qtd !== undefined ? it.qtd : 1)}" title="Quantidade da medida caseira: altere para recalcular gramas e nutrientes instantaneamente">
               </td>
               <td class="py-1.5 px-2 text-right">
-                <input type="number" min="0" step="5" class="rec-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-indigo-600" placeholder="g" value="${it.gramatura || ''}">
+                <input type="number" min="0" step="1" class="rec-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-indigo-600" placeholder="g" value="${it.gramatura || ''}">
               </td>
               <td class="py-1.5 px-2 text-right font-bold text-indigo-900 rec-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
               <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
@@ -3711,70 +3715,101 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("recordatorioMealsContainer");
     if (!container) return;
 
+    // Função unificada de recálculo reativo da linha do recordatório
+    function updateRecRowNutrition(row, triggerSource) {
+      if (!row) return;
+      const foodSelect = row.querySelector(".rec-item-food");
+      const foodId = foodSelect ? foodSelect.value : "";
+      const food = (typeof getFoodById === "function") ? getFoodById(foodId) : ((typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId));
+
+      const qtdInput = row.querySelector(".rec-item-qtd");
+      const gramasInput = row.querySelector(".rec-item-gramas");
+      const medidaInput = row.querySelector(".rec-item-medida");
+
+      const baseInfo = (typeof getFoodBaseMeasure === "function") ? getFoodBaseMeasure(food) : { medidaBase: "porção", gramasPorMedida: 100, baseGramas: 100 };
+
+      if (triggerSource === "food") {
+        if (food) {
+          if (!medidaInput.value || !medidaInput.value.trim() || medidaInput.dataset.autoFilled === "true") {
+            medidaInput.value = baseInfo.medidaBase;
+            medidaInput.dataset.autoFilled = "true";
+          }
+          if (!qtdInput.value || parseFloat(qtdInput.value.replace(",", ".")) <= 0) {
+            qtdInput.value = "1";
+          }
+          const qtd = parseFloat(qtdInput.value.replace(",", ".")) || 1;
+          const calculatedGrams = Math.round((baseInfo.gramasPorMedida * qtd) * 10) / 10;
+          gramasInput.value = calculatedGrams > 0 ? calculatedGrams : "";
+        }
+      } else if (triggerSource === "qtd") {
+        const qtd = parseFloat(qtdInput.value.replace(",", ".")) || 0;
+        if (food && baseInfo.gramasPorMedida > 0) {
+          const calculatedGrams = Math.round((baseInfo.gramasPorMedida * qtd) * 10) / 10;
+          gramasInput.value = calculatedGrams > 0 ? calculatedGrams : (qtd === 0 ? "0" : "");
+        }
+      } else if (triggerSource === "gramas") {
+        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+        if (food && baseInfo.gramasPorMedida > 0 && gramas > 0) {
+          const calcQtd = Math.round((gramas / baseInfo.gramasPorMedida) * 10) / 10;
+          if (calcQtd > 0) qtdInput.value = calcQtd;
+        }
+      }
+
+      const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+      const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+      row.querySelector(".rec-item-kcal").textContent = nutri.kcal;
+      row.querySelector(".rec-item-cho").textContent = nutri.cho;
+      row.querySelector(".rec-item-ptn").textContent = nutri.ptn;
+      row.querySelector(".rec-item-lip").textContent = nutri.lip;
+
+      readRecordatorioFromDOM();
+    }
+
     // 1. Mudança no alimento selecionado da TACO
     container.querySelectorAll(".rec-item-food").forEach(select => {
       select.addEventListener("change", (e) => {
         const row = e.target.closest(".rec-item-row");
-        if (!row) return;
-        const foodId = e.target.value;
-        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
-
-        const gramasInput = row.querySelector(".rec-item-gramas");
-        const medidaInput = row.querySelector(".rec-item-medida");
-
-        if (food && food.porcaoSugerida && (!medidaInput.value || !medidaInput.value.trim())) {
-          medidaInput.placeholder = `Sugestão: ${food.porcaoSugerida}`;
-        }
-
-        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
-        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
-
-        row.querySelector(".rec-item-kcal").textContent = nutri.kcal;
-        row.querySelector(".rec-item-cho").textContent = nutri.cho;
-        row.querySelector(".rec-item-ptn").textContent = nutri.ptn;
-        row.querySelector(".rec-item-lip").textContent = nutri.lip;
-
-        readRecordatorioFromDOM();
+        updateRecRowNutrition(row, "food");
       });
     });
 
-    // 2. Gramatura (g) -> Regra de três da TACO
+    // 2. Mudança na Quantidade da Medida Caseira (onChange e input) -> Cálculo dinâmico em tempo real
+    container.querySelectorAll(".rec-item-qtd").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const row = e.target.closest(".rec-item-row");
+        updateRecRowNutrition(row, "qtd");
+      });
+      input.addEventListener("change", (e) => {
+        const row = e.target.closest(".rec-item-row");
+        updateRecRowNutrition(row, "qtd");
+      });
+    });
+
+    // 3. Gramatura (g) -> Regra de três da TACO e sincronização com Qtd
     container.querySelectorAll(".rec-item-gramas").forEach(input => {
       input.addEventListener("input", (e) => {
         const row = e.target.closest(".rec-item-row");
-        if (!row) return;
-
-        const foodSelect = row.querySelector(".rec-item-food");
-        const foodId = foodSelect ? foodSelect.value : "";
-        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
-
-        const gramas = parseFloat(e.target.value.replace(",", ".")) || 0;
-        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
-
-        row.querySelector(".rec-item-kcal").textContent = nutri.kcal;
-        row.querySelector(".rec-item-cho").textContent = nutri.cho;
-        row.querySelector(".rec-item-ptn").textContent = nutri.ptn;
-        row.querySelector(".rec-item-lip").textContent = nutri.lip;
-
-        readRecordatorioFromDOM();
+        updateRecRowNutrition(row, "gramas");
       });
     });
 
-    // 3. Medida Caseira Livre
+    // 4. Medida Caseira Livre
     container.querySelectorAll(".rec-item-medida").forEach(input => {
-      input.addEventListener("input", () => {
+      input.addEventListener("input", (e) => {
+        delete e.target.dataset.autoFilled;
         readRecordatorioFromDOM();
       });
     });
 
-    // 4. Edição de nomes, horários, tipo preparação
+    // 5. Edição de nomes, horários, tipo preparação
     container.querySelectorAll(".rec-ref-name, .rec-ref-time, .rec-ref-tipo-prep").forEach(input => {
       input.addEventListener("input", () => {
         readRecordatorioFromDOM();
       });
     });
 
-    // 5. Botão Adicionar Alimento
+    // 6. Botão Adicionar Alimento
     container.querySelectorAll(".add-rec-food-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         readRecordatorioFromDOM();
@@ -3786,6 +3821,8 @@ document.addEventListener("DOMContentLoaded", () => {
             id: `rec-it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: "",
             alimentoNome: "",
+            quantidadeMedida: 1,
+            qtd: 1,
             medidaCaseira: "",
             gramatura: "",
             kcal: 0,
@@ -3803,7 +3840,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 6. Botão Remover Alimento
+    // 7. Botão Remover Alimento
     container.querySelectorAll(".remove-rec-item-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         readRecordatorioFromDOM();
@@ -3816,7 +3853,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 7. Botão Remover Refeição do Recordatório
+    // 8. Botão Remover Refeição do Recordatório
     container.querySelectorAll(".remove-rec-meal-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         readRecordatorioFromDOM();
@@ -3850,6 +3887,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const medidaInput = row.querySelector(".rec-item-medida");
           const medidaCaseira = medidaInput ? medidaInput.value.trim() : "";
 
+          const qtdInput = row.querySelector(".rec-item-qtd");
+          const quantidadeMedida = qtdInput ? (parseFloat(qtdInput.value.replace(",", ".")) || 1) : 1;
+
           const gramasInput = row.querySelector(".rec-item-gramas");
           const gramatura = parseFloat(gramasInput?.value?.replace(",", ".")) || 0;
 
@@ -3859,6 +3899,8 @@ document.addEventListener("DOMContentLoaded", () => {
             id: row.dataset.itemId || `rec-it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: tacoId,
             alimentoNome: alimentoNome,
+            quantidadeMedida: quantidadeMedida,
+            qtd: quantidadeMedida,
             medidaCaseira: medidaCaseira,
             gramatura: gramatura,
             kcal: nutri.kcal,
@@ -4318,6 +4360,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const medidaInput = row.querySelector(".cardapio-item-medida");
           const medidaCaseira = medidaInput ? medidaInput.value.trim() : ""; 
 
+          const qtdInput = row.querySelector(".cardapio-item-qtd");
+          const quantidadeMedida = qtdInput ? (parseFloat(qtdInput.value.replace(",", ".")) || 1) : 1;
+
           const gramasInput = row.querySelector(".cardapio-item-gramas");
           const gramasVal = gramasInput ? gramasInput.value.trim() : "";
           const gramatura = parseFloat(gramasVal.replace(",", ".")) || 0;
@@ -4329,6 +4374,8 @@ document.addEventListener("DOMContentLoaded", () => {
             id: row.dataset.itemId || `it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: tacoId,
             alimentoNome: alimentoNome,
+            quantidadeMedida: quantidadeMedida,
+            qtd: quantidadeMedida,
             medidaCaseira: medidaCaseira,
             gramatura: gramatura,
             kcal: nutri.kcal,
@@ -4493,8 +4540,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
               <tr>
-                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO)</th>
-                <th class="py-1.5 px-2 min-w-[170px]">Medida Caseira (Texto Livre)</th>
+                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO / Decisão)</th>
+                <th class="py-1.5 px-2 min-w-[140px]">Medida Caseira</th>
+                <th class="py-1.5 px-2 text-center w-16 text-emerald-800 font-bold" title="Quantidade de medidas caseiras">Qtd</th>
                 <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
                 <th class="py-1.5 px-2 text-right w-16 text-emerald-800 font-bold">Kcal</th>
                 <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
@@ -4509,7 +4557,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (meal.itens.length === 0) {
         itemsTableHtml += `
           <tr class="empty-items-row">
-            <td colspan="8" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+            <td colspan="9" class="text-center py-2.5 text-slate-400 italic text-[11px]">
               Nenhum alimento cadastrado nesta refeição. Clique no botão verde abaixo para adicionar alimentos da TACO.
             </td>
           </tr>
@@ -4524,10 +4572,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </select>
               </td>
               <td class="py-1.5 px-2">
-                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: 1 colher de sopa, 2 fatias..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira: texto descritivo livre, não interfere nos cálculos">
+                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: unidade, colher..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
+              </td>
+              <td class="py-1.5 px-2 text-center">
+                <input type="number" min="0.1" step="0.5" class="cardapio-item-qtd w-16 border border-emerald-400 bg-emerald-50/60 rounded px-1.5 py-1 text-xs text-center font-bold text-emerald-950 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 shadow-2xs" placeholder="1" value="${it.quantidadeMedida !== undefined && it.quantidadeMedida !== null && it.quantidadeMedida !== '' ? it.quantidadeMedida : (it.qtd !== undefined ? it.qtd : 1)}" title="Quantidade da medida caseira: altere (ex: de 1 para 2) para recalcular gramatura e nutrientes em tempo real">
               </td>
               <td class="py-1.5 px-2 text-right">
-                <input type="number" min="0" step="5" class="cardapio-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-emerald-600" placeholder="g" value="${it.gramatura || ''}">
+                <input type="number" min="0" step="1" class="cardapio-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-emerald-600" placeholder="g" value="${it.gramatura || ''}">
               </td>
               <td class="py-1.5 px-2 text-right font-bold text-emerald-800 cardapio-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
               <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
@@ -4584,72 +4635,101 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("cardapioMealsContainer");
     if (!container) return;
 
+    // Função unificada de recálculo reativo da linha do cardápio
+    function updateRowNutrition(row, triggerSource) {
+      if (!row) return;
+      const foodSelect = row.querySelector(".cardapio-item-food");
+      const foodId = foodSelect ? foodSelect.value : "";
+      const food = (typeof getFoodById === "function") ? getFoodById(foodId) : ((typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId));
+
+      const qtdInput = row.querySelector(".cardapio-item-qtd");
+      const gramasInput = row.querySelector(".cardapio-item-gramas");
+      const medidaInput = row.querySelector(".cardapio-item-medida");
+
+      const baseInfo = (typeof getFoodBaseMeasure === "function") ? getFoodBaseMeasure(food) : { medidaBase: "porção", gramasPorMedida: 100, baseGramas: 100 };
+
+      if (triggerSource === "food") {
+        if (food) {
+          if (!medidaInput.value || !medidaInput.value.trim() || medidaInput.dataset.autoFilled === "true") {
+            medidaInput.value = baseInfo.medidaBase;
+            medidaInput.dataset.autoFilled = "true";
+          }
+          if (!qtdInput.value || parseFloat(qtdInput.value.replace(",", ".")) <= 0) {
+            qtdInput.value = "1";
+          }
+          const qtd = parseFloat(qtdInput.value.replace(",", ".")) || 1;
+          const calculatedGrams = Math.round((baseInfo.gramasPorMedida * qtd) * 10) / 10;
+          gramasInput.value = calculatedGrams > 0 ? calculatedGrams : "";
+        }
+      } else if (triggerSource === "qtd") {
+        const qtd = parseFloat(qtdInput.value.replace(",", ".")) || 0;
+        if (food && baseInfo.gramasPorMedida > 0) {
+          const calculatedGrams = Math.round((baseInfo.gramasPorMedida * qtd) * 10) / 10;
+          gramasInput.value = calculatedGrams > 0 ? calculatedGrams : (qtd === 0 ? "0" : "");
+        }
+      } else if (triggerSource === "gramas") {
+        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+        if (food && baseInfo.gramasPorMedida > 0 && gramas > 0) {
+          const calcQtd = Math.round((gramas / baseInfo.gramasPorMedida) * 10) / 10;
+          if (calcQtd > 0) qtdInput.value = calcQtd;
+        }
+      }
+
+      const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
+      const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
+
+      row.querySelector(".cardapio-item-kcal").textContent = nutri.kcal;
+      row.querySelector(".cardapio-item-cho").textContent = nutri.cho;
+      row.querySelector(".cardapio-item-ptn").textContent = nutri.ptn;
+      row.querySelector(".cardapio-item-lip").textContent = nutri.lip;
+
+      readCardapioFromDOM();
+    }
+
     // 1. Mudança no alimento selecionado da TACO
     container.querySelectorAll(".cardapio-item-food").forEach(select => {
       select.addEventListener("change", (e) => {
         const row = e.target.closest(".cardapio-item-row");
-        if (!row) return;
-        const foodId = e.target.value;
-        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
-        
-        const gramasInput = row.querySelector(".cardapio-item-gramas");
-        const medidaInput = row.querySelector(".cardapio-item-medida");
-
-        // Se o aluno ainda não digitou medida caseira e a TACO possui porção sugerida, sugere
-        if (food && food.porcaoSugerida && (!medidaInput.value || !medidaInput.value.trim())) {
-          medidaInput.placeholder = `Sugestão: ${food.porcaoSugerida}`;
-        }
-
-        const gramas = parseFloat(gramasInput.value.replace(",", ".")) || 0;
-        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
-
-        row.querySelector(".cardapio-item-kcal").textContent = nutri.kcal;
-        row.querySelector(".cardapio-item-cho").textContent = nutri.cho;
-        row.querySelector(".cardapio-item-ptn").textContent = nutri.ptn;
-        row.querySelector(".cardapio-item-lip").textContent = nutri.lip;
-
-        readCardapioFromDOM();
+        updateRowNutrition(row, "food");
       });
     });
 
-    // 2. Digitação na Gramatura (g) -> Dispara Regra de Três da TACO instantaneamente
+    // 2. Mudança na Quantidade da Medida Caseira (evento onChange e input) -> Cálculo dinâmico em tempo real
+    container.querySelectorAll(".cardapio-item-qtd").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const row = e.target.closest(".cardapio-item-row");
+        updateRowNutrition(row, "qtd");
+      });
+      input.addEventListener("change", (e) => {
+        const row = e.target.closest(".cardapio-item-row");
+        updateRowNutrition(row, "qtd");
+      });
+    });
+
+    // 3. Digitação na Gramatura (g) -> Dispara Regra de Três da TACO instantaneamente
     container.querySelectorAll(".cardapio-item-gramas").forEach(input => {
       input.addEventListener("input", (e) => {
         const row = e.target.closest(".cardapio-item-row");
-        if (!row) return;
-
-        const foodSelect = row.querySelector(".cardapio-item-food");
-        const foodId = foodSelect ? foodSelect.value : "";
-        const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(foodId) : getTacoFoodsList().find(f => f.id === foodId);
-
-        const gramas = parseFloat(e.target.value.replace(",", ".")) || 0;
-        const nutri = prontuarioManager.calculateItemNutrition(food, gramas);
-
-        row.querySelector(".cardapio-item-kcal").textContent = nutri.kcal;
-        row.querySelector(".cardapio-item-cho").textContent = nutri.cho;
-        row.querySelector(".cardapio-item-ptn").textContent = nutri.ptn;
-        row.querySelector(".cardapio-item-lip").textContent = nutri.lip;
-
-        // Atualiza os subtotais da refeição e consolidação global
-        readCardapioFromDOM();
+        updateRowNutrition(row, "gramas");
       });
     });
 
-    // 3. Medida Caseira Livre -> Atualiza texto sem acionar cálculos matemáticos
+    // 4. Medida Caseira Livre -> Atualiza texto
     container.querySelectorAll(".cardapio-item-medida").forEach(input => {
-      input.addEventListener("input", () => {
+      input.addEventListener("input", (e) => {
+        delete e.target.dataset.autoFilled;
         readCardapioFromDOM();
       });
     });
 
-    // 4. Edição de nomes, horários, tipo preparação e substituições
+    // 5. Edição de nomes, horários, tipo preparação e substituições
     container.querySelectorAll(".cardapio-ref-name, .cardapio-ref-time, .cardapio-ref-tipo-prep, .cardapio-ref-subs").forEach(input => {
       input.addEventListener("input", () => {
         readCardapioFromDOM();
       });
     });
 
-    // 5. Botão de Adicionar Alimento da TACO à refeição
+    // 6. Botão de Adicionar Alimento da TACO à refeição
     container.querySelectorAll(".add-food-item-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         readCardapioFromDOM();
@@ -4661,6 +4741,8 @@ document.addEventListener("DOMContentLoaded", () => {
             id: `it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: "",
             alimentoNome: "",
+            quantidadeMedida: 1,
+            qtd: 1,
             medidaCaseira: "",
             gramatura: "",
             kcal: 0,
@@ -4674,6 +4756,33 @@ document.addEventListener("DOMContentLoaded", () => {
             potassio: 0
           });
           renderCardapioTable();
+        }
+      });
+    });
+
+    // 7. Botão de Remover Alimento da refeição
+    container.querySelectorAll(".remove-item-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readCardapioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        const itemIdx = parseInt(e.currentTarget.dataset.itemIdx);
+        if (!isNaN(mealIdx) && !isNaN(itemIdx) && appState.currentProntuario?.planejamentoAlimentar?.[mealIdx]?.itens) {
+          appState.currentProntuario.planejamentoAlimentar[mealIdx].itens.splice(itemIdx, 1);
+          renderCardapioTable();
+        }
+      });
+    });
+
+    // 8. Botão de Remover Refeição inteira
+    container.querySelectorAll(".remove-meal-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        readCardapioFromDOM();
+        const mealIdx = parseInt(e.currentTarget.dataset.mealIdx);
+        if (!isNaN(mealIdx) && appState.currentProntuario?.planejamentoAlimentar) {
+          if (confirm("Deseja realmente excluir esta refeição do planejamento alimentar?")) {
+            appState.currentProntuario.planejamentoAlimentar.splice(mealIdx, 1);
+            renderCardapioTable();
+          }
         }
       });
     });
