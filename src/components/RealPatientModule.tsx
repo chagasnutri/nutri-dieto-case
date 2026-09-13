@@ -45,28 +45,82 @@ export default function RealPatientModule() {
     vitC: ''
   });
 
-  // Estado reativo do cardápio com multiplicador dinâmico de medida caseira (Atendimento Real)
+  // Estado reativo do cardápio com regra de 3 em tempo real (Padrão TACO/Tucunduva base 100g)
   const [cardapioItems, setCardapioItems] = useState([
-    { id: '1', nome: 'Pão de forma integral', medida: 'fatia', baseGramasMedida: 25, qtd: 2, gramas: 50, kcal: 126.5, cho: 24.9, ptn: 4.7, lip: 1.8 },
-    { id: '2', nome: 'Queijo minas frescal', medida: 'fatia média', baseGramasMedida: 30, qtd: 1, gramas: 30, kcal: 79.2, cho: 1.0, ptn: 5.2, lip: 6.1 },
-    { id: '3', nome: 'Mamão papaia', medida: 'fatia / porção', baseGramasMedida: 100, qtd: 1, gramas: 100, kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1 }
+    {
+      id: '1',
+      nome: 'Pão francês',
+      medida: 'unidade',
+      pesoMedidaG: 50, // 1 unidade = 50g
+      qtd: 1,
+      gramas: 50, // Passo A: 1 * 50g = 50g
+      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+      kcal: 150.0, // Passo B: (50 * 300.0) / 100
+      cho: 29.3,
+      ptn: 4.0,
+      lip: 1.6
+    },
+    {
+      id: '2',
+      nome: 'Pão de forma integral',
+      medida: 'fatia',
+      pesoMedidaG: 25, // 1 fatia = 25g
+      qtd: 2,
+      gramas: 50, // Passo A: 2 * 25g = 50g
+      nutri100g: { kcal: 253.0, cho: 49.9, ptn: 9.4, lip: 3.7 },
+      kcal: 126.5, // Passo B: (50 * 253.0) / 100
+      cho: 25.0,
+      ptn: 4.7,
+      lip: 1.9
+    },
+    {
+      id: '3',
+      nome: 'Queijo minas frescal',
+      medida: 'fatia média',
+      pesoMedidaG: 30, // 1 fatia = 30g
+      qtd: 1,
+      gramas: 30, // Passo A: 1 * 30g = 30g
+      nutri100g: { kcal: 264.0, cho: 3.2, ptn: 17.4, lip: 20.2 },
+      kcal: 79.2, // Passo B: (30 * 264.0) / 100
+      cho: 1.0,
+      ptn: 5.2,
+      lip: 6.1
+    },
+    {
+      id: '4',
+      nome: 'Mamão papaia',
+      medida: 'fatia / porção',
+      pesoMedidaG: 100, // 1 porção = 100g
+      qtd: 1,
+      gramas: 100, // Passo A: 1 * 100g = 100g
+      nutri100g: { kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1 },
+      kcal: 40.0, // Passo B: (100 * 40.0) / 100
+      cho: 10.4,
+      ptn: 0.5,
+      lip: 0.1
+    }
   ]);
 
+  // Passo A (Grama Total) e Passo B (Regra de 3 dos Nutrientes) em tempo real
   const handleCardapioQtdChange = (idx: number, newQtdVal: string) => {
-    const q = parseFloat(newQtdVal) || 0;
+    const qtdInserida = parseFloat(newQtdVal) || 0;
     setCardapioItems(prev => prev.map((item, i) => {
       if (i !== idx) return item;
-      const g = Math.round((item.baseGramasMedida * q) * 10) / 10;
-      const baseRef = item.gramas > 0 ? item.gramas : item.baseGramasMedida;
-      const factor = g / (baseRef || 1);
+
+      // Passo A: Gramatura Total = quantidade inserida * peso da medida caseira em gramas
+      const gramaturaTotal = Math.round((qtdInserida * item.pesoMedidaG) * 10) / 10;
+
+      // Passo B: Regra de 3 dos Nutrientes = (Gramatura Total * Valor do Nutriente em 100g) / 100
+      const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+
       return {
         ...item,
-        qtd: q,
-        gramas: g,
-        kcal: Math.round((item.kcal * factor) * 10) / 10,
-        cho: Math.round((item.cho * factor) * 10) / 10,
-        ptn: Math.round((item.ptn * factor) * 10) / 10,
-        lip: Math.round((item.lip * factor) * 10) / 10
+        qtd: qtdInserida,
+        gramas: gramaturaTotal,
+        kcal: calcNutri(item.nutri100g.kcal),
+        cho: calcNutri(item.nutri100g.cho),
+        ptn: calcNutri(item.nutri100g.ptn),
+        lip: calcNutri(item.nutri100g.lip)
       };
     }));
   };
@@ -594,7 +648,7 @@ export default function RealPatientModule() {
                       {cardapioItems.map((item, idx) => (
                         <tr key={item.id} className="hover:bg-slate-850/50 transition">
                           <td className="py-2 px-2 font-medium text-slate-200">{item.nome}</td>
-                          <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.baseGramasMedida}g)</td>
+                          <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.pesoMedidaG}g)</td>
                           <td className="py-2 px-2 text-center">
                             <input
                               type="number"

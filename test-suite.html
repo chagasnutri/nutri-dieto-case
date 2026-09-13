@@ -3012,16 +3012,26 @@ Questões Avaliativas:
       const paoBaseInfo = getFoodBaseMeasure(paoFrances);
       assert(paoBaseInfo.gramasPorMedida === 50, `Pão francês possui medida base de 50g por unidade (obtido: ${paoBaseInfo.gramasPorMedida}g)`);
 
-      // Teste do multiplicador reativo de 1 para 2 unidades
-      const qtd1 = 1;
-      const gramas1 = paoBaseInfo.gramasPorMedida * qtd1;
-      const kcal1 = Math.round(((paoFrances.kcal * gramas1) / (paoFrances.baseGramas || 100)) * 10) / 10;
-      const qtd2 = 2;
-      const gramas2 = paoBaseInfo.gramasPorMedida * qtd2;
-      const kcal2 = Math.round(((paoFrances.kcal * gramas2) / (paoFrances.baseGramas || 100)) * 10) / 10;
+      // Teste do multiplicador reativo de 1 para 2 unidades via Regra de Três (Passo A e Passo B)
+      const pesoMedidaG = paoBaseInfo.gramasPorMedida; // 50g
+      const qtdTeste = 2;
+      // Passo A (Grama Total) = quantidade inserida * peso da medida caseira em gramas
+      const gramaturaTotal = qtdTeste * pesoMedidaG; // 2 * 50 = 100g
+      assert(gramaturaTotal === 100, `Passo A (Grama Total): 2 unidades * 50g = ${gramaturaTotal}g`);
 
-      assert(gramas2 === gramas1 * 2, `Multiplicador da medida caseira (2x) duplica a gramatura de ${gramas1}g para ${gramas2}g`);
-      assert(kcal2 === kcal1 * 2, `Multiplicador da medida caseira (2x) duplica as calorias de ${kcal1} kcal para ${kcal2} kcal de forma reativa`);
+      // Passo B (Regra de 3 dos Nutrientes) = (Gramatura Total * Valor do Nutriente em 100g) / 100
+      const nutriCalc100g = prontManager.calculateItemNutrition(paoFrances, gramaturaTotal);
+      const nutriCalc50g = prontManager.calculateItemNutrition(paoFrances, pesoMedidaG);
+
+      const formulaKcalEsperada = Math.round(((gramaturaTotal * paoFrances.kcal) / 100) * 10) / 10;
+      assert(nutriCalc100g.kcal === formulaKcalEsperada && nutriCalc100g.kcal === 300,
+        `Passo B (Regra de 3 Kcal): (${gramaturaTotal}g * ${paoFrances.kcal} kcal) / 100 = ${nutriCalc100g.kcal} kcal`);
+      assert(nutriCalc100g.kcal === nutriCalc50g.kcal * 2,
+        `Regra de 3 Reativa: 2 unidades de pão (100g = ${nutriCalc100g.kcal} kcal) dobram exatamente 1 unidade (50g = ${nutriCalc50g.kcal} kcal)`);
+
+      const formulaChoEsperada = Math.round(((gramaturaTotal * paoFrances.cho) / 100) * 10) / 10;
+      assert(nutriCalc100g.cho === formulaChoEsperada && nutriCalc100g.cho === 58.6,
+        `Passo B (Regra de 3 CHO): (${gramaturaTotal}g * ${paoFrances.cho}g) / 100 = ${nutriCalc100g.cho}g`);
 
       let appJsCode = "";
       try {
@@ -3034,7 +3044,7 @@ Questões Avaliativas:
       assert(appJsCode.includes("cardapio-item-qtd") && appJsCode.includes("updateRowNutrition"),
         "js/app.js possui inputs de quantidade '.cardapio-item-qtd' e função 'updateRowNutrition' para cálculo dinâmico");
       assert(appJsCode.includes("baseInfo.gramasPorMedida * qtd") && appJsCode.includes("calculateItemNutrition"),
-        "js/app.js implementa multiplicador reativo de medida caseira recalculando gramatura e nutrientes");
+        "js/app.js implementa Passo A e Passo B da Regra de 3 recalculando gramatura e nutrientes em tempo real");
 
       // 135. Método Socrático Rigoroso e Estrutura Obrigatória de Resposta em Duas Seções do Preceptor IA
       assert(typeof PRECEPTOR_SYSTEM_PROMPT === "string", "PRECEPTOR_SYSTEM_PROMPT está definido");

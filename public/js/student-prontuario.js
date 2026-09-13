@@ -599,7 +599,8 @@ class StudentProntuarioManager {
     return (vet / weight).toFixed(1);
   }
 
-  // Regra de três das Gramaturas: calcula nutrientes proporcionais a partir da base de 100g
+  // Regra de três das Gramaturas (Padrão TACO/Tucunduva base 100g)
+  // Passo B: Valor Final do Nutriente = (Gramatura Total * Valor do Nutriente em 100g) / 100
   calculateItemNutrition(foodTaco, gramatura) {
     if (!foodTaco) {
       return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0, vitA: 0, vitC: 0 };
@@ -609,27 +610,26 @@ class StudentProntuarioManager {
       return { gramatura: 0, kcal: 0, cho: 0, ptn: 0, lip: 0, sat: 0, mono: 0, poli: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0, vitA: 0, vitC: 0 };
     }
 
-    const base = foodTaco.baseGramas || 100; // sempre 100g na TACO e Decisão Nutricional
-    const factor = g / base;
-
-    const round1 = (val) => Math.round((Number(val || 0) * factor) * 10) / 10;
+    const base100g = Number(foodTaco.baseGramas || 100); // base 100g da TACO / Tucunduva
+    // Passo B: Valor Final do Nutriente = (Gramatura Total * Valor do Nutriente em 100g) / 100
+    const calcRegraDeTres = (val100g) => Math.round(((g * Number(val100g || 0)) / base100g) * 10) / 10;
 
     return {
       gramatura: g,
-      kcal: round1(foodTaco.kcal),
-      cho: round1(foodTaco.cho),
-      ptn: round1(foodTaco.ptn),
-      lip: round1(foodTaco.lip),
-      sat: round1(foodTaco.sat || 0),
-      mono: round1(foodTaco.mono || 0),
-      poli: round1(foodTaco.poli || 0),
-      fibra: round1(foodTaco.fibra),
-      calcio: round1(foodTaco.calcio),
-      ferro: round1(foodTaco.ferro),
-      sodio: round1(foodTaco.sodio),
-      potassio: round1(foodTaco.potassio),
-      vitA: round1(foodTaco.vitA || 0),
-      vitC: round1(foodTaco.vitC || 0)
+      kcal: calcRegraDeTres(foodTaco.kcal),
+      cho: calcRegraDeTres(foodTaco.cho),
+      ptn: calcRegraDeTres(foodTaco.ptn),
+      lip: calcRegraDeTres(foodTaco.lip),
+      sat: calcRegraDeTres(foodTaco.sat || 0),
+      mono: calcRegraDeTres(foodTaco.mono || 0),
+      poli: calcRegraDeTres(foodTaco.poli || 0),
+      fibra: calcRegraDeTres(foodTaco.fibra),
+      calcio: calcRegraDeTres(foodTaco.calcio),
+      ferro: calcRegraDeTres(foodTaco.ferro),
+      sodio: calcRegraDeTres(foodTaco.sodio),
+      potassio: calcRegraDeTres(foodTaco.potassio),
+      vitA: calcRegraDeTres(foodTaco.vitA || 0),
+      vitC: calcRegraDeTres(foodTaco.vitC || 0)
     };
   }
 
