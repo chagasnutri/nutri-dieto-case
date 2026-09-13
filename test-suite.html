@@ -3071,6 +3071,58 @@ Questões Avaliativas:
         "Preceptor IA não emite julgamento de certo/errado, estimulando raciocínio ativo do aluno");
       assert(respAvaliacao135.trim().endsWith("?"),
         "Resposta sobre avaliação encerra rigorosamente com pergunta reflexiva ('?')");
+
+      // 136. Cálculo Dinâmico do Recordatório 24h por Medida Caseira (Regra de 3 com Passo A e Passo B)
+      const leiteIntegral = getTacoFoodById("taco-17");
+      assert(leiteIntegral && leiteIntegral.nome.toLowerCase().includes("leite"), "Alimento Leite de vaca integral localizado na TACO (id: taco-17)");
+      const leiteBaseInfo = getFoodBaseMeasure(leiteIntegral);
+      assert(leiteBaseInfo.gramasPorMedida === 200, `Leite integral possui medida base de 200g por copo (obtido: ${leiteBaseInfo.gramasPorMedida}g)`);
+
+      const pesoMedidaRec = leiteBaseInfo.gramasPorMedida; // 200g
+      const qtdRecTeste = 1.5;
+
+      // Passo A (Grama Total) = quantidade inserida * peso da medida caseira em gramas
+      const gramasRecTotal = Math.round((qtdRecTeste * pesoMedidaRec) * 10) / 10;
+      assert(gramasRecTotal === 300, `Recordatório Passo A (Grama Total): 1.5 copos * ${pesoMedidaRec}g = ${gramasRecTotal}g`);
+
+      // Passo B (Regra de 3 dos Nutrientes) = (Gramatura Total * Valor do Nutriente em 100g) / 100
+      const nutriRecCalc = prontManager.calculateItemNutrition(leiteIntegral, gramasRecTotal);
+      const formulaKcalRec = Math.round(((gramasRecTotal * leiteIntegral.kcal) / 100) * 10) / 10;
+      assert(nutriRecCalc.kcal === formulaKcalRec && nutriRecCalc.kcal === 183,
+        `Recordatório Passo B (Regra de 3 Kcal): (${gramasRecTotal}g * ${leiteIntegral.kcal} kcal) / 100 = ${nutriRecCalc.kcal} kcal`);
+
+      const formulaChoRec = Math.round(((gramasRecTotal * leiteIntegral.cho) / 100) * 10) / 10;
+      assert(nutriRecCalc.cho === formulaChoRec && nutriRecCalc.cho === 13.5,
+        `Recordatório Passo B (Regra de 3 CHO): (${gramasRecTotal}g * ${leiteIntegral.cho}g) / 100 = ${nutriRecCalc.cho}g`);
+
+      assert(appJsCode.includes("rec-item-qtd") && appJsCode.includes("updateRecRowNutrition"),
+        "js/app.js possui inputs de quantidade '.rec-item-qtd' e função 'updateRecRowNutrition' para cálculo dinâmico no Recordatório");
+      assert(appJsCode.includes("rec-subtotal-badge"),
+        "js/app.js atualiza dinamicamente o badge de subtotal da refeição '.rec-subtotal-badge' no Recordatório 24h");
+      assert(appJsCode.includes("updateRecordatorioTotalsDisplay()"),
+        "readRecordatorioFromDOM() invoca updateRecordatorioTotalsDisplay() para atualizar somatórios consolidados em tempo real");
+
+      // Verificação nos módulos React (SimulationModule e RealPatientModule)
+      let simModuleCode = "";
+      let realPatientModuleCode = "";
+      try {
+        const xhrSim = new XMLHttpRequest();
+        xhrSim.open("GET", "components/SimulationModule.tsx", false);
+        xhrSim.send();
+        simModuleCode = xhrSim.responseText || "";
+      } catch (e) {}
+
+      try {
+        const xhrReal = new XMLHttpRequest();
+        xhrReal.open("GET", "components/RealPatientModule.tsx", false);
+        xhrReal.send();
+        realPatientModuleCode = xhrReal.responseText || "";
+      } catch (e) {}
+
+      assert(simModuleCode.includes("recordatorioItems") && simModuleCode.includes("handleRecordatorioQtdChange"),
+        "components/SimulationModule.tsx implementa estado 'recordatorioItems' e handler 'handleRecordatorioQtdChange' via Regra de 3");
+      assert(realPatientModuleCode.includes("recordatorioItems") && realPatientModuleCode.includes("handleRecordatorioQtdChange"),
+        "components/RealPatientModule.tsx implementa estado 'recordatorioItems' e handler 'handleRecordatorioQtdChange' via Regra de 3");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

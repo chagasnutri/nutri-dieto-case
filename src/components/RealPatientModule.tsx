@@ -125,6 +125,86 @@ export default function RealPatientModule() {
     }));
   };
 
+  // Estado reativo do Recordatório 24h com regra de 3 em tempo real (Padrão TACO/Tucunduva base 100g)
+  const [recordatorioItems, setRecordatorioItems] = useState([
+    {
+      id: 'rec-1',
+      nome: 'Leite de vaca integral',
+      medida: 'copo médio',
+      pesoMedidaG: 200, // 1 copo = 200g
+      qtd: 1,
+      gramas: 200, // Passo A: 1 * 200g = 200g
+      nutri100g: { kcal: 61.0, cho: 4.5, ptn: 3.2, lip: 3.5 },
+      kcal: 122.0, // Passo B: (200 * 61.0) / 100
+      cho: 9.0,
+      ptn: 6.4,
+      lip: 7.0
+    },
+    {
+      id: 'rec-2',
+      nome: 'Pão francês',
+      medida: 'unidade',
+      pesoMedidaG: 50, // 1 unidade = 50g
+      qtd: 2,
+      gramas: 100, // Passo A: 2 * 50g = 100g
+      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+      kcal: 300.0, // Passo B: (100 * 300.0) / 100
+      cho: 58.6,
+      ptn: 8.0,
+      lip: 3.2
+    },
+    {
+      id: 'rec-3',
+      nome: 'Manteiga com sal',
+      medida: 'ponta de faca',
+      pesoMedidaG: 10, // 1 ponta de faca = 10g
+      qtd: 1,
+      gramas: 10, // Passo A: 1 * 10g = 10g
+      nutri100g: { kcal: 726.0, cho: 0.1, ptn: 0.4, lip: 82.4 },
+      kcal: 72.6, // Passo B: (10 * 726.0) / 100
+      cho: 0.0,
+      ptn: 0.0,
+      lip: 8.2
+    },
+    {
+      id: 'rec-4',
+      nome: 'Banana prata',
+      medida: 'unidade média',
+      pesoMedidaG: 100, // 1 unidade = 100g
+      qtd: 1,
+      gramas: 100, // Passo A: 1 * 100g = 100g
+      nutri100g: { kcal: 98.0, cho: 26.0, ptn: 1.3, lip: 0.1 },
+      kcal: 98.0, // Passo B: (100 * 98.0) / 100
+      cho: 26.0,
+      ptn: 1.3,
+      lip: 0.1
+    }
+  ]);
+
+  // Passo A (Grama Total) e Passo B (Regra de 3) do Recordatório 24h
+  const handleRecordatorioQtdChange = (idx: number, newQtdVal: string) => {
+    const qtdInserida = parseFloat(newQtdVal) || 0;
+    setRecordatorioItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+
+      // Passo A: Gramatura Total = quantidade inserida * peso da medida caseira em gramas
+      const gramaturaTotal = Math.round((qtdInserida * item.pesoMedidaG) * 10) / 10;
+
+      // Passo B: Regra de 3 dos Nutrientes = (Gramatura Total * Valor do Nutriente em 100g) / 100
+      const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+
+      return {
+        ...item,
+        qtd: qtdInserida,
+        gramas: gramaturaTotal,
+        kcal: calcNutri(item.nutri100g.kcal),
+        cho: calcNutri(item.nutri100g.cho),
+        ptn: calcNutri(item.nutri100g.ptn),
+        lip: calcNutri(item.nutri100g.lip)
+      };
+    }));
+  };
+
   const addExamRow = () => {
     setExams(prev => [...prev, { id: Date.now().toString(), name: '', ref: '', value: '', interp: '' }]);
   };
@@ -257,6 +337,63 @@ export default function RealPatientModule() {
                 <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 block">Escolaridade:</span>
                   <span className="text-white font-bold">Superior Completo</span>
+                </div>
+              </div>
+
+              {/* Tabela Interativa de Alimentos do Recordatório 24h com Cálculo Dinâmico via Regra de 3 */}
+              <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                  <div>
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <span>📋</span>
+                      <span>Recordatório de 24h (Consumo Habitual Referido) • Regra de 3 em Tempo Real</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">Insira a quantidade da medida caseira consumida pelo paciente para cálculo automático de gramas e nutrientes.</p>
+                  </div>
+                  <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800/80 px-2.5 py-0.5 rounded-full">
+                    Total Consumido: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.lip, 0))}g
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+                      <tr>
+                        <th className="py-1.5 px-2">Alimento Consumido</th>
+                        <th className="py-1.5 px-2">Medida Caseira Base</th>
+                        <th className="py-1.5 px-2 text-center w-20 text-indigo-400 font-bold">Qtd</th>
+                        <th className="py-1.5 px-2 text-right w-24">Gramas</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-indigo-400 font-bold">Kcal</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-amber-400">CHO</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-sky-400">PTN</th>
+                        <th className="py-1.5 px-2 text-right w-16 text-rose-400">LIP</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-850">
+                      {recordatorioItems.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-slate-850/50 transition">
+                          <td className="py-2 px-2 font-medium text-slate-200">{item.nome}</td>
+                          <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.pesoMedidaG}g)</td>
+                          <td className="py-2 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={item.qtd}
+                              onChange={(e) => handleRecordatorioQtdChange(idx, e.target.value)}
+                              className="w-16 bg-slate-950 border border-indigo-500/60 rounded px-1.5 py-1 text-center font-bold text-indigo-300 focus:border-indigo-400 outline-none"
+                              title="Altere a quantidade da medida caseira consumida para recalcular gramas e nutrientes instantaneamente via Regra de 3"
+                            />
+                          </td>
+                          <td className="py-2 px-2 text-right font-bold text-slate-300">{item.gramas}g</td>
+                          <td className="py-2 px-2 text-right font-bold text-indigo-400">{item.kcal}</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.cho}g</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.ptn}g</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{item.lip}g</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

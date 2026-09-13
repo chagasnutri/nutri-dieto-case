@@ -3931,6 +3931,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mealObj.subtotal = prontuarioManager.calculateMealSubtotal(mealObj);
         mealObj.alimentos = prontuarioManager.formatMealFoodsSummary(mealObj);
+
+        const subtotalBadge = card.querySelector(".rec-subtotal-badge");
+        if (subtotalBadge && mealObj.subtotal) {
+          subtotalBadge.textContent = `${mealObj.subtotal.kcal} kcal | CHO: ${mealObj.subtotal.cho}g | PTN: ${mealObj.subtotal.ptn}g | LIP: ${mealObj.subtotal.lip}g`;
+        }
+
         list.push(mealObj);
       });
     }
@@ -4406,6 +4412,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mealObj.subtotal = prontuarioManager.calculateMealSubtotal(mealObj);
         mealObj.alimentos = prontuarioManager.formatMealFoodsSummary(mealObj);
+
+        const subtotalBadge = card.querySelector(".meal-subtotal-badge");
+        if (subtotalBadge && mealObj.subtotal) {
+          subtotalBadge.textContent = `${mealObj.subtotal.kcal} kcal | CHO: ${mealObj.subtotal.cho}g | PTN: ${mealObj.subtotal.ptn}g | LIP: ${mealObj.subtotal.lip}g`;
+        }
 
         list.push(mealObj);
       });
