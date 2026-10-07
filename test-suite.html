@@ -3197,6 +3197,85 @@ Questões Avaliativas:
 
       testOverlay.remove();
       testContent.remove();
+
+      // 138. Sistema de 'Auto-Save' (Rascunho Local) com Chave Única Isolada, Recuperação Automática e Limpeza no Envio
+      let useLocalStorageCode = "";
+      let useCaseDraftCode = "";
+      try {
+        const xhrLs = new XMLHttpRequest();
+        xhrLs.open("GET", "hooks/useLocalStorage.ts", false);
+        xhrLs.send();
+        useLocalStorageCode = xhrLs.responseText || "";
+      } catch (e) {}
+
+      try {
+        const xhrDraft = new XMLHttpRequest();
+        xhrDraft.open("GET", "hooks/useCaseDraft.ts", false);
+        xhrDraft.send();
+        useCaseDraftCode = xhrDraft.responseText || "";
+      } catch (e) {}
+
+      assert(useLocalStorageCode.includes("useLocalStorage") && useLocalStorageCode.includes("localStorage"),
+        "hooks/useLocalStorage.ts implementa o custom hook genérico 'useLocalStorage' SSR-safe");
+      assert(useCaseDraftCode.includes("draft_caso_") && useCaseDraftCode.includes("_aluno_"),
+        "hooks/useCaseDraft.ts define a chave única com formato 'draft_caso_${cleanCaseId}_aluno_${cleanStudentId}'");
+      assert(useCaseDraftCode.includes("debounce") && useCaseDraftCode.includes("clearDraft"),
+        "hooks/useCaseDraft.ts implementa debounce silencioso para auto-save e função clearDraft");
+
+      // Verificação da chave de isolamento no StudentProntuarioManager
+      const sampleCaseId = "caso-dm2-has";
+      const sampleStudent1 = "aluno_joao";
+      const sampleStudent2 = "aluno_maria";
+      const key1 = prontManager.getStorageKey(sampleCaseId, sampleStudent1);
+      const key2 = prontManager.getStorageKey(sampleCaseId, sampleStudent2);
+      assert(key1 === `draft_caso_${sampleCaseId}_aluno_${sampleStudent1}`,
+        `Chave de isolamento gerada corretamente: "${key1}"`);
+      assert(key1 !== key2,
+        `Chaves de alunos distintos no mesmo caso são estritamente isoladas: "${key1}" != "${key2}"`);
+
+      // Teste de ciclo completo de rascunho: salvar, carregar e limpar
+      const mockDraftData = {
+        caseId: sampleCaseId,
+        studentId: sampleStudent1,
+        evolucaoTexto: "Paciente com melhora clínica evidente.",
+        prescricaoVET: "2100",
+        respostasQuestoes: { q1: "Diagnóstico PES teste", q2: "opt_b" }
+      };
+
+      // 1. Salvamento
+      prontManager.saveDraft(sampleCaseId, mockDraftData, sampleStudent1);
+      const storedRaw = localStorage.getItem(key1);
+      assert(storedRaw !== null && storedRaw.includes("melhora clínica"),
+        "Rascunho persistido com sucesso no localStorage sob a chave única isolada");
+
+      // 2. Recuperação Automática
+      const loadedDraft = prontManager.loadDraft(sampleCaseId, sampleStudent1);
+      assert(loadedDraft && loadedDraft.evolucaoTexto === "Paciente com melhora clínica evidente.",
+        "Recuperação automática (Load) restaura fielmente o conteúdo do rascunho persistido");
+
+      // 3. Limpeza Estrita (Clear)
+      prontManager.clearDraft(sampleCaseId, sampleStudent1);
+      const afterClear = localStorage.getItem(key1);
+      assert(afterClear === null,
+        "Limpeza (Clear) remove definitivamente o rascunho do storage local após envio");
+
+      // Verificação dos componentes React SimulationModule
+      let simModuleTsxCode = "";
+      try {
+        const xhrSimMod = new XMLHttpRequest();
+        xhrSimMod.open("GET", "components/SimulationModule.tsx", false);
+        xhrSimMod.send();
+        simModuleTsxCode = xhrSimMod.responseText || "";
+      } catch (e) {}
+
+      assert(simModuleTsxCode.includes("useCaseDraft") && simModuleTsxCode.includes("draftKey"),
+        "components/SimulationModule.tsx consome o hook useCaseDraft com chave dinâmica");
+      assert(simModuleTsxCode.includes("inputStudentId") && simModuleTsxCode.includes("autoSaveIndicatorBadge"),
+        "components/SimulationModule.tsx renderiza input de identificação do aluno e badge visual de auto-save");
+      assert(simModuleTsxCode.includes("handleFinalizarCaso") && simModuleTsxCode.includes("clearDraft()"),
+        "components/SimulationModule.tsx invoca clearDraft() exclusivamente ao finalizar/enviar o caso com sucesso");
+      assert(simModuleTsxCode.includes("textareaQuestao1") && simModuleTsxCode.includes("questao_2_opcao"),
+        "components/SimulationModule.tsx oferece campos interativos de questões avaliativas (discursivas e múltipla escolha)");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

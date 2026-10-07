@@ -7,15 +7,26 @@ class StudentProntuarioManager {
     this.draftKeyPrefix = "dietoterapia_prontuario_draft_";
   }
 
-  // Gera chave de rascunho baseada no ID do caso
-  getStorageKey(caseId) {
-    return `${this.draftKeyPrefix}${caseId}`;
+  // Gera chave de rascunho dinâmica e única combinando ID do Caso e ID do Aluno (ex: draft_caso_{caseId}_aluno_{studentId})
+  getStorageKey(caseId, studentId) {
+    if (studentId) {
+      return `draft_caso_${caseId}_aluno_${studentId}`;
+    }
+    const currentUid = (typeof window !== "undefined" && window.firebaseSyncService && typeof window.firebaseSyncService.getUserId === "function")
+      ? window.firebaseSyncService.getUserId()
+      : (typeof localStorage !== "undefined" ? localStorage.getItem("dietocase_student_id") || "aluno_padrao" : "aluno_padrao");
+    return `draft_caso_${caseId}_aluno_${currentUid}`;
   }
 
   // Carrega rascunho salvo para o caso atual
-  loadDraft(caseId) {
+  loadDraft(caseId, studentId) {
     this.currentCaseId = caseId;
-    const raw = localStorage.getItem(this.getStorageKey(caseId));
+    const dynamicKey = this.getStorageKey(caseId, studentId);
+    let raw = localStorage.getItem(dynamicKey);
+    // Fallback de compatibilidade caso ainda exista sob o formato legado
+    if (!raw) {
+      raw = localStorage.getItem(`${this.draftKeyPrefix}${caseId}`);
+    }
     if (!raw) {
       return this.getEmptyProntuario(caseId);
     }
@@ -28,14 +39,20 @@ class StudentProntuarioManager {
   }
 
   // Salva rascunho no localStorage
-  saveDraft(caseId, data) {
+  saveDraft(caseId, data, studentId) {
     this.currentCaseId = caseId;
-    localStorage.setItem(this.getStorageKey(caseId), JSON.stringify(data));
+    const sId = studentId || (data && (data.userId || data.aluno?.id)) || null;
+    const dynamicKey = this.getStorageKey(caseId, sId);
+    const json = JSON.stringify(data);
+    localStorage.setItem(dynamicKey, json);
+    // Mantém chave legada para retrocompatibilidade
+    localStorage.setItem(`${this.draftKeyPrefix}${caseId}`, json);
   }
 
-  // Limpa rascunho
-  clearDraft(caseId) {
-    localStorage.removeItem(this.getStorageKey(caseId));
+  // Limpa rascunho local
+  clearDraft(caseId, studentId) {
+    localStorage.removeItem(this.getStorageKey(caseId, studentId));
+    localStorage.removeItem(`${this.draftKeyPrefix}${caseId}`);
   }
 
   // Modelo de prontuário em branco
