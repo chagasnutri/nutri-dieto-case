@@ -3276,6 +3276,97 @@ Questões Avaliativas:
         "components/SimulationModule.tsx invoca clearDraft() exclusivamente ao finalizar/enviar o caso com sucesso");
       assert(simModuleTsxCode.includes("textareaQuestao1") && simModuleTsxCode.includes("questao_2_opcao"),
         "components/SimulationModule.tsx oferece campos interativos de questões avaliativas (discursivas e múltipla escolha)");
+
+      // 139. Comportamento Humanizado e Natural do Simulador de Paciente em Ambiente Hospitalar
+      const engineSim = new ClinicalChatEngine();
+
+      // Caso clínico de teste com dados faltantes ou zerados (peso 0, estatura vazia, sem altura de joelho)
+      const mockCasoIncompleto = {
+        patient: { name: "Seu Sebastião", age: 68, gender: "Masculino", diagnosis: "Insuficiência Cardíaca" },
+        history: {
+          queixaPrincipal: "Falta de ar e cansaço ao caminhar",
+          hda: "Paciente internado para compensação clínica de ICC.",
+          medicamentos: "Furosemida 40mg 1x/dia, Carvedilol 12.5mg 2x/dia"
+        },
+        antropometria: {
+          pesoAtual: 0,
+          pesoHabitual: null,
+          estatura: "",
+          alturaJoelho: 0,
+          circunferenciaCintura: null,
+          circunferenciaBraco: 28.5,
+          dobraTricipital: 0
+        },
+        bioquimica: [
+          { exame: "Glicemia de jejum", valor: "105 mg/dL", referencia: "70 a 99 mg/dL" },
+          { exame: "Creatinina", valor: "1.4 mg/dL", referencia: "0.7 a 1.2 mg/dL" }
+        ]
+      };
+
+      // REGRA 1: NATURALIDADE COM DADOS FALTANTES OU ZERADOS
+      // Pergunta de peso quando pesoAtual = 0
+      const respZeroPeso = await engineSim.processQuestion("Qual o seu peso atual?", mockCasoIncompleto, "paciente");
+      assert(!respZeroPeso.includes("0 kg") && !respZeroPeso.includes("0kg") && !respZeroPeso.includes("em branco") && !respZeroPeso.includes("nulo"),
+        `Regra 1: Paciente NUNCA diz que peso é '0' ou 'em branco': "${respZeroPeso}"`);
+      assert(respZeroPeso.includes("não faço ideia") || respZeroPeso.includes("não me falaram") || respZeroPeso.includes("não sei"),
+        `Regra 1: Paciente responde naturalmente sobre peso desconhecido forçando estimativa: "${respZeroPeso}"`);
+
+      // Pergunta de altura quando estatura = ""
+      const respZeroAltura = await engineSim.processQuestion("Qual a sua altura?", mockCasoIncompleto, "paciente");
+      assert(!respZeroAltura.includes("0 m") && !respZeroAltura.includes("em branco") && !respZeroAltura.includes("undefined"),
+        `Regra 1: Paciente NUNCA diz que altura é '0' ou 'em branco': "${respZeroAltura}"`);
+      assert(respZeroAltura.includes("Não sei informar") || respZeroAltura.includes("não me falaram"),
+        `Regra 1: Paciente responde com naturalidade leiga sobre altura ausente: "${respZeroAltura}"`);
+
+      // Pergunta de altura do joelho quando alturaJoelho = 0
+      const respZeroJoelho = await engineSim.processQuestion("Qual a sua altura do joelho?", mockCasoIncompleto, "paciente");
+      assert(!respZeroJoelho.includes("0 cm") && !respZeroJoelho.includes("0cm"),
+        `Regra 1: Paciente não diz 0 para altura do joelho zerada: "${respZeroJoelho}"`);
+
+      // REGRA 2: LIMITAÇÃO DE CONHECIMENTO TÉCNICO (PACIENTE LEIGO)
+      // Pergunta sobre exame de imagem específico (tomografia)
+      const respTomografia = await engineSim.processQuestion("Qual o resultado da sua tomografia de tórax?", mockCasoIncompleto, "paciente");
+      assert(respTomografia.includes("médico plantonista") && respTomografia.includes("não sei"),
+        `Regra 2: Paciente encaminha pergunta de exame de imagem ao médico plantonista: "${respTomografia}"`);
+
+      // Pergunta sobre conduta médica complexa / prognóstico
+      const respCondutaMed = await engineSim.processQuestion("Qual a sua conduta médica e previsão de alta?", mockCasoIncompleto, "paciente");
+      assert(respCondutaMed.includes("médico plantonista"),
+        `Regra 2: Paciente encaminha dúvida de conduta médica ao médico plantonista: "${respCondutaMed}"`);
+
+      // Pergunta sobre procedimento técnico de enfermagem / acesso venoso
+      const respEnf = await engineSim.processQuestion("Como está o gotejamento do soro na veia e cuidados da enfermagem?", mockCasoIncompleto, "paciente");
+      assert(respEnf.includes("enfermeira") || respEnf.includes("enfermagem"),
+        `Regra 2: Paciente encaminha dúvida técnica de infusão à equipe de enfermagem: "${respEnf}"`);
+
+      // REGRA 3: RESPOSTAS DIRECIONADAS E FRACIONADAS (NÃO DESPEJE DADOS)
+      // Pergunta genérica de circunferências ("Quais são as suas circunferências?")
+      const respCircGen = await engineSim.processQuestion("Quais são as suas circunferências?", mockCasoIncompleto, "paciente");
+      assert(respCircGen.includes("Quais medidas o senhor quer saber exatamente?"),
+        `Regra 3: Pergunta genérica de medidas solicita especificação fracionada: "${respCircGen}"`);
+      assert(!respCircGen.includes("minha cintura deu") && !respCircGen.includes("o braço deu"),
+        `Regra 3: Paciente NÃO despeja todas as medidas de uma vez na pergunta genérica: "${respCircGen}"`);
+
+      // Pergunta genérica de exames ("Como estão seus exames?")
+      const respExameGen = await engineSim.processQuestion("Como estão seus exames?", mockCasoIncompleto, "paciente");
+      assert(respExameGen.includes("Doutor, fizeram tanto exame em mim... qual deles o senhor quer ver agora?"),
+        `Regra 3: Pergunta genérica de exames solicita especificação sob demanda: "${respExameGen}"`);
+      assert(!respExameGen.includes("105 mg/dL") && !respExameGen.includes("1.4 mg/dL"),
+        `Regra 3: Paciente NÃO despeja a lista de resultados laboratoriais na pergunta genérica: "${respExameGen}"`);
+
+      // Pergunta direcionada a uma circunferência específica presente (braço = 28.5 cm)
+      const respCircBraco = await engineSim.processQuestion("Qual a circunferência do seu braço?", mockCasoIncompleto, "paciente");
+      assert(respCircBraco.includes("28.5 cm") || respCircBraco.includes("28.5"),
+        `Regra 3: Pergunta específica de braço responde somente o braço solicitado (28.5 cm): "${respCircBraco}"`);
+      assert(!respCircBraco.includes("cintura") && !respCircBraco.includes("panturrilha"),
+        `Regra 3: Resposta específica não mistura outras partes do corpo: "${respCircBraco}"`);
+
+      // Pergunta direcionada a um exame específico presente (creatinina = 1.4 mg/dL)
+      const respExameCreat = await engineSim.processQuestion("Quanto deu a sua creatinina?", mockCasoIncompleto, "paciente");
+      assert(respExameCreat.includes("1.4"),
+        `Regra 3: Pergunta específica de exame entrega pontualmente a Creatinina: "${respExameCreat}"`);
+      assert(!respExameCreat.includes("Glicemia"),
+        `Regra 3: Resposta de creatinina não mistura outros exames: "${respExameCreat}"`);
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

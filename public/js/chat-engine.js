@@ -164,9 +164,40 @@ class ClinicalChatEngine {
     return s.trim();
   }
 
+  // Valida se um dado está ausente, vazio, não numérico ou zerado (para evitar falar '0' ou 'em branco')
+  isMissingOrZero(val) {
+    if (val === undefined || val === null) return true;
+    const str = String(val).trim().toLowerCase();
+    if (str === "" || str === "--" || str === "null" || str === "undefined" || str === "nulo" || str === "em branco" || str === "0" || str === "0.0" || str === "0.00") return true;
+    const num = parseFloat(str.replace(",", "."));
+    if (!isNaN(num) && num === 0) return true;
+    return false;
+  }
+
   // Resposta padrão humanizada e estrita quando uma informação NÃO consta no caso cadastrado
   getStrictUnknownResponse(role, questionText) {
     const q = this.normalizeText(questionText);
+
+    // REGRA 2: LIMITAÇÃO DE CONHECIMENTO TÉCNICO (PACIENTE LEIGO)
+    if (q.includes("tomografia") || q.includes("ressonancia") || q.includes("raio x") || q.includes("raio-x") || q.includes("radiografia") || q.includes("ultrassom") || q.includes("ultrassonografia") || q.includes("ecocardiograma") || q.includes("cintilografia") || q.includes("endoscopia") || q.includes("colonoscopia")) {
+      if (role === "paciente") return "Eu não sei lhe informar sobre isso, doutor. É melhor o senhor perguntar ao médico plantonista.";
+      if (role === "acompanhante") return "Doutor(a), nós não sabemos lhe informar sobre esse exame de imagem. É melhor perguntar ao médico plantonista.";
+      if (role === "medico") return "Colega, esse exame de imagem ou procedimento propedêutico não consta nos registros solicitados para este paciente.";
+      return "Não há registro desse exame de imagem nas evoluções deste caso clínico.";
+    }
+
+    if (q.includes("conduta medica") || q.includes("qual a conduta") || q.includes("conduta do medico") || q.includes("prognostico") || q.includes("alta medica")) {
+      if (role === "paciente") return "Eu não sei lhe informar sobre isso, doutor. É melhor o senhor perguntar ao médico plantonista.";
+      if (role === "acompanhante") return "Doutor(a), nós não sabemos lhe informar sobre isso. É melhor perguntar ao médico plantonista.";
+      if (role === "medico") return "Colega, as condutas médicas estão alinhadas com as diretrizes clínicas vigentes.";
+      return "Conduta sob alçada do médico assistente.";
+    }
+
+    if (q.includes("enfermagem") || q.includes("gotejamento") || q.includes("puncionar") || q.includes("acesso venoso")) {
+      if (role === "paciente") return "A enfermeira que cuida dessa parte, não sei dizer, doutor.";
+      if (role === "acompanhante") return "A enfermeira que cuida dessa parte, doutor(a), nós não sabemos dizer.";
+      return "Procedimento técnico registrado nos cuidados de enfermagem.";
+    }
 
     // Respostas específicas por tipo de pergunta ausente
     if (q.includes("alergia") || q.includes("camarao") || q.includes("frutos do mar") || q.includes("intolerancia")) {
@@ -183,7 +214,7 @@ class ClinicalChatEngine {
       return "Não consta histórico desse procedimento cirúrgico nos registros de enfermagem.";
     }
 
-    if (q.includes("gasometria") || q.includes("lactato") || q.includes("troponina") || q.includes("psa") || q.includes("tomografia")) {
+    if (q.includes("gasometria") || q.includes("lactato") || q.includes("troponina") || q.includes("psa") || q.includes("d-dimero") || q.includes("ferritina")) {
       if (role === "paciente") return "Esse exame aí eu não cheguei a fazer não, doutor(a). O médico não me pediu isso.";
       if (role === "acompanhante") return "Doutor(a), esse exame não consta na pastinha dele(a), os médicos não pediram.";
       if (role === "medico") return "Colega, essa dosagem laboratorial específica não consta nos exames solicitados nem foi realizada no momento.";
@@ -324,6 +355,43 @@ class ClinicalChatEngine {
       return this.getStrictUnknownResponse(prof.id, question);
     }
 
+    // REGRA 2: LIMITAÇÃO DE CONHECIMENTO TÉCNICO (PACIENTE E ACOMPANHANTE LEIGOS)
+    if (role === "paciente") {
+      // Exames de imagem específicos
+      if (q.includes("tomografia") || q.includes("ressonancia") || q.includes("raio x") || q.includes("raio-x") ||
+          q.includes("radiografia") || q.includes("ultrassom") || q.includes("ultrassonografia") ||
+          q.includes("ecocardiograma") || q.includes("cintilografia") || q.includes("pet-scan") ||
+          q.includes("endoscopia") || q.includes("colonoscopia")) {
+        return "Eu não sei lhe informar sobre isso, doutor. É melhor o senhor perguntar ao médico plantonista.";
+      }
+
+      // Condutas médicas complexas / prognósticos / decisões clínicas hospitalares
+      if (q.includes("conduta medica") || q.includes("qual a conduta") || q.includes("conduta do medico") ||
+          q.includes("prognostico") || q.includes("alta medica") || q.includes("intubacao") ||
+          q.includes("ventilacao mecanica") || q.includes("antibiotico na veia") || q.includes("terapia intensiva") ||
+          q.includes("desmame")) {
+        return "Eu não sei lhe informar sobre isso, doutor. É melhor o senhor perguntar ao médico plantonista.";
+      }
+
+      // Procedimentos e cuidados técnicos de enfermagem
+      if (q.includes("enfermagem") || q.includes("gotejamento") || q.includes("puncionar") ||
+          q.includes("cateter") || q.includes("acesso venoso") || q.includes("medicamento complexo")) {
+        return "A enfermeira que cuida dessa parte, não sei dizer, doutor.";
+      }
+    }
+
+    if (role === "acompanhante") {
+      if (q.includes("tomografia") || q.includes("ressonancia") || q.includes("raio x") || q.includes("raio-x") ||
+          q.includes("radiografia") || q.includes("ultrassom") || q.includes("ultrassonografia") ||
+          q.includes("ecocardiograma") || q.includes("cintilografia") || q.includes("endoscopia") || q.includes("colonoscopia") ||
+          q.includes("conduta medica") || q.includes("qual a conduta") || q.includes("prognostico") || q.includes("alta medica")) {
+        return "Doutor(a), nós não sabemos lhe informar sobre isso. É melhor perguntar ao médico plantonista.";
+      }
+      if (q.includes("enfermagem") || q.includes("gotejamento") || q.includes("puncionar") || q.includes("acesso venoso")) {
+        return "A enfermeira que cuida dessa parte, doutor(a), nós não sabemos dizer.";
+      }
+    }
+
     // 2. IDENTIFICAÇÃO E DADOS GERAIS DO PACIENTE
     if (q.includes("nome") || q.includes("como se chama") || q.includes("qual o seu nome") || q.includes("quem e voce")) {
       if (role === "paciente") return `Olá, doutor(a)! Meu nome é ${p.name}.`;
@@ -433,8 +501,14 @@ class ClinicalChatEngine {
       return "Não há menção a xerostomia ou alterações de paladar na avaliação clínica.";
     }
 
-    // 5. ANTROPOMETRIA (PESO, ESTATURA, PERDA/GANHO PONDERAL, CIRCUNFERÊNCIAS)
-    if (q.includes("peso atual") || q.includes("quanto pesa") || q.includes("quanto esta pesando") || q.includes("seu peso") || q.includes("pesou")) {
+    // 5. ANTROPOMETRIA (PESO, ESTATURA, PERDA/GANHO PONDERAL, CIRCUNFERÊNCIAS E DOBRAS)
+    if (q.includes("peso atual") || q.includes("quanto pesa") || q.includes("quanto esta pesando") || q.includes("seu peso") || q.includes("pesou") || q === "peso" || q.startsWith("peso ")) {
+      if (this.isMissingOrZero(a.pesoAtual)) {
+        if (role === "paciente") return "Nossa, faz muito tempo que não me peso, não faço ideia, doutor. Eles tiraram umas medidas quando cheguei, mas não me falaram.";
+        if (role === "acompanhante") return "Doutor(a), faz muito tempo que ele(a) não se pesa, não sabemos o peso atual de cabeça.";
+        if (role === "medico") return "Colega, o paciente encontra-se acamado e não foi possível aferir o peso atual diretamente na balança. Recomendo utilizar métodos de estimativa antropométrica.";
+        return "O peso atual não pôde ser aferido diretamente neste momento; recomenda-se estimativa antropométrica.";
+      }
       if (role === "paciente") return `Na última pesagem que fiz na balança aqui, eu estava com ${a.pesoAtual} kg, doutor(a).`;
       if (role === "acompanhante") return `Doutor(a), na última pesagem que fizeram dele(a), estava com ${a.pesoAtual} kg.`;
       if (role === "medico") return `Colega, o peso atual aferido do paciente é de ${a.pesoAtual} kg.`;
@@ -442,6 +516,11 @@ class ClinicalChatEngine {
     }
 
     if (q.includes("peso habitual") || q.includes("costumava pesar") || q.includes("pesava antes") || q.includes("peso normal")) {
+      if (this.isMissingOrZero(a.pesoHabitual)) {
+        if (role === "paciente") return "Nossa, faz muito tempo que não acompanho meu peso habitual, não lembro direito, doutor.";
+        if (role === "acompanhante") return "Doutor(a), a gente não lembra ao certo qual era o peso habitual dele(a).";
+        return "Peso habitual não informado na anamnese.";
+      }
       if (role === "paciente") return `O meu peso normal que eu sempre costumava manter era cerca de ${a.pesoHabitual} kg, doutor(a).`;
       if (role === "acompanhante") return `O peso habitual que ele(a) costumava manter era por volta de ${a.pesoHabitual} kg.`;
       return `O peso habitual de referência documentado na anamnese é de ${a.pesoHabitual} kg.`;
@@ -449,18 +528,24 @@ class ClinicalChatEngine {
 
     if (q.includes("altura do joelho") || q.includes("joelho") || q.includes(" aj ") || q.startsWith("aj ") || q === "aj" || q.includes("comprimento do joelho")) {
       const ajVal = a.alturaJoelho || null;
-      if (ajVal) {
+      if (!this.isMissingOrZero(ajVal)) {
         if (role === "paciente") return `Mediram a altura do meu joelho com o paquímetro no leito e deu ${ajVal} cm, doutor(a).`;
         if (role === "acompanhante") return `A equipe mediu a altura do joelho dele(a) no leito e anotou ${ajVal} cm para cálculo de estatura.`;
         return `A Altura do Joelho (AJ) aferida é de ${ajVal} cm (aplicável para estimativa de estatura pelas equações de Chumlea).`;
       } else {
-        if (role === "paciente") return `Não mediram a altura do meu joelho especificamente, doutor(a). Só mediram minha altura normal de pé (${a.estatura} m).`;
-        if (role === "acompanhante") return `Não mediram o joelho dele(a), apenas a altura normal no estadiômetro (${a.estatura} m).`;
-        return `A Altura do Joelho (AJ) não foi aferida neste caso clínico (estatura direta disponível: ${a.estatura} m).`;
+        if (role === "paciente") return "Não sei te informar sobre medida de joelho não, doutor. Eles olharam minhas pernas, mas não me falaram nada sobre isso.";
+        if (role === "acompanhante") return "Não mediram o joelho dele(a) que a gente tenha visto.";
+        return "A Altura do Joelho (AJ) não foi aferida neste caso clínico.";
       }
     }
 
     if (q.includes("altura") || q.includes("estatura") || q.includes("quanto mede") || q.includes("qual seu tamanho")) {
+      if (this.isMissingOrZero(a.estatura)) {
+        if (role === "paciente") return "Não sei informar, doutor, eles tiraram umas medidas quando cheguei, mas não me falaram a minha altura de pé.";
+        if (role === "acompanhante") return "Doutor(a), ele(a) não sabe a altura exata e não conseguiram medir de pé no leito.";
+        if (role === "medico") return "Colega, a estatura direta não pôde ser aferida no estadiômetro devido à condição clínica do paciente; indica-se estimativa por Altura do Joelho (Chumlea).";
+        return "Estatura direta indisponível; indica-se estimativa por altura do joelho.";
+      }
       if (role === "paciente") return `Eu tenho ${a.estatura} m de altura, doutor(a).`;
       if (role === "acompanhante") return `A altura dele(a) é de ${a.estatura} m.`;
       return `A estatura registrada no estadiômetro é de ${a.estatura} m.`;
@@ -472,20 +557,96 @@ class ClinicalChatEngine {
       return `Na evolução ponderal documentada no prontuário: ${a.historicoPerdaPonderal || 'Sem variação ponderal significativa registrada.'}`;
     }
 
-    if (q.includes("cintura") || q.includes("circunferencia") || q.includes("braco") || q.includes("dobra") || q.includes("panturrilha") || q.includes("quadril") || q.includes("demais avaliacoes") || q.includes("subescapular") || q.includes("suprailiaca") || q.includes("abdominal")) {
+    // REGRA 3: PERGUNTAS DE CIRCUNFERÊNCIAS E DOBRAS (DIRECIONADAS E FRACIONADAS)
+    const hasCircKeywords = q.includes("cintura") || q.includes("circunferencia") || q.includes("braco") ||
+                            q.includes("dobra") || q.includes("panturrilha") || q.includes("quadril") ||
+                            q.includes("demais avaliacoes") || q.includes("subescapular") ||
+                            q.includes("suprailiaca") || q.includes("abdominal") || q.includes("medidas") ||
+                            q.includes("perimetro") || q.includes("cb") || q.includes("cc") || q.includes("cp") || q.includes("dct");
+
+    if (hasCircKeywords) {
       if (role === "paciente") {
-        let msg = `Pelo que mediram de fita aqui hoje, doutor(a): minha cintura deu ${a.circunferenciaCintura || '--'} cm`;
-        if (a.circunferenciaQuadril) msg += `, o quadril deu ${a.circunferenciaQuadril} cm`;
-        if (a.circunferenciaBraco) msg += `, o braço deu ${a.circunferenciaBraco} cm`;
-        if (a.circunferenciaPanturrilha) msg += `, a panturrilha deu ${a.circunferenciaPanturrilha} cm`;
-        if (a.dobraTricipital) msg += `, e a dobra do braço deu ${a.dobraTricipital} mm`;
-        if (a.alturaJoelho) msg += `. A altura do joelho deu ${a.alturaJoelho} cm`;
-        msg += ".";
-        return msg;
+        const isGenericCirc = (q.includes("circunferencia") || q.includes("medidas") || q.includes("dobra")) &&
+          !q.includes("cintura") && !q.includes("quadril") && !q.includes("braco") &&
+          !q.includes("panturrilha") && !q.includes("tricipital") && !q.includes("subescapular") &&
+          !q.includes("suprailiaca") && !q.includes("abdominal") && !q.includes(" cb ") && !q.startsWith("cb ") && q !== "cb" &&
+          !q.includes(" cc ") && !q.startsWith("cc ") && q !== "cc" &&
+          !q.includes(" cp ") && !q.startsWith("cp ") && q !== "cp" &&
+          !q.includes(" dct ") && !q.startsWith("dct ") && q !== "dct";
+
+        if (isGenericCirc) {
+          return "Quais medidas o senhor quer saber exatamente? Mediram várias coisas aqui com a fita.";
+        }
+
+        if (q.includes("cintura") || q.includes(" cc ") || q.startsWith("cc ") || q === "cc") {
+          if (this.isMissingOrZero(a.circunferenciaCintura)) {
+            return "Essa medida da cintura não chegaram a me falar não, doutor.";
+          }
+          return `Mediram a minha cintura com a fita e deu ${a.circunferenciaCintura} cm, doutor.`;
+        }
+
+        if (q.includes("quadril")) {
+          if (this.isMissingOrZero(a.circunferenciaQuadril)) {
+            return "A medida do quadril não chegaram a me falar não, doutor.";
+          }
+          return `A medida do meu quadril deu ${a.circunferenciaQuadril} cm, doutor.`;
+        }
+
+        if (q.includes("braco") || q.includes(" cb ") || q.startsWith("cb ") || q === "cb") {
+          if (this.isMissingOrZero(a.circunferenciaBraco)) {
+            return "A medida do braço eles não me falaram não, doutor.";
+          }
+          return `A medida do meu braço com a fita deu ${a.circunferenciaBraco} cm, doutor.`;
+        }
+
+        if (q.includes("panturrilha") || q.includes(" cp ") || q.startsWith("cp ") || q === "cp") {
+          if (this.isMissingOrZero(a.circunferenciaPanturrilha)) {
+            return "A medida da panturrilha não me disseram não, doutor.";
+          }
+          return `A medida da minha panturrilha deu ${a.circunferenciaPanturrilha} cm, doutor.`;
+        }
+
+        if (q.includes("dobra") || q.includes("tricipital") || q.includes(" dct ") || q.startsWith("dct ") || q === "dct") {
+          if (this.isMissingOrZero(a.dobraTricipital)) {
+            return "Essa dobra do braço que apertaram com a pinça não me falaram o número não, doutor.";
+          }
+          return `A dobra do meu braço que mediram com a pinça deu ${a.dobraTricipital} mm, doutor.`;
+        }
+
+        if (q.includes("subescapular")) {
+          if (this.isMissingOrZero(a.dobraSubescapular)) {
+            return "Essa medida das costas não me falaram o número não, doutor.";
+          }
+          return `A dobra das costas deu ${a.dobraSubescapular} mm, doutor.`;
+        }
+
+        if (q.includes("suprailiaca")) {
+          if (this.isMissingOrZero(a.dobraSuprailiaca)) {
+            return "Essa dobra do lado da cintura não me falaram o valor não, doutor.";
+          }
+          return `A dobra do lado da cintura deu ${a.dobraSuprailiaca} mm, doutor.`;
+        }
+
+        if (q.includes("abdominal")) {
+          if (this.isMissingOrZero(a.dobraAbdominal)) {
+            return "Essa dobra da barriga não me disseram o número não, doutor.";
+          }
+          return `A dobra da barriga deu ${a.dobraAbdominal} mm, doutor.`;
+        }
+
+        return "Quais medidas o senhor quer saber exatamente? Mediram várias coisas aqui com a fita.";
       }
+
       if (role === "acompanhante") {
+        const isGenericCirc = (q.includes("circunferencia") || q.includes("medidas") || q.includes("dobra")) &&
+          !q.includes("cintura") && !q.includes("quadril") && !q.includes("braco") &&
+          !q.includes("panturrilha") && !q.includes("tricipital");
+        if (isGenericCirc) {
+          return "Doutor(a), a equipe tirou algumas medidas dele(a) com a fita. Quais medidas o senhor quer saber exatamente?";
+        }
         return `A equipe mediu com a fita métrica e a cintura dele(a) deu ${a.circunferenciaCintura || '--'} cm${a.circunferenciaBraco ? ', o braço ' + a.circunferenciaBraco + ' cm' : ''}${a.circunferenciaPanturrilha ? ', a panturrilha ' + a.circunferenciaPanturrilha + ' cm' : ''}.`;
       }
+
       const details = [];
       if (a.circunferenciaCintura) details.push(`Circunferência da cintura: ${a.circunferenciaCintura} cm`);
       if (a.circunferenciaQuadril) details.push(`Circunferência do quadril: ${a.circunferenciaQuadril} cm`);
@@ -497,7 +658,7 @@ class ClinicalChatEngine {
       if (a.dobraAbdominal) details.push(`Dobra abdominal: ${a.dobraAbdominal} mm`);
       if (a.alturaJoelho) details.push(`Altura do Joelho (AJ): ${a.alturaJoelho} cm`);
       if (a.demaisAvaliacoes) details.push(`Demais avaliações: ${a.demaisAvaliacoes}`);
-      return `Medidas antropométricas aferidas: ${details.join(", ")}.`;
+      return `Medidas antropométricas aferidas: ${details.length > 0 ? details.join(", ") : "Sem circunferências adicionais registradas"}.`;
     }
 
     // 6. MEDICAMENTOS E TRATAMENTOS
@@ -551,15 +712,25 @@ class ClinicalChatEngine {
     }
 
     // 9. EXAMES BIOQUÍMICOS E LABORATORIAIS
-    if (q.includes("exame") || q.includes("laboratorio") || q.includes("sangue") || q.includes("bioquimica") || q.includes("resultado")) {
+    // REGRA 3: PERGUNTA GENÉRICA DE EXAMES ("como estão seus exames?", "quais exames fez?")
+    // NÃO DESPEJAR DADOS: Fazer o aluno especificar!
+    const isGenericExam = (q.includes("exame") || q.includes("laboratorio") || q.includes("sangue") || q.includes("bioquimica") || q.includes("resultado")) &&
+      !q.includes("glicemia") && !q.includes("glicose") && !q.includes("glicada") && !q.includes("hba1c") &&
+      !q.includes("colesterol") && !q.includes("triglicer") && !q.includes("creatinina") && !q.includes("ureia") &&
+      !q.includes("potassio") && !q.includes("fosforo") && !q.includes("albumina") && !q.includes("anemia") &&
+      !q.includes("hemoglobina") && !q.includes("acido urico") && !q.includes("urico") && !q.includes("tfg") &&
+      !q.includes("sodio") && !q.includes("calcio") && !q.includes("plaquetas") && !q.includes("leucocitos") &&
+      !q.includes("pcr") && !q.includes("tgo") && !q.includes("tgp") && !q.includes("bilirrubina");
+
+    if (isGenericExam) {
       if (role === "paciente") {
-        return `Eu trouxe a pastinha com todos os meus exames aqui, doutor(a)! Fiz glicose, colesterol, rins, sangue e urina. Qual exame em específico você gostaria de ver primeiro?`;
+        return "Doutor, fizeram tanto exame em mim... qual deles o senhor quer ver agora?";
       }
       if (role === "acompanhante") {
-        return `Doutor(a), nós trouxemos os laudos do laboratório. Tem glicemia, colesterol, triglicerídeos, ureia, creatinina e outros exames. Pode perguntar de qualquer um deles.`;
+        return "Doutor(a), nós trouxemos os laudos do laboratório. Tem vários exames de sangue e urina. Qual deles o senhor quer ver agora?";
       }
       const labs = b.map(item => `${item.exame}: ${item.valor} (Ref: ${item.referencia})`).join("; ");
-      return `Colega, temos o painel laboratorial recente disponível: ${labs}.`;
+      return `Colega, temos o painel laboratorial recente disponível: ${labs || "Sem exames laboratoriais cadastrados no momento"}.`;
     }
 
     // Checa exames laboratoriais específicos com correspondência inteligente
@@ -713,7 +884,7 @@ class ClinicalChatEngine {
     const caseJson = JSON.stringify(c, null, 2);
 
     const systemPrompt = `
-Você é o interlocutor de um simulador educacional de Dietoterapia ("DietoCase") para estudantes de Nutrição.
+Você é o interlocutor de um simulador educacional de Dietoterapia ("DietoCase") para estudantes de Nutrição em um ambiente hospitalar.
 Seu papel atual é: "${roleInfo.title}" (${roleInfo.subtitle}).
 
 DADOS DO CASO CLÍNICO CADASTRADOS PELO PROFESSOR:
@@ -723,16 +894,27 @@ ${caseJson}
 
 DIRETRIZES DE COMUNICAÇÃO HUMANIZADA (SEM TOM ROBÓTICO):
 1. FALE NATURALMENTE EM PRIMEIRA PESSOA OU REFERINDO AO PACIENTE:
-   - Se você for o PACIENTE: responda com calor humano, falando em PRIMEIRA PESSOA ("eu sinto...", "meu nome é...", "no meu trabalho...", "olha doutor(a)..."). Use linguagem espontânea, empática e realista baseada na sua idade e ocupação. Nunca fale como prontuário de hospital.
+   - Se você for o PACIENTE: aja com extrema naturalidade humana em um ambiente hospitalar. Responda em PRIMEIRA PESSOA ("eu sinto...", "meu nome é...", "olha doutor(a)..."). Use linguagem espontânea, empática e realista. Nunca fale como prontuário de hospital.
    - Se você for o ACOMPANHANTE/FAMILIAR: fale como um familiar atencioso e amoroso ("doutor(a), ele(a) esquece de tomar...", "a gente tenta cuidar dele(a) em casa...").
    - Se você for o MÉDICO, ENFERMEIRO, FONOAUDIÓLOGO ou PSICÓLOGO: responda como um colega de saúde em diálogo interdisciplinar respeitoso com o colega nutricionista ("Olá, colega!", "Do ponto de vista médico...", "No plantão de enfermagem notamos que..."). Nunca utilize prefixos mecânicos com colchetes como "[Parecer Médico]:".
 
-2. REGRA ABSOLUTA ANTI-ALUCINAÇÃO (JAMAIS INVENTE FATOS):
+2. REGRAS ESTRITAS DE COMPORTAMENTO DO SIMULADOR DE PACIENTE:
+   a) NATURALIDADE COM DADOS FALTANTES OU ZERADOS:
+      - NUNCA diga que uma medida corporal é "0", "0 kg", "0 m", "0 cm", "nula" ou "em branco".
+      - Se o aluno perguntar um dado (como altura ou peso) e no banco constar 0, nulo, ou você não tiver essa informação, aja como um paciente comum.
+      - Responda coisas como: "Não sei informar, doutor, eles tiraram umas medidas quando cheguei, mas não me falaram" ou "Nossa, faz muito tempo que não me peso, não faço ideia".
+      - Obrigue o aluno a buscar alternativas para estimar essas medidas.
+   b) LIMITAÇÃO DE CONHECIMENTO TÉCNICO:
+      - Se o aluno perguntar sobre condutas médicas, medicamentos complexos, exames de imagem específicos ou informações que fogem do conhecimento de um paciente leigo (e que não estejam explícitas no seu roteiro), NÃO invente.
+      - Responda naturalmente: "Eu não sei lhe informar sobre isso, doutor. É melhor o senhor perguntar ao médico plantonista" ou "A enfermeira que cuida dessa parte, não sei dizer".
+   c) RESPOSTAS DIRECIONADAS E FRACIONADAS (NÃO DESPEJE DADOS):
+      - Responda APENAS ao que foi especificamente perguntado, de forma curta e coloquial.
+      - Se o aluno fizer uma pergunta genérica como "Quais são as suas circunferências?" ou "Como estão seus exames?", NÃO liste todas as informações de uma vez.
+      - Faça o aluno especificar: "Quais medidas o senhor quer saber exatamente?" ou "Doutor, fizeram tanto exame em mim... qual deles o senhor quer ver agora?".
+      - Entregue os dados um por um, apenas sob demanda.
+
+3. REGRA ABSOLUTA ANTI-ALUCINAÇÃO (JAMAIS INVENTE FATOS):
    - Suas respostas devem ser 100% fiéis às informações contidas no JSON acima.
-   - SE O ESTUDANTE PERGUNTAR QUALQUER COISA QUE NÃO CONSTA NO CASO (alergias não citadas, exames laboratoriais não solicitados, cirurgias não feitas, etc.):
-     * O Paciente deve dizer que não sente isso, que não sabe ou que nunca teve esse problema.
-     * O Acompanhante deve dizer que ele(a) nunca comentou nada a respeito.
-     * O Médico/Enfermeiro deve dizer claramente que esse parâmetro ou exame não consta no prontuário ou não foi avaliado.
    - JAMAIS deduza, suponha ou invente dados ausentes!
     `.trim();
 
