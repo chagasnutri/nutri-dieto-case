@@ -108,6 +108,10 @@ class FirebaseSyncService {
       if (startListener) {
         this.startRealtimeListener();
       }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dietocase:firebase-ready", { detail: this }));
+      }
       return true;
     } catch (err) {
       console.error("❌ Erro ao inicializar Firebase v9 Modular:", err);
@@ -256,10 +260,12 @@ class FirebaseSyncService {
         const list = [];
         if (!snapshot.empty) {
           snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            if (data && data.id) {
-              list.push(data);
-            }
+            const data = docSnap.data() || {};
+            const cId = data.id || docSnap.id;
+            const existing = (typeof getCases === "function" ? getCases() : []).find(c => c.id === cId) ||
+                             (typeof DEFAULT_CASES !== "undefined" ? DEFAULT_CASES.find(c => c.id === cId) : {}) || {};
+            const merged = { ...existing, ...data, id: cId };
+            list.push(merged);
           });
         }
         console.log(`📡 [Firestore onSnapshot: casos_clinicos] ${list.length} caso(s) recebido(s) em tempo real da nuvem!`);
@@ -279,10 +285,9 @@ class FirebaseSyncService {
         const list = [];
         if (!snapshot.empty) {
           snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            if (data && data.id) {
-              list.push(data);
-            }
+            const data = docSnap.data() || {};
+            const dId = data.id || docSnap.id;
+            list.push({ ...data, id: dId });
           });
         }
         console.log(`📡 [Firestore onSnapshot: disciplinas] ${list.length} disciplina(s) recebida(s) em tempo real da nuvem!`);
@@ -311,6 +316,96 @@ class FirebaseSyncService {
     } catch (errConfig) {
       console.error("❌ [Firestore ERROR ao configurar onSnapshot de configuracoes/estado_atual]:", errConfig);
     }
+  }
+
+  // Escuta em tempo real dedicada a um caso clínico específico (documento ativo na Simulação)
+  listenToActiveCase(caseId, callback) {
+    if (!caseId) return null;
+    if (!this.db) {
+      this.init(true);
+    }
+    if (this.unsubscribeActiveCaseSnapshot) {
+      try { this.unsubscribeActiveCaseSnapshot(); } catch (e) {}
+      this.unsubscribeActiveCaseSnapshot = null;
+    }
+    if (!this.db) return null;
+
+    try {
+      const caseDocRef = doc(this.db, COLLECTION_CASES, caseId);
+      this.unsubscribeActiveCaseSnapshot = onSnapshot(caseDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const rawData = docSnap.data() || {};
+          const cId = rawData.id || docSnap.id;
+          const existing = (typeof getCases === "function" ? getCases() : []).find(c => c.id === cId) ||
+                           (typeof DEFAULT_CASES !== "undefined" ? DEFAULT_CASES.find(c => c.id === cId) : {}) || {};
+          const merged = { ...existing, ...rawData, id: cId };
+          console.log(`📡 [Firestore onSnapshot: caso ativo ${cId}] Atualização em tempo real recebida. Visível:`, merged.visivel, "Trancado:", merged.isLocked);
+
+          const currentCases = typeof getCases === "function" ? getCases() : [];
+          const idx = currentCases.findIndex(c => c.id === cId);
+          if (idx >= 0) {
+            currentCases[idx] = merged;
+          } else {
+            currentCases.push(merged);
+          }
+          if (typeof setCasesStore === "function") setCasesStore(currentCases);
+          if (window.adminManager) window.adminManager.cases = currentCases;
+          if (window.appState && (window.appState.currentCaseId === cId || window.appState.currentCase?.id === cId)) {
+            window.appState.currentCase = merged;
+          }
+
+          if (typeof callback === "function") {
+            try { callback(merged); } catch (cbErr) { console.error(cbErr); }
+          }
+          if (typeof window.syncAppStateAndNotify === "function") {
+            window.syncAppStateAndNotify(null, false);
+          }
+        }
+      }, (err) => {
+        console.warn(`⚠️ [Firestore onSnapshot activeCase ${caseId}]:`, err.message);
+      });
+      return this.unsubscribeActiveCaseSnapshot;
+    } catch (errListen) {
+      console.error("❌ [Firestore ERROR ao configurar onSnapshot do caso ativo]:", errListen);
+      return null;
+    }
+  }
+
+  // Revalidação forçada do status do caso ignorando caches (Padrão SWR)
+  async revalidateCaseStatus(caseId) {
+    if (!caseId || !this.db) return null;
+    try {
+      const caseDocRef = doc(this.db, COLLECTION_CASES, caseId);
+      const snap = await getDoc(caseDocRef);
+      if (snap.exists()) {
+        const rawData = snap.data() || {};
+        const cId = rawData.id || snap.id;
+        const existing = (typeof getCases === "function" ? getCases() : []).find(c => c.id === cId) ||
+                         (typeof DEFAULT_CASES !== "undefined" ? DEFAULT_CASES.find(c => c.id === cId) : {}) || {};
+        const merged = { ...existing, ...rawData, id: cId };
+
+        const currentCases = typeof getCases === "function" ? getCases() : [];
+        const idx = currentCases.findIndex(c => c.id === cId);
+        if (idx >= 0) {
+          currentCases[idx] = merged;
+        } else {
+          currentCases.push(merged);
+        }
+        if (typeof setCasesStore === "function") setCasesStore(currentCases);
+        if (window.adminManager) window.adminManager.cases = currentCases;
+        if (window.appState && (window.appState.currentCaseId === cId || window.appState.currentCase?.id === cId)) {
+          window.appState.currentCase = merged;
+        }
+
+        if (typeof window.syncAppStateAndNotify === "function") {
+          window.syncAppStateAndNotify(null, false);
+        }
+        return { exists: true, caseData: merged };
+      }
+    } catch (e) {
+      console.warn(`⚠️ [Firestore revalidateCaseStatus ${caseId}]:`, e.message);
+    }
+    return null;
   }
 
   // Processa atualização recebida da coleção 'casos_clinicos' em tempo real
@@ -633,7 +728,7 @@ class FirebaseSyncService {
     try {
       const safeBlocked = Array.isArray(blockedTabs) ? blockedTabs : [];
       const caseRef = doc(this.db, COLLECTION_CASES, caseId);
-      await setDoc(caseRef, { blockedTabs: safeBlocked }, { merge: true });
+      await setDoc(caseRef, { id: caseId, blockedTabs: safeBlocked }, { merge: true });
 
       const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
       const c = cases.find(item => item.id === caseId);
@@ -659,7 +754,7 @@ class FirebaseSyncService {
 
     try {
       const caseRef = doc(this.db, COLLECTION_CASES, caseId);
-      await setDoc(caseRef, { isLocked: isLocked === true }, { merge: true });
+      await setDoc(caseRef, { id: caseId, isLocked: isLocked === true }, { merge: true });
 
       const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
       const c = cases.find(item => item.id === caseId);
@@ -685,7 +780,7 @@ class FirebaseSyncService {
 
     try {
       const caseRef = doc(this.db, COLLECTION_CASES, caseId);
-      await setDoc(caseRef, { visivel: visivel === true }, { merge: true });
+      await setDoc(caseRef, { id: caseId, visivel: visivel === true }, { merge: true });
 
       const cases = (window.adminManager ? window.adminManager.cases : (typeof getCases === "function" ? getCases() : []));
       const c = cases.find(item => item.id === caseId);
@@ -1080,8 +1175,11 @@ class FirebaseSyncService {
       const casesSnap = await getDocs(collection(this.db, COLLECTION_CASES));
       const cloudCases = [];
       casesSnap.forEach(d => {
-        const data = d.data();
-        if (data && data.id) cloudCases.push(data);
+        const data = d.data() || {};
+        const cId = data.id || d.id;
+        const existing = (typeof getCases === "function" ? getCases() : []).find(c => c.id === cId) ||
+                         (typeof DEFAULT_CASES !== "undefined" ? DEFAULT_CASES.find(c => c.id === cId) : {}) || {};
+        cloudCases.push({ ...existing, ...data, id: cId });
       });
 
       if (typeof window !== "undefined") {
@@ -1117,7 +1215,7 @@ class FirebaseSyncService {
         return snap.data();
       }
     } catch (e) {
-      console.error("âŒ [Firestore ERROR em fetchRemoteData] Erro ao buscar estado no Firestore:", e);
+      console.error("❌ [Firestore ERROR em fetchRemoteData] Erro ao buscar estado no Firestore:", e);
     }
     return null;
   }
@@ -1127,6 +1225,7 @@ class FirebaseSyncService {
 const firebaseSyncService = new FirebaseSyncService();
 if (typeof window !== "undefined") {
   window.firebaseSyncService = firebaseSyncService;
+  window.dispatchEvent(new CustomEvent("dietocase:firebase-ready", { detail: firebaseSyncService }));
 }
 
 export { FirebaseSyncService, firebaseSyncService };

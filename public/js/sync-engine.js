@@ -21,6 +21,14 @@ class DietoSyncEngine {
     } catch (e) {
       console.warn("BroadcastChannel não suportado neste navegador:", e);
     }
+
+    // Escuta evento de prontidão do Firebase caso o módulo ES carregue assincronamente após este script
+    if (typeof window !== "undefined") {
+      window.addEventListener("dietocase:firebase-ready", () => {
+        console.log("⚡ [DietoSyncEngine] Evento dietocase:firebase-ready recebido. Conectando listeners Firestore...");
+        this.init(true);
+      });
+    }
   }
 
   notifyDataListeners({ disciplinas, cases, isInitial = false, isRemote = false }) {
@@ -48,8 +56,12 @@ class DietoSyncEngine {
 
   // Inicializa o motor conectando diretamente ao Firebase Firestore
   async init(startListener = true) {
-    if (typeof firebaseSyncService !== "undefined") {
-      firebaseSyncService.onStatusChange((fbStatus, detail) => {
+    const fbService = (typeof firebaseSyncService !== "undefined") 
+      ? firebaseSyncService 
+      : (typeof window !== "undefined" ? window.firebaseSyncService : null);
+
+    if (fbService) {
+      fbService.onStatusChange((fbStatus, detail) => {
         if (fbStatus === "online") {
           this.setStatus("online_firebase");
         } else if (fbStatus === "syncing") {
@@ -61,15 +73,15 @@ class DietoSyncEngine {
         }
       });
 
-      firebaseSyncService.onDataChange(({ disciplinas, cases, isRemote }) => {
+      fbService.onDataChange(({ disciplinas, cases, isRemote }) => {
         this.notifyDataListeners({ disciplinas, cases, isInitial: false, isRemote: true });
       });
 
-      const fbStarted = await firebaseSyncService.init(startListener);
+      const fbStarted = await fbService.init(startListener);
       if (fbStarted) {
         console.log("☁️ DietoSyncEngine conectado ao Firebase Firestore com sucesso!");
-        if (startListener && typeof firebaseSyncService.startRealtimeListener === "function") {
-          firebaseSyncService.startRealtimeListener();
+        if (startListener && typeof fbService.startRealtimeListener === "function") {
+          fbService.startRealtimeListener();
         }
         return true;
       }

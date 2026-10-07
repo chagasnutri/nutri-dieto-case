@@ -277,9 +277,54 @@ document.addEventListener("DOMContentLoaded", () => {
         dietoSyncEngine.init(true);
       }
     }
-    if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.startRealtimeListener === "function") {
-      firebaseSyncService.startRealtimeListener();
-    }
+
+    const connectFirebaseListeners = () => {
+      const fb = (typeof firebaseSyncService !== "undefined") 
+        ? firebaseSyncService 
+        : (typeof window !== "undefined" ? window.firebaseSyncService : null);
+
+      if (fb && typeof fb.startRealtimeListener === "function") {
+        fb.startRealtimeListener();
+      }
+      const activeCaseId = appState.currentCaseId || (appState.currentCase ? appState.currentCase.id : null);
+      if (activeCaseId && fb && typeof fb.listenToActiveCase === "function") {
+        fb.listenToActiveCase(activeCaseId);
+      }
+    };
+
+    connectFirebaseListeners();
+    window.addEventListener("dietocase:firebase-ready", () => {
+      connectFirebaseListeners();
+    });
+
+    // Revalidação ativa estilo SWR (quando a aba volta ao foco ou altera visibilidade da janela)
+    const handleActiveRevalidation = () => {
+      const activeCaseId = appState.currentCaseId || (appState.currentCase ? appState.currentCase.id : null);
+      const fb = (typeof firebaseSyncService !== "undefined") 
+        ? firebaseSyncService 
+        : (typeof window !== "undefined" ? window.firebaseSyncService : null);
+
+      if (activeCaseId && fb && typeof fb.revalidateCaseStatus === "function") {
+        fb.revalidateCaseStatus(activeCaseId);
+      }
+    };
+    window.addEventListener("focus", handleActiveRevalidation);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        handleActiveRevalidation();
+      }
+    });
+
+    // Polling SWR de contingência a cada 5 segundos enquanto o caso ativo estiver restrito/oculto
+    setInterval(() => {
+      if (appState.mode === "student-simulation") {
+        const hiddenOverlay = document.getElementById("studentCaseHiddenOverlay");
+        const isCurrentlyHidden = (hiddenOverlay && !hiddenOverlay.classList.contains("hidden")) || appState.currentCase?.visivel === false;
+        if (isCurrentlyHidden) {
+          handleActiveRevalidation();
+        }
+      }
+    }, 5000);
 
 
 
@@ -895,14 +940,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const found = adminManager.getCaseById(caseId);
     if (!found) return;
 
-    if (found.visivel === false && !isTeacherAuthenticated) {
-      showToast("Caso clínico oculto. Aguardando liberação do professor.", "warning");
-      return;
-    }
+    // Conecta escuta em tempo real do caso específico no Firestore (SWR)
+    const fb = (typeof firebaseSyncService !== "undefined") 
+      ? firebaseSyncService 
+      : (typeof window !== "undefined" ? window.firebaseSyncService : null);
 
-    if (found.isLocked) {
-      showToast("🔒 Este caso está bloqueado pelo professor. Aguarde a liberação para realizar o atendimento.", "warning");
-      return;
+    if (fb && typeof fb.listenToActiveCase === "function") {
+      fb.listenToActiveCase(caseId);
+    }
+    if (fb && typeof fb.revalidateCaseStatus === "function") {
+      fb.revalidateCaseStatus(caseId);
     }
 
     appState.mode = "student-simulation";
@@ -916,6 +963,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (studentCatalogSection) studentCatalogSection.classList.add("hidden");
     if (studentSimulationContainer) studentSimulationContainer.classList.remove("hidden");
+
+    // Controle visual imediato do overlay de bloqueio
+    const hiddenOverlay = document.getElementById("studentCaseHiddenOverlay");
+    const simContent = document.getElementById("studentSimulationContent");
+    if (found.visivel === false && !isTeacherAuthenticated) {
+      if (hiddenOverlay) hiddenOverlay.classList.remove("hidden");
+      if (simContent) simContent.classList.add("hidden");
+      showToast("Caso clínico oculto. Aguardando liberação do professor.", "warning");
+    } else {
+      if (hiddenOverlay) hiddenOverlay.classList.add("hidden");
+      if (simContent) simContent.classList.remove("hidden");
+    }
+
+    if (found.isLocked && !isTeacherAuthenticated) {
+      showToast("🔒 Este caso está bloqueado pelo professor. Aguarde a liberação para realizar o atendimento.", "warning");
+    }
 
     if (backToCatalogBtn) {
       const span = backToCatalogBtn.querySelector("span:last-child");
@@ -1914,6 +1977,16 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAdminMetrics();
     populateDisciplineDropdowns();
 
+    // Sincroniza visualização do Aluno caso esteja navegando pelo catálogo
+    if (!isTeacherAuthenticated) {
+      if (typeof renderStudentDisciplinePortal === "function") {
+        renderStudentDisciplinePortal();
+      }
+      if (typeof renderStudentCatalog === "function" && appState.studentSelectedDisciplinaId) {
+        renderStudentCatalog(currentCatalogFilter, currentCatalogSearch);
+      }
+    }
+
     // 3. Sincroniza com o servidor central e difunde para outras abas (apenas se originado localmente)
     if (shouldTriggerSync) {
       adminManager.triggerServerSync();
@@ -2006,6 +2079,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Aplica bloqueio de abas configurado para este caso
     applyStudentTabBlockingState(found);
+
+    // Controle de visibilidade do caso ativo para o aluno
+    const hiddenOverlay = document.getElementById("studentCaseHiddenOverlay");
+    const simContent = document.getElementById("studentSimulationContent");
+    if (found.visivel === false && !isTeacherAuthenticated) {
+      if (hiddenOverlay) hiddenOverlay.classList.remove("hidden");
+      if (simContent) simContent.classList.add("hidden");
+    } else {
+      if (hiddenOverlay) hiddenOverlay.classList.add("hidden");
+      if (simContent) simContent.classList.remove("hidden");
+    }
   }
 
   // Alterna entre Modo Aluno e Modo Administrador (mantido para compatibilidade)

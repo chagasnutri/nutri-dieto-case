@@ -1,5 +1,6 @@
-// DietoCase Service Worker - Offline & PWA Support
-const CACHE_NAME = 'dietocase-pwa-v7';
+// DietoCase Service Worker - Offline & PWA Support (v8 com bypass para verificação em tempo real)
+// CACHE_NAME atualizado para dietocase-pwa-v8 (expurgo de caches legados incluindo dietocase-pwa-v7)
+const CACHE_NAME = 'dietocase-pwa-v8';
 
 // Configurações do PWA para forçar atualização automática de cache no cliente
 const pwaConfig = {
@@ -81,14 +82,33 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Estratégia Stale-While-Revalidate com fallback para cache
-// Prevenção de Cache Agressivo no PWA: não interceptar conexões do Firebase/Firestore/Google APIs
+// Estratégia Network-First com Fallback para Cache
+// Prevenção Rigorosa de Cache Agressivo: NÃO interceptar status de casos, APIs, autenticação e Firebase
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
 
-  // Não interceptar requisições em tempo real e APIs do Firebase/Google
+  // 1. Bypass por cabeçalhos de requisição crítica (ex: no-cache, no-store, bypass-sw)
+  const cacheControl = event.request.headers.get('cache-control') || '';
+  const pragma = event.request.headers.get('pragma') || '';
   if (
+    cacheControl.includes('no-cache') ||
+    cacheControl.includes('no-store') ||
+    pragma.includes('no-cache') ||
+    event.request.headers.get('x-bypass-sw') === 'true'
+  ) {
+    return;
+  }
+
+  // 2. Não interceptar requisições em tempo real, APIs do Firebase/Google, status e revalidações
+  let urlObj;
+  try {
+    urlObj = new URL(url);
+  } catch (e) {
+    urlObj = null;
+  }
+
+  const isBypassUrl = 
     url.includes('firestore.googleapis.com') ||
     url.includes('google.firestore') ||
     url.includes('firebase') ||
@@ -97,14 +117,28 @@ self.addEventListener('fetch', (event) => {
     url.includes('securetoken') ||
     url.includes('firebaseio.com') ||
     url.includes('_vercel') ||
-    url.includes('vercel')
-  ) {
+    url.includes('vercel') ||
+    url.includes('/api/') ||
+    url.includes('status') ||
+    url.includes('revalidate') ||
+    (urlObj && (
+      urlObj.searchParams.has('nocache') ||
+      urlObj.searchParams.has('_t') ||
+      urlObj.searchParams.has('caseId') ||
+      urlObj.searchParams.has('status') ||
+      urlObj.pathname.includes('/api/')
+    ));
+
+  if (isBypassUrl) {
+    // Permite que o tráfego de status e tempo real vá diretamente para a rede sem cache
     return;
   }
   
+  // 3. Estratégia Network-First para arquivos locais da aplicação:
+  // Garante que o aluno sempre receba a versão mais recente da rede, com fallback offline se a rede falhar.
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -112,11 +146,10 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        return cachedResponse;
-      });
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // Fallback para cache local apenas em caso de falha de conexão (offline)
+        return caches.match(event.request);
+      })
   );
 });

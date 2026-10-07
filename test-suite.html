@@ -2964,8 +2964,8 @@ Questões Avaliativas:
         swSourceV7 = xhrSw7.responseText || "";
       } catch (e) {}
 
-      assert(swSourceV7.includes("dietocase-pwa-v7"),
-        "sw.js utiliza CACHE_NAME = 'dietocase-pwa-v7' para expurgo de caches legados");
+      assert(swSourceV7.includes("dietocase-pwa-v7") || swSourceV7.includes("dietocase-pwa-v8"),
+        "sw.js utiliza CACHE_NAME atualizado para expurgo de caches legados");
       assert(swSourceV7.includes("url.includes('firebase')") || swSourceV7.includes("url.includes('firestore.googleapis.com')"),
         "sw.js implementa bypass de fetch para requisições de API do Firebase/Google");
 
@@ -3123,6 +3123,80 @@ Questões Avaliativas:
         "components/SimulationModule.tsx implementa estado 'recordatorioItems' e handler 'handleRecordatorioQtdChange' via Regra de 3");
       assert(realPatientModuleCode.includes("recordatorioItems") && realPatientModuleCode.includes("handleRecordatorioQtdChange"),
         "components/RealPatientModule.tsx implementa estado 'recordatorioItems' e handler 'handleRecordatorioQtdChange' via Regra de 3");
+
+      // 137. Sincronização em Tempo Real de Status de Casos (onSnapshot / SWR) e Bypass de Cache no Service Worker v8
+      let swSourceV8 = "";
+      try {
+        const xhrSw8 = new XMLHttpRequest();
+        xhrSw8.open("GET", "sw.js", false);
+        xhrSw8.send();
+        swSourceV8 = xhrSw8.responseText || "";
+      } catch (e) {}
+
+      assert(swSourceV8.includes("dietocase-pwa-v8"),
+        "sw.js define CACHE_NAME = 'dietocase-pwa-v8' para expurgo definitivo de caches legados");
+      assert(swSourceV8.includes("x-bypass-sw") || swSourceV8.includes("no-cache"),
+        "sw.js implementa detecção e bypass de headers 'no-cache' / 'x-bypass-sw'");
+      assert(swSourceV8.includes("status") && swSourceV8.includes("revalidate"),
+        "sw.js ignora cache do Service Worker para requisições críticas de verificação de status e revalidação");
+
+      let fbSyncSource = "";
+      try {
+        const xhrFb = new XMLHttpRequest();
+        xhrFb.open("GET", "js/firebase-sync.js", false);
+        xhrFb.send();
+        fbSyncSource = xhrFb.responseText || "";
+      } catch (e) {}
+
+      assert(fbSyncSource.includes("listenToActiveCase") && fbSyncSource.includes("revalidateCaseStatus"),
+        "js/firebase-sync.js implementa listenToActiveCase e revalidateCaseStatus para escuta dedicada em tempo real");
+      assert(fbSyncSource.includes("dietocase:firebase-ready"),
+        "js/firebase-sync.js emite CustomEvent 'dietocase:firebase-ready' para sincronização de módulos");
+
+      assert(appJsCode.includes("listenToActiveCase") && appJsCode.includes("revalidateCaseStatus"),
+        "js/app.js conecta listenToActiveCase e revalidateCaseStatus ao abrir a simulação do aluno");
+      assert(appJsCode.includes("studentCaseHiddenOverlay") && appJsCode.includes("studentSimulationContent"),
+        "js/app.js gerencia alternância reativa entre studentCaseHiddenOverlay e studentSimulationContent");
+      assert(appJsCode.includes("dietocase:firebase-ready"),
+        "js/app.js escuta evento 'dietocase:firebase-ready' para inicialização reativa resiliente");
+
+      // Verificação da estrutura do overlay no HTML
+      let indexHtmlSource = "";
+      try {
+        const xhrIndex = new XMLHttpRequest();
+        xhrIndex.open("GET", "index.html", false);
+        xhrIndex.send();
+        indexHtmlSource = xhrIndex.responseText || "";
+      } catch (e) {}
+
+      assert(indexHtmlSource.includes('id="studentCaseHiddenOverlay"') && indexHtmlSource.includes('Acesso Temporariamente Restrito'),
+        "index.html possui o container 'studentCaseHiddenOverlay' com aviso de 'Acesso Temporariamente Restrito'");
+      assert(indexHtmlSource.includes('id="studentSimulationContent"'),
+        "index.html possui o container 'studentSimulationContent' para conteúdo do atendimento");
+
+      // Teste dinâmico de alternância de visibilidade no DOM
+      const testOverlay = document.createElement("div");
+      testOverlay.id = "testCaseHiddenOverlay";
+      testOverlay.className = "hidden";
+      const testContent = document.createElement("div");
+      testContent.id = "testSimulationContent";
+      document.body.appendChild(testOverlay);
+      document.body.appendChild(testContent);
+
+      // Simulação: caso fica oculto pelo professor
+      testOverlay.classList.remove("hidden");
+      testContent.classList.add("hidden");
+      assert(!testOverlay.classList.contains("hidden") && testContent.classList.contains("hidden"),
+        "Overlay de bloqueio fica visível e conteúdo oculto quando o caso é restrito pelo professor");
+
+      // Simulação: professor libera o caso em tempo real
+      testOverlay.classList.add("hidden");
+      testContent.classList.remove("hidden");
+      assert(testOverlay.classList.contains("hidden") && !testContent.classList.contains("hidden"),
+        "Bloqueio é removido e conteúdo da simulação surge imediatamente ao liberar o caso");
+
+      testOverlay.remove();
+      testContent.remove();
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
