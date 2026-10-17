@@ -1,12 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import PreceptorFAB from './PreceptorFAB';
 import PreceptorDrawer from './PreceptorDrawer';
 import LipidQualitySection from './LipidQualitySection';
+import MicronutrientAdequacySection from './MicronutrientAdequacySection';
+import RelatorioFinal from './RelatorioFinal';
 import { useCaseDraft, CaseDraftData } from '../hooks/useCaseDraft';
+
+const SIMULATION_PATIENTS_MAP: Record<string, { nome: string; idade: number; sexo: 'Masculino' | 'Feminino'; hipotese: string }> = {
+  'caso-dm2-has': {
+    nome: 'João Batista da Silva',
+    idade: 58,
+    sexo: 'Masculino',
+    hipotese: 'DM2 descompensado, HAS Estágio 2 e Dislipidemia mista'
+  },
+  'caso-desnutricao': {
+    nome: 'Maria das Graças Oliveira',
+    idade: 76,
+    sexo: 'Feminino',
+    hipotese: 'Desnutrição Energético-Proteica Grave e DRC Estágio 4'
+  },
+  'caso-drc-idoso': {
+    nome: 'Roberto Silveira Santos',
+    idade: 42,
+    sexo: 'Masculino',
+    hipotese: 'Pós-Gastrectomia Subtotal com Síndrome de Dumping'
+  }
+};
 
 const DEFAULT_CARDAPIO_ITEMS = [
   {
@@ -16,11 +39,17 @@ const DEFAULT_CARDAPIO_ITEMS = [
     pesoMedidaG: 50, // 1 unidade = 50g
     qtd: 1,
     gramas: 50, // Passo A: 1 * 50g = 50g
-    nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+    nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2, calcio: 16.0, ferro: 1.0, sodio: 648.0, potassio: 125.0, vitA: 0.0, vitC: 0.0 },
     kcal: 150.0, // Passo B: (50 * 300.0) / 100
     cho: 29.3,
     ptn: 4.0,
-    lip: 1.6
+    lip: 1.6,
+    calcio: 8.0,
+    ferro: 0.5,
+    sodio: 324.0,
+    potassio: 62.5,
+    vitA: 0.0,
+    vitC: 0.0
   },
   {
     id: '2',
@@ -29,11 +58,17 @@ const DEFAULT_CARDAPIO_ITEMS = [
     pesoMedidaG: 25, // 1 fatia = 25g
     qtd: 2,
     gramas: 50, // Passo A: 2 * 25g = 50g
-    nutri100g: { kcal: 253.0, cho: 49.9, ptn: 9.4, lip: 3.7 },
+    nutri100g: { kcal: 253.0, cho: 49.9, ptn: 9.4, lip: 3.7, calcio: 132.0, ferro: 2.4, sodio: 506.0, potassio: 228.0, vitA: 0.0, vitC: 0.0 },
     kcal: 126.5, // Passo B: (50 * 253.0) / 100
     cho: 25.0,
     ptn: 4.7,
-    lip: 1.9
+    lip: 1.9,
+    calcio: 66.0,
+    ferro: 1.2,
+    sodio: 253.0,
+    potassio: 114.0,
+    vitA: 0.0,
+    vitC: 0.0
   },
   {
     id: '3',
@@ -42,11 +77,17 @@ const DEFAULT_CARDAPIO_ITEMS = [
     pesoMedidaG: 30, // 1 fatia = 30g
     qtd: 1,
     gramas: 30, // Passo A: 1 * 30g = 30g
-    nutri100g: { kcal: 264.0, cho: 3.2, ptn: 17.4, lip: 20.2 },
+    nutri100g: { kcal: 264.0, cho: 3.2, ptn: 17.4, lip: 20.2, calcio: 579.0, ferro: 0.3, sodio: 410.0, potassio: 95.0, vitA: 180.0, vitC: 0.0 },
     kcal: 79.2, // Passo B: (30 * 264.0) / 100
     cho: 1.0,
     ptn: 5.2,
-    lip: 6.1
+    lip: 6.1,
+    calcio: 173.7,
+    ferro: 0.1,
+    sodio: 123.0,
+    potassio: 28.5,
+    vitA: 54.0,
+    vitC: 0.0
   },
   {
     id: '4',
@@ -55,11 +96,17 @@ const DEFAULT_CARDAPIO_ITEMS = [
     pesoMedidaG: 100, // 1 porção = 100g
     qtd: 1,
     gramas: 100, // Passo A: 1 * 100g = 100g
-    nutri100g: { kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1 },
+    nutri100g: { kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1, calcio: 22.0, ferro: 0.2, sodio: 2.0, potassio: 222.0, vitA: 95.0, vitC: 61.8 },
     kcal: 40.0, // Passo B: (100 * 40.0) / 100
     cho: 10.4,
     ptn: 0.5,
-    lip: 0.1
+    lip: 0.1,
+    calcio: 22.0,
+    ferro: 0.2,
+    sodio: 2.0,
+    potassio: 222.0,
+    vitA: 95.0,
+    vitC: 61.8
   }
 ];
 
@@ -71,11 +118,17 @@ const DEFAULT_RECORDATORIO_ITEMS = [
     pesoMedidaG: 200, // 1 copo = 200g
     qtd: 1,
     gramas: 200, // Passo A: 1 * 200g = 200g
-    nutri100g: { kcal: 61.0, cho: 4.5, ptn: 3.2, lip: 3.5 },
+    nutri100g: { kcal: 61.0, cho: 4.5, ptn: 3.2, lip: 3.5, calcio: 123.0, ferro: 0.1, sodio: 65.0, potassio: 145.0, vitA: 28.0, vitC: 1.0 },
     kcal: 122.0, // Passo B: (200 * 61.0) / 100
     cho: 9.0,
     ptn: 6.4,
-    lip: 7.0
+    lip: 7.0,
+    calcio: 246.0,
+    ferro: 0.2,
+    sodio: 130.0,
+    potassio: 290.0,
+    vitA: 56.0,
+    vitC: 2.0
   },
   {
     id: 'rec-2',
@@ -84,11 +137,17 @@ const DEFAULT_RECORDATORIO_ITEMS = [
     pesoMedidaG: 50, // 1 unidade = 50g
     qtd: 2,
     gramas: 100, // Passo A: 2 * 50g = 100g
-    nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+    nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2, calcio: 16.0, ferro: 1.0, sodio: 648.0, potassio: 125.0, vitA: 0.0, vitC: 0.0 },
     kcal: 300.0, // Passo B: (100 * 300.0) / 100
     cho: 58.6,
     ptn: 8.0,
-    lip: 3.2
+    lip: 3.2,
+    calcio: 16.0,
+    ferro: 1.0,
+    sodio: 648.0,
+    potassio: 125.0,
+    vitA: 0.0,
+    vitC: 0.0
   },
   {
     id: 'rec-3',
@@ -97,11 +156,17 @@ const DEFAULT_RECORDATORIO_ITEMS = [
     pesoMedidaG: 10, // 1 ponta de faca = 10g
     qtd: 1,
     gramas: 10, // Passo A: 1 * 10g = 10g
-    nutri100g: { kcal: 726.0, cho: 0.1, ptn: 0.4, lip: 82.4 },
+    nutri100g: { kcal: 726.0, cho: 0.1, ptn: 0.4, lip: 82.4, calcio: 15.0, ferro: 0.1, sodio: 593.0, potassio: 24.0, vitA: 580.0, vitC: 0.0 },
     kcal: 72.6, // Passo B: (10 * 726.0) / 100
     cho: 0.0,
     ptn: 0.0,
-    lip: 8.2
+    lip: 8.2,
+    calcio: 1.5,
+    ferro: 0.0,
+    sodio: 59.3,
+    potassio: 2.4,
+    vitA: 58.0,
+    vitC: 0.0
   },
   {
     id: 'rec-4',
@@ -110,11 +175,17 @@ const DEFAULT_RECORDATORIO_ITEMS = [
     pesoMedidaG: 100, // 1 unidade = 100g
     qtd: 1,
     gramas: 100, // Passo A: 1 * 100g = 100g
-    nutri100g: { kcal: 98.0, cho: 26.0, ptn: 1.3, lip: 0.1 },
+    nutri100g: { kcal: 98.0, cho: 26.0, ptn: 1.3, lip: 0.1, calcio: 8.0, ferro: 0.4, sodio: 1.0, potassio: 358.0, vitA: 4.0, vitC: 8.5 },
     kcal: 98.0, // Passo B: (100 * 98.0) / 100
     cho: 26.0,
     ptn: 1.3,
-    lip: 0.1
+    lip: 0.1,
+    calcio: 8.0,
+    ferro: 0.4,
+    sodio: 1.0,
+    potassio: 358.0,
+    vitA: 4.0,
+    vitC: 8.5
   }
 ];
 
@@ -159,9 +230,19 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
 });
 
 export default function SimulationModule() {
-  const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio' | 'questoes'>('anamnese');
+  const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio' | 'questoes' | 'relatorio'>('anamnese');
   const [isPreceptorOpen, setIsPreceptorOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState('caso-dm2-has');
+
+  // Permite abrir diretamente o relatório via query parameter ?tab=relatorio
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'relatorio') {
+        setActiveTab('relatorio');
+      }
+    }
+  }, []);
 
   // Identificação do Aluno (persistida localmente para garantir isolamento por estudante)
   const [studentId, setStudentId] = useState<string>(() => {
@@ -224,13 +305,13 @@ export default function SimulationModule() {
     vitC: ''
   });
 
-  // Passo A (Grama Total) e Passo B (Regra de 3 dos Nutrientes) em tempo real no Cardápio
+  // Passo A (Grama Total) e Passo B (Regra de 3 dos Nutrientes: Macros e Micros) em tempo real no Cardápio
   const handleCardapioQtdChange = (idx: number, newQtdVal: string) => {
     const qtdInserida = parseFloat(newQtdVal) || 0;
     const updated = cardapioItems.map((item, i) => {
       if (i !== idx) return item;
       const gramaturaTotal = Math.round((qtdInserida * item.pesoMedidaG) * 10) / 10;
-      const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+      const calcNutri = (val100g?: number) => Math.round(((gramaturaTotal * (val100g || 0)) / 100) * 10) / 10;
       return {
         ...item,
         qtd: qtdInserida,
@@ -238,19 +319,25 @@ export default function SimulationModule() {
         kcal: calcNutri(item.nutri100g.kcal),
         cho: calcNutri(item.nutri100g.cho),
         ptn: calcNutri(item.nutri100g.ptn),
-        lip: calcNutri(item.nutri100g.lip)
+        lip: calcNutri(item.nutri100g.lip),
+        calcio: calcNutri(item.nutri100g.calcio),
+        ferro: calcNutri(item.nutri100g.ferro),
+        sodio: calcNutri(item.nutri100g.sodio),
+        potassio: calcNutri(item.nutri100g.potassio),
+        vitA: calcNutri(item.nutri100g.vitA),
+        vitC: calcNutri(item.nutri100g.vitC)
       };
     });
     updateField('cardapioItems', updated);
   };
 
-  // Passo A (Grama Total) e Passo B (Regra de 3) em tempo real no Recordatório 24h
+  // Passo A (Grama Total) e Passo B (Regra de 3: Macros e Micros) em tempo real no Recordatório 24h
   const handleRecordatorioQtdChange = (idx: number, newQtdVal: string) => {
     const qtdInserida = parseFloat(newQtdVal) || 0;
     const updated = recordatorioItems.map((item, i) => {
       if (i !== idx) return item;
       const gramaturaTotal = Math.round((qtdInserida * item.pesoMedidaG) * 10) / 10;
-      const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+      const calcNutri = (val100g?: number) => Math.round(((gramaturaTotal * (val100g || 0)) / 100) * 10) / 10;
       return {
         ...item,
         qtd: qtdInserida,
@@ -258,11 +345,60 @@ export default function SimulationModule() {
         kcal: calcNutri(item.nutri100g.kcal),
         cho: calcNutri(item.nutri100g.cho),
         ptn: calcNutri(item.nutri100g.ptn),
-        lip: calcNutri(item.nutri100g.lip)
+        lip: calcNutri(item.nutri100g.lip),
+        calcio: calcNutri(item.nutri100g.calcio),
+        ferro: calcNutri(item.nutri100g.ferro),
+        sodio: calcNutri(item.nutri100g.sodio),
+        potassio: calcNutri(item.nutri100g.potassio),
+        vitA: calcNutri(item.nutri100g.vitA),
+        vitC: calcNutri(item.nutri100g.vitC)
       };
     });
     updateField('recordatorioItems', updated);
   };
+
+  // Resgate automático de Idade e Sexo do paciente cadastrado no caso clínico
+  const activePatientInfo = useMemo(() => {
+    return SIMULATION_PATIENTS_MAP[selectedCase] || SIMULATION_PATIENTS_MAP['caso-dm2-has'];
+  }, [selectedCase]);
+
+  // Totais computados de micronutrientes para Recordatório 24h
+  const recordatorioMicroTotals = useMemo(() => {
+    const sum = (field: 'calcio' | 'ferro' | 'sodio' | 'potassio' | 'vitA' | 'vitC') =>
+      Math.round(
+        recordatorioItems.reduce((acc, it) => {
+          const val = it[field] !== undefined ? Number(it[field]) : ((Number(it.gramas || 0) * Number(it.nutri100g?.[field] || 0)) / 100);
+          return acc + val;
+        }, 0) * 10
+      ) / 10;
+    return {
+      calcio: sum('calcio'),
+      ferro: sum('ferro'),
+      sodio: sum('sodio'),
+      potassio: sum('potassio'),
+      vitA: sum('vitA'),
+      vitC: sum('vitC')
+    };
+  }, [recordatorioItems]);
+
+  // Totais computados de micronutrientes para o Planejamento Dietético (Cardápio)
+  const cardapioMicroTotals = useMemo(() => {
+    const sum = (field: 'calcio' | 'ferro' | 'sodio' | 'potassio' | 'vitA' | 'vitC') =>
+      Math.round(
+        cardapioItems.reduce((acc, it) => {
+          const val = it[field] !== undefined ? Number(it[field]) : ((Number(it.gramas || 0) * Number(it.nutri100g?.[field] || 0)) / 100);
+          return acc + val;
+        }, 0) * 10
+      ) / 10;
+    return {
+      calcio: sum('calcio'),
+      ferro: sum('ferro'),
+      sodio: sum('sodio'),
+      potassio: sum('potassio'),
+      vitA: sum('vitA'),
+      vitC: sum('vitC')
+    };
+  }, [cardapioItems]);
 
   const addExamRow = () => {
     const updated = [...exams, { id: Date.now().toString(), name: '', ref: '', value: '', interp: '' }];
@@ -430,12 +566,13 @@ export default function SimulationModule() {
               <span>{isSubmittingCase ? 'Enviando...' : '🚀 Finalizar Caso'}</span>
             </button>
 
-            <a
-              href="/?view=simulation&tab=relatorio"
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl border border-slate-700 shadow transition flex items-center gap-1"
+            <button
+              type="button"
+              onClick={() => setActiveTab('relatorio')}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl border border-slate-700 shadow transition flex items-center gap-1 cursor-pointer"
             >
               <span>Relatorio A4</span>
-            </a>
+            </button>
           </div>
         </div>
 
@@ -594,6 +731,15 @@ export default function SimulationModule() {
                   poliG: '20.0',
                   poliPct: '8.1'
                 }}
+              />
+
+              <MicronutrientAdequacySection
+                idPrefix="rec-dri"
+                title="Análise de Adequação de Micronutrientes do Recordatório 24h (DRIs)"
+                subtitle="Avaliação automática em tempo real vinculada à idade e ao sexo do paciente cadastrado (RDA ➔ EAR ➔ AI e Limite UL)."
+                patientAge={activePatientInfo.idade}
+                patientSex={activePatientInfo.sexo}
+                intakes={recordatorioMicroTotals}
               />
             </div>
           )}
@@ -1094,6 +1240,15 @@ export default function SimulationModule() {
                   poliPct: '7.7'
                 }}
               />
+
+              <MicronutrientAdequacySection
+                idPrefix="cardapio-dri"
+                title="Análise de Adequação de Micronutrientes do Planejamento Dietético (DRIs)"
+                subtitle="Cruzamento automático em tempo real entre os micronutrientes do cardápio planejado e as DRIs do paciente (RDA ➔ EAR ➔ AI e UL)."
+                patientAge={activePatientInfo.idade}
+                patientSex={activePatientInfo.sexo}
+                intakes={cardapioMicroTotals}
+              />
             </div>
           )}
 
@@ -1182,6 +1337,25 @@ export default function SimulationModule() {
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 outline-none resize-y"
                 />
               </div>
+            </div>
+          )}
+
+          {activeTab === 'relatorio' && (
+            <div className="space-y-4">
+              <RelatorioFinal
+                draftData={draftData}
+                clinicalCase={{
+                  id: selectedCase,
+                  title: selectedCase === 'caso-dm2-has' ? 'Caso 1: DM2 e HAS (Adulto/Idoso)' : (selectedCase === 'caso-desnutricao' ? 'Caso 2: Desnutrição Hospitalar Grave' : 'Caso 3: DRC Conservadora'),
+                  patient: {
+                    name: draftData.patientName || (selectedCase === 'caso-dm2-has' ? 'Carlos Alberto Souza' : 'Paciente Simulado'),
+                    age: selectedCase === 'caso-dm2-has' ? '58' : '65',
+                    gender: 'Masculino',
+                    occupation: 'Motorista de Aplicativo'
+                  }
+                }}
+                onClose={() => setActiveTab('anamnese')}
+              />
             </div>
           )}
         </div>

@@ -4203,6 +4203,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
     if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
 
+    // Análise de Adequação de Micronutrientes baseada nas DRIs (vínculo automático com idade e sexo do paciente)
+    if (typeof analyzeAllMicronutrientsForPatient === "function") {
+      const patAge = getEffectivePatientAge();
+      const patGender = getEffectivePatientGender();
+      const driAnalysisRec = analyzeAllMicronutrientsForPatient(totals, patAge, patGender);
+      totals.analiseDriMicronutrientes = driAnalysisRec;
+      if (appState.currentProntuario) {
+        appState.currentProntuario.totaisRecordatorio = totals;
+      }
+      const recDriContainer = document.getElementById("dispRecDriAdequacyTableContainer");
+      if (recDriContainer && typeof renderDriAdequacyTableHTML === "function") {
+        recDriContainer.innerHTML = renderDriAdequacyTableHTML(
+          driAnalysisRec,
+          "Análise de Adequação de Micronutrientes — Recordatório 24h (DRIs)"
+        );
+      }
+    }
+
     if (dispBalancoMsg) {
       if (totals.vetTotalKcal === 0) {
         dispBalancoMsg.textContent = "Insira os alimentos para comparar com a régua da prescrição.";
@@ -4412,6 +4430,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dispSodio) dispSodio.textContent = totals.sodioMg || 0;
     if (dispPotassio) dispPotassio.textContent = totals.potassioMg || 0;
     if (dispFosforo) dispFosforo.textContent = totals.fosforoMg ?? (isTne ? 0 : "--");
+
+    // Análise de Adequação de Micronutrientes baseada nas DRIs (vínculo automático com idade e sexo do paciente)
+    if (typeof analyzeAllMicronutrientsForPatient === "function") {
+      const patAge = getEffectivePatientAge();
+      const patGender = getEffectivePatientGender();
+      const driAnalysisCard = analyzeAllMicronutrientsForPatient(totals, patAge, patGender);
+      totals.analiseDriMicronutrientes = driAnalysisCard;
+      if (appState.currentProntuario) {
+        appState.currentProntuario.totaisCardapio = totals;
+      }
+      const cardDriContainer = document.getElementById("dispCardapioDriAdequacyTableContainer");
+      if (cardDriContainer && typeof renderDriAdequacyTableHTML === "function") {
+        cardDriContainer.innerHTML = renderDriAdequacyTableHTML(
+          driAnalysisCard,
+          "Análise de Adequação de Micronutrientes — Planejamento Dietético (DRIs)"
+        );
+      }
+    }
 
     if (dispBalancoMsg) {
       if (totals.vetTotalKcal === 0) {
@@ -4997,6 +5033,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getEffectivePatientAge() {
+    const isRealMode = Boolean(appState.currentCase?.isRealCase);
+    if (!isRealMode && appState.currentCase?.patient?.age) {
+      const caseAge = parseInt(String(appState.currentCase.patient.age), 10);
+      if (!isNaN(caseAge)) return caseAge;
+    }
     const realAge = document.getElementById("realPatAge")?.value?.trim();
     if (realAge && !isNaN(parseInt(realAge, 10))) {
       return parseInt(realAge, 10);
@@ -5015,8 +5056,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return null;
   }
+  window.getEffectivePatientAge = getEffectivePatientAge;
 
   function getEffectivePatientGender() {
+    const isRealMode = Boolean(appState.currentCase?.isRealCase);
+    if (!isRealMode && appState.currentCase?.patient?.gender) {
+      const g = appState.currentCase.patient.gender;
+      return g.toLowerCase().startsWith("fem") ? "Feminino" : "Masculino";
+    }
     const realGender = document.getElementById("realPatGender")?.value?.trim();
     if (realGender) {
       if (realGender.toLowerCase().startsWith("fem") || realGender.toLowerCase().startsWith("m")) {
@@ -5043,6 +5090,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return "Masculino";
   }
+  window.getEffectivePatientGender = getEffectivePatientGender;
+  window.updateRecordatorioTotalsDisplay = updateRecordatorioTotalsDisplay;
+  window.updateCardapioTotalsDisplay = updateCardapioTotalsDisplay;
+
+  ["realPatAge", "realPatGender", "prontRealIdade", "prontRealSexo"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", () => {
+        updateRecordatorioTotalsDisplay();
+        updateCardapioTotalsDisplay();
+      });
+      el.addEventListener("change", () => {
+        updateRecordatorioTotalsDisplay();
+        updateCardapioTotalsDisplay();
+      });
+    }
+  });
 
   function getSelectedCalcGender() {
     const sel = document.getElementById("calcPacienteGeneroSelect");

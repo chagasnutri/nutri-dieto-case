@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "titulo": "Dietary Reference Intakes (DRIs) - Vitaminas e Minerais",
+    "fonte": "Institute of Medicine (IOM) / National Academies of Sciences, Engineering, and Medicine (NASEM)",
+    "descricao": "Tabela de referência de micronutrientes categorizada por Faixa Etária e Sexo com valores de RDA, EAR, AI e UL."
+  },
+  "perfis": [
+    {
+      "id": "crianca-1-3",
+      "faixaEtaria": "1 a 3 anos",
+      "idadeMin": 1,
+      "idadeMax": 3,
+      "sexo": "Ambos",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 700, "EAR": 500, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 7, "EAR": 3.0, "AI": null, "UL": 40 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 800, "UL": 1200 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2000, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 300, "EAR": 210, "AI": null, "UL": 600 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 15, "EAR": 13, "AI": null, "UL": 400 }
+      }
+    },
+    {
+      "id": "crianca-4-8",
+      "faixaEtaria": "4 a 8 anos",
+      "idadeMin": 4,
+      "idadeMax": 8,
+      "sexo": "Ambos",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 10, "EAR": 4.1, "AI": null, "UL": 40 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1000, "UL": 1500 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2300, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 400, "EAR": 275, "AI": null, "UL": 900 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 25, "EAR": 22, "AI": null, "UL": 650 }
+      }
+    },
+    {
+      "id": "masc-9-13",
+      "faixaEtaria": "9 a 13 anos",
+      "idadeMin": 9,
+      "idadeMax": 13,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1300, "EAR": 1100, "AI": null, "UL": 3000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 5.9, "AI": null, "UL": 40 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1200, "UL": 1800 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2500, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 600, "EAR": 445, "AI": null, "UL": 1700 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 45, "EAR": 39, "AI": null, "UL": 1200 }
+      }
+    },
+    {
+      "id": "fem-9-13",
+      "faixaEtaria": "9 a 13 anos",
+      "idadeMin": 9,
+      "idadeMax": 13,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1300, "EAR": 1100, "AI": null, "UL": 3000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 5.7, "AI": null, "UL": 40 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1200, "UL": 1800 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2300, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 600, "EAR": 420, "AI": null, "UL": 1700 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 45, "EAR": 39, "AI": null, "UL": 1200 }
+      }
+    },
+    {
+      "id": "masc-14-18",
+      "faixaEtaria": "14 a 18 anos",
+      "idadeMin": 14,
+      "idadeMax": 18,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1300, "EAR": 1100, "AI": null, "UL": 3000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 11, "EAR": 7.7, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 3000, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 900, "EAR": 630, "AI": null, "UL": 2800 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 75, "EAR": 63, "AI": null, "UL": 1800 }
+      }
+    },
+    {
+      "id": "fem-14-18",
+      "faixaEtaria": "14 a 18 anos",
+      "idadeMin": 14,
+      "idadeMax": 18,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1300, "EAR": 1100, "AI": null, "UL": 3000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 15, "EAR": 7.9, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2300, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 700, "EAR": 485, "AI": null, "UL": 2800 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 65, "EAR": 56, "AI": null, "UL": 1800 }
+      }
+    },
+    {
+      "id": "masc-19-30",
+      "faixaEtaria": "19 a 30 anos",
+      "idadeMin": 19,
+      "idadeMax": 30,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 6.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 3400, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 900, "EAR": 625, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 90, "EAR": 75, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "fem-19-30",
+      "faixaEtaria": "19 a 30 anos",
+      "idadeMin": 19,
+      "idadeMax": 30,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 18, "EAR": 8.1, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2600, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 700, "EAR": 500, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 75, "EAR": 60, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "masc-31-50",
+      "faixaEtaria": "31 a 50 anos",
+      "idadeMin": 31,
+      "idadeMax": 50,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 6.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 3400, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 900, "EAR": 625, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 90, "EAR": 75, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "fem-31-50",
+      "faixaEtaria": "31 a 50 anos",
+      "idadeMin": 31,
+      "idadeMax": 50,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2500 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 18, "EAR": 8.1, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2600, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 700, "EAR": 500, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 75, "EAR": 60, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "masc-51-70",
+      "faixaEtaria": "51 a 70 anos",
+      "idadeMin": 51,
+      "idadeMax": 70,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1000, "EAR": 800, "AI": null, "UL": 2000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 6.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 3400, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 900, "EAR": 625, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 90, "EAR": 75, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "fem-51-70",
+      "faixaEtaria": "51 a 70 anos",
+      "idadeMin": 51,
+      "idadeMax": 70,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1200, "EAR": 1000, "AI": null, "UL": 2000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 5.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2600, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 700, "EAR": 500, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 75, "EAR": 60, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "masc-71-mais",
+      "faixaEtaria": "Acima de 70 anos",
+      "idadeMin": 71,
+      "idadeMax": 130,
+      "sexo": "Masculino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1200, "EAR": 1000, "AI": null, "UL": 2000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 6.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 3400, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 900, "EAR": 625, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 90, "EAR": 75, "AI": null, "UL": 2000 }
+      }
+    },
+    {
+      "id": "fem-71-mais",
+      "faixaEtaria": "Acima de 70 anos",
+      "idadeMin": 71,
+      "idadeMax": 130,
+      "sexo": "Feminino",
+      "micronutrientes": {
+        "calcio": { "nome": "Cálcio (Ca)", "unidade": "mg", "RDA": 1200, "EAR": 1000, "AI": null, "UL": 2000 },
+        "ferro": { "nome": "Ferro (Fe)", "unidade": "mg", "RDA": 8, "EAR": 5.0, "AI": null, "UL": 45 },
+        "sodio": { "nome": "Sódio (Na)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 1500, "UL": 2300 },
+        "potassio": { "nome": "Potássio (K)", "unidade": "mg", "RDA": null, "EAR": null, "AI": 2600, "UL": null },
+        "vitA": { "nome": "Vitamina A", "unidade": "mcg", "RDA": 700, "EAR": 500, "AI": null, "UL": 3000 },
+        "vitC": { "nome": "Vitamina C", "unidade": "mg", "RDA": 75, "EAR": 60, "AI": null, "UL": 2000 }
+      }
+    }
+  ]
+}

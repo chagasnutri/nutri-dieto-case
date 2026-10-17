@@ -399,7 +399,7 @@ class ClinicalChatEngine {
       return `Trata-se do(a) paciente ${p.name}.`;
     }
 
-    if (q.includes("idade") || q.includes("quantos anos") || q.includes("sua idade")) {
+    if (/\bidade\b/i.test(q) || q.includes("quantos anos") || q.includes("sua idade")) {
       if (role === "paciente") return `Eu tenho ${p.age} anos, doutor(a).`;
       if (role === "acompanhante") return `Ele(a) tem ${p.age} anos.`;
       return `O paciente possui ${p.age} anos de idade.`;
@@ -417,10 +417,56 @@ class ClinicalChatEngine {
       return `Estado civil do paciente: ${p.maritalStatus}.`;
     }
 
-    if (q.includes("onde mora") || q.includes("residencia") || q.includes("cidade") || q.includes("bairro")) {
-      if (role === "paciente") return `Eu moro em ${p.residence || 'minha cidade'}, doutor(a).`;
-      if (role === "acompanhante") return `Nós moramos em ${p.residence || 'nossa residência'}.`;
-      return `Residência do paciente: ${p.residence || 'Não especificada'}.`;
+    // REQUISITO 1: SINÔNIMOS E INTERPRETAÇÃO DE INTENÇÃO (ONDE MORA / DE ONDE É / CIDADE / RESIDÊNCIA / PROCEDÊNCIA / NATURALIDADE / ENDEREÇO)
+    const isPergLocalizacao = 
+      q.includes("onde mora") || q.includes("onde o senhor mora") || q.includes("onde a senhora mora") ||
+      q.includes("onde voce mora") || q.includes("onde o sr mora") || q.includes("onde a sra mora") ||
+      q.includes("de onde voce e") || q.includes("de onde o senhor e") || q.includes("de onde a senhora e") ||
+      q.includes("de onde e") || q.includes("de onde voce veio") || q.includes("de onde o senhor veio") ||
+      q.includes("qual sua cidade") || q.includes("qual e a sua cidade") || q.includes("qual a sua cidade") ||
+      q.includes("qual cidade") || q.includes("naturalidade") || q.includes("procedencia") ||
+      q.includes("residencia") || q.includes("endereco") || q.includes("bairro") ||
+      q.includes("onde reside") || q.includes("onde o senhor reside") || q.includes("onde voce reside") ||
+      (q.includes("onde") && (q.includes("mora") || q.includes("vive") || q.includes("reside")));
+
+    if (isPergLocalizacao) {
+      const naturalidade = p.naturalidade || h.naturalidade || "";
+      const procedencia = p.procedencia || h.procedencia || "";
+      const residencia = p.residence || p.cidade || p.endereco || h.residencia || h.endereco || "";
+      const infoLocal = residencia || procedencia || naturalidade || "minha cidade";
+
+      const querNaturalidade = q.includes("naturalidade") || q.includes("cidade natal") || q.includes("onde nasceu") || q.includes("onde o senhor nasceu") || q.includes("onde voce nasceu");
+      const querOrigem = q.includes("de onde") || q.includes("procedencia") || q.includes("veio de onde");
+
+      if (role === "paciente") {
+        if (querNaturalidade && naturalidade) {
+          return `Eu sou natural de ${naturalidade}${residencia ? `, mas moro em ${residencia}` : ''}, doutor(a).`;
+        }
+        if (querOrigem && (procedencia || naturalidade)) {
+          const orig = procedencia || naturalidade;
+          return `Eu sou de ${orig}${residencia && residencia !== orig ? `, e atualmente moro em ${residencia}` : ''}, doutor(a).`;
+        }
+        return `Eu moro em ${infoLocal}, doutor(a).`;
+      }
+
+      if (role === "acompanhante") {
+        if (querNaturalidade && naturalidade) {
+          return `Ele(a) é natural de ${naturalidade}${residencia ? `, mas mora em ${residencia}` : ''}.`;
+        }
+        if (querOrigem && (procedencia || naturalidade)) {
+          const orig = procedencia || naturalidade;
+          return `Ele(a) é de ${orig}${residencia && residencia !== orig ? `, e atualmente mora em ${residencia}` : ''}.`;
+        }
+        return `Nós moramos em ${infoLocal}.`;
+      }
+
+      const detalhes = [];
+      if (naturalidade) detalhes.push(`Naturalidade: ${naturalidade}`);
+      if (procedencia) detalhes.push(`Procedência: ${procedencia}`);
+      if (residencia) detalhes.push(`Residência: ${residencia}`);
+      return detalhes.length > 0
+        ? `Identificação geográfica do paciente: ${detalhes.join("; ")}.`
+        : `Residência/Procedência do paciente: ${infoLocal}.`;
     }
 
     // 3. QUEIXA PRINCIPAL E HISTÓRIA DA DOENÇA ATUAL (HDA)
@@ -476,10 +522,72 @@ class ClinicalChatEngine {
       return "Não há registro de queixas de náuseas ou episódios de vômitos no quadro clínico atual.";
     }
 
-    if (q.includes("diarreia") || q.includes("fezes") || q.includes("evacuacao") || q.includes("intestino") || q.includes("prisao de ventre") || q.includes("constipacao") || q.includes("evacua") || q.includes("banheiro")) {
-      if (role === "paciente") return `Sobre o meu intestino, doutor(a): ${this.cleanFirstPerson(h.funcaoIntestinalDiurese || "Funciona normalmente todos os dias.")}`;
-      if (role === "acompanhante") return `Sobre as idas ao banheiro e intestino dele(a): ${this.cleanThirdPerson(h.funcaoIntestinalDiurese || "Funciona normalmente.")}`;
-      return `Histórico e avaliação da função intestinal e diurese: ${h.funcaoIntestinalDiurese || "Sem alterações intestinais registradas."}`;
+    // REQUISITO 2: TERMOS TÉCNICOS VS. POPULARES (DISPNEIA <-> FALTA DE AR)
+    const isPergDispneia =
+      q.includes("dispneia") || q.includes("dispneic") || q.includes("falta de ar") ||
+      q.includes("cansaso para respirar") || q.includes("cansaco para respirar") ||
+      q.includes("cansaso ao respirar") || q.includes("cansaco ao respirar") ||
+      q.includes("folego curto") || q.includes("dificuldade para respirar") ||
+      q.includes("desconforto respiratorio") || q.includes("peito chiando") ||
+      (q.includes("falta") && q.includes("ar")) ||
+      (q.includes("folego") && (q.includes("sem") || q.includes("curto") || q.includes("perde")));
+
+    if (isPergDispneia) {
+      const contextoResp = `${h.queixaPrincipal || ''} ${h.hda || ''} ${ef.sinaisEspecificos || ''} ${ef.estadoGeral || ''} ${h.hpp || ''}`.toLowerCase();
+      const negaDispneia = contextoResp.includes("nega dor precordial ou dispneia") ||
+                           contextoResp.includes("nega precordialgia") ||
+                           contextoResp.includes("nega dispneia") ||
+                           contextoResp.includes("sem dispneia") ||
+                           contextoResp.includes("eupneico") ||
+                           contextoResp.includes("eupneica");
+      const temDispneia = !negaDispneia && (
+        contextoResp.includes("dispneia") ||
+        contextoResp.includes("falta de ar") ||
+        contextoResp.includes("cansaco ao caminhar") ||
+        contextoResp.includes("cansaço ao caminhar") ||
+        contextoResp.includes("desconforto respiratorio")
+      );
+
+      if (temDispneia) {
+        if (role === "paciente") {
+          const queixaOuHda = h.queixaPrincipal || h.hda || "Sinto cansaço e falta de ar quando faço esforço.";
+          return `Sim, doutor(a), eu tenho sentido falta de ar (dispneia). ${this.cleanFirstPerson(queixaOuHda)}`;
+        }
+        if (role === "acompanhante") {
+          return `Sim, doutor(a), ele(a) tem sentido falta de ar e cansaço no peito (dispneia). ${this.cleanThirdPerson(h.queixaPrincipal || h.hda || '')}`;
+        }
+        return `O paciente apresenta quadro de dispneia / desconforto respiratório documentado na evolução clínica.`;
+      } else {
+        if (role === "paciente") {
+          return `Graças a Deus não sinto falta de ar nem cansaço para respirar (dispneia) não, doutor(a).`;
+        }
+        if (role === "acompanhante") {
+          return `Ele(a) não reclama de falta de ar nem cansaço para respirar não, doutor(a).`;
+        }
+        return `O paciente encontra-se eupneico, sem queixas de dispneia ou desconforto respiratório registradas no prontuário.`;
+      }
+    }
+
+    // REQUISITO 2: TERMOS TÉCNICOS VS. POPULARES (HÁBITO INTESTINAL <-> FAZER COCÔ / IR AOS PÉS)
+    const isPergIntestino =
+      q.includes("habito intestinal") || q.includes("ritmo intestinal") || q.includes("funcao intestinal") ||
+      q.includes("ir aos pes") || q.includes("vai aos pes") || q.includes("vou aos pes") ||
+      q.includes("fazer coco") || q.includes("faz coco") || q.includes("numero 2") ||
+      q.includes("evacuac") || q.includes("evacua") || q.includes("defecac") || q.includes("defeca") ||
+      q.includes("diarreia") || q.includes("fezes") || q.includes("prisao de ventre") ||
+      q.includes("constipac") || q.includes("obstipac") || q.includes("intestino preso") ||
+      q.includes("intestino solto") || (q.includes("intestino") && !q.includes("delgado") && !q.includes("grosso")) ||
+      (q.includes("banheiro") && !q.includes("urina") && !q.includes("xixi") && !q.includes("diurese"));
+
+    if (isPergIntestino) {
+      const infoIntestino = h.funcaoIntestinalDiurese || h.habitoIntestinal || h.intestino || ef.tgi || "Hábito intestinal normal, evacuações diárias sem dificuldades.";
+      if (role === "paciente") {
+        return `Sobre o meu intestino e ir aos pés (fazer cocô), doutor(a): ${this.cleanFirstPerson(infoIntestino)}`;
+      }
+      if (role === "acompanhante") {
+        return `Sobre as idas ao banheiro e intestino (fazer cocô) dele(a): ${this.cleanThirdPerson(infoIntestino)}`;
+      }
+      return `Histórico e avaliação clínica do hábito intestinal e eliminações fecais: ${infoIntestino}`;
     }
 
     if (q.includes("urina") || q.includes("urinar") || q.includes("xixi") || q.includes("noite") || q.includes("nocturia") || q.includes("diurese")) {
@@ -705,7 +813,49 @@ class ClinicalChatEngine {
       return `Histórico cirúrgico e patológico pregresso (HPP): ${h.hpp || "Sem histórico cirúrgico informado."}`;
     }
 
-    if (q.includes("doencas anteriores") || q.includes("pressao alta") || q.includes("diabetes") || q.includes("antecedentes") || q.includes("outras doencas") || q.includes("hpp") || q.includes("comorbidade")) {
+    // REQUISITO 2: TERMOS TÉCNICOS VS. POPULARES (HIPERTENSÃO <-> PRESSÃO ALTA)
+    const isPergHipertensao =
+      q.includes("hipertens") || q.includes("hipertenso") || q.includes("hipertensa") ||
+      q.includes("pressao alta") || q.includes("pressao elevada") || q.includes("pa elevada") ||
+      q.includes("pressao arterial") ||
+      (q.includes("pressao") && (q.includes("alta") || q.includes("sofre") || q.includes("tem") || q.includes("sobe") || q.includes("remedio") || q.includes("controlada") || q.includes("descontrolada")));
+
+    if (isPergHipertensao && !q.includes("pulso") && !q.includes("temperatura") && role !== "enfermagem") {
+      const contextoClinico = `${p.diagnosis || ''} ${h.hipoteseDiagnostica || ''} ${c.hipoteseDiagnostica || ''} ${h.hpp || ''} ${h.hda || ''} ${h.medicamentos || ''}`.toLowerCase();
+      const negaHAS = contextoClinico.includes("nega hipertens") || contextoClinico.includes("nega has") || contextoClinico.includes("sem hipertens");
+      const temHAS = !negaHAS && (
+        contextoClinico.includes("hipertens") ||
+        contextoClinico.includes("has") ||
+        contextoClinico.includes("pressao alta") ||
+        contextoClinico.includes("losartana") ||
+        contextoClinico.includes("enalapril") ||
+        contextoClinico.includes("hidroclorotiazida") ||
+        contextoClinico.includes("anlodipino") ||
+        contextoClinico.includes("atenolol")
+      );
+
+      if (temHAS) {
+        if (role === "paciente") {
+          const medInfo = h.medicamentos ? ` Tomo remédio para controlar: ${this.cleanFirstPerson(h.medicamentos)}.` : "";
+          const hppInfo = h.hpp ? ` ${this.cleanFirstPerson(h.hpp)}` : "";
+          return `Sim, doutor(a), eu tenho pressão alta (hipertensão arterial).${hppInfo}${medInfo}`;
+        }
+        if (role === "acompanhante") {
+          return `Sim, doutor(a), ele(a) tem pressão alta (hipertensão) e faz tratamento com medicação e controle da dieta.`;
+        }
+        return `Paciente com diagnóstico confirmado de Hipertensão Arterial Sistêmica (HAS). Informações e posologia documentadas no prontuário.`;
+      } else {
+        if (role === "paciente") {
+          return `Não tenho pressão alta (hipertensão) não, doutor(a). Minha pressão costuma ser boa e controlada.`;
+        }
+        if (role === "acompanhante") {
+          return `Ele(a) não sofre de pressão alta (hipertensão) não, doutor(a).`;
+        }
+        return `Não há diagnóstico ou queixa de Hipertensão Arterial Sistêmica (HAS) registrada na história clínica pregressa.`;
+      }
+    }
+
+    if (q.includes("doencas anteriores") || q.includes("diabetes") || q.includes("antecedentes") || q.includes("outras doencas") || q.includes("hpp") || q.includes("comorbidade")) {
       if (role === "paciente") return `Das doenças que eu já tenho e acompanho, doutor(a): ${this.cleanFirstPerson(h.hpp || 'Não tenho outras doenças graves conhecidas.')}`;
       if (role === "acompanhante") return `Sobre as doenças anteriores dele(a): ${this.cleanThirdPerson(h.hpp || 'Sem comorbidades prévias além das mencionadas.')}`;
       return `Nos antecedentes patológicos pregressos (HPP): ${h.hpp || 'Sem outras patologias documentadas.'}`;
@@ -913,7 +1063,13 @@ DIRETRIZES DE COMUNICAÇÃO HUMANIZADA (SEM TOM ROBÓTICO):
       - Faça o aluno especificar: "Quais medidas o senhor quer saber exatamente?" ou "Doutor, fizeram tanto exame em mim... qual deles o senhor quer ver agora?".
       - Entregue os dados um por um, apenas sob demanda.
 
-3. REGRA ABSOLUTA ANTI-ALUCINAÇÃO (JAMAIS INVENTE FATOS):
+3. REGRAS DE MAPEAMENTO DE VOCABULÁRIO E INTERPRETAÇÃO SEMÂNTICA:
+   Você possui alta capacidade de interpretação semântica. Ao ler os dados do prontuário do paciente (JSON/Banco de dados) para responder ao aluno, você JAMAIS deve exigir que o aluno use as palavras exatas que estão no sistema. Siga estas regras:
+   a) SINÔNIMOS E INTERPRETAÇÃO DE INTENÇÃO: Compreenda perguntas formuladas de diferentes maneiras. Se o aluno perguntar "Onde o senhor mora?", "De onde você é?" ou "Qual sua cidade?", cruze essa informação com os campos de "Naturalidade", "Procedência", "residence" ou "Endereço" do banco de dados e responda a informação correta.
+   b) TERMOS TÉCNICOS VS. POPULARES: Seja a ponte entre o linguajar médico e o linguajar do paciente. Se o aluno usar termos técnicos (ex: "Como está seu hábito intestinal?", "Tem hipertensão?", "Apresenta dispneia?"), reconheça e conecte com dados populares do sistema (ex: "Fazer cocô / ir aos pés", "Pressão alta", "Falta de ar"). Faça o mesmo no sentido inverso: se o aluno perguntar usando termos leigos/populares, entregue os dados correspondentes da ficha clínica.
+   c) ADAPTAÇÃO DE CONTEXTO: Analise o sentido da frase inteira, não apenas palavras isoladas. O objetivo é que a conversa flua de forma natural e que o paciente virtual entenda a intenção por trás da pergunta do nutricionista, mesmo que o vocabulário divirja do que está escrito no roteiro estruturado.
+
+4. REGRA ABSOLUTA ANTI-ALUCINAÇÃO (JAMAIS INVENTE FATOS):
    - Suas respostas devem ser 100% fiéis às informações contidas no JSON acima.
    - JAMAIS deduza, suponha ou invente dados ausentes!
     `.trim();

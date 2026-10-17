@@ -9,11 +9,28 @@ export interface RecordatorioDraftItem {
   pesoMedidaG: number;
   qtd: number;
   gramas: number;
-  nutri100g: { kcal: number; cho: number; ptn: number; lip: number };
+  nutri100g: {
+    kcal: number;
+    cho: number;
+    ptn: number;
+    lip: number;
+    calcio?: number;
+    ferro?: number;
+    sodio?: number;
+    potassio?: number;
+    vitA?: number;
+    vitC?: number;
+  };
   kcal: number;
   cho: number;
   ptn: number;
   lip: number;
+  calcio?: number;
+  ferro?: number;
+  sodio?: number;
+  potassio?: number;
+  vitA?: number;
+  vitC?: number;
 }
 
 export interface CardapioDraftItem {
@@ -23,11 +40,28 @@ export interface CardapioDraftItem {
   pesoMedidaG: number;
   qtd: number;
   gramas: number;
-  nutri100g: { kcal: number; cho: number; ptn: number; lip: number };
+  nutri100g: {
+    kcal: number;
+    cho: number;
+    ptn: number;
+    lip: number;
+    calcio?: number;
+    ferro?: number;
+    sodio?: number;
+    potassio?: number;
+    vitA?: number;
+    vitC?: number;
+  };
   kcal: number;
   cho: number;
   ptn: number;
   lip: number;
+  calcio?: number;
+  ferro?: number;
+  sodio?: number;
+  potassio?: number;
+  vitA?: number;
+  vitC?: number;
 }
 
 export interface ExamDraftItem {

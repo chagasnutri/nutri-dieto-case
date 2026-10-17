@@ -1,15 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import PreceptorFAB from './PreceptorFAB';
 import PreceptorDrawer from './PreceptorDrawer';
 import LipidQualitySection from './LipidQualitySection';
+import MicronutrientAdequacySection from './MicronutrientAdequacySection';
+import RelatorioFinal from './RelatorioFinal';
 
 export default function RealPatientModule() {
-  const [activeTab, setActiveTab] = useState<'identificacao' | 'antropometria' | 'triagem' | 'exameFisico' | 'exames' | 'interacoes' | 'conduta'>('identificacao');
+  const [activeTab, setActiveTab] = useState<'identificacao' | 'antropometria' | 'triagem' | 'exameFisico' | 'exames' | 'interacoes' | 'conduta' | 'relatorio'>('identificacao');
   const [isPreceptorOpen, setIsPreceptorOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'relatorio') {
+        setActiveTab('relatorio');
+      }
+    }
+  }, []);
 
   // Estado dinamico de exames laboratoriais (estritamente em branco para aprendizado ativo)
   const [exams, setExams] = useState<Array<{ id: string; name: string; ref: string; value: string; interp: string }>>([
@@ -54,11 +65,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 50, // 1 unidade = 50g
       qtd: 1,
       gramas: 50, // Passo A: 1 * 50g = 50g
-      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2, calcio: 16.0, ferro: 1.0, sodio: 648.0, potassio: 142.0, vitA: 0.0, vitC: 0.0 },
       kcal: 150.0, // Passo B: (50 * 300.0) / 100
       cho: 29.3,
       ptn: 4.0,
-      lip: 1.6
+      lip: 1.6,
+      calcio: 8.0,
+      ferro: 0.5,
+      sodio: 324.0,
+      potassio: 71.0,
+      vitA: 0.0,
+      vitC: 0.0
     },
     {
       id: '2',
@@ -67,11 +84,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 25, // 1 fatia = 25g
       qtd: 2,
       gramas: 50, // Passo A: 2 * 25g = 50g
-      nutri100g: { kcal: 253.0, cho: 49.9, ptn: 9.4, lip: 3.7 },
+      nutri100g: { kcal: 253.0, cho: 49.9, ptn: 9.4, lip: 3.7, calcio: 132.0, ferro: 3.0, sodio: 506.0, potassio: 215.0, vitA: 0.0, vitC: 0.0 },
       kcal: 126.5, // Passo B: (50 * 253.0) / 100
       cho: 25.0,
       ptn: 4.7,
-      lip: 1.9
+      lip: 1.9,
+      calcio: 66.0,
+      ferro: 1.5,
+      sodio: 253.0,
+      potassio: 107.5,
+      vitA: 0.0,
+      vitC: 0.0
     },
     {
       id: '3',
@@ -80,11 +103,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 30, // 1 fatia = 30g
       qtd: 1,
       gramas: 30, // Passo A: 1 * 30g = 30g
-      nutri100g: { kcal: 264.0, cho: 3.2, ptn: 17.4, lip: 20.2 },
+      nutri100g: { kcal: 264.0, cho: 3.2, ptn: 17.4, lip: 20.2, calcio: 579.0, ferro: 0.9, sodio: 31.0, potassio: 105.0, vitA: 120.0, vitC: 0.0 },
       kcal: 79.2, // Passo B: (30 * 264.0) / 100
       cho: 1.0,
       ptn: 5.2,
-      lip: 6.1
+      lip: 6.1,
+      calcio: 173.7,
+      ferro: 0.3,
+      sodio: 9.3,
+      potassio: 31.5,
+      vitA: 36.0,
+      vitC: 0.0
     },
     {
       id: '4',
@@ -93,11 +122,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 100, // 1 porção = 100g
       qtd: 1,
       gramas: 100, // Passo A: 1 * 100g = 100g
-      nutri100g: { kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1 },
+      nutri100g: { kcal: 40.0, cho: 10.4, ptn: 0.5, lip: 0.1, calcio: 22.0, ferro: 0.2, sodio: 2.0, potassio: 126.0, vitA: 37.0, vitC: 82.2 },
       kcal: 40.0, // Passo B: (100 * 40.0) / 100
       cho: 10.4,
       ptn: 0.5,
-      lip: 0.1
+      lip: 0.1,
+      calcio: 22.0,
+      ferro: 0.2,
+      sodio: 2.0,
+      potassio: 126.0,
+      vitA: 37.0,
+      vitC: 82.2
     }
   ]);
 
@@ -112,6 +147,7 @@ export default function RealPatientModule() {
 
       // Passo B: Regra de 3 dos Nutrientes = (Gramatura Total * Valor do Nutriente em 100g) / 100
       const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+      const n100 = item.nutri100g as Record<string, number>;
 
       return {
         ...item,
@@ -120,7 +156,13 @@ export default function RealPatientModule() {
         kcal: calcNutri(item.nutri100g.kcal),
         cho: calcNutri(item.nutri100g.cho),
         ptn: calcNutri(item.nutri100g.ptn),
-        lip: calcNutri(item.nutri100g.lip)
+        lip: calcNutri(item.nutri100g.lip),
+        calcio: calcNutri(n100.calcio || 0),
+        ferro: calcNutri(n100.ferro || 0),
+        sodio: calcNutri(n100.sodio || 0),
+        potassio: calcNutri(n100.potassio || 0),
+        vitA: calcNutri(n100.vitA || 0),
+        vitC: calcNutri(n100.vitC || 0)
       };
     }));
   };
@@ -134,11 +176,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 200, // 1 copo = 200g
       qtd: 1,
       gramas: 200, // Passo A: 1 * 200g = 200g
-      nutri100g: { kcal: 61.0, cho: 4.5, ptn: 3.2, lip: 3.5 },
+      nutri100g: { kcal: 61.0, cho: 4.5, ptn: 3.2, lip: 3.5, calcio: 123.0, ferro: 0.1, sodio: 64.0, potassio: 133.0, vitA: 46.0, vitC: 0.0 },
       kcal: 122.0, // Passo B: (200 * 61.0) / 100
       cho: 9.0,
       ptn: 6.4,
-      lip: 7.0
+      lip: 7.0,
+      calcio: 246.0,
+      ferro: 0.2,
+      sodio: 128.0,
+      potassio: 266.0,
+      vitA: 92.0,
+      vitC: 0.0
     },
     {
       id: 'rec-2',
@@ -147,11 +195,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 50, // 1 unidade = 50g
       qtd: 2,
       gramas: 100, // Passo A: 2 * 50g = 100g
-      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2 },
+      nutri100g: { kcal: 300.0, cho: 58.6, ptn: 8.0, lip: 3.2, calcio: 16.0, ferro: 1.0, sodio: 648.0, potassio: 142.0, vitA: 0.0, vitC: 0.0 },
       kcal: 300.0, // Passo B: (100 * 300.0) / 100
       cho: 58.6,
       ptn: 8.0,
-      lip: 3.2
+      lip: 3.2,
+      calcio: 16.0,
+      ferro: 1.0,
+      sodio: 648.0,
+      potassio: 142.0,
+      vitA: 0.0,
+      vitC: 0.0
     },
     {
       id: 'rec-3',
@@ -160,11 +214,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 10, // 1 ponta de faca = 10g
       qtd: 1,
       gramas: 10, // Passo A: 1 * 10g = 10g
-      nutri100g: { kcal: 726.0, cho: 0.1, ptn: 0.4, lip: 82.4 },
+      nutri100g: { kcal: 726.0, cho: 0.1, ptn: 0.4, lip: 82.4, calcio: 9.0, ferro: 0.0, sodio: 579.0, potassio: 15.0, vitA: 684.0, vitC: 0.0 },
       kcal: 72.6, // Passo B: (10 * 726.0) / 100
       cho: 0.0,
       ptn: 0.0,
-      lip: 8.2
+      lip: 8.2,
+      calcio: 0.9,
+      ferro: 0.0,
+      sodio: 57.9,
+      potassio: 1.5,
+      vitA: 68.4,
+      vitC: 0.0
     },
     {
       id: 'rec-4',
@@ -173,11 +233,17 @@ export default function RealPatientModule() {
       pesoMedidaG: 100, // 1 unidade = 100g
       qtd: 1,
       gramas: 100, // Passo A: 1 * 100g = 100g
-      nutri100g: { kcal: 98.0, cho: 26.0, ptn: 1.3, lip: 0.1 },
+      nutri100g: { kcal: 98.0, cho: 26.0, ptn: 1.3, lip: 0.1, calcio: 8.0, ferro: 0.4, sodio: 0.0, potassio: 358.0, vitA: 3.0, vitC: 21.6 },
       kcal: 98.0, // Passo B: (100 * 98.0) / 100
       cho: 26.0,
       ptn: 1.3,
-      lip: 0.1
+      lip: 0.1,
+      calcio: 8.0,
+      ferro: 0.4,
+      sodio: 0.0,
+      potassio: 358.0,
+      vitA: 3.0,
+      vitC: 21.6
     }
   ]);
 
@@ -192,6 +258,7 @@ export default function RealPatientModule() {
 
       // Passo B: Regra de 3 dos Nutrientes = (Gramatura Total * Valor do Nutriente em 100g) / 100
       const calcNutri = (val100g: number) => Math.round(((gramaturaTotal * val100g) / 100) * 10) / 10;
+      const n100 = item.nutri100g as Record<string, number>;
 
       return {
         ...item,
@@ -200,7 +267,13 @@ export default function RealPatientModule() {
         kcal: calcNutri(item.nutri100g.kcal),
         cho: calcNutri(item.nutri100g.cho),
         ptn: calcNutri(item.nutri100g.ptn),
-        lip: calcNutri(item.nutri100g.lip)
+        lip: calcNutri(item.nutri100g.lip),
+        calcio: calcNutri(n100.calcio || 0),
+        ferro: calcNutri(n100.ferro || 0),
+        sodio: calcNutri(n100.sodio || 0),
+        potassio: calcNutri(n100.potassio || 0),
+        vitA: calcNutri(n100.vitA || 0),
+        vitC: calcNutri(n100.vitC || 0)
       };
     }));
   };
@@ -271,12 +344,13 @@ export default function RealPatientModule() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href="/?view=real&tab=relatorio"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5"
+            <button
+              type="button"
+              onClick={() => setActiveTab('relatorio')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>Relatorio A4 / Word</span>
-            </a>
+            </button>
           </div>
         </div>
 
@@ -410,6 +484,22 @@ export default function RealPatientModule() {
                   poliG: '',
                   poliPct: ''
                 }}
+              />
+
+              <MicronutrientAdequacySection
+                title="Análise de Adequação de Micronutrientes — Recordatório 24h (DRIs)"
+                subtitle="Avaliação automática em tempo real vinculada ao perfil demográfico do paciente (52 anos • Masculino)."
+                patientAge={52}
+                patientGender="Masculino"
+                totals={{
+                  calcio: recordatorioItems.reduce((acc, it) => acc + (Number(it.calcio) || 0), 0),
+                  ferro: recordatorioItems.reduce((acc, it) => acc + (Number(it.ferro) || 0), 0),
+                  sodio: recordatorioItems.reduce((acc, it) => acc + (Number(it.sodio) || 0), 0),
+                  potassio: recordatorioItems.reduce((acc, it) => acc + (Number(it.potassio) || 0), 0),
+                  vitA: recordatorioItems.reduce((acc, it) => acc + (Number(it.vitA) || 0), 0),
+                  vitC: recordatorioItems.reduce((acc, it) => acc + (Number(it.vitC) || 0), 0)
+                }}
+                theme="indigo"
               />
             </div>
           )}
@@ -822,6 +912,55 @@ export default function RealPatientModule() {
                   poliG: '',
                   poliPct: ''
                 }}
+              />
+
+              <MicronutrientAdequacySection
+                title="Análise de Adequação de Micronutrientes — Planejamento Dietético (DRIs)"
+                subtitle="Monitoramento em tempo real da adequação dos micronutrientes planejados frente às DRIs (RDA / EAR / AI e UL)."
+                patientAge={52}
+                patientGender="Masculino"
+                totals={{
+                  calcio: cardapioItems.reduce((acc, it) => acc + (Number(it.calcio) || 0), 0),
+                  ferro: cardapioItems.reduce((acc, it) => acc + (Number(it.ferro) || 0), 0),
+                  sodio: cardapioItems.reduce((acc, it) => acc + (Number(it.sodio) || 0), 0),
+                  potassio: cardapioItems.reduce((acc, it) => acc + (Number(it.potassio) || 0), 0),
+                  vitA: cardapioItems.reduce((acc, it) => acc + (Number(it.vitA) || 0), 0),
+                  vitC: cardapioItems.reduce((acc, it) => acc + (Number(it.vitC) || 0), 0)
+                }}
+                theme="indigo"
+              />
+            </div>
+          )}
+
+          {activeTab === 'relatorio' && (
+            <div className="space-y-4">
+              <RelatorioFinal
+                studentData={{
+                  isRealPatient: true,
+                  dadosPacienteReal: {
+                    nome: "Carlos Eduardo Silva",
+                    idade: "52",
+                    sexo: "Masculino",
+                    hipoteseDiagnostica: "Sindrome Metabolica e Esteatose Hepatica Grau II",
+                    naturalidade: "Salvador - BA",
+                    procedencia: "Feira de Santana - BA",
+                    ocupacao: "Motorista de Ônibus",
+                    historicoSocial: {
+                      estadoCivil: "Casado",
+                      moradia: "Casa própria de alvenaria com saneamento básico",
+                      escolaridade: "Ensino Médio Completo",
+                      renda: "3 salários mínimos"
+                    }
+                  },
+                  cardapioItems: cardapioItems,
+                  exams: exams,
+                  interactions: interactions
+                }}
+                clinicalCase={{
+                  isRealCase: true,
+                  title: "Atendimento Clínico Presencial Real (Prontuário Livre)"
+                }}
+                onClose={() => setActiveTab('identificacao')}
               />
             </div>
           )}

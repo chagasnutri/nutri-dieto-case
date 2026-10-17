@@ -24,6 +24,7 @@
   <script src="lib/mini-docx.js"></script>
   <script src="js/tacoData.js"></script>
   <script src="js/decisaoData.js"></script>
+  <script src="js/driData.js"></script>
   <script src="js/cases-data.js"></script>
   <script src="js/portuguese-reviser.js"></script>
   <script src="js/case-builder.js"></script>
@@ -3367,6 +3368,223 @@ Questões Avaliativas:
         `Regra 3: Pergunta específica de exame entrega pontualmente a Creatinina: "${respExameCreat}"`);
       assert(!respExameCreat.includes("Glicemia"),
         `Regra 3: Resposta de creatinina não mistura outros exames: "${respExameCreat}"`);
+
+      // 140. Renderização Condicional Estrita no Relatório Final (Tela e PDF/DOCX) baseada nas abas liberadas pelo professor
+      const casoComAbasBloqueadas = {
+        ...caso1,
+        id: "caso-teste-bloqueio",
+        blockedTabs: ["examefisico", "questoes"],
+        caseConfig: {
+          abasLiberadas: {
+            "Anamnese": true,
+            "Antropometria": true,
+            "Bioquímica": true,
+            "Exames Físicos": false,
+            "Consumo Alimentar": true,
+            "Diagnóstico PES": true,
+            "Necessidades": true,
+            "Prescrição": true,
+            "Cardápio": true,
+            "Questões": false
+          }
+        }
+      };
+
+      // Teste unitário de isSectionLiberada
+      assert(DietoterapiaDocxReport.isSectionLiberada("anamnese", casoComAbasBloqueadas) === true,
+        "isSectionLiberada permite seção 'anamnese' quando a aba está liberada");
+      assert(DietoterapiaDocxReport.isSectionLiberada("examefisico", casoComAbasBloqueadas) === false,
+        "isSectionLiberada bloqueia seção 'examefisico' quando abasLiberadas['Exames Físicos'] === false");
+      assert(DietoterapiaDocxReport.isSectionLiberada("questoes", casoComAbasBloqueadas) === false,
+        "isSectionLiberada bloqueia seção 'questoes' quando abasLiberadas['Questões'] === false ou está em blockedTabs");
+
+      // Teste do Relatório HTML (Visualização em Tela e Impressão A4 / PDF)
+      const mockDraftRelatorio = {
+        studentId: "aluno_relatorio_teste",
+        studentName: "Mariana Aluna",
+        evolucaoTexto: "Evolução do paciente de teste",
+        diagnosticoPESTexto: "Ingestão excessiva de carboidratos",
+        respostasQuestoes: { q1: "Resposta discursiva questão 1" }
+      };
+
+      const htmlReportBloqueado = DietoterapiaDocxReport.buildHtmlReport(mockDraftRelatorio, casoComAbasBloqueadas);
+      assert(!htmlReportBloqueado.includes("1.7. Exame Físico"),
+        "Relatório HTML Final OMITE estritamente a seção de Exame Físico quando bloqueada pelo professor");
+      assert(!htmlReportBloqueado.includes("4. AVALIAÇÃO ACADÊMICA"),
+        "Relatório HTML Final OMITE estritamente a seção de Questões Avaliativas quando bloqueada pelo professor");
+      assert(htmlReportBloqueado.includes("1.1. Identificação do Paciente"),
+        "Relatório HTML Final MANTÉM seções liberadas (Identificação do Paciente)");
+      assert(htmlReportBloqueado.includes("1.5. Avaliação Antropométrica"),
+        "Relatório HTML Final MANTÉM seções liberadas (Avaliação Antropométrica)");
+
+      // Relatório HTML quando todas as seções estão liberadas
+      const casoTotalmenteLiberado = { ...caso1, blockedTabs: [], caseConfig: { abasLiberadas: {} } };
+      const htmlReportCompleto = DietoterapiaDocxReport.buildHtmlReport(mockDraftRelatorio, casoTotalmenteLiberado);
+      assert(htmlReportCompleto.includes("1.7. Exame Físico"),
+        "Relatório HTML inclui Exame Físico quando todas as abas estão liberadas");
+      assert(htmlReportCompleto.includes("4. AVALIAÇÃO ACADÊMICA"),
+        "Relatório HTML inclui Questões Avaliativas quando liberadas");
+
+      // 141. Interpretação Semântica e Mapeamento de Vocabulário do Interlocutor Clínico (Paciente Virtual)
+      // REGRA 1: Sinônimos e Intenção - Residência, Procedência e Naturalidade
+      const respOndeMora = await engineSim.processQuestion("Onde o senhor mora?", caso1, "paciente");
+      assert(respOndeMora.includes("São Paulo - SP"),
+        `Regra 1 (Sinônimos): Pergunta 'Onde o senhor mora?' cruza com residence ('${respOndeMora}')`);
+
+      const respDeOndeE = await engineSim.processQuestion("De onde você é?", caso1, "paciente");
+      assert(respDeOndeE.includes("São Paulo - SP"),
+        `Regra 1 (Sinônimos): Pergunta 'De onde você é?' cruza com origem/cidade ('${respDeOndeE}')`);
+
+      const respQualCidade = await engineSim.processQuestion("Qual sua cidade?", caso1, "paciente");
+      assert(respQualCidade.includes("São Paulo - SP"),
+        `Regra 1 (Sinônimos): Pergunta 'Qual sua cidade?' identifica localização corretamente ('${respQualCidade}')`);
+
+      // Teste com paciente com Naturalidade diferente da Residência
+      const mockCasoMigrante = {
+        ...caso1,
+        patient: {
+          ...caso1.patient,
+          naturalidade: "Salvador - BA",
+          residence: "Campinas - SP"
+        }
+      };
+      const respNaturalidade = await engineSim.processQuestion("Qual a sua naturalidade?", mockCasoMigrante, "paciente");
+      assert(respNaturalidade.includes("Salvador - BA"),
+        `Regra 1 (Sinônimos): Pergunta 'Qual sua naturalidade?' entrega campo naturalidade ('${respNaturalidade}')`);
+
+      // REGRA 2: Termos Técnicos vs. Populares
+      // A) Hábito Intestinal vs Fazer Cocô / Ir aos Pés
+      const respHabitoTec = await engineSim.processQuestion("Como está seu hábito intestinal?", caso1, "paciente");
+      assert((respHabitoTec.includes("ir aos pés") || respHabitoTec.includes("fazer cocô")) && respHabitoTec.includes("Bristol"),
+        `Regra 2 (Técnico -> Popular): Termo técnico 'hábito intestinal' conecta com linguajar leigo e dados do prontuário: '${respHabitoTec}'`);
+
+      const respHabitoPop1 = await engineSim.processQuestion("Você vai aos pés direitinho?", caso1, "paciente");
+      assert(respHabitoPop1.includes("Bristol") || respHabitoPop1.includes("evacuações diárias"),
+        `Regra 2 (Popular -> Técnico): Termo popular 'vai aos pés' recupera dados de função intestinal da ficha: '${respHabitoPop1}'`);
+
+      const respHabitoPop2 = await engineSim.processQuestion("Como está para fazer cocô todo dia?", caso1, "paciente");
+      assert(respHabitoPop2.includes("Bristol") || respHabitoPop2.includes("evacuações"),
+        `Regra 2 (Popular -> Técnico): Termo popular 'fazer cocô' recupera dados de função intestinal da ficha: '${respHabitoPop2}'`);
+
+      // B) Hipertensão vs Pressão Alta
+      const respHAS1 = await engineSim.processQuestion("O senhor tem hipertensão?", caso1, "paciente");
+      assert(respHAS1.includes("pressão alta") && (respHAS1.includes("Sim") || respHAS1.includes("tenho")),
+        `Regra 2 (Técnico -> Popular): Termo 'hipertensão' conecta com 'pressão alta' e confirma comorbidade do prontuário: '${respHAS1}'`);
+
+      const respHAS2 = await engineSim.processQuestion("A sua pressão é alta?", caso1, "paciente");
+      assert(respHAS2.includes("pressão alta") && (respHAS2.includes("Sim") || respHAS2.includes("tenho")),
+        `Regra 2 (Popular -> Técnico): Termo 'pressão é alta' reconhece e confirma diagnóstico de HAS: '${respHAS2}'`);
+
+      const respSemHAS = await engineSim.processQuestion("O senhor tem hipertensão?", mockCasoIncompleto, "paciente");
+      assert(respSemHAS.includes("Não tenho") && respSemHAS.includes("pressão alta"),
+        `Regra 2 (Anti-Alucinação e Negação Natural): Paciente sem HAS relata ausência em termos populares: '${respSemHAS}'`);
+
+      // C) Dispneia vs Falta de Ar
+      const respDispNega = await engineSim.processQuestion("Apresenta dispneia?", caso1, "paciente");
+      assert((respDispNega.includes("falta de ar") || respDispNega.includes("cansaço")) && (respDispNega.includes("não sinto") || respDispNega.includes("Graças a Deus")),
+        `Regra 2 (Técnico -> Popular): Termo técnico 'dispneia' traduz para 'falta de ar' e confirma negação do caso: '${respDispNega}'`);
+
+      const respDispAfirma = await engineSim.processQuestion("Apresenta dispneia?", mockCasoIncompleto, "paciente");
+      assert(respDispAfirma.includes("falta de ar") && respDispAfirma.includes("Falta de ar e cansaço"),
+        `Regra 2 (Técnico -> Clínico): Paciente com queixa de falta de ar reconhece o termo 'dispneia': '${respDispAfirma}'`);
+
+      const respFaltaArPop = await engineSim.processQuestion("O senhor sente falta de ar?", mockCasoIncompleto, "paciente");
+      assert(respFaltaArPop.includes("falta de ar") && respFaltaArPop.includes("cansaço"),
+        `Regra 2 (Popular -> Clínico): Paciente responde com base na queixa registrada: '${respFaltaArPop}'`);
+
+      // 142. Análise de Adequação de Micronutrientes baseada nas DRIs (Recordatório 24h e Planejamento Dietético)
+      // Requisito 1: Estrutura de Dados (Tabela/JSON de Referência com Faixa Etária, Sexo e chaves RDA, EAR, AI, UL)
+      assert(typeof DRI_REFERENCE_DATABASE === "object" && Array.isArray(DRI_REFERENCE_DATABASE.profiles) && DRI_REFERENCE_DATABASE.profiles.length >= 10,
+        "DRI (Req 1): Banco de dados local de referência DRI carregado com perfis categorizados por Faixa Etária e Sexo");
+      const sampleProfile = DRI_REFERENCE_DATABASE.profiles[0];
+      assert(sampleProfile.faixaEtaria && sampleProfile.sexo && sampleProfile.micronutrientes && sampleProfile.micronutrientes.calcio,
+        "DRI (Req 1): Perfil DRI contém faixaEtaria, sexo e dicionário de micronutrientes");
+      const sampleMicro = sampleProfile.micronutrientes.calcio;
+      assert("RDA" in sampleMicro && "EAR" in sampleMicro && "AI" in sampleMicro && "UL" in sampleMicro,
+        "DRI (Req 1): Cada micronutriente possui estritamente as chaves RDA, EAR, AI e UL");
+
+      // Requisito 2: Lógica de Seleção Automática (Vínculo com Idade e Sexo do Paciente do Caso Clínico)
+      const perfilCaso1 = selectDriProfileForPatient(caso1.patient.age, caso1.patient.gender); // 54 anos, Masculino
+      assert(perfilCaso1.faixaEtaria === "51 a 70 anos" && perfilCaso1.sexo === "Masculino",
+        `DRI (Req 2): Seleção automática para Caso 1 (${caso1.patient.age}a, ${caso1.patient.gender}) filtra perfil '51 a 70 anos' / 'Masculino'`);
+      assert(perfilCaso1.micronutrientes.calcio.RDA === 1000 && perfilCaso1.micronutrientes.calcio.UL === 2000,
+        "DRI (Req 2): Homem 54 anos possui Cálcio RDA = 1000 mg e UL = 2000 mg");
+
+      const perfilCaso2 = selectDriProfileForPatient(caso2.patient.age, caso2.patient.gender); // 76 anos, Feminino
+      assert(perfilCaso2.faixaEtaria === "Acima de 70 anos" && perfilCaso2.sexo === "Feminino",
+        `DRI (Req 2): Seleção automática para Caso 2 (${caso2.patient.age}a, ${caso2.patient.gender}) filtra perfil 'Acima de 70 anos' / 'Feminino'`);
+      assert(perfilCaso2.micronutrientes.calcio.RDA === 1200 && perfilCaso2.micronutrientes.calcio.UL === 2000,
+        "DRI (Req 2): Mulher 76 anos possui Cálcio RDA = 1200 mg e UL = 2000 mg");
+
+      const perfilMulherJovem = selectDriProfileForPatient(25, "Feminino");
+      assert(perfilMulherJovem.faixaEtaria === "19 a 30 anos" && perfilMulherJovem.micronutrientes.ferro.RDA === 18,
+        "DRI (Req 2): Mulher de 25 anos seleciona automaticamente Ferro RDA = 18 mg/dia");
+
+      // Requisito 3: Regras de Negócio para o Parâmetro de Referência (Hierarquia de Fallback RDA -> EAR -> AI + UL)
+      // Prioridade 1: RDA existe (ex: Cálcio RDA=1000, EAR=800)
+      const refPrio1 = resolveMicronutrientReference({ RDA: 1000, EAR: 800, AI: null, UL: 2000 });
+      assert(refPrio1.refType === "RDA" && refPrio1.refValue === 1000 && refPrio1.ulValue === 2000,
+        "DRI (Req 3 - Prioridade 1): Utiliza a RDA quando disponível e carrega a UL como limite máximo");
+
+      // Prioridade 2: RDA é null ou 0 -> utiliza EAR
+      const refPrio2Null = resolveMicronutrientReference({ RDA: null, EAR: 800, AI: 1000, UL: 2500 });
+      const refPrio2Zero = resolveMicronutrientReference({ RDA: 0, EAR: 6.0, AI: 8.0, UL: 45 });
+      assert(refPrio2Null.refType === "EAR" && refPrio2Null.refValue === 800 && refPrio2Null.ulValue === 2500,
+        "DRI (Req 3 - Prioridade 2): Quando RDA é null, utiliza automaticamente a EAR");
+      assert(refPrio2Zero.refType === "EAR" && refPrio2Zero.refValue === 6.0 && refPrio2Zero.ulValue === 45,
+        "DRI (Req 3 - Prioridade 2): Quando RDA é 0, utiliza automaticamente a EAR");
+
+      // Prioridade 3: RDA e EAR são null ou 0 -> utiliza AI (ex: Sódio e Potássio)
+      const refPrio3Sodio = resolveMicronutrientReference(perfilCaso1.micronutrientes.sodio);
+      assert(refPrio3Sodio.refType === "AI" && refPrio3Sodio.refValue === 1500 && refPrio3Sodio.ulValue === 2300,
+        "DRI (Req 3 - Prioridade 3): Quando RDA e EAR são null (Sódio), utiliza a AI (1500 mg) e mantém UL (2300 mg)");
+
+      const refPrio3Potassio = resolveMicronutrientReference(perfilCaso1.micronutrientes.potassio);
+      assert(refPrio3Potassio.refType === "AI" && refPrio3Potassio.refValue === 3400 && refPrio3Potassio.ulValue === null,
+        "DRI (Req 3 - Prioridade 3): Potássio utiliza AI (3400 mg) para homem adulto");
+
+      // Requisito 4: Classificações de Adequação ('Inadequado (Abaixo)', 'Adequado', 'Inadequado (Acima do Limite / Risco)')
+      const evalAbaixo = evaluateMicronutrientAdequacy(650, perfilCaso1.micronutrientes.calcio);
+      assert(evalAbaixo.status === "Inadequado (Abaixo)",
+        `DRI (Req 4): Ingestão (650 mg) menor que a referência (1000 mg) retorna '${evalAbaixo.status}'`);
+
+      const evalAdequado = evaluateMicronutrientAdequacy(1200, perfilCaso1.micronutrientes.calcio);
+      assert(evalAdequado.status === "Adequado",
+        `DRI (Req 4): Ingestão (1200 mg) entre a referência (1000 mg) e a UL (2000 mg) retorna '${evalAdequado.status}'`);
+
+      const evalAcimaUL = evaluateMicronutrientAdequacy(2450, perfilCaso1.micronutrientes.calcio);
+      assert(evalAcimaUL.status === "Inadequado (Acima do Limite / Risco)",
+        `DRI (Req 4): Ingestão (2450 mg) acima da UL (2000 mg) retorna '${evalAcimaUL.status}'`);
+
+      // Integração com StudentProntuarioManager e renderização da tabela HTML para Recordatório e Planejamento
+      const pmDri = new StudentProntuarioManager();
+      const refeicoesTesteDri = [
+        {
+          id: "ref-dri-1",
+          refeicao: "Almoço",
+          itens: [
+            { alimentoNome: "Leite enriquecido", gramatura: 200, kcal: 300, cho: 30, ptn: 15, lip: 10, calcio: 1100, ferro: 5.0, sodio: 2500, potassio: 3600, vitA: 950, vitC: 100 }
+          ]
+        }
+      ];
+      const totaisComDri = pmDri.calculateNutritionalTotals(refeicoesTesteDri, 75, 2000, null);
+      assert(totaisComDri.analiseDriMicronutrientes && Array.isArray(totaisComDri.analiseDriMicronutrientes.items),
+        "DRI (Integração): calculateNutritionalTotals anexa analiseDriMicronutrientes automaticamente");
+
+      const analisePacienteCaso1 = pmDri.evaluateMicronutrientsDri(totaisComDri, 54, "Masculino");
+      const itemCalcio = analisePacienteCaso1.items.find(i => i.key === "calcio");
+      const itemFerro = analisePacienteCaso1.items.find(i => i.key === "ferro");
+      const itemSodio = analisePacienteCaso1.items.find(i => i.key === "sodio");
+      const itemPotassio = analisePacienteCaso1.items.find(i => i.key === "potassio");
+
+      assert(itemCalcio.status === "Adequado", "DRI (Integração): Cálcio 1100mg avaliado como 'Adequado'");
+      assert(itemFerro.status === "Inadequado (Abaixo)", "DRI (Integração): Ferro 5mg avaliado como 'Inadequado (Abaixo)' frente à RDA de 8mg");
+      assert(itemSodio.status === "Inadequado (Acima do Limite / Risco)", "DRI (Integração): Sódio 2500mg avaliado como 'Inadequado (Acima do Limite / Risco)' frente à UL de 2300mg");
+      assert(itemPotassio.status === "Adequado" && itemPotassio.refType === "AI", "DRI (Integração): Potássio 3600mg avaliado como 'Adequado' usando fallback AI (3400mg)");
+
+      const tabelaHtmlDri = renderDriAdequacyTableHTML(analisePacienteCaso1, "Análise de Adequação de Micronutrientes — Recordatório 24h (DRIs)");
+      assert(tabelaHtmlDri.includes("Inadequado (Abaixo)") && tabelaHtmlDri.includes("Adequado") && tabelaHtmlDri.includes("Inadequado (Acima do Limite / Risco)"),
+        "DRI (UI): Tabela HTML renderiza dinamicamente as tags visuais para os 3 status de adequação");
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

@@ -1007,7 +1007,31 @@ class StudentProntuarioManager {
     // Status dos macros frente à prescrição
     totals.statusMacros = this.compareTotalsWithPrescription(totals, distribuicaoPrescrita);
 
+    if (typeof analyzeAllMicronutrientsForPatient === "function") {
+      totals.analiseDriMicronutrientes = analyzeAllMicronutrientsForPatient(
+        totals,
+        typeof getEffectivePatientAge === "function" ? getEffectivePatientAge() : 54,
+        typeof getEffectivePatientGender === "function" ? getEffectivePatientGender() : "Masculino"
+      );
+    }
+
     return totals;
+  }
+
+  // Seleciona automaticamente o perfil DRI exato de micronutrientes para a idade e sexo do paciente
+  getPatientDriProfile(age, gender) {
+    if (typeof selectDriProfileForPatient === "function") {
+      return selectDriProfileForPatient(age, gender);
+    }
+    return null;
+  }
+
+  // Avalia a adequação de micronutrientes (Cálcio, Ferro, Sódio, Potássio, Vitamina A e Vitamina C) frente às DRIs (RDA > EAR > AI e UL)
+  evaluateMicronutrientsDri(totals, age, gender) {
+    if (typeof analyzeAllMicronutrientsForPatient === "function") {
+      return analyzeAllMicronutrientsForPatient(totals, age, gender);
+    }
+    return null;
   }
 
   // Mantém compatibilidade com chamadas de calculateCardapioTotals
