@@ -38,6 +38,35 @@ export default function RealPatientModule() {
   }, []);
 
   // Auto-Save reativo das Orientações Nutricionais no Modo Atendimento Real
+  // Regra 1: Estado do VET Planejado (sem valor hardcoded de 2000 kcal) que alimenta dinamicamente a NEE do Recordatório 24h
+  const [vetPlanejadoReal, setVetPlanejadoReal] = useState<string>('');
+
+  // Regra 2: Estado das Fórmulas Preditivas no Atendimento Real (Trava de Validação: Exatas 3 Fórmulas)
+  const [formulasReal, setFormulasReal] = useState<Array<{ id: string; formulaKey: string; nome: string; equacao: string; resultadoKcal: string }>>([]);
+  const [novaFormulaKeyReal, setNovaFormulaKeyReal] = useState<string>('bolso');
+  const [novaFormulaEquacaoReal, setNovaFormulaEquacaoReal] = useState<string>('25 kcal/kg × 94,0 kg');
+  const [novaFormulaResultadoReal, setNovaFormulaResultadoReal] = useState<string>('2350');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const studentId = window.localStorage.getItem('dietocase_student_id') || 'aluno-demo';
+    const draftKey = `draft_caso_atendimento-real_aluno_${studentId}`;
+    try {
+      const raw = window.localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.vetPlanejadoReal === 'string') {
+          setVetPlanejadoReal(parsed.vetPlanejadoReal);
+        }
+        if (Array.isArray(parsed.formulasReal)) {
+          setFormulasReal(parsed.formulasReal.slice(0, 3));
+        }
+      }
+    } catch (e) {
+      // ignora erro de leitura
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const studentId = window.localStorage.getItem('dietocase_student_id') || 'aluno-demo';
@@ -50,12 +79,14 @@ export default function RealPatientModule() {
         caseId: 'atendimento-real',
         studentId,
         orientacoesNutricionais,
+        vetPlanejadoReal,
+        formulasReal,
         lastUpdated: new Date().toISOString()
       }));
     } catch (e) {
-      console.warn('[Auto-Save Real] Erro ao salvar orientacoesNutricionais:', e);
+      console.warn('[Auto-Save Real] Erro ao salvar rascunho:', e);
     }
-  }, [orientacoesNutricionais]);
+  }, [orientacoesNutricionais, vetPlanejadoReal, formulasReal]);
 
   const handleFinalizarAtendimentoReal = async () => {
     if (typeof window === 'undefined') return;
@@ -548,12 +579,52 @@ export default function RealPatientModule() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Painel de Adequação Energética do Recordatório 24h (NEE vinculada dinamicamente ao VET Planejado, sem 2000 kcal fixo) */}
+                {(() => {
+                  const vetPlanejadoNum = parseFloat(String(vetPlanejadoReal || '').trim().replace(',', '.')) || 0;
+                  const totalRecKcal = Math.round(recordatorioItems.reduce((acc, it) => acc + (Number(it.kcal) || 0), 0));
+                  const adeqPct = vetPlanejadoNum > 0 ? Math.round(((totalRecKcal / vetPlanejadoNum) * 100) * 10) / 10 : null;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+                      <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">🍽️ VET Consumido (R24h):</span>
+                        <div className="text-base font-extrabold text-indigo-400 mt-0.5">{totalRecKcal} kcal/dia</div>
+                        <span className="text-[10px] text-slate-500">Soma do consumo relatado</span>
+                      </div>
+                      <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">🎯 NEE (VET Planejado 100%):</span>
+                        <div id="dispRealRecordatorioNee" className="text-base font-extrabold text-white mt-0.5">
+                          {vetPlanejadoNum > 0 ? `${vetPlanejadoNum} kcal/dia` : 'Aguardando VET Planejado'}
+                        </div>
+                        <span className="text-[10px] text-slate-500">Reflete o campo VET Planejado</span>
+                      </div>
+                      <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">📊 Adequação Energética (R24h / NEE):</span>
+                        <div id="dispRealRecordatorioAdequacao" className="text-base font-extrabold text-emerald-400 mt-0.5">
+                          {adeqPct !== null ? `${adeqPct}%` : '--%'}
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {adeqPct === null
+                            ? 'Defina o VET Planejado na aba de Planejamento'
+                            : adeqPct < 90
+                            ? 'Consumo Hipocalórico (< 90% do VET Planejado)'
+                            : adeqPct <= 110
+                            ? 'Consumo Adequado (90% a 110% do VET Planejado)'
+                            : 'Consumo Hipercalórico (> 110% do VET Planejado)'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <LipidQualitySection
                 title="Análise do Recordatório de 24h - Frações Lipídicas"
                 subtitle="Avaliação da ingestão habitual de ácidos graxos relatada pelo paciente (1g = 9 kcal)."
-                vetKcal={2000}
+                vetKcal={(parseFloat(String(vetPlanejadoReal || '').trim().replace(',', '.')) || 0) > 0
+                  ? (parseFloat(String(vetPlanejadoReal || '').trim().replace(',', '.')) || 0)
+                  : Math.round(recordatorioItems.reduce((acc, it) => acc + (Number(it.kcal) || 0), 0))}
                 theme="indigo"
                 defaultValues={{
                   satG: '',
@@ -880,12 +951,147 @@ export default function RealPatientModule() {
               <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
                 Planejamento Dietoterápico & Prescrição (Bancos Oficiais & Colaborativos)
               </h3>
-              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                <span className="font-bold text-sm text-indigo-400 block">Conduta Ambulatorial Padronizada:</span>
-                <p className="text-slate-200 leading-relaxed">
-                  Dieta hipocalorica moderada (deficit de 500 kcal/dia), calculada para 2.000 kcal, com fracionamento em 5 a 6 refeicoes. Estimulo ao consumo de alimentos ricos em fibras soluveis (aveia, psyllium, leguminosas) e gorduras monoinsaturadas (azeite de oliva extravirgem) para controle da esteatose hepatica e perfil lipidico.
-                </p>
-              </div>
+
+              {/* Bloco de Cálculo de Necessidades (Validação Estrita: Exatas 3 Fórmulas) e VET Planejado (Vinculado à NEE do Recordatório 24h) */}
+              {(() => {
+                const isMaxRealFormulas = formulasReal.length >= 3;
+                const completasRealCount = formulasReal.filter(
+                  (f) => f && f.formulaKey && String(f.equacao || '').trim().length > 0 && parseFloat(String(f.resultadoKcal || '').replace(',', '.')) > 0
+                ).length;
+                const canAdvanceReal = completasRealCount === 3;
+                return (
+                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold text-sm text-indigo-400">
+                        Necessidades Energéticas (Exatas 3 Fórmulas) & VET Planejado
+                      </span>
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          canAdvanceReal
+                            ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700'
+                            : 'bg-amber-950/70 text-amber-300 border-amber-700'
+                        }`}
+                      >
+                        Fórmulas Completas: {completasRealCount} / 3
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+                      <div className="md:col-span-4">
+                        <label className="block text-[11px] text-slate-400 mb-1">Equação Preditiva:</label>
+                        <select
+                          disabled={isMaxRealFormulas}
+                          value={novaFormulaKeyReal}
+                          onChange={(e) => setNovaFormulaKeyReal(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-indigo-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="bolso">1. Regra de Bolso</option>
+                          <option value="harrisBenedict">2. Harris & Benedict (1919)</option>
+                          <option value="mifflin">3. Mifflin-St Jeor (1990)</option>
+                          <option value="faoOms">4. FAO / OMS (1985/2004)</option>
+                          <option value="eerIom">5. EER / IOM (DRI 2002/2005)</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-4">
+                        <label className="block text-[11px] text-slate-400 mb-1">Desenvolvimento Matemático:</label>
+                        <input
+                          type="text"
+                          disabled={isMaxRealFormulas}
+                          value={novaFormulaEquacaoReal}
+                          onChange={(e) => setNovaFormulaEquacaoReal(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:border-indigo-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] text-slate-400 mb-1">Resultado (kcal):</label>
+                        <input
+                          type="number"
+                          disabled={isMaxRealFormulas}
+                          value={novaFormulaResultadoReal}
+                          onChange={(e) => setNovaFormulaResultadoReal(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-bold text-indigo-300 focus:border-indigo-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <button
+                          type="button"
+                          disabled={isMaxRealFormulas}
+                          onClick={() => {
+                            if (formulasReal.length >= 3) return;
+                            const val = String(novaFormulaResultadoReal || '').trim();
+                            if (!val || parseFloat(val.replace(',', '.')) <= 0) return;
+                            setFormulasReal((prev) =>
+                              [
+                                ...prev,
+                                {
+                                  id: `real-form-${Date.now()}`,
+                                  formulaKey: novaFormulaKeyReal,
+                                  nome: novaFormulaKeyReal,
+                                  equacao: novaFormulaEquacaoReal,
+                                  resultadoKcal: val
+                                }
+                              ].slice(0, 3)
+                            );
+                          }}
+                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        >
+                          {isMaxRealFormulas ? '🔒 Limite (3/3)' : '+ Adicionar Fórmula'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {formulasReal.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                        {formulasReal.map((f, idx) => (
+                          <div key={f.id} className="bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-indigo-300">Fórmula #{idx + 1}: {f.nome}</span>
+                              <button
+                                type="button"
+                                onClick={() => setFormulasReal((prev) => prev.filter((item) => item.id !== f.id))}
+                                className="text-rose-400 hover:text-rose-300 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-950/40 cursor-pointer"
+                              >
+                                🗑️ Excluir
+                              </button>
+                            </div>
+                            <div className="text-sm font-bold text-white">{f.resultadoKcal} kcal/dia</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{f.equacao}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-indigo-300">VET Planejado (Base 100% da NEE no Recordatório 24h):</span>
+                        <input
+                          id="inputVetPlanejadoReal"
+                          type="number"
+                          value={vetPlanejadoReal}
+                          onChange={(e) => setVetPlanejadoReal(e.target.value)}
+                          placeholder="Ex: 2000"
+                          className="w-32 bg-slate-950 border border-indigo-500/60 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:border-indigo-400 outline-none"
+                        />
+                        <span className="text-slate-400 font-bold">kcal/dia</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        id="btnAvancarCalculosReal"
+                        disabled={!canAdvanceReal}
+                        onClick={() => {
+                          if (canAdvanceReal) {
+                            setActiveTab('orientacao');
+                          }
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:border disabled:border-slate-700 disabled:cursor-not-allowed"
+                      >
+                        Salvar e Avançar para Orientação Nutricional ➔
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Seletor de Bases e Botao Cadastrar Alimento */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">

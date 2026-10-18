@@ -1498,14 +1498,14 @@
                     <span class="text-[10px] text-slate-500 block mt-0.5">Ingestão referida</span>
                   </div>
 
-                  <!-- CARD 2: NEE DO CASO CLÍNICO -->
+                  <!-- CARD 2: NEE VINCULADA AO VET PLANEJADO -->
                   <div class="bg-white border border-indigo-100 rounded-lg p-2.5 text-xs">
                     <span class="text-[10px] font-semibold text-slate-500 uppercase block">🎯 Necessidade Estimada (NEE):</span>
                     <div class="flex items-baseline space-x-1 mt-0.5">
                       <span id="dispNeeCasoVal" class="text-xl font-black text-slate-900">--</span>
                       <span class="text-[11px] text-slate-500 font-medium">kcal/dia</span>
                     </div>
-                    <span class="text-[10px] text-slate-500 block mt-0.5">Meta calculada do caso</span>
+                    <span id="dispNeeCasoSubtitle" class="text-[10px] text-slate-500 block mt-0.5">Reflete o VET Planejado (100%)</span>
                   </div>
 
                   <!-- CARD 3: % DE ADEQUAÇÃO DO VET -->
@@ -1670,6 +1670,26 @@
                 </div>
               </div>
 
+              <!-- BARRA DE INCLUSÃO DE FÓRMULA E TRAVA DE 3 FÓRMULAS -->
+              <div class="bg-emerald-50/70 border border-emerald-200 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                  <label for="selectAdicionarFormulaCalc" class="font-bold text-emerald-950">Escolher Equação Preditiva:</label>
+                  <select id="selectAdicionarFormulaCalc" class="border border-emerald-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold text-slate-800 text-xs">
+                    <option value="bolso">1. Fórmula de Bolso (kcal/kg)</option>
+                    <option value="harrisBenedict">2. Harris-Benedict (1919)</option>
+                    <option value="mifflin">3. Mifflin-St Jeor (1990)</option>
+                    <option value="faoOms">4. FAO / OMS (1985 / 2004)</option>
+                    <option value="eerIom">5. DRI / IOM (EER 2002/2005)</option>
+                  </select>
+                  <button type="button" id="btnAdicionarFormulaCalc" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition cursor-pointer disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed">
+                    ➕ Adicionar Fórmula
+                  </button>
+                </div>
+                <span id="dispTravaTresFormulasBadge" class="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full">
+                  ⚠️ Preencha exatamente 3 fórmulas completas para liberar o avanço
+                </span>
+              </div>
+
               <!-- LISTA DAS 5 EQUAÇÕES PREDITIVAS ABERTAS -->
               <div class="space-y-3" id="calcFormulasListContainer">
                 
@@ -1687,6 +1707,9 @@
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Estimativa direta do VET multiplicando a faixa de calorias recomendada pelo peso corporal.</p>
                       </div>
                     </label>
+                    <button type="button" class="btn-remover-formula text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition cursor-pointer" data-formula="bolso" title="Excluir esta fórmula para liberar espaço">
+                      🗑️ Excluir
+                    </button>
                   </div>
 
                   <!-- Container Aberto Interativo -->
@@ -1744,6 +1767,9 @@
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Cálculo do Gasto Energético Basal (GEB) condicionado ao sexo, corrigido por Fator Atividade e Injúria.</p>
                       </div>
                     </label>
+                    <button type="button" class="btn-remover-formula text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition cursor-pointer" data-formula="harrisBenedict" title="Excluir esta fórmula para liberar espaço">
+                      🗑️ Excluir
+                    </button>
                   </div>
 
                   <!-- Container Aberto Interativo -->
@@ -1835,6 +1861,9 @@
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Diretriz da Academy of Nutrition and Dietetics para adultos eutróficos e obesos.</p>
                       </div>
                     </label>
+                    <button type="button" class="btn-remover-formula text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition cursor-pointer" data-formula="mifflin" title="Excluir esta fórmula para liberar espaço">
+                      🗑️ Excluir
+                    </button>
                   </div>
 
                   <!-- Container Aberto Interativo -->
@@ -1926,6 +1955,9 @@
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">GEB baseado em constantes lineares por sexo e faixa etária aplicadas ao peso corporal.</p>
                       </div>
                     </label>
+                    <button type="button" class="btn-remover-formula text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition cursor-pointer" data-formula="faoOms" title="Excluir esta fórmula para liberar espaço">
+                      🗑️ Excluir
+                    </button>
                   </div>
 
                   <!-- Container Aberto Interativo -->
@@ -2061,6 +2093,9 @@
                         <p class="text-[11px] text-slate-500 mt-0.5 leading-tight">Necessidade Estimada de Energia (EER) ponderando coeficiente de atividade física (NAF), peso e altura em metros.</p>
                       </div>
                     </label>
+                    <button type="button" class="btn-remover-formula text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition cursor-pointer" data-formula="eerIom" title="Excluir esta fórmula para liberar espaço">
+                      🗑️ Excluir
+                    </button>
                   </div>
 
                   <!-- Container Aberto Interativo -->
@@ -2167,14 +2202,14 @@
                     <span>🎯</span>
                     <span>Decisão Clínica e VET Planejado</span>
                   </span>
-                  <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">Integração com Prescrição</span>
+                  <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">Integração com Prescrição e Recordatório 24h</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block font-bold text-slate-800 text-xs mb-1">VET Planejado (kcal/dia):</label>
                     <input type="number" id="prontCalcVetPlanejado" class="w-full border border-emerald-400 rounded-lg p-2 text-sm font-bold text-emerald-900 bg-white focus:ring-2 focus:ring-emerald-500 shadow-2xs" placeholder="Ex: 1850" min="500" max="6000" step="10">
-                    <p class="text-[10px] text-slate-500 mt-1">Este valor será transmitido automaticamente para a aba de Prescrição Dietética.</p>
+                    <p class="text-[10px] text-slate-500 mt-1">Transmitido dinamicamente como NEE (100%) no Recordatório 24h e na Prescrição Dietética.</p>
                   </div>
                   <div>
                     <label class="block font-bold text-slate-800 text-xs mb-1">Taxa Metabólica Resultante (kcal/kg):</label>
@@ -2189,6 +2224,16 @@
                 <div>
                   <label class="block font-bold text-slate-800 text-xs mb-1">Justificativa da Escolha Clínica:</label>
                   <textarea id="prontCalcJustificativa" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-white text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" rows="3" placeholder="Justifique a equação escolhida ou o valor calórico estabelecido (ex: meta de déficit energético para perda de peso, aporte normocalórico de manutenção, necessidades aumentadas por estresse metabólico ou recuperação nutricional)..."></textarea>
+                </div>
+
+                <!-- BARRA DE BLOQUEIO DE AVANÇO (EXIGE EXATAS 3 FÓRMULAS COMPLETAS) -->
+                <div class="pt-3 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+                  <span id="dispFormulasCompletasStatus" class="text-xs font-bold text-amber-800">
+                    ⏳ Progresso: 0 de 3 fórmulas completas (o avanço será liberado ao completar 3 fórmulas)
+                  </span>
+                  <button type="button" id="btnAvancarNecessidades" disabled class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-300 text-slate-500 cursor-not-allowed transition shadow-2xs">
+                    Salvar e Avançar para Próxima Aba ➔
+                  </button>
                 </div>
               </div>
             </div>

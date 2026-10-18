@@ -3350,10 +3350,45 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCalculoNecessidadesDisplay();
   }
 
+  // Obtém dinamicamente o VET Planejado definido pelo aluno na aba de Cálculos/Planejamento (sem valor fixo 2000 kcal)
+  function getEffectivePlannedVet() {
+    const calcVetRaw = document.getElementById("prontCalcVetPlanejado")?.value || "";
+    const calcMatch = calcVetRaw.match(/[\d.,]+/);
+    if (calcMatch) {
+      const val = parseFloat(calcMatch[0].replace(",", "."));
+      if (!isNaN(val) && val > 0) return val;
+    }
+    const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
+    const prescMatch = prescVetRaw.match(/[\d.,]+/);
+    if (prescMatch) {
+      const val = parseFloat(prescMatch[0].replace(",", "."));
+      if (!isNaN(val) && val > 0) return val;
+    }
+    const stateCalcVet = appState.currentProntuario?.calculoNecessidades?.vetPlanejadoKcal;
+    if (stateCalcVet) {
+      const m = String(stateCalcVet).match(/[\d.,]+/);
+      if (m) {
+        const val = parseFloat(m[0].replace(",", "."));
+        if (!isNaN(val) && val > 0) return val;
+      }
+    }
+    const statePrescVet = appState.currentProntuario?.prescricaoDietoterapica?.vetKcal;
+    if (statePrescVet) {
+      const m = String(statePrescVet).match(/[\d.,]+/);
+      if (m) {
+        const val = parseFloat(m[0].replace(",", "."));
+        if (!isNaN(val) && val > 0) return val;
+      }
+    }
+    return null;
+  }
+  window.getEffectivePlannedVet = getEffectivePlannedVet;
+
   // Atualiza avaliação quantitativa do consumo alimentar e adequação energética do VET
+  // A NEE no Recordatório 24h reflete dinamicamente o VET Planejado (100% de referência)
   function updateVetAdequacyCalculations() {
     const vetInput = document.getElementById("prontVetRecordatorio")?.value || "";
-    const neeCaso = appState.currentCase?.neeKcal || 2000;
+    const neeCaso = getEffectivePlannedVet();
 
     const res = prontuarioManager.calculateVetAdequacy(vetInput, neeCaso);
 
@@ -3365,29 +3400,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dispVet) dispVet.textContent = vetInput ? vetInput : "--";
     if (dispNee) dispNee.textContent = neeCaso ? neeCaso : "--";
-    if (dispPct) dispPct.textContent = res.percentual ? res.percentual : "--";
+    if (dispPct) dispPct.textContent = (neeCaso && res.percentual) ? res.percentual : "--";
     if (dispClass) {
-      dispClass.textContent = res.classificacao;
-      if (res.statusColor === "emerald") {
-        dispClass.className = "text-[10px] font-bold text-emerald-700 block mt-0.5";
-      } else if (res.statusColor === "amber") {
-        dispClass.className = "text-[10px] font-bold text-amber-700 block mt-0.5";
-      } else if (res.statusColor === "rose") {
-        dispClass.className = "text-[10px] font-bold text-rose-700 block mt-0.5";
-      } else {
+      if (!neeCaso) {
+        dispClass.textContent = "Aguardando VET Planejado";
         dispClass.className = "text-[10px] font-bold text-slate-500 block mt-0.5";
+      } else {
+        dispClass.textContent = res.classificacao;
+        if (res.statusColor === "emerald") {
+          dispClass.className = "text-[10px] font-bold text-emerald-700 block mt-0.5";
+        } else if (res.statusColor === "amber") {
+          dispClass.className = "text-[10px] font-bold text-amber-700 block mt-0.5";
+        } else if (res.statusColor === "rose") {
+          dispClass.className = "text-[10px] font-bold text-rose-700 block mt-0.5";
+        } else {
+          dispClass.className = "text-[10px] font-bold text-slate-500 block mt-0.5";
+        }
       }
     }
-    if (dispInterp) dispInterp.textContent = res.interpretacao;
+    if (dispInterp) {
+      dispInterp.textContent = neeCaso
+        ? res.interpretacao
+        : "Defina o VET Planejado na aba de Cálculos/Planejamento para que o Recordatório 24h utilize esse valor como base (100%) de adequação energética.";
+    }
 
     if (appState.currentProntuario?.consumoAlimentar) {
       const c = appState.currentProntuario.consumoAlimentar;
       c.vetRecordatorio = vetInput;
-      c.neeCaso = neeCaso;
-      c.adequacaoVetPct = res.percentual || "";
-      c.adequacaoVetClassificacao = res.classificacao || "";
+      c.neeCaso = neeCaso || "";
+      c.adequacaoVetPct = (neeCaso && res.percentual) ? res.percentual : "";
+      c.adequacaoVetClassificacao = neeCaso ? (res.classificacao || "") : "Aguardando VET Planejado";
     }
   }
+  window.updateVetAdequacyCalculations = updateVetAdequacyCalculations;
 
   // Obtém lista de alimentos de todas as bases (TACO, Decisão Nutricional e Colaborativa)
   function getAllFoodsList(sourceFilter = "todas") {
@@ -3567,8 +3612,9 @@ document.addEventListener("DOMContentLoaded", () => {
       appState.currentProntuario.prescricaoDietoterapica.regraBolsoKcalKg = prescRegraBolso ? prescRegraBolso.value : "";
     }
 
-    // Dispara recálculo da prescrição
+    // Dispara recálculo da prescrição e da adequação energética da NEE no Recordatório 24h
     updatePrescriptionCalculations();
+    updateVetAdequacyCalculations();
   }
   window.updateCalculoNecessidadesDisplay = updateCalculoNecessidadesDisplay;
 
@@ -4046,9 +4092,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio || [];
     const pesoPaciente = getEffectivePatientWeight();
 
-    const prescVetRaw = document.getElementById("prontVetKcal")?.value || "";
-    const prescVetMatch = prescVetRaw.match(/[\d.,]+/);
-    const prescVet = prescVetMatch ? parseFloat(prescVetMatch[0].replace(",", ".")) : null;
+    const prescVet = getEffectivePlannedVet();
 
     const prescDist = appState.currentProntuario?.prescricaoDietoterapica?.distribuicaoMacros || null;
     const totals = prontuarioManager.calculateNutritionalTotals(list, pesoPaciente, prescVet, prescDist);
@@ -4239,12 +4283,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Atualiza automaticamente o campo VET do Recordatório e a adequação da NEE se alimentos foram inseridos
+    // Atualiza automaticamente o campo VET do Recordatório e a adequação da NEE (vinculada ao VET Planejado)
     const vetInput = document.getElementById("prontVetRecordatorio");
     if (vetInput && totals.vetTotalKcal > 0) {
       vetInput.value = totals.vetTotalKcal;
-      updateVetAdequacyCalculations();
     }
+    updateVetAdequacyCalculations();
   }
 
   // Atualiza em tempo real o painel consolidado do cardápio/TNE vs metas prescritas
@@ -5343,12 +5387,126 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.recalculateEer = recalculateEer;
 
+  // Regra de Validação Estrita: Exatas 3 Fórmulas no Cálculo de Necessidades
+  // 1. Limite Máximo e Trava (Lock): máximo 3 fórmulas (desabilita inputs/botões de adicionar ao atingir 3)
+  // 2. Desbloqueio Condicional: ao excluir/desmarcar uma das 3 fórmulas, destrava imediatamente a adição
+  // 3. Bloqueio de Avanço (Next Step): botão de avançar fica desabilitado até existirem exatas 3 fórmulas completas
+  function updateNecessidadesValidationLock() {
+    const formulaResultInputMap = {
+      bolso: "calcBolsoResultadoKcal",
+      harrisBenedict: "calcHarrisResultadoKcal",
+      mifflin: "calcMifflinResultadoKcal",
+      faoOms: "calcFaoResultadoKcal",
+      eerIom: "calcEerResultadoKcal"
+    };
+    const formulaContainerMap = {
+      bolso: "calcBolsoFieldsContainer",
+      harrisBenedict: "calcHarrisFieldsContainer",
+      mifflin: "calcMifflinFieldsContainer",
+      faoOms: "calcFaoFieldsContainer",
+      eerIom: "calcEerFieldsContainer"
+    };
+
+    const checkboxes = Array.from(document.querySelectorAll(".calc-formula-checkbox"));
+    const checkedList = checkboxes.filter(cb => cb.checked);
+    const totalInserted = checkedList.length;
+
+    let completeCount = 0;
+    checkedList.forEach(cb => {
+      const fKey = cb.dataset.formula;
+      const resId = formulaResultInputMap[fKey];
+      const resVal = resId ? document.getElementById(resId)?.value?.trim() : "";
+      const numVal = resVal ? parseFloat(resVal.replace(",", ".")) : NaN;
+      if (!isNaN(numVal) && numVal > 0) {
+        completeCount++;
+      }
+    });
+
+    const isAddLocked = totalInserted >= 3;
+    const canAdvance = totalInserted === 3 && completeCount === 3;
+
+    const countEl = document.getElementById("calcFormulasSelectedCount");
+    if (countEl) countEl.textContent = String(totalInserted);
+
+    // 1. Limite Máximo e Trava (Lock) & 2. Desbloqueio Condicional
+    checkboxes.forEach(cb => {
+      if (!cb.checked) {
+        cb.disabled = isAddLocked;
+      } else {
+        cb.disabled = false;
+      }
+      const fKey = cb.dataset.formula;
+      const containerId = formulaContainerMap[fKey];
+      const container = containerId ? document.getElementById(containerId) : null;
+      if (container) {
+        if (cb.checked) container.classList.remove("hidden");
+        else container.classList.add("hidden");
+      }
+    });
+
+    const btnAddFormula = document.getElementById("btnAdicionarFormulaCalc");
+    const selAddFormula = document.getElementById("selectAdicionarFormulaCalc");
+    if (btnAddFormula) {
+      btnAddFormula.disabled = isAddLocked;
+    }
+    if (selAddFormula) {
+      selAddFormula.disabled = isAddLocked;
+    }
+
+    // 3. Bloqueio de Avanço (Next Step)
+    const btnAvancar = document.getElementById("btnAvancarNecessidades");
+    if (btnAvancar) {
+      btnAvancar.disabled = !canAdvance;
+      if (canAdvance) {
+        btnAvancar.className = "px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition shadow-2xs";
+      } else {
+        btnAvancar.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-300 text-slate-500 cursor-not-allowed transition shadow-2xs";
+      }
+    }
+
+    const statusEl = document.getElementById("dispFormulasCompletasStatus");
+    if (statusEl) {
+      if (canAdvance) {
+        statusEl.textContent = "✅ 3 de 3 fórmulas completas! Avanço para a próxima aba liberado.";
+        statusEl.className = "text-xs font-bold text-emerald-800";
+      } else {
+        statusEl.textContent = `⏳ Progresso: ${completeCount} de 3 fórmulas completas (${totalInserted}/3 selecionadas — o avanço exige exatas 3 fórmulas completas)`;
+        statusEl.className = "text-xs font-bold text-amber-800";
+      }
+    }
+
+    const badgeEl = document.getElementById("dispTravaTresFormulasBadge");
+    if (badgeEl) {
+      if (canAdvance) {
+        badgeEl.textContent = "✅ 3/3 fórmulas completas — Avanço Liberado";
+        badgeEl.className = "text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full";
+      } else if (isAddLocked) {
+        badgeEl.textContent = `🔒 Limite de 3 fórmulas atingido (${completeCount}/3 com resultado preenchido)`;
+        badgeEl.className = "text-[11px] font-bold text-indigo-800 bg-indigo-100 border border-indigo-300 px-2.5 py-1 rounded-full";
+      } else {
+        badgeEl.textContent = `⚠️ Preencha exatamente 3 fórmulas completas (${completeCount}/3 concluídas)`;
+        badgeEl.className = "text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full";
+      }
+    }
+
+    return {
+      totalInserted,
+      completeCount,
+      maxAllowed: 3,
+      isAddLocked,
+      isAdvanceLocked: !canAdvance,
+      canAdvance
+    };
+  }
+  window.updateNecessidadesValidationLock = updateNecessidadesValidationLock;
+
   function recalculateAllFormulas() {
     recalculateBolso();
     recalculateHarris();
     recalculateMifflin();
     recalculateFao();
     recalculateEer();
+    updateNecessidadesValidationLock();
   }
   window.recalculateAllFormulas = recalculateAllFormulas;
 
@@ -5361,6 +5519,13 @@ document.addEventListener("DOMContentLoaded", () => {
       eerIom: "calcEerFieldsContainer",
       faoOms: "calcFaoFieldsContainer"
     };
+    const formulaResultInputMap = {
+      bolso: "calcBolsoResultadoKcal",
+      harrisBenedict: "calcHarrisResultadoKcal",
+      mifflin: "calcMifflinResultadoKcal",
+      faoOms: "calcFaoResultadoKcal",
+      eerIom: "calcEerResultadoKcal"
+    };
 
     const checkboxes = document.querySelectorAll(".calc-formula-checkbox");
     const countEl = document.getElementById("calcFormulasSelectedCount");
@@ -5372,6 +5537,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (checkedList.length > 3) {
           cb.checked = false;
+          updateNecessidadesValidationLock();
           showToast("⚠️ Selecione no máximo 3 fórmulas preditivas para o cálculo manual.");
           return;
         }
@@ -5389,8 +5555,72 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
         }
+        updateNecessidadesValidationLock();
       });
     });
+
+    // Botão de Adicionar Fórmula Preditiva (com trava em 3 fórmulas)
+    const btnAdicionarFormulaCalc = document.getElementById("btnAdicionarFormulaCalc");
+    const selectAdicionarFormulaCalc = document.getElementById("selectAdicionarFormulaCalc");
+    if (btnAdicionarFormulaCalc) {
+      btnAdicionarFormulaCalc.addEventListener("click", () => {
+        const checkedList = Array.from(checkboxes).filter(c => c.checked);
+        if (checkedList.length >= 3) {
+          updateNecessidadesValidationLock();
+          showToast("⚠️ Limite máximo de 3 fórmulas atingido.");
+          return;
+        }
+        const preferredKey = selectAdicionarFormulaCalc ? selectAdicionarFormulaCalc.value : "";
+        let targetCb = Array.from(checkboxes).find(c => c.dataset.formula === preferredKey && !c.checked);
+        if (!targetCb) {
+          targetCb = Array.from(checkboxes).find(c => !c.checked);
+        }
+        if (targetCb) {
+          targetCb.checked = true;
+          const containerId = formulaContainers[targetCb.dataset.formula];
+          if (containerId) {
+            document.getElementById(containerId)?.classList.remove("hidden");
+          }
+          updateNecessidadesValidationLock();
+        }
+      });
+    }
+
+    // Botões de Excluir/Apagar uma das fórmulas (destrava imediatamente a adição quando clicado)
+    document.querySelectorAll(".btn-remover-formula").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const formulaKey = btn.dataset.formula;
+        const cb = Array.from(checkboxes).find(c => c.dataset.formula === formulaKey);
+        if (cb) {
+          cb.checked = false;
+        }
+        const containerId = formulaContainers[formulaKey];
+        if (containerId) {
+          document.getElementById(containerId)?.classList.add("hidden");
+        }
+        const resId = formulaResultInputMap[formulaKey];
+        if (resId && document.getElementById(resId)) {
+          document.getElementById(resId).value = "";
+        }
+        updateNecessidadesValidationLock();
+        showToast("🗑️ Fórmula removida. Espaço liberado para adicionar outra equação.");
+      });
+    });
+
+    // Botão de Avançar da aba Necessidades (bloqueado até existirem exatas 3 fórmulas completas)
+    const btnAvancarNecessidades = document.getElementById("btnAvancarNecessidades");
+    if (btnAvancarNecessidades) {
+      btnAvancarNecessidades.addEventListener("click", () => {
+        const lockState = updateNecessidadesValidationLock();
+        if (!lockState.canAdvance) {
+          showToast("⚠️ Complete exatamente 3 fórmulas preditivas antes de avançar para a próxima aba.");
+          return;
+        }
+        triggerProntuarioAutoSave();
+        const nextTabBtn = document.querySelector('.student-tab-btn[data-tab="prescricao"]');
+        if (nextTabBtn) nextTabBtn.click();
+      });
+    }
 
     // Seletor de Gênero do Paciente
     const generoSelect = document.getElementById("calcPacienteGeneroSelect");
@@ -5399,6 +5629,7 @@ document.addEventListener("DOMContentLoaded", () => {
         applyCalcGenderVisuals(generoSelect.value);
         recalculateHarris();
         recalculateMifflin();
+        updateNecessidadesValidationLock();
       });
     }
 
@@ -5489,7 +5720,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Sincronização entre inputs Masc e Fem e recálculo
     document.querySelectorAll(".calc-bolso-input").forEach(inp => {
-      inp.addEventListener("input", recalculateBolso);
+      inp.addEventListener("input", () => {
+        recalculateBolso();
+        updateNecessidadesValidationLock();
+      });
     });
 
     document.querySelectorAll(".calc-harris-input").forEach(inp => {
@@ -5508,6 +5742,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.getElementById("calcHarrisIdade").value = e.target.value;
         }
         recalculateHarris();
+        updateNecessidadesValidationLock();
       });
     });
 
@@ -5527,15 +5762,22 @@ document.addEventListener("DOMContentLoaded", () => {
           document.getElementById("calcMifflinIdade").value = e.target.value;
         }
         recalculateMifflin();
+        updateNecessidadesValidationLock();
       });
     });
 
     document.querySelectorAll(".calc-fao-input").forEach(inp => {
-      inp.addEventListener("input", recalculateFao);
+      inp.addEventListener("input", () => {
+        recalculateFao();
+        updateNecessidadesValidationLock();
+      });
     });
 
     document.querySelectorAll(".calc-eer-input").forEach(inp => {
-      inp.addEventListener("input", recalculateEer);
+      inp.addEventListener("input", () => {
+        recalculateEer();
+        updateNecessidadesValidationLock();
+      });
     });
 
     // Inputs de resultado manual (quando o aluno edita o resultado diretamente)
@@ -5550,6 +5792,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el) {
         el.addEventListener("input", () => {
           delete el.dataset.autoCalculated;
+          updateNecessidadesValidationLock();
         });
       }
     });
@@ -5564,7 +5807,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (vetInput) {
             vetInput.value = targetInput.value;
             updateCalculoNecessidadesDisplay();
-            showToast(`🎯 VET Planejado definido como ${targetInput.value} kcal/dia e espelhado na Prescrição.`);
+            showToast(`🎯 VET Planejado definido como ${targetInput.value} kcal/dia e espelhado na Prescrição e no Recordatório 24h.`);
           }
         } else {
           showToast("⚠️ Preencha as variáveis da fórmula antes de adotar o VET.");
@@ -5604,6 +5847,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (inputCIdade) inputCIdade.value = cIdade;
         if (inputCFixa) inputCFixa.value = cFixa;
         recalculateFao();
+        updateNecessidadesValidationLock();
         showToast(`✅ Constantes FAO/OMS preenchidas: ${cIdade} × P + ${cFixa}`);
       });
     });
@@ -5641,6 +5885,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (elFatAlt) elFatAlt.value = fatAlt;
 
         recalculateEer();
+        updateNecessidadesValidationLock();
         showToast(`✅ Constantes EER DRI/IOM para Adultos (${isFem ? "Mulheres" : "Homens"}) aplicadas.`);
       });
     }
@@ -5660,6 +5905,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    updateNecessidadesValidationLock();
   }
   setupCalculoNecessidadesListeners();
   window.setupCalculoNecessidadesListeners = setupCalculoNecessidadesListeners;
@@ -6095,21 +6342,19 @@ document.addEventListener("DOMContentLoaded", () => {
     function getRecEffectiveVet() {
       const disp = parseFloat(document.getElementById("dispRecVetTotal")?.textContent);
       if (!isNaN(disp) && disp > 0) return disp;
-      const prescRaw = document.getElementById("prontVetKcal")?.value || "";
-      const m = prescRaw.match(/[\d.,]+/);
-      if (m) return parseFloat(m[0].replace(",", "."));
+      const planned = getEffectivePlannedVet();
+      if (planned && planned > 0) return planned;
       const rVal = parseFloat(document.getElementById("prontVetRecordatorio")?.value);
       if (!isNaN(rVal) && rVal > 0) return rVal;
-      return 2000;
+      return 0;
     }
 
     function getCardEffectiveVet() {
       const disp = parseFloat(document.getElementById("dispCardapioVetTotal")?.textContent);
       if (!isNaN(disp) && disp > 0) return disp;
-      const prescRaw = document.getElementById("prontVetKcal")?.value || "";
-      const m = prescRaw.match(/[\d.,]+/);
-      if (m) return parseFloat(m[0].replace(",", "."));
-      return 2000;
+      const planned = getEffectivePlannedVet();
+      if (planned && planned > 0) return planned;
+      return 0;
     }
 
     function attachLipidPair(idG, idPct, getVetFn, updateFn) {

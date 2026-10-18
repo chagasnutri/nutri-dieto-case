@@ -3654,6 +3654,85 @@ Questões Avaliativas:
         !htmlBloqueado.includes("Fracionar a dieta em 6 refeições diárias"),
         "Orientação Nutricional (Req 4 - Condicional Bloqueado): Omite o bloco 'Orientações Nutricionais' no PDF se a aba estiver bloqueada pelo professor"
       );
+      // =========================================================================
+      // 144. VINCULAÇÃO DINÂMICA DA NEE (RECORDATÓRIO 24H <> VET PLANEJADO) E TRAVA DE EXATAS 3 FÓRMULAS
+      // =========================================================================
+      const pmRules = new StudentProntuarioManager();
+
+      // 144.1 Regra 1: Ausência de valor 'hardcoded' (2000 kcal) na NEE do Recordatório 24h quando VET Planejado está vazio
+      const adeqSemVetPlanejado = pmRules.calculateDynamicRecordatorioAdequacy(1500, {});
+      assert(
+        adeqSemVetPlanejado.neeBaseKcal === null && adeqSemVetPlanejado.percentualNum === null,
+        "Regra 1 (NEE Dinâmica - Sem 2000 fixo): Quando o VET Planejado ainda não foi preenchido, a NEE não assume 2000 kcal fixo (retorna null)"
+      );
+
+      // 144.2 Regra 1: Assim que o aluno define o VET Planejado (ex: 1800 kcal), o Recordatório 24h usa esse valor como 100% para calcular adequação
+      const prontComVetPlanejado = {
+        calculoNecessidades: { vetPlanejadoKcal: "1800" },
+        prescricaoDietoterapica: { vetKcal: "1800" }
+      };
+      const adeqComVet1800 = pmRules.calculateDynamicRecordatorioAdequacy(1440, prontComVetPlanejado);
+      assert(
+        adeqComVet1800.neeBaseKcal === 1800 && adeqComVet1800.percentualNum === 80 && adeqComVet1800.classificacao.includes("Hipocalórica"),
+        "Regra 1 (NEE Dinâmica - Base 100%): Recordatório de 1440 kcal frente ao VET Planejado de 1800 kcal resulta em exatos 80% de adequação energética"
+      );
+
+      const adeqComVet2400 = pmRules.calculateDynamicRecordatorioAdequacy(2400, { calculoNecessidades: { vetPlanejadoKcal: "2400" } });
+      assert(
+        adeqComVet2400.neeBaseKcal === 2400 && adeqComVet2400.percentualNum === 100 && adeqComVet2400.classificacao.includes("Normocalórica"),
+        "Regra 1 (NEE Dinâmica - Reatividade): Alterar o VET Planejado para 2400 kcal recalcula imediatamente a base (100%) do Recordatório 24h"
+      );
+
+      // 144.3 Regra 2: Trava de Validação de Exatas 3 Fórmulas (Limite Máximo, Desbloqueio Condicional e Bloqueio de Avanço)
+      let listaFormulasTeste = [];
+
+      // Estado inicial (0 fórmulas): Adicionar liberado, Avançar bloqueado
+      const val0 = pmRules.evaluateThreeFormulasValidation(listaFormulasTeste);
+      assert(
+        val0.totalInserted === 0 && val0.completeCount === 0 && val0.isAddLocked === false && val0.isAdvanceLocked === true && val0.canAdvance === false,
+        "Regra 2 (0 Fórmulas): Botão de adicionar liberado (isAddLocked=false) e botão de avançar desabilitado (canAdvance=false)"
+      );
+
+      // Inserindo 1ª e 2ª fórmulas completas: Avanço continua obrigatoriamente bloqueado
+      const rAdd1 = pmRules.addFormulaCalculo(listaFormulasTeste, { id: "f1", formulaKey: "bolso", nome: "Fórmula de Bolso", equacao: "25 x 70", resultadoKcal: "1750" });
+      listaFormulasTeste = rAdd1.formulas;
+      const val1 = rAdd1.validation;
+
+      const rAdd2 = pmRules.addFormulaCalculo(listaFormulasTeste, { id: "f2", formulaKey: "harrisBenedict", nome: "Harris-Benedict", equacao: "GEB x 1.2", resultadoKcal: "1820" });
+      listaFormulasTeste = rAdd2.formulas;
+      const val2 = rAdd2.validation;
+
+      assert(
+        val1.canAdvance === false && val2.canAdvance === false && val2.isAdvanceLocked === true && val2.isAddLocked === false,
+        "Regra 2 (Bloqueio de Avanço com 1 ou 2 cálculos): O aluno não pode prosseguir se tiver feito apenas 1 ou 2 fórmulas"
+      );
+
+      // Inserindo 3ª fórmula completa: Trava adição (isAddLocked=true) e libera avanço (canAdvance=true)
+      const rAdd3 = pmRules.addFormulaCalculo(listaFormulasTeste, { id: "f3", formulaKey: "mifflin", nome: "Mifflin-St Jeor", equacao: "GEB x 1.2", resultadoKcal: "1790" });
+      listaFormulasTeste = rAdd3.formulas;
+      const val3 = rAdd3.validation;
+
+      assert(
+        val3.totalInserted === 3 && val3.completeCount === 3 && val3.isAddLocked === true && val3.isAdvanceLocked === false && val3.canAdvance === true,
+        "Regra 2 (Exatas 3 Fórmulas Completas): Ao atingir 3 fórmulas preenchidas, trava o botão de adicionar (disabled=true) e habilita o botão de Avançar"
+      );
+
+      // Tentativa de inserir 4ª fórmula: Sistema bloqueia e mantém length === 3
+      const rAdd4 = pmRules.addFormulaCalculo(listaFormulasTeste, { id: "f4", formulaKey: "faoOms", nome: "FAO/OMS", equacao: "15.3 x 70 + 679", resultadoKcal: "1850" });
+      assert(
+        rAdd4.added === false && rAdd4.formulas.length === 3 && rAdd4.reason === "MAX_3_FORMULAS_REACHED",
+        "Regra 2 (Trava de 4ª Fórmula): O sistema impede a inclusão de uma quarta fórmula preditiva"
+      );
+
+      // Desbloqueio Condicional: Excluir uma das 3 fórmulas destrava imediatamente o botão de adicionar e bloqueia o avanço até completar 3 novamente
+      const rRem = pmRules.removeFormulaCalculo(listaFormulasTeste, "f2");
+      listaFormulasTeste = rRem.formulas;
+      const valAfterDelete = rRem.validation;
+
+      assert(
+        listaFormulasTeste.length === 2 && valAfterDelete.isAddLocked === false && valAfterDelete.isAdvanceLocked === true && valAfterDelete.canAdvance === false,
+        "Regra 2 (Desbloqueio Condicional ao Excluir): Excluir 1 das 3 fórmulas destrava imediatamente a adição (isAddLocked=false) e volta a bloquear o avanço"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

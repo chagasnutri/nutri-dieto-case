@@ -1211,6 +1211,145 @@ class StudentProntuarioManager {
     }
     return prontuario.bioquimica.exames;
   }
+
+  // Regra 1: Vinculação Dinâmica da NEE (Recordatório 24h <> VET Planejado)
+  // Remove qualquer valor fixo (hardcoded 2000 kcal) e reflete dinamicamente o valor numérico digitado pelo aluno em 'VET Planejado'
+  resolveDynamicRecordatorioNee(prontuarioOrVet, vetPlanejadoOverride = null) {
+    const extractNum = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "number") return !isNaN(val) && val > 0 ? val : null;
+      const match = String(val).trim().match(/[\d.,]+/);
+      if (!match) return null;
+      const num = parseFloat(match[0].replace(",", "."));
+      return !isNaN(num) && num > 0 ? num : null;
+    };
+
+    const fromOverride = extractNum(vetPlanejadoOverride);
+    if (fromOverride !== null) return fromOverride;
+
+    if (typeof prontuarioOrVet === "number" || typeof prontuarioOrVet === "string") {
+      return extractNum(prontuarioOrVet);
+    }
+
+    if (prontuarioOrVet && typeof prontuarioOrVet === "object") {
+      const candidates = [
+        prontuarioOrVet.calculoNecessidades?.vetPlanejadoKcal,
+        prontuarioOrVet.prescricaoDietoterapica?.vetKcal,
+        prontuarioOrVet.prescricaoVET,
+        prontuarioOrVet.vetPlanejado
+      ];
+      for (const c of candidates) {
+        const parsed = extractNum(c);
+        if (parsed !== null) return parsed;
+      }
+    }
+    return null;
+  }
+
+  // Calcula adequação energética do Recordatório 24h usando dinamicamente o VET Planejado como base (100% NEE)
+  calculateDynamicRecordatorioAdequacy(vetRecordatorio, prontuarioOrVetPlanejado, vetPlanejadoOverride = null) {
+    const dynamicNee = this.resolveDynamicRecordatorioNee(prontuarioOrVetPlanejado, vetPlanejadoOverride);
+    const res = this.calculateVetAdequacy(vetRecordatorio, dynamicNee);
+    return {
+      ...res,
+      neeDinamicaKcal: dynamicNee,
+      neeBaseKcal: dynamicNee
+    };
+  }
+
+  // Regra 2: Trava de Validação Estrita de Exatas 3 Fórmulas no Cálculo de Necessidades
+  evaluateThreeFormulasValidation(formulasOrCalcObj) {
+    let items = [];
+
+    if (Array.isArray(formulasOrCalcObj)) {
+      items = formulasOrCalcObj;
+    } else if (formulasOrCalcObj && typeof formulasOrCalcObj === "object") {
+      if (Array.isArray(formulasOrCalcObj.formulasCalculadas) && formulasOrCalcObj.formulasCalculadas.length > 0) {
+        items = formulasOrCalcObj.formulasCalculadas;
+      } else if (Array.isArray(formulasOrCalcObj.formulasSelecionadas)) {
+        items = formulasOrCalcObj.formulasSelecionadas.map((key) => {
+          const detail = formulasOrCalcObj[key] || {};
+          return {
+            formulaKey: key,
+            resultadoKcal: detail.resultadoKcal || detail.vetKcal || ""
+          };
+        });
+      }
+    }
+
+    const validList = items.filter(Boolean).slice(0, 3);
+    const totalInserted = validList.length;
+
+    const completeCount = validList.filter((item) => {
+      if (typeof item === "string") return item.trim().length > 0;
+      const resRaw = item.resultadoKcal !== undefined ? item.resultadoKcal : item.vetKcal;
+      const match = String(resRaw || "").trim().match(/[\d.,]+/);
+      const num = match ? parseFloat(match[0].replace(",", ".")) : 0;
+      return Boolean((item.formulaKey || item.nome || item.id) && !isNaN(num) && num > 0);
+    }).length;
+
+    const isAddLocked = totalInserted >= 3;
+    const canAdvance = totalInserted === 3 && completeCount === 3;
+    const isAdvanceLocked = !canAdvance;
+
+    return {
+      totalInserted,
+      completeCount,
+      maxAllowed: 3,
+      isAddLocked,
+      isAdvanceLocked,
+      canAdvance
+    };
+  }
+
+  // Adiciona uma fórmula respeitando a trava estrita de no máximo 3 fórmulas
+  addFormulaCalculo(formulasList, formulaObj) {
+    const current = Array.isArray(formulasList) ? [...formulasList] : [];
+    if (current.length >= 3) {
+      const validation = this.evaluateThreeFormulasValidation(current);
+      const sliced = current.slice(0, 3);
+      return {
+        list: sliced,
+        formulas: sliced,
+        added: false,
+        reason: "MAX_3_FORMULAS_REACHED",
+        validation,
+        ...validation
+      };
+    }
+    const newItem = {
+      id: formulaObj?.id || `formula-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      formulaKey: formulaObj?.formulaKey || "bolso",
+      nome: formulaObj?.nome || formulaObj?.formulaKey || "Fórmula Preditiva",
+      equacao: formulaObj?.equacao || "",
+      resultadoKcal: String(formulaObj?.resultadoKcal ?? "")
+    };
+    const nextList = [...current, newItem].slice(0, 3);
+    const validation = this.evaluateThreeFormulasValidation(nextList);
+    return {
+      list: nextList,
+      formulas: nextList,
+      added: true,
+      validation,
+      ...validation
+    };
+  }
+
+  // Remove uma fórmula e destrava imediatamente a inclusão de novas fórmulas
+  removeFormulaCalculo(formulasList, idOrKey) {
+    const current = Array.isArray(formulasList) ? [...formulasList] : [];
+    const nextList = current.filter(
+      (item, index) => item?.id !== idOrKey && item?.formulaKey !== idOrKey && index !== idOrKey
+    );
+    const validation = this.evaluateThreeFormulasValidation(nextList);
+    return {
+      list: nextList,
+      formulas: nextList,
+      removed: nextList.length < current.length,
+      validation,
+      ...validation
+    };
+  }
 }
 
 // Avaliador Clínico Propedêutico de Exames Bioquímicos

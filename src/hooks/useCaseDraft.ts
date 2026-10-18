@@ -98,10 +98,17 @@ export interface CaseDraftData {
   // 3. Interações Droga-Nutriente
   interactions: InteractionDraftItem[];
 
-  // 4. Fórmulas / Cálculos
+  // 4. Fórmulas / Cálculos (Trava de Validação: Exatas 3 Fórmulas)
   formulaSelecionada: string;
   vetCalculado: string;
   notasCalculo: string;
+  formulasCalculadas?: Array<{
+    id: string;
+    formulaKey: string;
+    nome: string;
+    equacao: string;
+    resultadoKcal: string;
+  }>;
 
   // 5. Diagnóstico PES & Objetivos
   diagnosticoProblema: string;
@@ -176,6 +183,7 @@ export function useCaseDraft(
           interactions: Array.isArray(parsed.interactions) && parsed.interactions.length > 0 ? parsed.interactions : initialData.interactions,
           recordatorioItems: Array.isArray(parsed.recordatorioItems) && parsed.recordatorioItems.length > 0 ? parsed.recordatorioItems : initialData.recordatorioItems,
           cardapioItems: Array.isArray(parsed.cardapioItems) && parsed.cardapioItems.length > 0 ? parsed.cardapioItems : initialData.cardapioItems,
+          formulasCalculadas: Array.isArray(parsed.formulasCalculadas) ? parsed.formulasCalculadas.slice(0, 3) : (initialData.formulasCalculadas || []),
           respostasQuestoes: parsed.respostasQuestoes || initialData.respostasQuestoes || {},
           orientacoesNutricionais: typeof parsed.orientacoesNutricionais === 'string'
             ? parsed.orientacoesNutricionais

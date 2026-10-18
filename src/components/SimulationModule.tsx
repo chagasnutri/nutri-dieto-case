@@ -216,11 +216,12 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   diagnosticoSinais: 'HbA1c de 8.9%, glicemia de jejum de 186 mg/dL e sobrepeso (IMC 29.9 kg/m²)',
   diagnosticoPESTexto: 'Ingestão excessiva de carboidratos simples (P) relacionada a hábitos alimentares inadequados e fracionamento irregular (E) evidenciada por HbA1c de 8.9%, glicemia de jejum de 186 mg/dL e sobrepeso (IMC 29.9 kg/m²) (S).',
   objetivosDietoterapicos: '1. Promover o controle glicêmico estrito, visando HbA1c < 7.0% e glicemias pré-prandiais entre 80-130 mg/dL.\n2. Adequar o aporte de carboidratos complexos e fibras (> 25 g/dia) para reduzir o índice glicêmico total da dieta.\n3. Auxiliar na redução gradual e sustentada de peso corporal (5 a 7% nos próximos 6 meses).',
-  prescricaoVET: '2100',
+  prescricaoVET: '',
   prescricaoCHO: '50',
   prescricaoPTN: '20',
   prescricaoLIP: '30',
   condutaPrescricao: 'Dieta normocalórica, normoglicídica com ênfase em carboidratos complexos de baixo IG, normoproteica e normolipídica com perfil cardioprotetor (< 7% gorduras saturadas, restrição de sódio < 2000 mg/dia).',
+  formulasCalculadas: [],
   cardapioItems: DEFAULT_CARDAPIO_ITEMS,
   respostasQuestoes: {
     q1: '',
@@ -229,6 +230,34 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   },
   orientacoesNutricionais: ''
 });
+
+const FORMULAS_PREDITIVAS_CATALOGO: Record<string, { nome: string; equacaoPadrao: string; sugestaoKcal: string }> = {
+  bolso: {
+    nome: '1. Regra de Bolso (Fórmula Prática)',
+    equacaoPadrao: '25 kcal/kg × 88,5 kg (Faixa: 25 a 30 kcal/kg)',
+    sugestaoKcal: '2212'
+  },
+  harrisBenedict: {
+    nome: '2. Harris & Benedict (1919)',
+    equacaoPadrao: 'GEB = 66,5 + (13,75 × P) + (5,0 × A) - (6,78 × I) × FA 1,3',
+    sugestaoKcal: '2180'
+  },
+  mifflin: {
+    nome: '3. Mifflin-St Jeor (1990)',
+    equacaoPadrao: 'GEB = (10 × P) + (6,25 × A) - (5 × I) + 5 × FA 1,25',
+    sugestaoKcal: '2145'
+  },
+  faoOms: {
+    nome: '4. FAO / OMS (1985 / 2004)',
+    equacaoPadrao: 'GEB = (11,6 × P) + 879 × FA 1,25 (Faixa 30-60 anos)',
+    sugestaoKcal: '2250'
+  },
+  eerIom: {
+    nome: '5. EER / IOM (DRI 2002 / 2005)',
+    equacaoPadrao: 'EER = 662 - (9,53 × I) + CAF × ((15,91 × P) + (539,6 × A))',
+    sugestaoKcal: '2190'
+  }
+};
 
 export default function SimulationModule() {
   const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio' | 'questoes' | 'orientacao' | 'relatorio'>('anamnese');
@@ -278,6 +307,66 @@ export default function SimulationModule() {
   const interactions = draftData.interactions || DEFAULT_INTERACTIONS;
   const recordatorioItems = draftData.recordatorioItems || DEFAULT_RECORDATORIO_ITEMS;
   const cardapioItems = draftData.cardapioItems || DEFAULT_CARDAPIO_ITEMS;
+  const formulasCalculadas = draftData.formulasCalculadas || [];
+
+  // Regra 1: Vinculação Dinâmica da NEE (Recordatório 24h <> VET Planejado) — SEM valor hardcoded de 2000 kcal
+  const vetPlanejadoNumerico = (() => {
+    const raw = String(draftData.prescricaoVET || '').trim().replace(',', '.');
+    const parsed = parseFloat(raw);
+    return !isNaN(parsed) && parsed > 0 ? parsed : 0;
+  })();
+
+  const totalRecordatorioKcal = Math.round(recordatorioItems.reduce((acc, it) => acc + (Number(it.kcal) || 0), 0));
+  const adequacaoRecordatorioPct = vetPlanejadoNumerico > 0
+    ? Math.round(((totalRecordatorioKcal / vetPlanejadoNumerico) * 100) * 10) / 10
+    : null;
+
+  // Regra 2: Trava de Validação de Exatas 3 Fórmulas no Cálculo de Necessidades
+  const [novaFormulaKey, setNovaFormulaKey] = useState<string>('bolso');
+  const [novaFormulaEquacao, setNovaFormulaEquacao] = useState<string>(FORMULAS_PREDITIVAS_CATALOGO.bolso.equacaoPadrao);
+  const [novaFormulaResultadoKcal, setNovaFormulaResultadoKcal] = useState<string>(FORMULAS_PREDITIVAS_CATALOGO.bolso.sugestaoKcal);
+
+  const isMaxFormulasReached = formulasCalculadas.length >= 3;
+  const formulasCompletasCount = formulasCalculadas.filter(
+    (f) => f && f.formulaKey && String(f.equacao || '').trim().length > 0 && parseFloat(String(f.resultadoKcal || '').replace(',', '.')) > 0
+  ).length;
+  const canAdvanceFromCalculos = formulasCompletasCount === 3;
+
+  const handleSelectNovaFormulaKey = (key: string) => {
+    setNovaFormulaKey(key);
+    const cat = FORMULAS_PREDITIVAS_CATALOGO[key];
+    if (cat) {
+      setNovaFormulaEquacao(cat.equacaoPadrao);
+      setNovaFormulaResultadoKcal(cat.sugestaoKcal);
+    }
+  };
+
+  const handleAdicionarFormula = () => {
+    if (formulasCalculadas.length >= 3) return;
+    const cat = FORMULAS_PREDITIVAS_CATALOGO[novaFormulaKey] || {
+      nome: novaFormulaKey,
+      equacaoPadrao: '',
+      sugestaoKcal: ''
+    };
+    const resVal = String(novaFormulaResultadoKcal || '').trim();
+    if (!resVal || isNaN(parseFloat(resVal.replace(',', '.'))) || parseFloat(resVal.replace(',', '.')) <= 0) {
+      return;
+    }
+    const nova = {
+      id: `form-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      formulaKey: novaFormulaKey,
+      nome: cat.nome,
+      equacao: String(novaFormulaEquacao || cat.equacaoPadrao).trim(),
+      resultadoKcal: resVal
+    };
+    const nextList = [...formulasCalculadas, nova].slice(0, 3);
+    updateField('formulasCalculadas', nextList);
+  };
+
+  const handleRemoverFormula = (id: string) => {
+    const nextList = formulasCalculadas.filter((f) => f.id !== id);
+    updateField('formulasCalculadas', nextList);
+  };
 
   // Estado de fontes de alimentos e cadastro colaborativo multi-tabelas
   const [foodSource, setFoodSource] = useState<'todas' | 'taco' | 'decisao' | 'colaborativa'>('taco');
@@ -719,12 +808,43 @@ export default function SimulationModule() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Painel de Adequação Energética do Recordatório 24h (NEE vinculada dinamicamente ao VET Planejado, sem 2000 kcal fixo) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">🍽️ VET Consumido (R24h):</span>
+                    <div className="text-base font-extrabold text-emerald-400 mt-0.5">{totalRecordatorioKcal} kcal/dia</div>
+                    <span className="text-[10px] text-slate-500">Soma do consumo relatado</span>
+                  </div>
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">🎯 NEE (VET Planejado 100%):</span>
+                    <div id="dispSimRecordatorioNee" className="text-base font-extrabold text-white mt-0.5">
+                      {vetPlanejadoNumerico > 0 ? `${vetPlanejadoNumerico} kcal/dia` : 'Aguardando VET Planejado'}
+                    </div>
+                    <span className="text-[10px] text-slate-500">Reflete o campo VET Planejado</span>
+                  </div>
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">📊 Adequação Energética (R24h / NEE):</span>
+                    <div id="dispSimRecordatorioAdequacao" className="text-base font-extrabold text-sky-400 mt-0.5">
+                      {adequacaoRecordatorioPct !== null ? `${adequacaoRecordatorioPct}%` : '--%'}
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      {adequacaoRecordatorioPct === null
+                        ? 'Defina o VET Planejado na aba de Cálculos/Planejamento'
+                        : adequacaoRecordatorioPct < 90
+                        ? 'Consumo Hipocalórico (< 90% do VET Planejado)'
+                        : adequacaoRecordatorioPct <= 110
+                        ? 'Consumo Adequado (90% a 110% do VET Planejado)'
+                        : 'Consumo Hipercalórico (> 110% do VET Planejado)'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <LipidQualitySection
                 title="Análise do Recordatório de 24h - Frações Lipídicas"
                 subtitle="Avaliação da ingestão habitual de ácidos graxos relatada no recordatório com conversão automática (1g = 9 kcal)."
-                vetKcal={2212}
+                vetKcal={vetPlanejadoNumerico > 0 ? vetPlanejadoNumerico : totalRecordatorioKcal}
                 theme="emerald"
                 defaultValues={{
                   satG: '15.0',
@@ -947,52 +1067,182 @@ export default function SimulationModule() {
 
           {activeTab === 'calculos' && (
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-                As 5 Equacoes Preditivas Abertas
-              </h3>
-              <p className="text-xs text-slate-400">
-                Compare as equacoes simultaneamente para definir a conduta normocalorica ou restritiva adequada.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
-                  <span className="text-[11px] text-emerald-400 font-bold">1. Regra de Bolso</span>
-                  <div className="text-xl font-bold text-white">2.212 kcal/dia</div>
-                  <div className="text-[11px] text-slate-400">25 kcal/kg peso atual (25-30 kcal/kg)</div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Cálculo de Necessidades Energéticas (Validação Estrita: Exatas 3 Fórmulas)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Insira exatamente 3 fórmulas preditivas completas para habilitar o avanço e defina o VET Planejado (que alimentará dinamicamente a NEE do Recordatório 24h).
+                  </p>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
-                  <span className="text-[11px] text-emerald-400 font-bold">2. Harris & Benedict (1919)</span>
-                  <div className="text-xl font-bold text-white">2.180 kcal/dia</div>
-                  <div className="text-[11px] text-slate-400">GEB (1.677 kcal) &times; FA 1.3</div>
+                <span
+                  className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                    canAdvanceFromCalculos
+                      ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700'
+                      : 'bg-amber-950/70 text-amber-300 border-amber-700'
+                  }`}
+                >
+                  Fórmulas Completas: {formulasCompletasCount} / 3
+                </span>
+              </div>
+
+              {/* Formulário de Inclusão de Fórmula Preditiva (Travado quando atingir 3 fórmulas) */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400">
+                    {isMaxFormulasReached
+                      ? '🔒 Limite atingido (3/3 fórmulas inseridas). Exclua uma fórmula caso deseje substituí-la.'
+                      : '➕ Inserir Fórmula Preditiva no Prontuário:'}
+                  </span>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
-                  <span className="text-[11px] text-emerald-400 font-bold">3. Mifflin-St Jeor (1990)</span>
-                  <div className="text-xl font-bold text-white">2.145 kcal/dia</div>
-                  <div className="text-[11px] text-slate-400">Indicada para sobrepeso e obesidade</div>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
-                  <span className="text-[11px] text-emerald-400 font-bold">4. FAO / OMS (1985/2001)</span>
-                  <div className="text-xl font-bold text-white">2.250 kcal/dia</div>
-                  <div className="text-[11px] text-slate-400">Faixa etaria 30 a 60 anos</div>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">
-                  <span className="text-[11px] text-emerald-400 font-bold">5. EER / IOM (DRI 2002/2006)</span>
-                  <div className="text-xl font-bold text-white">2.190 kcal/dia</div>
-                  <div className="text-[11px] text-slate-400">Sedentario / Leve (CAF 1.12)</div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                  <div className="md:col-span-4">
+                    <label className="block text-[11px] text-slate-400 mb-1">Equação Preditiva:</label>
+                    <select
+                      id="selectFormulaPreditivaSim"
+                      disabled={isMaxFormulasReached}
+                      value={novaFormulaKey}
+                      onChange={(e) => handleSelectNovaFormulaKey(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-emerald-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {Object.entries(FORMULAS_PREDITIVAS_CATALOGO).map(([key, item]) => (
+                        <option key={key} value={key}>{item.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="md:col-span-4">
+                    <label className="block text-[11px] text-slate-400 mb-1">Desenvolvimento Matemático / Equação:</label>
+                    <input
+                      id="inputFormulaEquacaoSim"
+                      type="text"
+                      disabled={isMaxFormulasReached}
+                      value={novaFormulaEquacao}
+                      onChange={(e) => setNovaFormulaEquacao(e.target.value)}
+                      placeholder="Ex: 25 kcal/kg × 88,5 kg"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:border-emerald-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] text-slate-400 mb-1">Resultado (kcal/dia):</label>
+                    <input
+                      id="inputFormulaResultadoSim"
+                      type="number"
+                      disabled={isMaxFormulasReached}
+                      value={novaFormulaResultadoKcal}
+                      onChange={(e) => setNovaFormulaResultadoKcal(e.target.value)}
+                      placeholder="Ex: 2145"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-bold text-emerald-300 focus:border-emerald-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <button
+                      type="button"
+                      id="btnAdicionarFormulaCalc"
+                      disabled={isMaxFormulasReached}
+                      onClick={handleAdicionarFormula}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    >
+                      {isMaxFormulasReached ? '🔒 Limite (3/3)' : '+ Adicionar Fórmula'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Notas do Aluno sobre a Decisão Calórica */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 mt-4">
-                <label className="text-xs font-bold text-emerald-400 block">
-                  Justificativa da Equação Escolhida & Raciocínio Energético:
-                </label>
-                <textarea
-                  rows={2}
-                  value={draftData.notasCalculo || ''}
-                  onChange={(e) => updateField('notasCalculo', e.target.value)}
-                  placeholder="Justifique a equação preditiva adotada e os fatores aplicados..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:border-emerald-500 outline-none resize-y"
-                />
+              {/* Lista de Fórmulas Inseridas pelo Aluno (Máximo 3, com botão de Excluir que destrava a adição) */}
+              <div className="space-y-2.5">
+                {formulasCalculadas.length === 0 ? (
+                  <div className="bg-slate-900/50 border border-dashed border-slate-700 rounded-xl p-6 text-center text-xs text-slate-400">
+                    Nenhuma fórmula inserida ainda. Adicione exatamente <strong>3 fórmulas preditivas</strong> acima para liberar o avanço.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {formulasCalculadas.map((f, idx) => (
+                      <div key={f.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 relative">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[11px] text-emerald-400 font-bold">
+                            Fórmula #{idx + 1}: {f.nome}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoverFormula(f.id)}
+                            className="text-rose-400 hover:text-rose-300 text-[11px] font-bold px-2 py-0.5 rounded bg-rose-950/40 border border-rose-800/50 cursor-pointer"
+                            title="Excluir esta fórmula para destravar e inserir outra"
+                          >
+                            🗑️ Excluir
+                          </button>
+                        </div>
+                        <div className="text-xl font-bold text-white">{f.resultadoKcal} kcal/dia</div>
+                        <div className="text-[11px] text-slate-400 font-mono">{f.equacao}</div>
+                        <button
+                          type="button"
+                          onClick={() => updateField('prescricaoVET', String(f.resultadoKcal))}
+                          className="w-full mt-1 bg-slate-800 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-700 rounded-lg py-1 text-[11px] font-bold transition cursor-pointer"
+                        >
+                          🎯 Adotar como VET Planejado ({f.resultadoKcal} kcal)
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Campo VET Planejado (vinculado dinamicamente à NEE do Recordatório 24h) + Justificativa */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div>
+                  <label className="text-xs font-bold text-emerald-400 block mb-1">
+                    VET Planejado (Base 100% da NEE no Recordatório 24h):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="inputVetPlanejadoCalc"
+                      type="number"
+                      value={draftData.prescricaoVET || ''}
+                      onChange={(e) => updateField('prescricaoVET', e.target.value)}
+                      placeholder="Digite o VET Planejado (ex: 2100)"
+                      className="w-full bg-slate-950 border border-emerald-500/60 rounded-lg px-3 py-2 text-sm font-bold text-white focus:border-emerald-400 outline-none"
+                    />
+                    <span className="text-xs font-bold text-slate-400">kcal/dia</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block mt-1">
+                    Reflete instantaneamente na NEE do Recordatório 24h e na Prescrição.
+                  </span>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-bold text-emerald-400 block mb-1">
+                    Justificativa da Equação Escolhida & Raciocínio Energético:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={draftData.notasCalculo || ''}
+                    onChange={(e) => updateField('notasCalculo', e.target.value)}
+                    placeholder="Justifique a equação preditiva adotada e os fatores aplicados..."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:border-emerald-500 outline-none resize-y"
+                  />
+                </div>
+              </div>
+
+              {/* Rodapé com Bloqueio de Avanço (Next Step) até existirem exatamente 3 fórmulas completas */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                <span className="text-xs text-slate-400">
+                  {canAdvanceFromCalculos
+                    ? '✅ Exatas 3 fórmulas completas preenchidas. Avanço liberado!'
+                    : `⚠️ Preencha exatamente 3 fórmulas completas para avançar (atual: ${formulasCompletasCount}/3).`}
+                </span>
+                <button
+                  type="button"
+                  id="btnAvancarCalculos"
+                  disabled={!canAdvanceFromCalculos}
+                  onClick={() => {
+                    if (canAdvanceFromCalculos) {
+                      setActiveTab('diagnostico');
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:border disabled:border-slate-700 disabled:cursor-not-allowed"
+                >
+                  Salvar e Avançar para Próxima Aba ➔
+                </button>
               </div>
             </div>
           )}
@@ -1072,8 +1322,9 @@ export default function SimulationModule() {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
-                      value={draftData.prescricaoVET || '2100'}
+                      value={draftData.prescricaoVET || ''}
                       onChange={(e) => updateField('prescricaoVET', e.target.value)}
+                      placeholder="Ex: 2100"
                       className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-bold text-base w-24 focus:border-emerald-500 outline-none"
                     />
                     <span className="text-slate-400 font-bold">kcal</span>
