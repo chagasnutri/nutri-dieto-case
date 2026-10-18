@@ -28,7 +28,8 @@ class DietoterapiaDocxReport {
       necessidades: ["necessidades", "calculos", "calculosnecessidades", "formulas", "7", "7calculosdenecessidades", "calculosdenecessidades"],
       prescricao: ["prescricao", "prescricaodietetica", "prescricaodietoterapica", "conduta", "8", "8prescricaodietetica"],
       cardapio: ["cardapio", "planejamento", "planejamentoalimentar", "tne", "9", "9cardapio"],
-      questoes: ["questoes", "questoesavaliativas", "perguntas", "avaliacao", "questoes avaliativas", "10", "10questoesavaliativas"]
+      questoes: ["questoes", "questoesavaliativas", "perguntas", "avaliacao", "questoes avaliativas", "10", "10questoesavaliativas"],
+      orientacao: ["orientacao", "orientacaonutricional", "orientacoes", "orientacoesnutricionais", "orientacao nutricional", "orientacoes nutricionais", "11", "11orientacao"]
     };
 
     // Identifica a chave canônica correspondente
@@ -740,9 +741,6 @@ class DietoterapiaDocxReport {
           [3400, 2800, 2800]
         );
       }
-
-      doc.addHeading("3.2. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento", 2);
-      doc.addParagraph(studentData.orientacoesNutricionais || "Nenhuma orientação nutricional específica registrada / Não preenchido.");
     }
 
     // 6. SEÇÃO IV: RESPOSTAS ÀS QUESTÕES AVALIATIVAS DO CASO (Apenas no Modo Simulação)
@@ -758,6 +756,14 @@ class DietoterapiaDocxReport {
           doc.addCallout(`Resposta do Estudante:`, respostaAluno, "0284c7", "f0f9ff");
         });
       }
+    }
+
+    // 7. BLOCO FINAL CONDICIONAL: ORIENTAÇÕES NUTRICIONAIS (Simulação e Atendimento Real)
+    // Só aparece se a aba estiver liberada para o aluno E se o aluno tiver preenchido algum conteúdo nela (ignorar se estiver vazia)
+    const textoOrientacoesDocx = String(studentData?.orientacoesNutricionais || studentData?.orientacaoNutricional || "").trim();
+    if (isLiberada("orientacao") && textoOrientacoesDocx.length > 0) {
+      doc.addHeading("Orientações Nutricionais", 1);
+      doc.addParagraph(textoOrientacoesDocx);
     }
 
     // Componente nativo de Rodapé (Footer) do Word para repetição obrigatória em todas as páginas
@@ -1241,9 +1247,6 @@ class DietoterapiaDocxReport {
           ["Potássio (K) no Cardápio", totaisCardapio?.potassioMg !== undefined ? `${totaisCardapio.potassioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"]
         ]
       )}
-
-      <h3 class="subsec-heading">3.2. Recomendações e Orientações Dietoterápicas de Alta/Acompanhamento</h3>
-      <p>${studentData.orientacoesNutricionais || "Nenhuma orientação nutricional específica registrada / Não preenchido."}</p>
     `;
   }
 
@@ -1264,6 +1267,20 @@ class DietoterapiaDocxReport {
             `).join("")
           : `<p>Não foram cadastradas questões avaliativas específicas para este caso clínico.</p>`
       }
+    `;
+  }
+
+  // Seção Final Condicional: Orientações Nutricionais (Simulação e Atendimento Real)
+  // Só deve aparecer no PDF/Relatório se a aba estiver liberada para o aluno (nas configurações do professor)
+  // E se o aluno tiver de fato preenchido algum conteúdo nela (ignorar se estiver vazia).
+  static renderOrientacoesSectionHtml(studentData, clinicalCase = {}) {
+    if (!this.isSectionLiberada("orientacao", clinicalCase)) return null;
+    const texto = String(studentData?.orientacoesNutricionais || studentData?.orientacaoNutricional || "").trim();
+    if (!texto) return null;
+
+    return `
+      <h2 class="sec-heading">Orientações Nutricionais</h2>
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; white-space: pre-line; font-size: 11px; color: #1e293b;">${texto}</div>
     `;
   }
 
@@ -1307,6 +1324,7 @@ class DietoterapiaDocxReport {
 
     const secCardapioHtml = this.renderCardapioSectionHtml(studentData, clinicalCase) || "";
     const secQuestoesHtml = this.renderQuestoesSectionHtml(studentData, clinicalCase) || "";
+    const secOrientacoesHtml = this.renderOrientacoesSectionHtml(studentData, clinicalCase) || "";
 
     return `
 <!DOCTYPE html>
@@ -1468,6 +1486,7 @@ class DietoterapiaDocxReport {
           ${sec2Html}
           ${secCardapioHtml}
           ${secQuestoesHtml}
+          ${secOrientacoesHtml}
         </td>
       </tr>
     </tbody>

@@ -2741,8 +2741,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("tneManualCalcio")) document.getElementById("tneManualCalcio").value = manTne.calcio ?? "";
     if (document.getElementById("tneManualFosforo")) document.getElementById("tneManualFosforo").value = manTne.fosforo ?? "";
 
-    // Orientações Nutricionais
-    document.getElementById("prontOrientacoesGerais").value = p.orientacoesNutricionais || "";
+    // Orientações Nutricionais (aba final e campo legado sincronizado)
+    const orientVal = p.orientacoesNutricionais || p.orientacaoNutricional || "";
+    if (document.getElementById("prontOrientacoesNutricionais")) {
+      document.getElementById("prontOrientacoesNutricionais").value = orientVal;
+    }
+    if (document.getElementById("prontOrientacoesGerais")) {
+      document.getElementById("prontOrientacoesGerais").value = orientVal;
+    }
   }
 
   // Coleta dados digitados pelo aluno
@@ -3183,8 +3189,10 @@ document.addEventListener("DOMContentLoaded", () => {
       moduloSuplementacaoProteica: document.getElementById("tneModuloProteico")?.value.trim() || ""
     };
 
-    // Orientações Nutricionais
-    p.orientacoesNutricionais = document.getElementById("prontOrientacoesGerais").value.trim();
+    // Orientações Nutricionais (aba final e campo complementar sincronizado)
+    const orientTabVal = document.getElementById("prontOrientacoesNutricionais")?.value.trim() || "";
+    const orientGeraisVal = document.getElementById("prontOrientacoesGerais")?.value.trim() || "";
+    p.orientacoesNutricionais = orientTabVal || orientGeraisVal;
 
     // Questões avaliativas
     const questions = appState.currentCase?.questoesAvaliativas || [];
@@ -7594,8 +7602,45 @@ document.addEventListener("DOMContentLoaded", () => {
     necessidades: "7. Cálculos de Necessidades",
     prescricao: "8. Prescrição Dietética",
     cardapio: "9. Elaboração do Cardápio",
-    questoes: "10. Questões Avaliativas"
+    questoes: "10. Questões Avaliativas",
+    orientacao: "11. Orientação Nutricional"
   };
+
+  // Sincronização bidirecional e Auto-Save da aba Orientação Nutricional
+  const orientTabEl = document.getElementById("prontOrientacoesNutricionais");
+  const orientGeraisEl = document.getElementById("prontOrientacoesGerais");
+  if (orientTabEl) {
+    orientTabEl.addEventListener("input", () => {
+      if (orientGeraisEl && orientGeraisEl.value !== orientTabEl.value) {
+        orientGeraisEl.value = orientTabEl.value;
+      }
+      if (appState.currentProntuario) {
+        appState.currentProntuario.orientacoesNutricionais = orientTabEl.value;
+        prontuarioManager.saveDraft(appState.currentCase?.id || "atendimento-real", appState.currentProntuario);
+      }
+    });
+  }
+  if (orientGeraisEl) {
+    orientGeraisEl.addEventListener("input", () => {
+      if (orientTabEl && orientTabEl.value !== orientGeraisEl.value) {
+        orientTabEl.value = orientGeraisEl.value;
+      }
+      if (appState.currentProntuario) {
+        appState.currentProntuario.orientacoesNutricionais = orientGeraisEl.value;
+        prontuarioManager.saveDraft(appState.currentCase?.id || "atendimento-real", appState.currentProntuario);
+      }
+    });
+  }
+
+  document.querySelectorAll(".btn-orientacao-snippet").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const snippet = btn.dataset.snippet || "";
+      if (!snippet || !orientTabEl) return;
+      const current = orientTabEl.value || "";
+      orientTabEl.value = (current ? current.trimEnd() + "\n\n" : "") + snippet;
+      orientTabEl.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
 
   // Verifica se uma aba está bloqueada para o aluno neste caso clínico
   function isStudentTabBlocked(tabId) {
@@ -7671,6 +7716,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isTeacherAuthenticated && appState.activeStudentTab && blockedTabs.includes(appState.activeStudentTab)) {
       const allTabs = ["anamnese", "antropometria", "bioquimica", "examefisico", "consumo", "droganutriente", "pes", "necessidades", "prescricao", "cardapio"];
       if (questionsEnabled) allTabs.push("questoes");
+      allTabs.push("orientacao");
       const firstAvailable = allTabs.find(t => !blockedTabs.includes(t)) || "anamnese";
       const targetBtn = document.querySelector(`.student-tab-btn[data-tab="${firstAvailable}"]`);
       if (targetBtn) {

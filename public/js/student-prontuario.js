@@ -31,7 +31,11 @@ class StudentProntuarioManager {
       return this.getEmptyProntuario(caseId);
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.orientacoesNutricionais !== "string") {
+        parsed.orientacoesNutricionais = parsed.orientacaoNutricional || "";
+      }
+      return parsed;
     } catch (e) {
       console.error("Erro ao carregar rascunho do prontuário:", e);
       return this.getEmptyProntuario(caseId);
@@ -41,12 +45,25 @@ class StudentProntuarioManager {
   // Salva rascunho no localStorage
   saveDraft(caseId, data, studentId) {
     this.currentCaseId = caseId;
+    if (data && typeof data === "object") {
+      data.orientacoesNutricionais = String(data.orientacoesNutricionais ?? data.orientacaoNutricional ?? "");
+    }
     const sId = studentId || (data && (data.userId || data.aluno?.id)) || null;
     const dynamicKey = this.getStorageKey(caseId, sId);
     const json = JSON.stringify(data);
     localStorage.setItem(dynamicKey, json);
     // Mantém chave legada para retrocompatibilidade
     localStorage.setItem(`${this.draftKeyPrefix}${caseId}`, json);
+  }
+
+  // Constrói o payload final padronizado enviado ao Firebase (Simulação e Atendimento Real)
+  buildSubmissionPayload(data = {}) {
+    const orientacoes = String(data.orientacoesNutricionais ?? data.orientacaoNutricional ?? "").trim();
+    return {
+      ...data,
+      orientacoesNutricionais: orientacoes,
+      dataFinalizacao: data.dataFinalizacao || new Date().toISOString()
+    };
   }
 
   // Limpa rascunho local

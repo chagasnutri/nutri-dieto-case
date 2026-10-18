@@ -3585,6 +3585,75 @@ Questões Avaliativas:
       const tabelaHtmlDri = renderDriAdequacyTableHTML(analisePacienteCaso1, "Análise de Adequação de Micronutrientes — Recordatório 24h (DRIs)");
       assert(tabelaHtmlDri.includes("Inadequado (Abaixo)") && tabelaHtmlDri.includes("Adequado") && tabelaHtmlDri.includes("Inadequado (Acima do Limite / Risco)"),
         "DRI (UI): Tabela HTML renderiza dinamicamente as tags visuais para os 3 status de adequação");
+
+      // =========================================================================
+      // 143. NOVA ABA 'ORIENTAÇÃO NUTRICIONAL' (SIMULAÇÃO E ATENDIMENTO REAL)
+      // =========================================================================
+      const pmOrient = new StudentProntuarioManager();
+
+      // 143.1 Auto-Save (Rascunho Local) no Modo Simulação e no Modo Atendimento Real
+      const draftOrientSim = pmOrient.loadDraft("caso_1", "2026999");
+      draftOrientSim.orientacoesNutricionais = "• Fracionar a dieta em 6 refeições diárias.\n• Evitar líquidos durante as grandes refeições.";
+      pmOrient.saveDraft("caso_1", draftOrientSim, "2026999");
+
+      const loadedOrientSim = pmOrient.loadDraft("caso_1", "2026999");
+      assert(
+        loadedOrientSim.orientacoesNutricionais.includes("Fracionar a dieta em 6 refeições diárias"),
+        "Orientação Nutricional (Req 2 - Auto-Save Simulação): Salva e recupera orientacoesNutricionais na chave isolada do caso simulado"
+      );
+
+      const draftOrientReal = pmOrient.loadDraft("real_patient_mode", "2026999");
+      draftOrientReal.orientacoesNutricionais = "• Orientações de alta ambulatorial: priorizar alimentos in natura e reduzir embutidos.";
+      pmOrient.saveDraft("real_patient_mode", draftOrientReal, "2026999");
+
+      const loadedOrientReal = pmOrient.loadDraft("real_patient_mode", "2026999");
+      assert(
+        loadedOrientReal.orientacoesNutricionais.includes("Orientações de alta ambulatorial"),
+        "Orientação Nutricional (Req 2 - Auto-Save Atendimento Real): Salva e recupera orientacoesNutricionais no modo Atendimento Real"
+      );
+
+      // 143.2 Persistência no Banco de Dados (Payload do Firebase com orientacoesNutricionais)
+      const payloadSim = pmOrient.buildSubmissionPayload(loadedOrientSim);
+      const payloadReal = pmOrient.buildSubmissionPayload(loadedOrientReal);
+      assert(
+        typeof payloadSim.orientacoesNutricionais === "string" && payloadSim.orientacoesNutricionais.includes("Fracionar a dieta"),
+        "Orientação Nutricional (Req 3 - Payload Firebase Simulação): Objeto final contém a chave orientacoesNutricionais preenchida"
+      );
+      assert(
+        typeof payloadReal.orientacoesNutricionais === "string" && payloadReal.orientacoesNutricionais.includes("Orientações de alta ambulatorial"),
+        "Orientação Nutricional (Req 3 - Payload Firebase Atendimento Real): Objeto final contém a chave orientacoesNutricionais preenchida"
+      );
+
+      // Limpeza dos rascunhos de teste
+      pmOrient.clearDraft("caso_1", "2026999");
+      pmOrient.clearDraft("real_patient_mode", "2026999");
+
+      // 143.3 Renderização Condicional no Relatório Final (HTML/PDF e Word .docx)
+      // Cenário A: Aba liberada E conteúdo preenchido -> DEVE aparecer no final do relatório com título 'Orientações Nutricionais'
+      const casoAbaLiberada = { id: "caso_1", title: "Caso Teste Orientação", blockedTabs: [] };
+      const htmlComOrientacao = DietoterapiaDocxReport.buildHtmlReport(payloadSim, casoAbaLiberada);
+      assert(
+        htmlComOrientacao.includes("<h2 class=\"sec-heading\">Orientações Nutricionais</h2>") &&
+        htmlComOrientacao.includes("Fracionar a dieta em 6 refeições diárias"),
+        "Orientação Nutricional (Req 4 - Relatório Final): Renderiza bloco 'Orientações Nutricionais' no final do PDF quando liberada e preenchida"
+      );
+
+      // Cenário B: Aba liberada, mas conteúdo vazio (ou apenas espaços) -> NÃO deve aparecer no relatório
+      const payloadSemOrientacao = pmOrient.buildSubmissionPayload({ ...loadedOrientSim, orientacoesNutricionais: "   " });
+      const htmlSemOrientacao = DietoterapiaDocxReport.buildHtmlReport(payloadSemOrientacao, casoAbaLiberada);
+      assert(
+        !htmlSemOrientacao.includes("<h2 class=\"sec-heading\">Orientações Nutricionais</h2>"),
+        "Orientação Nutricional (Req 4 - Condicional Vazio): Ignora e omite o bloco 'Orientações Nutricionais' no PDF se estiver vazio"
+      );
+
+      // Cenário C: Conteúdo preenchido, mas aba bloqueada pelo professor -> NÃO deve aparecer no relatório
+      const casoAbaBloqueada = { id: "caso_1", title: "Caso Teste Bloqueado", blockedTabs: ["orientacao"] };
+      const htmlBloqueado = DietoterapiaDocxReport.buildHtmlReport(payloadSim, casoAbaBloqueada);
+      assert(
+        !htmlBloqueado.includes("<h2 class=\"sec-heading\">Orientações Nutricionais</h2>") &&
+        !htmlBloqueado.includes("Fracionar a dieta em 6 refeições diárias"),
+        "Orientação Nutricional (Req 4 - Condicional Bloqueado): Omite o bloco 'Orientações Nutricionais' no PDF se a aba estiver bloqueada pelo professor"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

@@ -10,8 +10,10 @@ import MicronutrientAdequacySection from './MicronutrientAdequacySection';
 import RelatorioFinal from './RelatorioFinal';
 
 export default function RealPatientModule() {
-  const [activeTab, setActiveTab] = useState<'identificacao' | 'antropometria' | 'triagem' | 'exameFisico' | 'exames' | 'interacoes' | 'conduta' | 'relatorio'>('identificacao');
+  const [activeTab, setActiveTab] = useState<'identificacao' | 'antropometria' | 'triagem' | 'exameFisico' | 'exames' | 'interacoes' | 'conduta' | 'orientacao' | 'relatorio'>('identificacao');
   const [isPreceptorOpen, setIsPreceptorOpen] = useState(false);
+  const [orientacoesNutricionais, setOrientacoesNutricionais] = useState<string>('');
+  const [isSubmittingReal, setIsSubmittingReal] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -19,8 +21,75 @@ export default function RealPatientModule() {
       if (params.get('tab') === 'relatorio') {
         setActiveTab('relatorio');
       }
+      const studentId = window.localStorage.getItem('dietocase_student_id') || 'aluno-demo';
+      const draftKey = `draft_caso_atendimento-real_aluno_${studentId}`;
+      const savedRaw = window.localStorage.getItem(draftKey);
+      if (savedRaw) {
+        try {
+          const parsed = JSON.parse(savedRaw);
+          if (typeof parsed.orientacoesNutricionais === 'string') {
+            setOrientacoesNutricionais(parsed.orientacoesNutricionais);
+          }
+        } catch (e) {
+          console.warn('[Auto-Save Real] Erro ao ler rascunho:', e);
+        }
+      }
     }
   }, []);
+
+  // Auto-Save reativo das Orientações Nutricionais no Modo Atendimento Real
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const studentId = window.localStorage.getItem('dietocase_student_id') || 'aluno-demo';
+    const draftKey = `draft_caso_atendimento-real_aluno_${studentId}`;
+    try {
+      const existingRaw = window.localStorage.getItem(draftKey);
+      const existing = existingRaw ? JSON.parse(existingRaw) : {};
+      window.localStorage.setItem(draftKey, JSON.stringify({
+        ...existing,
+        caseId: 'atendimento-real',
+        studentId,
+        orientacoesNutricionais,
+        lastUpdated: new Date().toISOString()
+      }));
+    } catch (e) {
+      console.warn('[Auto-Save Real] Erro ao salvar orientacoesNutricionais:', e);
+    }
+  }, [orientacoesNutricionais]);
+
+  const handleFinalizarAtendimentoReal = async () => {
+    if (typeof window === 'undefined') return;
+    const studentId = window.localStorage.getItem('dietocase_student_id') || 'aluno-demo';
+    setIsSubmittingReal(true);
+    try {
+      const payload = {
+        isRealPatient: true,
+        caseId: 'atendimento-real',
+        userId: studentId,
+        dadosPacienteReal: {
+          nome: 'Carlos Eduardo Silva',
+          idade: '52',
+          sexo: 'Masculino',
+          hipoteseDiagnostica: 'Sindrome Metabolica e Esteatose Hepatica Grau II'
+        },
+        recordatorioItems,
+        cardapioItems,
+        exams,
+        interactions,
+        orientacoesNutricionais: orientacoesNutricionais || '',
+        dataFinalizacao: new Date().toISOString()
+      };
+      if ((window as any).firebaseSyncService && typeof (window as any).firebaseSyncService.saveProntuario === 'function') {
+        await (window as any).firebaseSyncService.saveProntuario('atendimento-real', payload);
+      }
+      window.localStorage.removeItem(`draft_caso_atendimento-real_aluno_${studentId}`);
+      setActiveTab('relatorio');
+    } catch (err) {
+      console.error('Erro ao finalizar atendimento real:', err);
+    } finally {
+      setIsSubmittingReal(false);
+    }
+  };
 
   // Estado dinamico de exames laboratoriais (estritamente em branco para aprendizado ativo)
   const [exams, setExams] = useState<Array<{ id: string; name: string; ref: string; value: string; interp: string }>>([
@@ -346,6 +415,15 @@ export default function RealPatientModule() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              id="btnFinalizarAtendimentoReal"
+              onClick={handleFinalizarAtendimentoReal}
+              disabled={isSubmittingReal}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <span>{isSubmittingReal ? 'Enviando...' : 'Finalizar Atendimento'}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('relatorio')}
               className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
             >
@@ -363,7 +441,8 @@ export default function RealPatientModule() {
             { id: 'exameFisico', label: '4. Exame Fisico / Compartimentos', icon: '4' },
             { id: 'exames', label: '5. Exames Bioquimicos', icon: '5' },
             { id: 'interacoes', label: '6. Droga-Nutriente', icon: '6' },
-            { id: 'conduta', label: '7. Planejamento & Conduta', icon: '7' }
+            { id: 'conduta', label: '7. Planejamento & Conduta', icon: '7' },
+            { id: 'orientacao', label: '8. Orientação Nutricional', icon: '8' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -932,6 +1011,66 @@ export default function RealPatientModule() {
             </div>
           )}
 
+          {activeTab === 'orientacao' && (
+            <div className="space-y-4">
+              <div className="border-b border-slate-800 pb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>📋</span>
+                    <span>Orientação Nutricional (Qualitativa, Comportamental, Substituições e Alta)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Redija as orientações qualitativas, comportamentais, lista de substituições equivalentes e recomendações de alta ambulatorial/hospitalar para o paciente.
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 px-2.5 py-1 rounded-full">
+                  Última Etapa do Fluxo Clínico • Auto-Save Ativo
+                </span>
+              </div>
+
+              {/* Barra de Inserção Rápida / Estruturação de Texto */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+                <span className="text-[11px] font-bold text-slate-300 block">Inserir Tópicos Estruturados no Editor:</span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: '+ Orientações Qualitativas', snippet: '\n• ORIENTAÇÕES QUALITATIVAS E DE PREPARO:\n- Priorizar preparações assadas, grelhadas ou cozidas no vapor, evitando frituras de imersão.\n- Utilizar temperos naturais (alho, cebola, ervas aromáticas, cúrcuma) em substituição aos caldos industrializados.\n' },
+                    { label: '+ Mudanças Comportamentais', snippet: '\n• ESTRATÉGIAS COMPORTAMENTAIS E ESTILO DE VIDA:\n- Manter fracionamento regular das refeições (a cada 3 horas), mastigando devagar.\n- Meta de hidratação diária fracionada ao longo do dia nos intervalos interprandiais.\n' },
+                    { label: '+ Lista de Substituições', snippet: '\n• LISTA DE SUBSTITUIÇÕES EQUIVALENTES:\n- Grupo dos Cereais/Tubérculos: 1 unidade de pão francês (50g) = 2 fatias de pão integral (50g) = 3 colheres de sopa de mandioca/aipim cozido.\n- Grupo das Carnes/Ovos: 1 filé médio de frango grelhado (100g) = 1 filé de peixe assado (120g) = 2 ovos cozidos.\n' },
+                    { label: '+ Orientações de Alta', snippet: '\n• ORIENTAÇÕES DE ALTA E SINAIS DE ALERTA:\n- Monitorar evolução clínica, adesão dietética e sintomas gastrointestinais.\n- Retorno ambulatorial agendado em 30 dias com novos exames laboratoriais de controle.\n' }
+                  ].map((btn) => (
+                    <button
+                      key={btn.label}
+                      type="button"
+                      onClick={() => {
+                        setOrientacoesNutricionais((prev) => (prev ? prev.trimEnd() + '\n' : '') + btn.snippet.trimStart());
+                      }}
+                      className="text-[11px] font-semibold bg-slate-800 hover:bg-indigo-950/60 hover:text-indigo-300 hover:border-indigo-600/60 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                <label htmlFor="textareaOrientacaoNutricionalReal" className="text-xs font-bold text-indigo-400 flex items-center justify-between">
+                  <span>Redação Completa das Orientações Nutricionais ao Paciente:</span>
+                  <span className="text-[10px] text-slate-400">
+                    {(orientacoesNutricionais || '').length} caracteres • Sincronizado com Auto-Save e Relatório Final
+                  </span>
+                </label>
+                <textarea
+                  id="textareaOrientacaoNutricionalReal"
+                  rows={12}
+                  value={orientacoesNutricionais}
+                  onChange={(e) => setOrientacoesNutricionais(e.target.value)}
+                  placeholder="Redija aqui as orientações qualitativas, comportamentais, lista de substituições equivalentes, meta hídrica e orientações de alta para o paciente..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-xs text-slate-100 leading-relaxed focus:border-indigo-500 outline-none resize-y"
+                />
+              </div>
+            </div>
+          )}
+
           {activeTab === 'relatorio' && (
             <div className="space-y-4">
               <RelatorioFinal
@@ -954,7 +1093,8 @@ export default function RealPatientModule() {
                   },
                   cardapioItems: cardapioItems,
                   exams: exams,
-                  interactions: interactions
+                  interactions: interactions,
+                  orientacoesNutricionais: orientacoesNutricionais
                 }}
                 clinicalCase={{
                   isRealCase: true,

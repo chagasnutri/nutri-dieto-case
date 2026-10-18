@@ -122,6 +122,9 @@ export interface CaseDraftData {
 
   // 8. Questões Avaliativas (respostas discursivas e opções selecionadas)
   respostasQuestoes: Record<string, string>;
+
+  // 9. Orientação Nutricional (qualitativa, comportamental, lista de substituições e alta)
+  orientacoesNutricionais: string;
 }
 
 export interface UseCaseDraftOptions {
@@ -142,7 +145,7 @@ export function useCaseDraft(
 ) {
   const { debounceMs = 800, onAutoSave, onLoad } = options;
 
-  // Chave Única dinâmica garantindo isolamento estrito por Aluno e Caso Clínico
+  // Chave única dinâmica garantindo isolamento estrito por Aluno e Caso Clínico
   const cleanCaseId = (caseId || 'caso-padrao').trim();
   const cleanStudentId = (studentId || 'aluno-anon').trim();
   const draftKey = `draft_caso_${cleanCaseId}_aluno_${cleanStudentId}`;
@@ -173,7 +176,10 @@ export function useCaseDraft(
           interactions: Array.isArray(parsed.interactions) && parsed.interactions.length > 0 ? parsed.interactions : initialData.interactions,
           recordatorioItems: Array.isArray(parsed.recordatorioItems) && parsed.recordatorioItems.length > 0 ? parsed.recordatorioItems : initialData.recordatorioItems,
           cardapioItems: Array.isArray(parsed.cardapioItems) && parsed.cardapioItems.length > 0 ? parsed.cardapioItems : initialData.cardapioItems,
-          respostasQuestoes: parsed.respostasQuestoes || initialData.respostasQuestoes || {}
+          respostasQuestoes: parsed.respostasQuestoes || initialData.respostasQuestoes || {},
+          orientacoesNutricionais: typeof parsed.orientacoesNutricionais === 'string'
+            ? parsed.orientacoesNutricionais
+            : (initialData.orientacoesNutricionais || '')
         };
         setDraftData(merged);
         if (parsed.lastUpdated) {

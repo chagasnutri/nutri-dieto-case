@@ -26,7 +26,8 @@ export function isSectionLiberada(sectionKey: string, clinicalCase: any = {}): b
     necessidades: ["necessidades", "calculos", "calculosnecessidades", "formulas", "7", "7calculosdenecessidades", "calculosdenecessidades"],
     prescricao: ["prescricao", "prescricaodietetica", "prescricaodietoterapica", "conduta", "8", "8prescricaodietetica"],
     cardapio: ["cardapio", "planejamento", "planejamentoalimentar", "tne", "9", "9cardapio"],
-    questoes: ["questoes", "questoesavaliativas", "perguntas", "avaliacao", "questoes avaliativas", "10", "10questoesavaliativas"]
+    questoes: ["questoes", "questoesavaliativas", "perguntas", "avaliacao", "questoes avaliativas", "10", "10questoesavaliativas"],
+    orientacao: ["orientacao", "orientacaonutricional", "orientacoes", "orientacoesnutricionais", "orientacao nutricional", "orientacoes nutricionais", "11", "11orientacao"]
   };
 
   let canonical = sectionKey;
@@ -456,7 +457,6 @@ export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCas
           )}
         </tbody>
       </table>
-      <p className="text-xs text-slate-700"><strong>Orientações Nutricionais de Alta:</strong> {data.orientacoesNutricionais || "Não preenchido / ---"}</p>
     </div>
   );
 }
@@ -485,6 +485,29 @@ export function QuestoesSection({ data, clinicalCase }: { data: any; clinicalCas
       ) : (
         <p className="text-xs text-slate-500">Não foram cadastradas questões avaliativas específicas para este caso.</p>
       )}
+    </div>
+  );
+}
+
+// Seção Final: Orientações Nutricionais (Renderizada somente se liberada pelo professor E preenchida pelo aluno)
+export function OrientacoesNutricionaisSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
+  if (!isSectionLiberada("orientacao", clinicalCase)) {
+    return null;
+  }
+
+  const texto = String(data?.orientacoesNutricionais || data?.orientacaoNutricional || "").trim();
+  if (!texto) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2 mb-6">
+      <h2 className="text-sm font-black text-slate-900 uppercase bg-slate-100 p-2 rounded border-l-4 border-emerald-600">
+        Orientações Nutricionais
+      </h2>
+      <div className="bg-emerald-50/60 border border-emerald-200 rounded-lg p-3.5 text-xs text-slate-800 whitespace-pre-line leading-relaxed">
+        {texto}
+      </div>
     </div>
   );
 }
@@ -580,6 +603,9 @@ export default function RelatorioFinal({ draftData = {}, studentData, clinicalCa
 
         {/* SEÇÃO 4: QUESTÕES AVALIATIVAS */}
         <QuestoesSection data={mergedData} clinicalCase={clinicalCase} />
+
+        {/* BLOCO FINAL: ORIENTAÇÕES NUTRICIONAIS (Condicional: Liberada + Não-Vazia) */}
+        <OrientacoesNutricionaisSection data={mergedData} clinicalCase={clinicalCase} />
 
         {/* Rodapé Obrigatório */}
         <footer className="border-t border-slate-300 pt-3 text-center text-[10px] text-slate-500 mt-8">

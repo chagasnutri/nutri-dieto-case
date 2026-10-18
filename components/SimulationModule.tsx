@@ -226,11 +226,12 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
     q1: '',
     q2: 'opt_b',
     q3: ''
-  }
+  },
+  orientacoesNutricionais: ''
 });
 
 export default function SimulationModule() {
-  const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio' | 'questoes' | 'relatorio'>('anamnese');
+  const [activeTab, setActiveTab] = useState<'anamnese' | 'exames' | 'interacoes' | 'calculos' | 'diagnostico' | 'prescricao' | 'cardapio' | 'questoes' | 'orientacao' | 'relatorio'>('anamnese');
   const [isPreceptorOpen, setIsPreceptorOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState('caso-dm2-has');
 
@@ -441,6 +442,7 @@ export default function SimulationModule() {
         try {
           await (window as any).firebaseSyncService.saveProntuario(selectedCase, {
             ...draftData,
+            orientacoesNutricionais: draftData.orientacoesNutricionais || '',
             userId: studentId,
             aluno: { id: studentId, nome: draftData.studentName || 'Estudante' },
             dataFinalizacao: new Date().toISOString()
@@ -586,7 +588,8 @@ export default function SimulationModule() {
             { id: 'diagnostico', label: '5. Diagnostico PES & Objetivos', icon: '5' },
             { id: 'prescricao', label: '6. Prescricao Dietoterapica', icon: '6' },
             { id: 'cardapio', label: '7. Cardapio TACO', icon: '7' },
-            { id: 'questoes', label: '8. Questoes Avaliativas', icon: '8' }
+            { id: 'questoes', label: '8. Questoes Avaliativas', icon: '8' },
+            { id: 'orientacao', label: '9. Orientação Nutricional', icon: '9' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1335,6 +1338,67 @@ export default function SimulationModule() {
                   onChange={(e) => updateField('respostasQuestoes', { ...draftData.respostasQuestoes, q3: e.target.value })}
                   placeholder="Escreva sua resposta detalhada..."
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 outline-none resize-y"
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'orientacao' && (
+            <div className="space-y-4">
+              <div className="border-b border-slate-800 pb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>📋</span>
+                    <span>Orientação Nutricional (Qualitativa, Comportamental, Substituições e Alta)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Redija as orientações qualitativas, estratégias comportamentais, lista de substituições e recomendações de alta para o paciente. Salvo automaticamente no rascunho local.
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-700/60 px-2.5 py-1 rounded-full">
+                  Última Etapa do Fluxo Clínico • Auto-Save Ativo
+                </span>
+              </div>
+
+              {/* Barra de Inserção Rápida / Estruturação de Texto (Rich Text / Tópicos Clínicos) */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+                <span className="text-[11px] font-bold text-slate-300 block">Inserir Tópicos Estruturados no Editor:</span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: '+ Orientações Qualitativas', snippet: '\n• ORIENTAÇÕES QUALITATIVAS E DE PREPARO:\n- Priorizar preparações assadas, grelhadas ou cozidas no vapor, evitando frituras de imersão.\n- Utilizar temperos naturais (alho, cebola, ervas aromáticas, cúrcuma) em substituição aos caldos industrializados.\n' },
+                    { label: '+ Mudanças Comportamentais', snippet: '\n• ESTRATÉGIAS COMPORTAMENTAIS E ESTILO DE VIDA:\n- Manter fracionamento regular das refeições (a cada 3 horas), mastigando devagar.\n- Meta de hidratação diária fracionada ao longo do dia nos intervalos interprandiais.\n' },
+                    { label: '+ Lista de Substituições', snippet: '\n• LISTA DE SUBSTITUIÇÕES EQUIVALENTES:\n- Grupo dos Cereais/Tubérculos: 1 unidade de pão francês (50g) = 2 fatias de pão integral (50g) = 3 colheres de sopa de mandioca/aipim cozido.\n- Grupo das Carnes/Ovos: 1 filé médio de frango grelhado (100g) = 1 filé de peixe assado (120g) = 2 ovos cozidos.\n' },
+                    { label: '+ Orientações de Alta', snippet: '\n• ORIENTAÇÕES DE ALTA E SINAIS DE ALERTA:\n- Monitorar sinais de hipoglicemia/hiperglicemia e níveis pressóricos domiciliares.\n- Retorno ambulatorial agendado em 30 dias com novos exames laboratoriais de controle.\n' }
+                  ].map((btn) => (
+                    <button
+                      key={btn.label}
+                      type="button"
+                      onClick={() => {
+                        const atual = draftData.orientacoesNutricionais || '';
+                        updateField('orientacoesNutricionais', (atual ? atual.trimEnd() + '\n' : '') + btn.snippet.trimStart());
+                      }}
+                      className="text-[11px] font-semibold bg-slate-800 hover:bg-emerald-950/60 hover:text-emerald-300 hover:border-emerald-600/60 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                <label htmlFor="textareaOrientacaoNutricionalSim" className="text-xs font-bold text-emerald-400 flex items-center justify-between">
+                  <span>Redação Completa das Orientações Nutricionais ao Paciente:</span>
+                  <span className="text-[10px] text-slate-400">
+                    {(draftData.orientacoesNutricionais || '').length} caracteres • Sincronizado com Auto-Save e Relatório Final
+                  </span>
+                </label>
+                <textarea
+                  id="textareaOrientacaoNutricionalSim"
+                  rows={12}
+                  value={draftData.orientacoesNutricionais || ''}
+                  onChange={(e) => updateField('orientacoesNutricionais', e.target.value)}
+                  placeholder="Redija aqui as orientações qualitativas, comportamentais, lista de substituições equivalentes, meta hídrica e orientações de alta para o paciente..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-xs text-slate-100 leading-relaxed focus:border-emerald-500 outline-none resize-y"
                 />
               </div>
             </div>

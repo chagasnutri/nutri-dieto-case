@@ -625,6 +625,9 @@
             <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1 bg-amber-50 text-amber-800" data-tab="questoes">
               <span>❓</span> <span>Questões Avaliativas</span>
             </button>
+            <button class="student-tab-btn nav-tab-btn px-3 py-2 whitespace-nowrap flex items-center space-x-1" data-tab="orientacao">
+              <span>📋</span> <span>Orientação Nutricional</span>
+            </button>
           </div>
 
           <!-- CONTEÚDO DAS ABAS (SCROLLABLE) -->
@@ -2931,6 +2934,51 @@
               </div>
             </div>
 
+            <!-- ABA FINAL: ORIENTAÇÃO NUTRICIONAL -->
+            <div id="tab-content-orientacao" class="student-tab-content hidden space-y-3">
+              <div class="flex flex-wrap items-center justify-between border-b pb-1.5 gap-2">
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <span>📋</span>
+                    <span>Orientação Nutricional (Qualitativa, Comportamental, Substituições e Alta)</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500 mt-0.5">
+                    Última etapa do fluxo clínico. Redija as orientações qualitativas, mudanças comportamentais, lista de substituições e recomendações de alta para o paciente.
+                  </p>
+                </div>
+                <span class="badge-clinical bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px]">
+                  Auto-Save Ativo
+                </span>
+              </div>
+
+              <!-- BARRA DE INSERÇÃO RÁPIDA DE TÓPICOS ESTRUTURADOS (RICH TEXT / TEMPLATES) -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                <span class="text-[11px] font-bold text-slate-700 block">Inserir Tópicos Estruturados no Editor:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="btn-orientacao-snippet bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-slate-700 border border-slate-300 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs" data-snippet="• ORIENTAÇÕES QUALITATIVAS E MODO DE PREPARO:&#10;- Priorizar preparações assadas, grelhadas ou cozidas no vapor, evitando frituras de imersão.&#10;- Utilizar temperos naturais (alho, cebola, ervas aromáticas, cúrcuma) em substituição aos caldos industrializados.">
+                    + Orientações Qualitativas
+                  </button>
+                  <button type="button" class="btn-orientacao-snippet bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-slate-700 border border-slate-300 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs" data-snippet="• ESTRATÉGIAS COMPORTAMENTAIS E HIDRATAÇÃO:&#10;- Manter fracionamento regular das refeições (a cada 3 horas), mastigando devagar em ambiente tranquilo.&#10;- Meta de hidratação diária fracionada nos intervalos interprandiais.">
+                    + Mudanças Comportamentais
+                  </button>
+                  <button type="button" class="btn-orientacao-snippet bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-slate-700 border border-slate-300 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs" data-snippet="• LISTA DE SUBSTITUIÇÕES EQUIVALENTES:&#10;- Grupo dos Cereais/Tubérculos: 1 pão francês (50g) = 2 fatias de pão integral (50g) = 3 colheres de sopa de mandioca cozida.&#10;- Grupo das Carnes/Ovos: 1 filé médio de frango grelhado (100g) = 1 filé de peixe assado (120g) = 2 ovos cozidos.">
+                    + Lista de Substituições
+                  </button>
+                  <button type="button" class="btn-orientacao-snippet bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-slate-700 border border-slate-300 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs" data-snippet="• ORIENTAÇÕES DE ALTA E SINAIS DE ALERTA:&#10;- Monitorar evolução clínica, adesão dietética e sinais de alerta domiciliares.&#10;- Retorno ambulatorial agendado em 30 dias com exames laboratoriais atualizados.">
+                    + Orientações de Alta
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label for="prontOrientacoesNutricionais" class="block font-bold text-slate-700 text-xs flex items-center justify-between">
+                  <span>Redação Completa das Orientações Nutricionais ao Paciente:</span>
+                  <span class="text-[10px] text-slate-500 font-normal">Incluído automaticamente no bloco final do Relatório (PDF/Word) quando preenchido</span>
+                </label>
+                <textarea id="prontOrientacoesNutricionais" class="w-full border border-slate-300 rounded-xl p-3 text-xs leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" rows="12" placeholder="Redija aqui as orientações qualitativas, comportamentais, lista de substituições equivalentes, meta hídrica e orientações de alta para o paciente..."></textarea>
+              </div>
+            </div>
+
           </div>
 
           <!-- FOOTER DE AÇÕES DO ALUNO -->
@@ -3817,6 +3865,19 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
                 </div>
               </div>
               <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="questoes">
+              <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
+            </label>
+
+            <!-- 11. Orientação Nutricional -->
+            <label class="adm-tab-block-card flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition cursor-pointer select-none">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-lg">📋</span>
+                <div>
+                  <div class="font-bold text-slate-800 text-xs">11. Orientação Nutricional</div>
+                  <div class="text-[10px] text-slate-500">Qualitativa, comportamental, substituições e alta</div>
+                </div>
+              </div>
+              <input type="checkbox" class="adm-tab-block-checkbox sr-only peer" data-tab-id="orientacao">
               <div class="w-10 h-5 bg-emerald-200 peer-focus:outline-none rounded-full peer peer-checked:bg-rose-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative shadow-inner"></div>
             </label>
           </div>
