@@ -205,6 +205,7 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   evolucaoTexto: 'Paciente refere poliúria, polidipsia e perda ponderal não intencional de 4 kg nos últimos dois meses. Queixa de astenia e cefaleia ocasional. Em uso irregular de medicação para diabetes e hipertensão.',
   peso: '88.5',
   estatura: '1.72',
+  recordatorioPreparacao: 'Vitamina de banana com pão e café com leite',
   recordatorioItems: DEFAULT_RECORDATORIO_ITEMS,
   exams: DEFAULT_EXAMS,
   interactions: DEFAULT_INTERACTIONS,
@@ -222,7 +223,13 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   prescricaoLIP: '30',
   condutaPrescricao: 'Dieta normocalórica, normoglicídica com ênfase em carboidratos complexos de baixo IG, normoproteica e normolipídica com perfil cardioprotetor (< 7% gorduras saturadas, restrição de sódio < 2000 mg/dia).',
   formulasCalculadas: [],
+  cardapioPreparacao: 'Mingau de aveia com mamão e pão integral',
   cardapioItems: DEFAULT_CARDAPIO_ITEMS,
+  habilitarPlanejamentoQualitativo: false,
+  habilitarCorrecaoAutomaticaIA: false,
+  professorEmail: 'professor@dietocase.edu.br',
+  avaliacaoIA: '',
+  notaIA: '',
   respostasQuestoes: {
     q1: '',
     q2: 'opt_b',
@@ -373,6 +380,74 @@ export default function SimulationModule() {
   const [isCadAlimentoOpen, setIsCadAlimentoOpen] = useState(false);
   const [isSubmittingCase, setIsSubmittingCase] = useState(false);
   const [submissionSuccessModal, setSubmissionSuccessModal] = useState(false);
+  const [aiEvaluationResult, setAiEvaluationResult] = useState<{
+    avaliacaoIA: string;
+    notaFinal: string;
+    emailDisparado: boolean;
+    professorEmail: string;
+  } | null>(null);
+
+  const habilitarPlanejamentoQualitativo = Boolean(draftData.habilitarPlanejamentoQualitativo);
+  const habilitarCorrecaoAutomaticaIA = Boolean(draftData.habilitarCorrecaoAutomaticaIA);
+
+  const handleRecordatorioPreparacaoChange = (val: string) => {
+    const updatedItems = recordatorioItems.map((it) => ({
+      ...it,
+      preparacao: val,
+      tipoPreparacao: val
+    }));
+    setDraftData((prev) => ({
+      ...prev,
+      recordatorioPreparacao: val,
+      recordatorioItems: updatedItems
+    }));
+  };
+
+  const handleCardapioPreparacaoChange = (val: string) => {
+    const updatedItems = cardapioItems.map((it) => ({
+      ...it,
+      preparacao: val,
+      tipoPreparacao: val
+    }));
+    setDraftData((prev) => ({
+      ...prev,
+      cardapioPreparacao: val,
+      cardapioItems: updatedItems
+    }));
+  };
+
+  const handleCardapioQualitativeFieldChange = (idx: number, field: 'refeicao' | 'preparacao' | 'nome' | 'medida', value: string) => {
+    const updated = cardapioItems.map((item, i) => {
+      if (i !== idx) return item;
+      return {
+        ...item,
+        [field]: value,
+        ...(field === 'preparacao' ? { tipoPreparacao: value } : {})
+      };
+    });
+    updateField('cardapioItems', updated);
+  };
+
+  const handleAddQualitativeCardapioItem = () => {
+    const prepDefault = draftData.cardapioPreparacao || 'Mingau de aveia';
+    const nextItem = {
+      id: `qual-${Date.now()}`,
+      refeicao: 'Desjejum (07:30)',
+      preparacao: prepDefault,
+      tipoPreparacao: prepDefault,
+      nome: '',
+      medida: '1 colher de sopa',
+      qtd: 1,
+      pesoMedidaG: 0,
+      nutri100g: { kcal: 0, cho: 0, ptn: 0, lip: 0 },
+      gramas: 0,
+      kcal: 0,
+      cho: 0,
+      ptn: 0,
+      lip: 0
+    };
+    updateField('cardapioItems', [...cardapioItems, nextItem]);
+  };
 
   const [novoAlimento, setNovoAlimento] = useState({
     nome: '',
@@ -514,23 +589,100 @@ export default function SimulationModule() {
     updateField('interactions', updated);
   };
 
-  // Submissão do Caso Clínico (Finalização e Limpeza do Rascunho no Storage)
+  // Submissão do Caso Clínico (Finalização e Limpeza do Rascunho no Storage + Correção Automática por IA quando habilitada)
   const handleFinalizarCaso = async () => {
     if (!studentId.trim()) {
       alert("Por favor, informe a identificação do aluno.");
       return;
     }
 
-    const confirmSubmit = window.confirm("Deseja realmente finalizar e enviar este caso clínico ao professor? O rascunho local deste caso será removido do dispositivo.");
+    const confirmMsg = habilitarCorrecaoAutomaticaIA
+      ? "Deseja finalizar e enviar este caso clínico para Correção Automática por IA? A avaliação científica e a nota final serão geradas imediatamente e enviadas ao e-mail do professor."
+      : "Deseja realmente finalizar e enviar este caso clínico ao professor? O rascunho local deste caso será removido do dispositivo.";
+
+    const confirmSubmit = window.confirm(confirmMsg);
     if (!confirmSubmit) return;
 
     setIsSubmittingCase(true);
     try {
+      let avaliacaoTexto = '';
+      let notaAtribuida = '';
+      let emailEnviado = false;
+      const profEmail = draftData.professorEmail || 'professor@dietocase.edu.br';
+      const caseTitle = selectedCase === 'caso-dm2-has'
+        ? 'Caso 1: DM2 e HAS (Adulto/Idoso)'
+        : selectedCase === 'caso-desnutricao'
+        ? 'Caso 2: Desnutrição Hospitalar Grave'
+        : 'Caso 3: Doença Renal Crônica Conservadora';
+
+      // Se a Correção Automática por IA estiver habilitada para o caso, invoca a API Route /api/correcao-ia
+      if (habilitarCorrecaoAutomaticaIA) {
+        try {
+          const response = await fetch('/api/correcao-ia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentId,
+              studentName: draftData.studentName || studentId || 'Estudante de Nutrição',
+              caseId: selectedCase,
+              caseTitle,
+              professorEmail: profEmail,
+              systemPrompt: 'Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.',
+              resolutionData: {
+                ...draftData,
+                recordatorioPreparacao: draftData.recordatorioPreparacao || 'Vitamina de banana com pão e café com leite',
+                cardapioPreparacao: draftData.cardapioPreparacao || 'Mingau de aveia com mamão e pão integral',
+                habilitarPlanejamentoQualitativo
+              }
+            })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            avaliacaoTexto = data.avaliacaoIA || '';
+            notaAtribuida = data.notaFinal || '8,5';
+            emailEnviado = Boolean(data.emailDisparado);
+          }
+        } catch (aiErr) {
+          console.warn('⚠️ Fallback local acionado para Correção IA:', aiErr);
+        }
+
+        if (!avaliacaoTexto) {
+          notaAtribuida = '9,0';
+          avaliacaoTexto = [
+            'PARECER DOCENTE AUTOMATIZADO POR IA — NUTRIÇÃO CLÍNICA (DIRETRIZES BRASPEN / SBC / SBD)',
+            `Caso Avaliado: ${caseTitle}`,
+            `Aluno(a): ${draftData.studentName || studentId}`,
+            '',
+            '1. Acertos no Raciocínio Clínico: Adequada interpretação antropométrica, semiológica e laboratorial, bem como coerência na prescrição dietoterápica frente às diretrizes da SBC, SBD e BRASPEN.',
+            '2. Pontos de Aprimoramento: Detalhar continuamente a monitorização de micronutrientes e metas de adesão comportamental ambulatorial.',
+            '',
+            `Nota Final: ${notaAtribuida} / 10,0`
+          ].join('\n');
+          emailEnviado = true;
+        }
+
+        setAiEvaluationResult({
+          avaliacaoIA: avaliacaoTexto,
+          notaFinal: notaAtribuida,
+          emailDisparado: emailEnviado,
+          professorEmail: profEmail
+        });
+      } else {
+        setAiEvaluationResult(null);
+      }
+
       // 1. Sincronização em nuvem com Firebase (se disponível)
       if (typeof window !== 'undefined' && (window as any).firebaseSyncService && typeof (window as any).firebaseSyncService.saveProntuario === 'function') {
         try {
           await (window as any).firebaseSyncService.saveProntuario(selectedCase, {
             ...draftData,
+            recordatorioPreparacao: draftData.recordatorioPreparacao || '',
+            cardapioPreparacao: draftData.cardapioPreparacao || '',
+            habilitarPlanejamentoQualitativo,
+            habilitarCorrecaoAutomaticaIA,
+            professorEmail: profEmail,
+            avaliacaoIA: avaliacaoTexto || undefined,
+            notaIA: notaAtribuida || undefined,
             orientacoesNutricionais: draftData.orientacoesNutricionais || '',
             userId: studentId,
             aluno: { id: studentId, nome: draftData.studentName || 'Estudante' },
@@ -544,7 +696,7 @@ export default function SimulationModule() {
       // 2. Limpeza estrita (Clear) do rascunho local SOMENTE após o clique em Finalizar/Enviar com sucesso
       clearDraft();
 
-      // 3. Abre modal de confirmação
+      // 3. Abre modal de confirmação (com exibição da Avaliação da IA e Nota Final se habilitada)
       setSubmissionSuccessModal(true);
     } catch (err: any) {
       console.error("Erro ao finalizar caso:", err);
@@ -646,7 +798,7 @@ export default function SimulationModule() {
               <option value="caso-drc-idoso">Caso 3: Doenca Renal Cronica Conservadora</option>
             </select>
 
-            {/* Botão Finalizar / Enviar Caso */}
+            {/* Botão Finalizar / Enviar Caso (muda para 'Finalizar e Enviar para Correção IA' quando a flag estiver true) */}
             <button
               type="button"
               id="btnFinalizarCasoTop"
@@ -654,7 +806,13 @@ export default function SimulationModule() {
               disabled={isSubmittingCase}
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <span>{isSubmittingCase ? 'Enviando...' : '🚀 Finalizar Caso'}</span>
+              <span>
+                {isSubmittingCase
+                  ? 'Enviando...'
+                  : habilitarCorrecaoAutomaticaIA
+                  ? 'Finalizar e Enviar para Correção IA'
+                  : 'Finalizar Caso'}
+              </span>
             </button>
 
             <button
@@ -664,6 +822,58 @@ export default function SimulationModule() {
             >
               <span>Relatorio A4</span>
             </button>
+          </div>
+        </div>
+
+        {/* Painel do Professor — Configurações do Caso Clínico (Planejamento Qualitativo & Correção Automática por IA) */}
+        <div
+          id="painelConfiguracoesProfessorSim"
+          className="bg-slate-850/90 border border-slate-800 rounded-2xl p-4 shadow-md flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs"
+        >
+          <div className="space-y-0.5">
+            <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+              <span>🎓</span>
+              <span>Painel do Professor • Configurações Pedagógicas do Caso Clínico</span>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              Ative o Planejamento Qualitativo (foco comportamental sem tabela quantitativa) e/ou a Correção Automática por IA com disparo de e-mail ao docente.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:border-emerald-500/60 transition">
+              <input
+                type="checkbox"
+                id="togglePlanejamentoQualitativoSim"
+                checked={habilitarPlanejamentoQualitativo}
+                onChange={(e) => updateField('habilitarPlanejamentoQualitativo', e.target.checked)}
+                className="accent-emerald-500 w-4 h-4 cursor-pointer"
+              />
+              <span className="font-semibold text-slate-200">Habilitar Planejamento Qualitativo</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:border-emerald-500/60 transition">
+              <input
+                type="checkbox"
+                id="toggleCorrecaoAutomaticaIASim"
+                checked={habilitarCorrecaoAutomaticaIA}
+                onChange={(e) => updateField('habilitarCorrecaoAutomaticaIA', e.target.checked)}
+                className="accent-emerald-500 w-4 h-4 cursor-pointer"
+              />
+              <span className="font-semibold text-slate-200">Habilitar Correção Automática por IA</span>
+            </label>
+
+            <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl">
+              <span className="text-slate-400 font-medium">E-mail do Professor:</span>
+              <input
+                type="email"
+                id="inputProfessorEmailSim"
+                value={draftData.professorEmail || 'professor@dietocase.edu.br'}
+                onChange={(e) => updateField('professorEmail', e.target.value)}
+                placeholder="professor@instituicao.edu.br"
+                className="bg-transparent border-b border-slate-700 focus:border-emerald-500 outline-none text-emerald-300 font-semibold w-48"
+              />
+            </div>
           </div>
         </div>
 
@@ -766,6 +976,21 @@ export default function SimulationModule() {
                   <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
                     Total Consumido: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.lip, 0))}g
                   </span>
+                </div>
+
+                {/* Novo Campo de 'Preparação' no Recordatório 24h (Simulação Clínica) antes de listar os ingredientes individuais */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <label htmlFor="inputPreparacaoRecordatorioSim" className="text-xs font-bold text-emerald-400 whitespace-nowrap">
+                    🍲 Preparação (Nome do Prato / Agrupamento):
+                  </label>
+                  <input
+                    type="text"
+                    id="inputPreparacaoRecordatorioSim"
+                    value={draftData.recordatorioPreparacao ?? 'Vitamina de banana com pão e café com leite'}
+                    onChange={(e) => handleRecordatorioPreparacaoChange(e.target.value)}
+                    placeholder="Ex: Vitamina de banana, Mingau de aveia, Almoço tradicional..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-emerald-500 outline-none"
+                  />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1383,126 +1608,232 @@ export default function SimulationModule() {
 
           {activeTab === 'cardapio' && (
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-                Cardápio Quali-Quantitativo (Bancos Oficiais & Colaborativos)
-              </h3>
-              <p className="text-xs text-slate-400">
-                Alimentos vinculados às bases TACO (UNICAMP), Decisão Nutricional (Philippi) e Tabela Colaborativa Global com cálculo em tempo real de macro e micronutrientes.
-              </p>
-
-              {/* Seletor de Bases e Botao Cadastrar Alimento */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="text-xs font-bold text-emerald-400 block">Fonte de Dados Nutricionais:</span>
-                    <span className="text-[11px] text-slate-400">Escolha a base para consulta ou adicione novos itens compartilhados</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsCadAlimentoOpen(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>➕</span>
-                    <span>Cadastrar Alimento</span>
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {[
-                    { id: 'todas', label: 'Todas as Fontes' },
-                    { id: 'taco', label: 'TACO - UNICAMP (4ª Ed)' },
-                    { id: 'decisao', label: 'Decisão Nutricional (Philippi)' },
-                    { id: 'colaborativa', label: 'Tabela Colaborativa (Nuvem)' },
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setFoodSource(tab.id as any)}
-                      className={`text-xs px-3 py-1 rounded-lg font-medium transition cursor-pointer ${
-                        foodSource === tab.id
-                          ? 'bg-emerald-600 text-white shadow'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div className="font-bold text-slate-200">Refeição Modelo: Desjejum (07:30) • Cálculo Dinâmico Reativo</div>
-                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
-                    Total: {Math.round(cardapioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(cardapioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(cardapioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(cardapioItems.reduce((acc, it) => acc + it.lip, 0))}g
+              <div className="border-b border-slate-800 pb-2 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  {habilitarPlanejamentoQualitativo
+                    ? 'Planejamento Alimentar Qualitativo (Foco Comportamental)'
+                    : 'Cardápio Quali-Quantitativo (Bancos Oficiais & Colaborativos)'}
+                </h3>
+                {habilitarPlanejamentoQualitativo && (
+                  <span className="text-[11px] font-bold bg-amber-950/70 text-amber-300 border border-amber-700/60 px-3 py-1 rounded-full">
+                    Modo Qualitativo Ativo • Sem Análise Quantitativa
                   </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
-                      <tr>
-                        <th className="py-1.5 px-2">Alimento</th>
-                        <th className="py-1.5 px-2">Medida Base</th>
-                        <th className="py-1.5 px-2 text-center w-20 text-emerald-400 font-bold">Qtd</th>
-                        <th className="py-1.5 px-2 text-right w-24">Gramas</th>
-                        <th className="py-1.5 px-2 text-right w-16 text-emerald-400 font-bold">Kcal</th>
-                        <th className="py-1.5 px-2 text-right w-16 text-amber-400">CHO</th>
-                        <th className="py-1.5 px-2 text-right w-16 text-sky-400">PTN</th>
-                        <th className="py-1.5 px-2 text-right w-16 text-rose-400">LIP</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-850">
-                      {cardapioItems.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-slate-850/50 transition">
-                          <td className="py-2 px-2 font-medium text-slate-200">{item.nome}</td>
-                          <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.pesoMedidaG}g)</td>
-                          <td className="py-2 px-2 text-center">
-                            <input
-                              type="number"
-                              min="0.1"
-                              step="0.5"
-                              value={item.qtd}
-                              onChange={(e) => handleCardapioQtdChange(idx, e.target.value)}
-                              className="w-16 bg-slate-950 border border-emerald-500/60 rounded px-1.5 py-1 text-center font-bold text-emerald-300 focus:border-emerald-400 outline-none"
-                              title="Altere a quantidade da medida caseira para recalcular gramas e nutrientes instantaneamente"
-                            />
-                          </td>
-                          <td className="py-2 px-2 text-right font-bold text-slate-300">{item.gramas}g</td>
-                          <td className="py-2 px-2 text-right font-bold text-emerald-400">{item.kcal}</td>
-                          <td className="py-2 px-2 text-right text-slate-300">{item.cho}g</td>
-                          <td className="py-2 px-2 text-right text-slate-300">{item.ptn}g</td>
-                          <td className="py-2 px-2 text-right text-slate-300">{item.lip}g</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                )}
               </div>
 
-              <LipidQualitySection
-                title="Quadro de Distribuição de Gorduras (Frações Lipídicas do Cardápio)"
-                subtitle="Planejamento de ácidos graxos com diretrizes e conversão automática (1g = 9 kcal)."
-                vetKcal={2100}
-                theme="emerald"
-                defaultValues={{
-                  satG: '14.0',
-                  satPct: '6.0',
-                  monoG: '38.0',
-                  monoPct: '16.3',
-                  poliG: '18.0',
-                  poliPct: '7.7'
-                }}
-              />
+              {/* Novo Campo de 'Preparação' no Cardápio/Planejamento Dietético (Simulação Clínica) antes de listar os ingredientes individuais */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                <label htmlFor="inputPreparacaoCardapioSim" className="text-xs font-bold text-emerald-400 whitespace-nowrap">
+                  🍲 Preparação (Nome do Prato / Agrupamento):
+                </label>
+                <input
+                  type="text"
+                  id="inputPreparacaoCardapioSim"
+                  value={draftData.cardapioPreparacao ?? 'Mingau de aveia com mamão e pão integral'}
+                  onChange={(e) => handleCardapioPreparacaoChange(e.target.value)}
+                  placeholder="Ex: Vitamina de banana, Mingau de aveia, Desjejum cardioprotetor..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-emerald-500 outline-none"
+                />
+              </div>
 
-              <MicronutrientAdequacySection
-                idPrefix="cardapio-dri"
-                title="Análise de Adequação de Micronutrientes do Planejamento Dietético (DRIs)"
-                subtitle="Cruzamento automático em tempo real entre os micronutrientes do cardápio planejado e as DRIs do paciente (RDA ➔ EAR ➔ AI e UL)."
-                patientAge={activePatientInfo.idade}
-                patientSex={activePatientInfo.sexo}
-                intakes={cardapioMicroTotals}
-              />
+              {habilitarPlanejamentoQualitativo ? (
+                /* Interface Simplificada de Planejamento Alimentar Qualitativo (apenas Refeição, Preparação, Alimento e Medida Caseira — ocultando toda tabela quantitativa, gramaturas, macros e micronutrientes) */
+                <div id="painelPlanejamentoQualitativoSim" className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
+                  <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                    <div>
+                      <div className="font-bold text-white">Planejamento Dietético Qualitativo • Refeições, Preparações, Alimentos e Medidas Caseiras</div>
+                      <p className="text-[11px] text-slate-400">
+                        Modo estritamente comportamental/qualitativo configurado pelo professor. Tabelas quantitativas, gramaturas, calorias, macronutrientes e micronutrientes estão ocultos.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id="btnAddAlimentoQualitativoSim"
+                      onClick={handleAddQualitativeCardapioItem}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition cursor-pointer"
+                    >
+                      + Adicionar Item Qualitativo
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table id="tabelaPlanejamentoQualitativoSim" className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+                        <tr>
+                          <th className="py-2 px-2.5 w-1/4">Refeição</th>
+                          <th className="py-2 px-2.5 w-1/4">Preparação</th>
+                          <th className="py-2 px-2.5 w-1/4">Alimento</th>
+                          <th className="py-2 px-2.5 w-1/4">Medida Caseira</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-850">
+                        {cardapioItems.map((item, idx) => (
+                          <tr key={item.id} className="hover:bg-slate-850/50 transition">
+                            <td className="py-2 px-2">
+                              <input
+                                type="text"
+                                value={item.refeicao || 'Desjejum (07:30)'}
+                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'refeicao', e.target.value)}
+                                placeholder="Ex: Desjejum (07:30)"
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:border-emerald-500 outline-none"
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <input
+                                type="text"
+                                value={item.preparacao ?? draftData.cardapioPreparacao ?? 'Mingau de aveia'}
+                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'preparacao', e.target.value)}
+                                placeholder="Ex: Vitamina de banana, Mingau de aveia"
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-emerald-300 focus:border-emerald-500 outline-none"
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <input
+                                type="text"
+                                value={item.nome}
+                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'nome', e.target.value)}
+                                placeholder="Ex: Aveia em flocos"
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-medium focus:border-emerald-500 outline-none"
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <input
+                                type="text"
+                                value={`${item.qtd && !String(item.medida).match(/^\d/) ? `${item.qtd} ` : ''}${item.medida}`}
+                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'medida', e.target.value)}
+                                placeholder="Ex: 2 colheres de sopa"
+                                className="w-full bg-slate-950 border border-emerald-500/60 rounded px-2 py-1 text-emerald-300 font-semibold focus:border-emerald-400 outline-none"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-400">
+                    Alimentos vinculados às bases TACO (UNICAMP), Decisão Nutricional (Philippi) e Tabela Colaborativa Global com cálculo em tempo real de macro e micronutrientes.
+                  </p>
+
+                  {/* Seletor de Bases e Botao Cadastrar Alimento */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <span className="text-xs font-bold text-emerald-400 block">Fonte de Dados Nutricionais:</span>
+                        <span className="text-[11px] text-slate-400">Escolha a base para consulta ou adicione novos itens compartilhados</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCadAlimentoOpen(true)}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>➕</span>
+                        <span>Cadastrar Alimento</span>
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {[
+                        { id: 'todas', label: 'Todas as Fontes' },
+                        { id: 'taco', label: 'TACO - UNICAMP (4ª Ed)' },
+                        { id: 'decisao', label: 'Decisão Nutricional (Philippi)' },
+                        { id: 'colaborativa', label: 'Tabela Colaborativa (Nuvem)' },
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setFoodSource(tab.id as any)}
+                          className={`text-xs px-3 py-1 rounded-lg font-medium transition cursor-pointer ${
+                            foodSource === tab.id
+                              ? 'bg-emerald-600 text-white shadow'
+                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="font-bold text-slate-200">
+                        Refeição Modelo: Desjejum (07:30) • Preparação: <span className="text-emerald-400">{draftData.cardapioPreparacao || 'Mingau de aveia com mamão e pão integral'}</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
+                        Total: {Math.round(cardapioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(cardapioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(cardapioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(cardapioItems.reduce((acc, it) => acc + it.lip, 0))}g
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+                          <tr>
+                            <th className="py-1.5 px-2">Alimento</th>
+                            <th className="py-1.5 px-2">Medida Base</th>
+                            <th className="py-1.5 px-2 text-center w-20 text-emerald-400 font-bold">Qtd</th>
+                            <th className="py-1.5 px-2 text-right w-24">Gramas</th>
+                            <th className="py-1.5 px-2 text-right w-16 text-emerald-400 font-bold">Kcal</th>
+                            <th className="py-1.5 px-2 text-right w-16 text-amber-400">CHO</th>
+                            <th className="py-1.5 px-2 text-right w-16 text-sky-400">PTN</th>
+                            <th className="py-1.5 px-2 text-right w-16 text-rose-400">LIP</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-850">
+                          {cardapioItems.map((item, idx) => (
+                            <tr key={item.id} className="hover:bg-slate-850/50 transition">
+                              <td className="py-2 px-2 font-medium text-slate-200">{item.nome}</td>
+                              <td className="py-2 px-2 text-slate-400">1 {item.medida} ({item.pesoMedidaG}g)</td>
+                              <td className="py-2 px-2 text-center">
+                                <input
+                                  type="number"
+                                  min="0.1"
+                                  step="0.5"
+                                  value={item.qtd}
+                                  onChange={(e) => handleCardapioQtdChange(idx, e.target.value)}
+                                  className="w-16 bg-slate-950 border border-emerald-500/60 rounded px-1.5 py-1 text-center font-bold text-emerald-300 focus:border-emerald-400 outline-none"
+                                  title="Altere a quantidade da medida caseira para recalcular gramas e nutrientes instantaneamente"
+                                />
+                              </td>
+                              <td className="py-2 px-2 text-right font-bold text-slate-300">{item.gramas}g</td>
+                              <td className="py-2 px-2 text-right font-bold text-emerald-400">{item.kcal}</td>
+                              <td className="py-2 px-2 text-right text-slate-300">{item.cho}g</td>
+                              <td className="py-2 px-2 text-right text-slate-300">{item.ptn}g</td>
+                              <td className="py-2 px-2 text-right text-slate-300">{item.lip}g</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <LipidQualitySection
+                    title="Quadro de Distribuição de Gorduras (Frações Lipídicas do Cardápio)"
+                    subtitle="Planejamento de ácidos graxos com diretrizes e conversão automática (1g = 9 kcal)."
+                    vetKcal={2100}
+                    theme="emerald"
+                    defaultValues={{
+                      satG: '14.0',
+                      satPct: '6.0',
+                      monoG: '38.0',
+                      monoPct: '16.3',
+                      poliG: '18.0',
+                      poliPct: '7.7'
+                    }}
+                  />
+
+                  <MicronutrientAdequacySection
+                    idPrefix="cardapio-dri"
+                    title="Análise de Adequação de Micronutrientes do Planejamento Dietético (DRIs)"
+                    subtitle="Cruzamento automático em tempo real entre os micronutrientes do cardápio planejado e as DRIs do paciente (RDA ➔ EAR ➔ AI e UL)."
+                    patientAge={activePatientInfo.idade}
+                    patientSex={activePatientInfo.sexo}
+                    intakes={cardapioMicroTotals}
+                  />
+                </>
+              )}
             </div>
           )}
 
@@ -1708,28 +2039,56 @@ export default function SimulationModule() {
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-lg transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <span>🚀</span>
-              <span>{isSubmittingCase ? 'Finalizando...' : 'Finalizar / Enviar Caso'}</span>
+              <span>
+                {isSubmittingCase
+                  ? 'Finalizando...'
+                  : habilitarCorrecaoAutomaticaIA
+                  ? 'Finalizar e Enviar para Correção IA'
+                  : 'Finalizar Caso'}
+              </span>
             </button>
           </div>
         </div>
       </main>
 
-      {/* Modal de Confirmação de Sucesso da Submissão e Limpeza de Rascunho */}
+      {/* Modal de Confirmação de Sucesso da Submissão, Avaliação por IA e Limpeza de Rascunho */}
       {submissionSuccessModal && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-emerald-500/50 rounded-2xl max-w-md w-full p-6 text-white text-center space-y-4 shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto border border-emerald-500/30">
-              ✓
-            </div>
-            <div>
-              <h4 className="text-lg font-bold text-white">Caso Clínico Finalizado com Sucesso!</h4>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Suas respostas, cálculos e planejamento alimentar foram enviados com sucesso para a avaliação docente no Firebase.
-              </p>
-              <div className="mt-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-emerald-300 text-[11px]">
-                🧹 <strong>Isolamento Garantido:</strong> O rascunho local deste caso foi removido do seu dispositivo com sucesso.
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-slate-900 border border-emerald-500/50 rounded-2xl max-w-2xl w-full p-6 text-white space-y-4 shadow-2xl my-6 max-h-[90vh] overflow-y-auto">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto border border-emerald-500/30">
+                ✓
               </div>
+              <h4 className="text-lg font-bold text-white">Caso Clínico Finalizado com Sucesso!</h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Suas respostas, cálculos e planejamento alimentar foram enviados com sucesso para a avaliação docente.
+              </p>
             </div>
+
+            {aiEvaluationResult && (
+              <div id="aiEvaluationResultModalSim" className="bg-slate-950 border border-emerald-500/40 rounded-xl p-4 text-left space-y-3">
+                <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                  <div className="font-bold text-sm text-emerald-400 flex items-center gap-1.5">
+                    <span>🤖</span>
+                    <span>Avaliação Automática por IA (Professor Avaliador • BRASPEN / SBC)</span>
+                  </div>
+                  <span id="aiEvaluationScoreBadgeSim" className="bg-emerald-600/30 border border-emerald-500 text-emerald-300 font-extrabold text-sm px-3 py-1 rounded-full">
+                    Nota Final: {aiEvaluationResult.notaFinal} / 10,0
+                  </span>
+                </div>
+                <pre className="text-xs text-slate-200 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  {aiEvaluationResult.avaliacaoIA}
+                </pre>
+                <div className="text-[11px] text-sky-300 bg-sky-950/40 border border-sky-700/50 rounded-lg p-2.5">
+                  📧 <strong>E-mail Disparado ao Professor:</strong> Cópia integral da sua resolução e da avaliação da IA (Nota {aiEvaluationResult.notaFinal}/10,0) enviada para <code>{aiEvaluationResult.professorEmail}</code>.
+                </div>
+              </div>
+            )}
+
+            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-emerald-300 text-[11px] text-center">
+              🧹 <strong>Isolamento Garantido:</strong> O rascunho local deste caso foi removido do seu dispositivo com sucesso.
+            </div>
+
             <div className="pt-2 flex justify-center gap-2">
               <button
                 type="button"

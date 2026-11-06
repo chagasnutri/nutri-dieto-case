@@ -41,6 +41,10 @@ export default function RealPatientModule() {
   // Regra 1: Estado do VET Planejado (sem valor hardcoded de 2000 kcal) que alimenta dinamicamente a NEE do Recordatório 24h
   const [vetPlanejadoReal, setVetPlanejadoReal] = useState<string>('');
 
+  // Novo Campo de 'Preparação' nos Módulos de Consumo (Recordatório 24h) e Planejamento Dietético (Atendimento Real)
+  const [recordatorioPreparacaoReal, setRecordatorioPreparacaoReal] = useState<string>('Vitamina de banana com pão e café com leite');
+  const [cardapioPreparacaoReal, setCardapioPreparacaoReal] = useState<string>('Mingau de aveia com mamão e pão integral');
+
   // Regra 2: Estado das Fórmulas Preditivas no Atendimento Real (Trava de Validação: Exatas 3 Fórmulas)
   const [formulasReal, setFormulasReal] = useState<Array<{ id: string; formulaKey: string; nome: string; equacao: string; resultadoKcal: string }>>([]);
   const [novaFormulaKeyReal, setNovaFormulaKeyReal] = useState<string>('bolso');
@@ -57,6 +61,12 @@ export default function RealPatientModule() {
         const parsed = JSON.parse(raw);
         if (typeof parsed.vetPlanejadoReal === 'string') {
           setVetPlanejadoReal(parsed.vetPlanejadoReal);
+        }
+        if (typeof parsed.recordatorioPreparacaoReal === 'string') {
+          setRecordatorioPreparacaoReal(parsed.recordatorioPreparacaoReal);
+        }
+        if (typeof parsed.cardapioPreparacaoReal === 'string') {
+          setCardapioPreparacaoReal(parsed.cardapioPreparacaoReal);
         }
         if (Array.isArray(parsed.formulasReal)) {
           setFormulasReal(parsed.formulasReal.slice(0, 3));
@@ -80,13 +90,17 @@ export default function RealPatientModule() {
         studentId,
         orientacoesNutricionais,
         vetPlanejadoReal,
+        recordatorioPreparacaoReal,
+        cardapioPreparacaoReal,
+        recordatorioPreparacao: recordatorioPreparacaoReal,
+        cardapioPreparacao: cardapioPreparacaoReal,
         formulasReal,
         lastUpdated: new Date().toISOString()
       }));
     } catch (e) {
       console.warn('[Auto-Save Real] Erro ao salvar rascunho:', e);
     }
-  }, [orientacoesNutricionais, vetPlanejadoReal, formulasReal]);
+  }, [orientacoesNutricionais, vetPlanejadoReal, recordatorioPreparacaoReal, cardapioPreparacaoReal, formulasReal]);
 
   const handleFinalizarAtendimentoReal = async () => {
     if (typeof window === 'undefined') return;
@@ -103,8 +117,10 @@ export default function RealPatientModule() {
           sexo: 'Masculino',
           hipoteseDiagnostica: 'Sindrome Metabolica e Esteatose Hepatica Grau II'
         },
-        recordatorioItems,
-        cardapioItems,
+        recordatorioPreparacao: recordatorioPreparacaoReal,
+        cardapioPreparacao: cardapioPreparacaoReal,
+        recordatorioItems: recordatorioItems.map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
+        cardapioItems: cardapioItems.map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
         exams,
         interactions,
         orientacoesNutricionais: orientacoesNutricionais || '',
@@ -537,6 +553,25 @@ export default function RealPatientModule() {
                   <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800/80 px-2.5 py-0.5 rounded-full">
                     Total Consumido: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.kcal, 0))} kcal | CHO: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.cho, 0))}g | PTN: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.ptn, 0))}g | LIP: {Math.round(recordatorioItems.reduce((acc, it) => acc + it.lip, 0))}g
                   </span>
+                </div>
+
+                {/* Novo Campo de 'Preparação' no Recordatório 24h (Atendimento Real) antes de listar os ingredientes individuais */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <label htmlFor="inputPreparacaoRecordatorioReal" className="text-xs font-bold text-indigo-400 whitespace-nowrap">
+                    🍲 Preparação (Nome do Prato / Agrupamento):
+                  </label>
+                  <input
+                    type="text"
+                    id="inputPreparacaoRecordatorioReal"
+                    value={recordatorioPreparacaoReal}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRecordatorioPreparacaoReal(val);
+                      setRecordatorioItems((prev) => prev.map((it) => ({ ...it, preparacao: val, tipoPreparacao: val })));
+                    }}
+                    placeholder="Ex: Vitamina de banana, Mingau de aveia, Almoço tradicional..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 outline-none"
+                  />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1142,6 +1177,25 @@ export default function RealPatientModule() {
                   </span>
                 </div>
 
+                {/* Novo Campo de 'Preparação' no Cardápio/Planejamento Dietético (Atendimento Real) antes de listar os ingredientes individuais */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <label htmlFor="inputPreparacaoCardapioReal" className="text-xs font-bold text-indigo-400 whitespace-nowrap">
+                    🍲 Preparação (Nome do Prato / Agrupamento):
+                  </label>
+                  <input
+                    type="text"
+                    id="inputPreparacaoCardapioReal"
+                    value={cardapioPreparacaoReal}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCardapioPreparacaoReal(val);
+                      setCardapioItems((prev) => prev.map((it) => ({ ...it, preparacao: val, tipoPreparacao: val })));
+                    }}
+                    placeholder="Ex: Vitamina de banana, Mingau de aveia, Desjejum cardioprotetor..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 outline-none"
+                  />
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
@@ -1297,7 +1351,10 @@ export default function RealPatientModule() {
                       renda: "3 salários mínimos"
                     }
                   },
-                  cardapioItems: cardapioItems,
+                  recordatorioPreparacao: recordatorioPreparacaoReal,
+                  cardapioPreparacao: cardapioPreparacaoReal,
+                  recordatorioItems: recordatorioItems.map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
+                  cardapioItems: cardapioItems.map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
                   exams: exams,
                   interactions: interactions,
                   orientacoesNutricionais: orientacoesNutricionais

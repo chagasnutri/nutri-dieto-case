@@ -3733,6 +3733,104 @@ Questões Avaliativas:
         listaFormulasTeste.length === 2 && valAfterDelete.isAddLocked === false && valAfterDelete.isAdvanceLocked === true && valAfterDelete.canAdvance === false,
         "Regra 2 (Desbloqueio Condicional ao Excluir): Excluir 1 das 3 fórmulas destrava imediatamente a adição (isAddLocked=false) e volta a bloquear o avanço"
       );
+
+      // =========================================================================
+      // 145. NOVO CAMPO 'PREPARAÇÃO' (CONSUMO E PLANEJAMENTO), PLANEJAMENTO QUALITATIVO E CORREÇÃO AUTOMÁTICA POR IA COM E-MAIL
+      // =========================================================================
+      // 145.1 Novo Campo 'Preparação' no schema do prontuário (Recordatório 24h e Cardápio) e renderização no Relatório Final (PDF/HTML e Word)
+      const prontPrepTest = pmRules.getEmptyProntuario();
+      assert(
+        Array.isArray(prontPrepTest.consumoAlimentar.refeicoesRecordatorio) &&
+        "preparacao" in prontPrepTest.consumoAlimentar.refeicoesRecordatorio[0] &&
+        Array.isArray(prontPrepTest.planejamentoAlimentar) &&
+        "preparacao" in prontPrepTest.planejamentoAlimentar[0],
+        "Regra 1 (Campo 'Preparação' no Schema): O schema do prontuário possui o campo string 'preparacao' tanto no Recordatório 24h quanto no Cardápio/Planejamento Dietético"
+      );
+
+      prontPrepTest.consumoAlimentar.refeicoesRecordatorio[0].preparacao = "Vitamina de banana";
+      prontPrepTest.consumoAlimentar.refeicoesRecordatorio[0].itens = [
+        { alimentoNome: "Banana prata", medidaCaseira: "1 unidade", gramatura: 100, kcal: 98 },
+        { alimentoNome: "Leite desnatado", medidaCaseira: "1 copo", gramatura: 200, kcal: 70 }
+      ];
+      prontPrepTest.planejamentoAlimentar[0].preparacao = "Mingau de aveia";
+      prontPrepTest.planejamentoAlimentar[0].itens = [
+        { alimentoNome: "Aveia em flocos", medidaCaseira: "2 colheres de sopa", gramatura: 30, kcal: 118 },
+        { alimentoNome: "Leite desnatado", medidaCaseira: "1 xícara", gramatura: 200, kcal: 70 }
+      ];
+
+      const summaryRecPrep = pmRules.formatMealFoodsSummary(prontPrepTest.consumoAlimentar.refeicoesRecordatorio[0]);
+      const summaryCardPrep = pmRules.formatMealFoodsSummary(prontPrepTest.planejamentoAlimentar[0]);
+      assert(
+        summaryRecPrep.includes("[Vitamina de banana]") && summaryCardPrep.includes("[Mingau de aveia]"),
+        "Regra 1 (Formatação de Preparação): formatMealFoodsSummary inclui o nome da preparação ('Vitamina de banana' e 'Mingau de aveia') antes dos ingredientes individuais"
+      );
+
+      const htmlReportPrepSim = DietoterapiaDocxReport.buildHtmlReport(prontPrepTest, { id: "caso-sim-prep", title: "Caso Simulação Preparação" });
+      const htmlReportPrepReal = DietoterapiaDocxReport.buildHtmlReport({ ...prontPrepTest, isRealPatient: true }, { id: "caso-real-prep", isRealCase: true, title: "Atendimento Real Preparação" });
+      assert(
+        htmlReportPrepSim.includes("Preparação: Vitamina de banana") &&
+        htmlReportPrepSim.includes("Preparação: Mingau de aveia") &&
+        htmlReportPrepReal.includes("Preparação: Vitamina de banana") &&
+        htmlReportPrepReal.includes("Preparação: Mingau de aveia"),
+        "Regra 1 (Relatório Final PDF/HTML - Simulação e Atendimento Real): O campo 'Preparação' é renderizado no Recordatório 24h e no Cardápio em ambas as modalidades"
+      );
+
+      // 145.2 Planejamento Alimentar Qualitativo (Painel do Professor + Interface Simplificada sem Tabela Quantitativa)
+      const adminMgrQual = new AdminManager();
+      const emptyCaseSchema = adminMgrQual.getEmptyCase();
+      assert(
+        "habilitarPlanejamentoQualitativo" in emptyCaseSchema &&
+        "habilitarCorrecaoAutomaticaIA" in emptyCaseSchema &&
+        "professorEmail" in emptyCaseSchema,
+        "Regra 2 & 3 (Schema do Caso no Painel do Professor): getEmptyCase inclui 'habilitarPlanejamentoQualitativo', 'habilitarCorrecaoAutomaticaIA' e 'professorEmail'"
+      );
+
+      const casoQualitativoAtivo = {
+        id: "caso-qualitativo-1",
+        title: "Caso Clínico Qualitativo Comportamental",
+        habilitarPlanejamentoQualitativo: true,
+        habilitarCorrecaoAutomaticaIA: false
+      };
+      const htmlReportQualitativo = DietoterapiaDocxReport.buildHtmlReport(prontPrepTest, casoQualitativoAtivo);
+      assert(
+        htmlReportQualitativo.includes("PLANEJAMENTO ALIMENTAR QUALITATIVO") &&
+        htmlReportQualitativo.includes("Preparação: Mingau de aveia") &&
+        htmlReportQualitativo.includes("Aveia em flocos (2 colheres de sopa)") &&
+        !htmlReportQualitativo.includes("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas (Análises Quantitativas)"),
+        "Regra 2 (Planejamento Qualitativo): Quando 'habilitarPlanejamentoQualitativo' é true, renderiza apenas refeição, preparação, alimento e medida caseira, ocultando a tabela de análise quantitativa de macros e micronutrientes"
+      );
+
+      // 145.3 Módulo de Correção Automática por IA com Disparo de E-mail (System Prompt Obrigatório + Nota 0,0 a 10,0 + E-mail ao Professor)
+      const mandatoryPrompt = pmRules.getAiEvaluatorSystemPrompt();
+      assert(
+        mandatoryPrompt === "Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.",
+        "Regra 3 (System Prompt Obrigatório da IA): O System Prompt corresponde exatamente à especificação com diretrizes BRASPEN, SBC e nota de 0,0 a 10,0"
+      );
+
+      prontPrepTest.aluno = { id: "aluno-123", nome: "Mariana Costa" };
+      const casoComCorrecaoIA = {
+        id: "caso-ia-1",
+        title: "Caso Síndrome Metabólica e Dislipidemia",
+        habilitarPlanejamentoQualitativo: false,
+        habilitarCorrecaoAutomaticaIA: true,
+        professorEmail: "docente.nutricao@universidade.edu.br"
+      };
+      const aiEvalResult = await pmRules.evaluateCaseWithAI(prontPrepTest, casoComCorrecaoIA);
+      assert(
+        aiEvalResult &&
+        aiEvalResult.success === true &&
+        typeof aiEvalResult.avaliacaoIA === "string" &&
+        aiEvalResult.avaliacaoIA.length > 50 &&
+        /^\d{1,2},\d$/.test(aiEvalResult.notaFinal) &&
+        aiEvalResult.emailPayload &&
+        aiEvalResult.emailPayload.to === "docente.nutricao@universidade.edu.br" &&
+        aiEvalResult.emailPayload.text.includes("Mariana Costa") &&
+        aiEvalResult.emailPayload.text.includes("Caso Síndrome Metabólica e Dislipidemia") &&
+        aiEvalResult.emailPayload.text.includes("Vitamina de banana") &&
+        aiEvalResult.emailPayload.text.includes("Mingau de aveia") &&
+        aiEvalResult.emailPayload.text.includes(aiEvalResult.notaFinal),
+        "Regra 3 (Avaliação por IA e Disparo de E-mail ao Professor): Compila a resolução completa, retorna avaliação com nota exata (0,0 a 10,0) e gera o e-mail para o professor com Nome do Aluno, Nome do Caso, Resolução Completa e Avaliação da IA"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

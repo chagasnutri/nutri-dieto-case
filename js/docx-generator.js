@@ -401,12 +401,13 @@ class DietoterapiaDocxReport {
 
       doc.addHeading("1.8.1. Refeições e Alimentos no Recordatório de 24h", 3);
       const r24Rows = [];
-      if (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => r.itens && r.itens.length > 0)) {
-        ca.refeicoesRecordatorio.filter(r => r.itens && r.itens.length > 0).forEach(r => {
-          const itemsStr = r.itens.map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
+      if (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))) {
+        ca.refeicoesRecordatorio.filter(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)).forEach(r => {
+          const prep = r.preparacao || r.tipoPreparacao || "";
+          const itemsStr = (r.itens || []).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
           r24Rows.push([
             `${r.refeicao} (${r.horario || '--:--'})`,
-            itemsStr + (r.tipoPreparacao ? `\nPreparação: ${r.tipoPreparacao}` : "")
+            (prep ? `Preparação: ${prep}\n` : "") + itemsStr
           ]);
         });
       }
@@ -414,7 +415,7 @@ class DietoterapiaDocxReport {
         r24Rows.push(["---", "Nenhuma refeição detalhada no recordatório alimentar / Não preenchido"]);
       }
       doc.addTable(
-        ["Refeição e Horário", "Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
+        ["Refeição e Horário", "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
         r24Rows,
         [3000, 6000]
       );
@@ -637,8 +638,13 @@ class DietoterapiaDocxReport {
         plano.forEach(ref => {
           const items = Array.isArray(ref.itens) ? ref.itens : (Array.isArray(ref.alimentos) ? ref.alimentos : []);
           let alimentosFormatados = "";
+          const isQualitativoDocx = Boolean(clinicalCase?.habilitarPlanejamentoQualitativo || studentData?.habilitarPlanejamentoQualitativo);
+          const prep = ref.preparacao || ref.tipoPreparacao || "";
           if (items.length > 0) {
             const itemLines = items.map(it => {
+              if (isQualitativoDocx) {
+                return `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || '1 porção'})`;
+              }
               let line = `${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || it.quantidade || 0}g)`;
               if (it.kcal !== undefined && it.kcal !== null && it.kcal !== "") {
                 line += ` [${it.kcal} kcal]`;
@@ -646,14 +652,14 @@ class DietoterapiaDocxReport {
               return "• " + line;
             });
             alimentosFormatados = itemLines.join("\n");
-            if (ref.tipoPreparacao) {
-              alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+            if (prep) {
+              alimentosFormatados = `Preparação: ${prep}\n` + alimentosFormatados;
             }
-            if (ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
+            if (!isQualitativoDocx && ref.subtotal && (ref.subtotal.kcal || ref.subtotal.cho || ref.subtotal.ptn || ref.subtotal.lip)) {
               alimentosFormatados += `\n[Subtotal: ${ref.subtotal.kcal || 0} kcal | CHO: ${ref.subtotal.cho || 0}g | PTN: ${ref.subtotal.ptn || 0}g | LIP: ${ref.subtotal.lip || 0}g]`;
             }
-          } else if (ref.tipoPreparacao) {
-            alimentosFormatados = `Tipo de Preparação: ${ref.tipoPreparacao}\n` + alimentosFormatados;
+          } else if (prep) {
+            alimentosFormatados = `Preparação: ${prep}\n` + alimentosFormatados;
           }
 
           const mealName = ref.refeicao || ref.nome || "Refeição";
@@ -980,12 +986,16 @@ class DietoterapiaDocxReport {
       
       <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h</h3>
       ${this.renderTableHtml(
-        ["Refeição e Horário", "Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
-        (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => r.itens && r.itens.length > 0))
-          ? ca.refeicoesRecordatorio.filter(r => r.itens && r.itens.length > 0).map(r => [
-              `${r.refeicao} (${r.horario || '--:--'})`,
-              r.itens.map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n") + (r.tipoPreparacao ? `\nPreparação: ${r.tipoPreparacao}` : "")
-            ])
+        ["Refeição e Horário", "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
+        (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)))
+          ? ca.refeicoesRecordatorio.filter(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)).map(r => {
+              const prep = r.preparacao || r.tipoPreparacao || "";
+              const itensStr = (r.itens || []).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
+              return [
+                `${r.refeicao} (${r.horario || '--:--'})`,
+                (prep ? `Preparação: ${prep}\n` : "") + itensStr
+              ];
+            })
           : [["---", "Nenhuma refeição detalhada no recordatório alimentar / Não preenchido"]]
       )}
 
@@ -1205,28 +1215,37 @@ class DietoterapiaDocxReport {
       `;
     }
 
+    const isQualitativo = Boolean(clinicalCase?.habilitarPlanejamentoQualitativo || studentData?.habilitarPlanejamentoQualitativo);
+
     return `
-      <h2 class="sec-heading">3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)</h2>
+      <h2 class="sec-heading">${isQualitativo ? "3. PLANEJAMENTO ALIMENTAR QUALITATIVO (FOCO COMPORTAMENTAL)" : "3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)"}</h2>
       <p><strong>Tipo / Consistência da Dieta Oral Definida:</strong> ${studentData.consistenciaDietaOral || presc.consistencia || "Dieta Livre / Normal"}</p>
       
-      <h3 class="subsec-heading">Refeições e Alimentos do Cardápio</h3>
+      <h3 class="subsec-heading">Refeições, Preparações e Alimentos do Cardápio</h3>
       ${this.renderTableHtml(
-        ["Refeição e Horário", "Tipo de Preparação, Alimentos e Gramaturas (TACO)", "Opções de Substituição"],
+        ["Refeição e Horário", isQualitativo ? "Preparação, Alimento e Medida Caseira" : "Preparação, Alimentos e Gramaturas (TACO)", "Opções de Substituição"],
         (Array.isArray(plano) && plano.length > 0)
           ? plano.map(r => {
               const mealName = r.refeicao || r.nome || "Refeição";
+              const prep = r.preparacao || r.tipoPreparacao || "";
               const items = Array.isArray(r.itens) ? r.itens : (Array.isArray(r.alimentos) ? r.alimentos : []);
+              const itemsFormatted = (items.length > 0)
+                ? items.map(it =>
+                    isQualitativo
+                      ? `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || '1 porção'})`
+                      : `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || it.quantidade || 0}g) [${it.kcal || 0} kcal]`
+                  ).join("\n")
+                : (r.alimentos && typeof r.alimentos === 'string' ? r.alimentos : "Alimentos não especificados");
               return [
                 `${mealName} (${r.horario || '--:--'})`,
-                (items.length > 0)
-                  ? (r.tipoPreparacao ? `Preparação: ${r.tipoPreparacao}\n` : "") + items.map(it => `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || it.quantidade || 0}g) [${it.kcal || 0} kcal]`).join("\n")
-                  : (r.tipoPreparacao ? `Preparação: ${r.tipoPreparacao}\n` : "") + (r.alimentos && typeof r.alimentos === 'string' ? r.alimentos : "Alimentos não especificados"),
+                (prep ? `Preparação: ${prep}\n` : "") + itemsFormatted,
                 r.substituicoes || "Não descrita"
               ];
             })
           : [["---", "Nenhuma refeição detalhada no planejamento alimentar / Não preenchido", "---"]]
       )}
 
+      ${isQualitativo ? "" : `
       <!-- 3.1. CONSOLIDAÇÃO NUTRICIONAL DO CARDÁPIO (ANÁLISES QUANTITATIVAS OBRIGATÓRIAS) -->
       <h3 class="subsec-heading">3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas (Análises Quantitativas)</h3>
       ${this.renderTableHtml(
@@ -1246,7 +1265,7 @@ class DietoterapiaDocxReport {
           ["Sódio (Na) no Cardápio", totaisCardapio?.sodioMg !== undefined ? `${totaisCardapio.sodioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
           ["Potássio (K) no Cardápio", totaisCardapio?.potassioMg !== undefined ? `${totaisCardapio.potassioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"]
         ]
-      )}
+      )}`}
     `;
   }
 

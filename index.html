@@ -3371,6 +3371,49 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
             </div>
           </div>
 
+          <!-- NOVAS CONDICIONAIS DE CONFIGURAÇÃO DO PROFESSOR: PLANEJAMENTO QUALITATIVO E CORREÇÃO AUTOMÁTICA POR IA -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-indigo-50/70 p-3 rounded-xl border border-indigo-200">
+            <div class="bg-white p-2.5 rounded-lg border border-indigo-200 flex items-center justify-between">
+              <div>
+                <div class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
+                  <span>🥗</span>
+                  <span>Habilitar Planejamento Qualitativo</span>
+                </div>
+                <p class="text-[11px] text-indigo-700 leading-tight mt-0.5">
+                  Renderiza versão simplificada no Cardápio (apenas Refeição, Preparação, Alimento e Medida Caseira), ocultando tabelas quantitativas, gramaturas, macros e micronutrientes.
+                </p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer ml-2">
+                <input type="checkbox" id="admCaseEnableQualitativePlan" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <span id="admCaseEnableQualitativePlanLabel" class="ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">Desabilitado</span>
+              </label>
+            </div>
+
+            <div class="bg-white p-2.5 rounded-lg border border-emerald-200 space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-emerald-900 text-xs flex items-center space-x-1">
+                    <span>🤖</span>
+                    <span>Habilitar Correção Automática por IA</span>
+                  </div>
+                  <p class="text-[11px] text-emerald-700 leading-tight mt-0.5">
+                    Altera o botão final para "Finalizar e Enviar para Correção IA", avalia segundo diretrizes BRASPEN/SBC (nota 0,0 a 10,0) e dispara e-mail ao professor.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer ml-2">
+                  <input type="checkbox" id="admCaseEnableAiCorrection" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <span id="admCaseEnableAiCorrectionLabel" class="ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">Desabilitado</span>
+                </label>
+              </div>
+              <div class="flex items-center space-x-2 pt-1 border-t border-slate-100">
+                <label for="admCaseProfessorEmail" class="text-[11px] font-bold text-slate-700 whitespace-nowrap">📧 E-mail do Professor:</label>
+                <input type="email" id="admCaseProfessorEmail" placeholder="professor@instituicao.edu.br" value="professor@dietocase.edu.br" class="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:border-emerald-500">
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div class="sm:col-span-2">
               <label class="block font-bold text-slate-700 mb-1">Título do Caso:</label>
@@ -3959,9 +4002,24 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
         <p>
           O relatório clínico-nutricional completo foi consolidado com 100% dos dados estruturados, incluindo identificação, anamnese, interações droga-nutriente, antropometria, bioquímica, exame físico, recordatório alimentar 24h, diagnóstico PES com objetivos dietoterápicos, cálculos energéticos descritivos e planejamento alimentar com análises quantitativas completas.
         </p>
-        <div class="bg-amber-50 border border-amber-200 p-2 rounded text-amber-800 text-[11px]">
+        <div id="submissionStandardPedagogicalNotice" class="bg-amber-50 border border-amber-200 p-2 rounded text-amber-800 text-[11px]">
           🔒 <strong>Nota Didática:</strong> Conforme as diretrizes da disciplina, <strong>não é exibido feedback imediato de acertos ou erros</strong>. A avaliação e discussão detalhada serão realizadas pelo professor.
         </div>
+      </div>
+
+      <!-- CONTAINER DE EXIBIÇÃO DA CORREÇÃO AUTOMÁTICA POR IA E NOTA FINAL (0,0 A 10,0) -->
+      <div id="aiEvaluationResultContainer" class="hidden bg-emerald-50 border border-emerald-300 rounded-xl p-3.5 text-xs text-slate-800 space-y-2.5 mb-4">
+        <div class="flex flex-wrap items-center justify-between border-b border-emerald-200 pb-2 gap-2">
+          <div class="font-bold text-emerald-900 flex items-center space-x-1.5">
+            <span>🤖</span>
+            <span>Avaliação Docente Automatizada por IA (Diretrizes BRASPEN / SBC)</span>
+          </div>
+          <span id="aiEvaluationFinalGradeBadge" class="bg-emerald-700 text-white font-extrabold px-3 py-1 rounded-full text-xs">
+            Nota Final: -- / 10,0
+          </span>
+        </div>
+        <div id="aiEvaluationTextContent" class="bg-white border border-emerald-200 rounded-lg p-3 text-xs text-slate-700 whitespace-pre-wrap max-h-56 overflow-y-auto leading-relaxed"></div>
+        <div id="aiEvaluationEmailStatus" class="bg-sky-50 border border-sky-200 rounded-lg p-2 text-[11px] text-sky-900 font-medium"></div>
       </div>
 
       <!-- BOTÕES DE EMISSÃO DO RELATÓRIO (WORD E PDF) -->

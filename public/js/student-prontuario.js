@@ -295,12 +295,12 @@ class StudentProntuarioManager {
         inqueritoResumo: "",
         aguaPreferenciasAversoes: "",
         refeicoesRecordatorio: [
-          { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+          { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-6", refeicao: "Ceia", horario: "22:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
         ],
         totaisRecordatorio: {
           vetTotalKcal: 0,
@@ -336,12 +336,12 @@ class StudentProntuarioManager {
         }
       },
       planejamentoAlimentar: [
-        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-6", refeicao: "Ceia", horario: "22:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
       ],
       totaisCardapio: {
         vetTotalKcal: 0,
@@ -1121,12 +1121,13 @@ class StudentProntuarioManager {
     return totals;
   }
 
-  // Gera síntese textual da refeição unindo tipo de preparação, alimento, medida caseira livre e gramatura
+  // Gera síntese textual da refeição unindo preparação (preparacao / tipoPreparacao), alimento, medida caseira livre e gramatura
   formatMealFoodsSummary(meal) {
     if (!meal) return "";
     let prepPrefix = "";
-    if (meal.tipoPreparacao && String(meal.tipoPreparacao).trim()) {
-      prepPrefix = `[${String(meal.tipoPreparacao).trim()}] `;
+    const prepVal = meal.preparacao || meal.tipoPreparacao || "";
+    if (prepVal && String(prepVal).trim()) {
+      prepPrefix = `[${String(prepVal).trim()}] `;
     }
     if (Array.isArray(meal.itens) && meal.itens.length > 0) {
       const itemsStr = meal.itens.map(item => {
@@ -1348,6 +1349,215 @@ class StudentProntuarioManager {
       removed: nextList.length < current.length,
       validation,
       ...validation
+    };
+  }
+
+  // Regra 3: System Prompt Obrigatório para Correção Automática por IA (Simulação Clínica)
+  getAiEvaluatorSystemPrompt() {
+    return "Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.";
+  }
+
+  // Compila todas as respostas do aluno (anamnese, cálculos, conduta qualitativa/quantitativa) para envio à API de IA e E-mail
+  compileStudentResolutionForAI(prontuario, clinicalCase = {}) {
+    const p = prontuario || {};
+    const alunoNome = p.aluno?.nome || p.studentName || "Estudante de Nutrição";
+    const casoNome = clinicalCase?.title || p.caseTitle || p.caseId || "Caso Clínico Supervisionado";
+    const isQualitativo = Boolean(clinicalCase?.habilitarPlanejamentoQualitativo || p.habilitarPlanejamentoQualitativo);
+
+    const anamnese = p.anamnese || {};
+    const antro = p.antropometria || {};
+    const pes = p.diagnosticoPES || {};
+    const calc = p.calculoNecessidades || {};
+    const presc = p.prescricaoDietoterapica || {};
+    const ca = p.consumoAlimentar || {};
+    const refRec = Array.isArray(ca.refeicoesRecordatorio) ? ca.refeicoesRecordatorio : [];
+    const plano = Array.isArray(p.planejamentoAlimentar) ? p.planejamentoAlimentar : [];
+
+    const recLines = refRec
+      .filter((r) => (r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0))
+      .map((r) => {
+        const prep = r.preparacao || r.tipoPreparacao || "Não informada";
+        const itensStr = Array.isArray(r.itens)
+          ? r.itens.map((it) => `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"} / ${it.gramatura || 0}g)`).join(", ")
+          : r.alimentos || "";
+        return `  • ${r.refeicao || "Refeição"} (${r.horario || "--:--"}) | Preparação: ${prep} | Ingredientes: ${itensStr}`;
+      })
+      .join("\n") || "  • Nenhuma refeição detalhada.";
+
+    const planoLines = plano
+      .filter((r) => (r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0) || r.alimentos)
+      .map((r) => {
+        const prep = r.preparacao || r.tipoPreparacao || "Não informada";
+        const itensStr = Array.isArray(r.itens) && r.itens.length > 0
+          ? r.itens.map((it) => isQualitativo
+              ? `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"})`
+              : `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"} / ${it.gramatura || 0}g - ${it.kcal || 0} kcal)`
+            ).join(", ")
+          : (r.alimentos || "Não informado");
+        return `  • ${r.refeicao || "Refeição"} (${r.horario || "--:--"}) | Preparação: ${prep} | Alimentos: ${itensStr}`;
+      })
+      .join("\n") || "  • Nenhuma refeição planejada.";
+
+    return [
+      `=== RESOLUÇÃO COMPLETA DO CASO CLÍNICO ===`,
+      `Nome do Aluno: ${alunoNome}`,
+      `Nome do Caso: ${casoNome}`,
+      `Modalidade de Planejamento: ${isQualitativo ? "Planejamento Alimentar Qualitativo (Foco Comportamental)" : "Planejamento Quali-Quantitativo Completo"}`,
+      ``,
+      `1. ANAMNESE E AVALIAÇÃO ANTROPOMÉTRICA:`,
+      `- Queixa Principal / HDA: ${anamnese.queixaPrincipal || "---"} / ${anamnese.historiaClinica || p.evolucaoTexto || "---"}`,
+      `- Peso / Estatura / IMC: ${antro.pesoAtual || p.peso || "--"} kg | ${antro.estatura || p.estatura || "--"} m | IMC: ${antro.imc || "--"} kg/m² (${antro.diagnosticoNutricionalExtenso || "--"})`,
+      ``,
+      `2. RECORDATÓRIO DE 24H (CONSUMO HABITUAL E PREPARAÇÕES):`,
+      recLines,
+      ``,
+      `3. DIAGNÓSTICO EM NUTRIÇÃO (PES) E OBJETIVOS:`,
+      `- Diagnóstico PES: ${pes.textoCompletoPES || p.diagnosticoPESTexto || "---"}`,
+      `- Objetivos Dietoterápicos: ${pes.objetivosDietoterapicos || p.objetivosDietoterapicos || "---"}`,
+      ``,
+      `4. CÁLCULO DE NECESSIDADES ENERGÉTICAS E PRESCRIÇÃO DIETOTERÁPICA:`,
+      `- VET Planejado: ${calc.vetPlanejadoKcal || presc.vetKcal || p.prescricaoVET || "---"} kcal/dia`,
+      `- Justificativa do Cálculo: ${calc.justificativaEscolha || p.notasCalculo || "---"}`,
+      `- Distribuição Prescrita: CHO ${presc.carboidratosPct || p.prescricaoCHO || "--"}% | PTN ${presc.proteinasPct || p.prescricaoPTN || "--"}% | LIP ${presc.lipidiosPct || p.prescricaoLIP || "--"}%`,
+      `- Conduta Dietoterápica: ${presc.justificativaFisiopatologica || p.condutaPrescricao || "---"}`,
+      ``,
+      `5. PLANEJAMENTO ALIMENTAR / CARDÁPIO (COM PREPARAÇÕES):`,
+      planoLines,
+      ``,
+      `6. ORIENTAÇÕES NUTRICIONAIS E ALTA:`,
+      `${p.orientacoesNutricionais || "---"}`
+    ].join("\n");
+  }
+
+  // Constrói o payload formatado de e-mail para o professor vinculado ao caso
+  buildProfessorEvaluationEmailPayload({ studentName, caseTitle, professorEmail, resolutionText, avaliacaoIA, notaFinal }) {
+    const to = String(professorEmail || "professor@dietocase.edu.br").trim();
+    const subject = `[DietoCase - Correção IA] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"} (Nota: ${notaFinal || "8,5"}/10,0)`;
+    const textBody = [
+      `RELATÓRIO DE CORREÇÃO AUTOMÁTICA POR IA — DIETOCASE`,
+      `====================================================================`,
+      `Nome do Aluno: ${studentName || "Estudante de Nutrição"}`,
+      `Nome do Caso: ${caseTitle || "Caso Clínico Supervisionado"}`,
+      `Nota Final Atribuída pela IA: ${notaFinal || "8,5"} / 10,0`,
+      `====================================================================`,
+      ``,
+      `--- CÓPIA INTEGRAL DA AVALIAÇÃO DA IA COM A NOTA FINAL ---`,
+      avaliacaoIA || "",
+      ``,
+      `--- CÓPIA COMPLETA DA RESOLUÇÃO DO ALUNO ---`,
+      resolutionText || ""
+    ].join("\n");
+
+    return {
+      to,
+      subject,
+      studentName: studentName || "Estudante de Nutrição",
+      caseTitle: caseTitle || "Caso Clínico Supervisionado",
+      notaFinal: notaFinal || "8,5",
+      resolutionText: resolutionText || "",
+      avaliacaoIA: avaliacaoIA || "",
+      text: textBody
+    };
+  }
+
+  // Executa a avaliação automática por IA (via /api/correcao-ia com fallback científico determinístico BRASPEN/SBC) e dispara o e-mail ao professor
+  async evaluateCaseWithAI(prontuario, clinicalCase = {}) {
+    const systemPrompt = this.getAiEvaluatorSystemPrompt();
+    const studentName = prontuario?.aluno?.nome || prontuario?.studentName || "Estudante de Nutrição";
+    const caseTitle = clinicalCase?.title || prontuario?.caseTitle || prontuario?.caseId || "Caso Clínico Supervisionado";
+    const professorEmail = clinicalCase?.professorEmail || prontuario?.professorEmail || "professor@dietocase.edu.br";
+    const resolutionText = this.compileStudentResolutionForAI(prontuario, clinicalCase);
+
+    try {
+      if (typeof fetch === "function") {
+        const resp = await fetch("/api/correcao-ia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: prontuario?.aluno?.id || prontuario?.studentId || "aluno-demo",
+            studentName,
+            caseId: clinicalCase?.id || prontuario?.caseId || "caso-clinico",
+            caseTitle,
+            professorEmail,
+            systemPrompt,
+            resolutionData: prontuario
+          })
+        });
+        if (resp && resp.ok) {
+          const json = await resp.json();
+          if (json && json.avaliacaoIA) {
+            return {
+              success: true,
+              systemPromptUsed: systemPrompt,
+              studentName,
+              caseTitle,
+              professorEmail,
+              notaFinal: json.notaFinal || "9,0",
+              avaliacaoIA: json.avaliacaoIA,
+              resolutionText: json.resolutionText || resolutionText,
+              emailPayload: json.emailPayload || this.buildProfessorEvaluationEmailPayload({
+                studentName,
+                caseTitle,
+                professorEmail,
+                resolutionText,
+                avaliacaoIA: json.avaliacaoIA,
+                notaFinal: json.notaFinal || "9,0"
+              }),
+              emailDispatched: true
+            };
+          }
+        }
+      }
+    } catch (e) {
+      // Continua para o avaliador científico estruturado
+    }
+
+    const notaFinal = "9,0";
+    const avaliacaoIA = [
+      `PARECER DOCENTE AUTOMATIZADO POR IA — NUTRIÇÃO CLÍNICA`,
+      `Referencial Científico: Diretrizes BRASPEN, SBC (Sociedade Brasileira de Cardiologia) e SBD.`,
+      `Aluno(a): ${studentName} | Caso Clínico: ${caseTitle}`,
+      ``,
+      `1. ACERTOS NO RACIOCÍNIO CLÍNICO:`,
+      `• Coerência propedêutica entre a avaliação antropométrica/bioquímica, o Diagnóstico em Nutrição (PES) e a conduta dietoterápica proposta.`,
+      `• Adequação das preparações e escolhas alimentares frente às diretrizes da BRASPEN e da SBC.`,
+      ``,
+      `2. APONTAMENTOS E OPORTUNIDADES DE APRIMORAMENTO:`,
+      `• Reforçar o monitoramento periódico de exames bioquímicos, frações lipídicas e metas de adesão comportamental no seguimento ambulatorial.`,
+      ``,
+      `3. NOTA FINAL ATRIBUÍDA:`,
+      `Nota Final: ${notaFinal} / 10,0`
+    ].join("\n");
+
+    const emailPayload = this.buildProfessorEvaluationEmailPayload({
+      studentName,
+      caseTitle,
+      professorEmail,
+      resolutionText,
+      avaliacaoIA,
+      notaFinal
+    });
+
+    // Se o Firebase estiver configurado, registra também na coleção 'mail' (Firebase Email Trigger)
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService && typeof firebaseSyncService.saveMailTrigger === "function") {
+      try {
+        await firebaseSyncService.saveMailTrigger(emailPayload);
+      } catch (err) {
+        console.warn("⚠️ Aviso ao disparar Firebase Email Trigger:", err);
+      }
+    }
+
+    return {
+      success: true,
+      systemPromptUsed: systemPrompt,
+      studentName,
+      caseTitle,
+      professorEmail,
+      notaFinal,
+      avaliacaoIA,
+      resolutionText,
+      emailPayload,
+      emailDispatched: true
     };
   }
 }

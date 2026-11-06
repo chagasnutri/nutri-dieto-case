@@ -5,6 +5,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export interface RecordatorioDraftItem {
   id: string;
   nome: string;
+  preparacao?: string;
+  tipoPreparacao?: string;
+  refeicao?: string;
   medida: string;
   pesoMedidaG: number;
   qtd: number;
@@ -36,6 +39,9 @@ export interface RecordatorioDraftItem {
 export interface CardapioDraftItem {
   id: string;
   nome: string;
+  preparacao?: string;
+  tipoPreparacao?: string;
+  refeicao?: string;
   medida: string;
   pesoMedidaG: number;
   qtd: number;
@@ -90,6 +96,7 @@ export interface CaseDraftData {
   evolucaoTexto: string;
   peso: string;
   estatura: string;
+  recordatorioPreparacao?: string;
   recordatorioItems: RecordatorioDraftItem[];
 
   // 2. Exames Bioquímicos
@@ -124,14 +131,22 @@ export interface CaseDraftData {
   prescricaoLIP: string;
   condutaPrescricao: string;
 
-  // 7. Cardápio TACO
+  // 7. Cardápio TACO / Planejamento Dietético (Quali-Quantitativo ou Qualitativo)
+  cardapioPreparacao?: string;
   cardapioItems: CardapioDraftItem[];
+  habilitarPlanejamentoQualitativo?: boolean;
 
   // 8. Questões Avaliativas (respostas discursivas e opções selecionadas)
   respostasQuestoes: Record<string, string>;
 
   // 9. Orientação Nutricional (qualitativa, comportamental, lista de substituições e alta)
   orientacoesNutricionais: string;
+
+  // 10. Configurações e Resultado de Correção Automática por IA (Simulação Clínica)
+  habilitarCorrecaoAutomaticaIA?: boolean;
+  professorEmail?: string;
+  avaliacaoIA?: string;
+  notaIA?: string;
 }
 
 export interface UseCaseDraftOptions {

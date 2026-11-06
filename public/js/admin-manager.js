@@ -188,6 +188,9 @@ class AdminManager {
     reviewedCase.isLocked = reviewedCase.isLocked === true;
     reviewedCase.visivel = reviewedCase.visivel !== false;
     reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
+    reviewedCase.habilitarPlanejamentoQualitativo = reviewedCase.habilitarPlanejamentoQualitativo === true;
+    reviewedCase.habilitarCorrecaoAutomaticaIA = reviewedCase.habilitarCorrecaoAutomaticaIA === true;
+    reviewedCase.professorEmail = String(reviewedCase.professorEmail || "professor@dietocase.edu.br").trim();
 
     const existingIndex = this.cases.findIndex(c => c.id === reviewedCase.id);
     if (existingIndex >= 0) {
@@ -231,6 +234,9 @@ class AdminManager {
     copy.isLocked = true; // Por padrão, novas cópias nascem travadas
     copy.visivel = original.visivel !== false;
     copy.habilitarQuestoesAvaliativas = original.habilitarQuestoesAvaliativas !== false;
+    copy.habilitarPlanejamentoQualitativo = original.habilitarPlanejamentoQualitativo === true;
+    copy.habilitarCorrecaoAutomaticaIA = original.habilitarCorrecaoAutomaticaIA === true;
+    copy.professorEmail = original.professorEmail || "professor@dietocase.edu.br";
     copy.blockedTabs = Array.isArray(original.blockedTabs) ? [...original.blockedTabs] : [];
     copy.disciplinaId = original.disciplinaId || this.activeDisciplinaId || "dietoterapia";
 
@@ -426,6 +432,10 @@ class AdminManager {
       description: "Descrição breve dos objetivos e patologia do caso clínico.",
       isLocked: false,
       visivel: true,
+      habilitarQuestoesAvaliativas: true,
+      habilitarPlanejamentoQualitativo: false,
+      habilitarCorrecaoAutomaticaIA: false,
+      professorEmail: "professor@dietocase.edu.br",
       blockedTabs: [],
       patient: {
         name: "Nome do Paciente",

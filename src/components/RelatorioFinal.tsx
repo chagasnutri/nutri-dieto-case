@@ -329,21 +329,37 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
 
   const ca = data.consumoAlimentar || {};
   const recItems = ca.refeicoesRecordatorio || data.recordatorioItems || [];
+  const prepRecordatorioGlobal = data.recordatorioPreparacao || ca.preparacao || "";
 
   return (
     <div className="space-y-4 mb-6">
       <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1">1.8. Consumo Alimentar e Inquérito Nutricional</h3>
       <p className="text-xs text-slate-700"><strong>Resumo do Padrão Dietético:</strong> {ca.inqueritoResumo || "Não preenchido / ---"}</p>
       <p className="text-xs text-slate-700"><strong>Ingestão Hídrica:</strong> {ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+      {prepRecordatorioGlobal && (
+        <p className="text-xs text-slate-700"><strong>Preparação (Recordatório 24h):</strong> {prepRecordatorioGlobal}</p>
+      )}
 
       <h4 className="text-xs font-bold text-slate-700 mt-3">1.8.1. Refeições e Alimentos no Recordatório de 24h</h4>
       <div className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-3">
         {Array.isArray(recItems) && recItems.length > 0 ? (
-          recItems.map((r: any, idx: number) => (
-            <div key={idx} className="mb-2">
-              <strong>{r.refeicao || r.nome} ({r.horario || '--:--'}):</strong> {r.alimentos || (r.itens?.map((it: any) => `${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g)`).join(", ")) || "Não detalhado"}
-            </div>
-          ))
+          recItems.map((r: any, idx: number) => {
+            const prep = r.preparacao || r.tipoPreparacao || prepRecordatorioGlobal || "";
+            const descAlimentos =
+              r.alimentos ||
+              (Array.isArray(r.itens)
+                ? r.itens.map((it: any) => `${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g)`).join(", ")
+                : r.nome
+                ? `${r.nome} — ${r.qtd || 1} ${r.medida || "porção"} (${r.gramas || 0}g)`
+                : "Não detalhado");
+            return (
+              <div key={idx} className="mb-2">
+                <strong>{r.refeicao || r.nome || "Refeição"} ({r.horario || '--:--'}):</strong>{" "}
+                {prep ? <span className="font-semibold text-emerald-800">[Preparação: {prep}] </span> : null}
+                {descAlimentos}
+              </div>
+            );
+          })
         ) : (
           <p className="text-slate-500">Nenhuma refeição detalhada no recordatório alimentar.</p>
         )}
@@ -423,7 +439,7 @@ export function PrescricaoSection({ data, clinicalCase }: { data: any; clinicalC
   );
 }
 
-// Seção 3: Cardápio TACO ou TNE
+// Seção 3: Cardápio TACO ou TNE (com suporte ao Campo 'Preparação' e Modo Planejamento Qualitativo)
 export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
   if (!isSectionLiberada("cardapio", clinicalCase)) {
     return null;
@@ -431,29 +447,56 @@ export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCas
 
   const rawPlano = data.planejamentoAlimentar;
   const plano = Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : (data.cardapioItems || []));
+  const prepCardapioGlobal = data.cardapioPreparacao || rawPlano?.preparacao || "";
+  const isQualitativo = Boolean(data.habilitarPlanejamentoQualitativo || clinicalCase?.habilitarPlanejamentoQualitativo);
 
   return (
     <div className="space-y-4 mb-6">
-      <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1">3. Planejamento Alimentar Quali-Quantitativo (Cardápio TACO)</h3>
+      <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1">
+        {isQualitativo
+          ? "3. Planejamento Alimentar Qualitativo (Foco Comportamental)"
+          : "3. Planejamento Alimentar Quali-Quantitativo (Cardápio TACO)"}
+      </h3>
+      {prepCardapioGlobal && (
+        <p className="text-xs text-slate-700"><strong>Preparação Planejada:</strong> {prepCardapioGlobal}</p>
+      )}
       <table className="w-full text-xs border border-slate-300">
         <thead className="bg-slate-100">
           <tr>
             <th className="border border-slate-300 px-3 py-1.5 text-left font-bold w-1/4">Refeição / Horário</th>
-            <th className="border border-slate-300 px-3 py-1.5 text-left font-bold">Alimentos e Gramaturas</th>
-            <th className="border border-slate-300 px-3 py-1.5 text-left font-bold w-1/4">Substituições</th>
+            <th className="border border-slate-300 px-3 py-1.5 text-left font-bold w-1/4">Preparação</th>
+            <th className="border border-slate-300 px-3 py-1.5 text-left font-bold">
+              {isQualitativo ? "Alimento e Medida Caseira" : "Alimentos e Gramaturas"}
+            </th>
+            <th className="border border-slate-300 px-3 py-1.5 text-left font-bold w-1/5">Substituições</th>
           </tr>
         </thead>
         <tbody>
           {Array.isArray(plano) && plano.length > 0 ? (
-            plano.map((r: any, idx: number) => (
-              <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                <td className="border border-slate-300 px-3 py-1 font-semibold">{r.refeicao || r.nome || "Refeição"} ({r.horario || '--:--'})</td>
-                <td className="border border-slate-300 px-3 py-1">{Array.isArray(r.itens) ? r.itens.map((it: any) => `• ${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g) [${it.kcal || 0} kcal]`).join("\n") : (r.alimentoNome || r.alimentos || "Não informado")}</td>
-                <td className="border border-slate-300 px-3 py-1">{r.substituicoes || "Não descrita"}</td>
-              </tr>
-            ))
+            plano.map((r: any, idx: number) => {
+              const prep = r.preparacao || r.tipoPreparacao || prepCardapioGlobal || "---";
+              const alimentosCell = Array.isArray(r.itens)
+                ? r.itens
+                    .map((it: any) =>
+                      isQualitativo
+                        ? `• ${it.alimentoNome || it.nome} — ${it.medidaCaseira || it.medida || "1 porção"}`
+                        : `• ${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g) [${it.kcal || 0} kcal]`
+                    )
+                    .join("\n")
+                : isQualitativo
+                ? `${r.alimentoNome || r.nome || r.alimentos || "Não informado"} — ${r.medidaCaseira || r.medida || "1 porção"}`
+                : r.alimentoNome || r.alimentos || (r.nome ? `${r.nome} (${r.gramas || 0}g) [${r.kcal || 0} kcal]` : "Não informado");
+              return (
+                <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                  <td className="border border-slate-300 px-3 py-1 font-semibold">{r.refeicao || r.nome || "Refeição"} ({r.horario || '--:--'})</td>
+                  <td className="border border-slate-300 px-3 py-1 font-medium text-emerald-900">{prep}</td>
+                  <td className="border border-slate-300 px-3 py-1 whitespace-pre-line">{alimentosCell}</td>
+                  <td className="border border-slate-300 px-3 py-1">{r.substituicoes || "Não descrita"}</td>
+                </tr>
+              );
+            })
           ) : (
-            <tr><td colSpan={3} className="border border-slate-300 px-3 py-1 text-center text-slate-500">Nenhuma refeição detalhada no cardápio.</td></tr>
+            <tr><td colSpan={4} className="border border-slate-300 px-3 py-1 text-center text-slate-500">Nenhuma refeição detalhada no cardápio.</td></tr>
           )}
         </tbody>
       </table>

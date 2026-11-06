@@ -3755,9 +3755,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="bg-indigo-50/40 border border-indigo-100 rounded-lg p-2 flex items-center space-x-2">
           <label class="text-[11px] font-bold text-indigo-950 whitespace-nowrap flex items-center space-x-1">
             <span>🍳</span>
-            <span>Tipo de Preparação (opcional):</span>
+            <span>Preparação:</span>
           </label>
-          <input type="text" class="rec-ref-tipo-prep w-full border border-indigo-200 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 font-medium" placeholder="Ex: Café com leite e pão com manteiga..." value="${escapeHtml(meal.tipoPreparacao || '')}">
+          <input type="text" data-field="preparacao" class="rec-ref-tipo-prep rec-ref-preparacao w-full border border-indigo-200 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 font-medium" placeholder="Ex: Vitamina de banana, Mingau de aveia, Café com leite e pão com manteiga..." value="${escapeHtml(meal.preparacao || meal.tipoPreparacao || '')}">
         </div>
       `;
 
@@ -4062,6 +4062,7 @@ document.addEventListener("DOMContentLoaded", () => {
           id: card.dataset.mealId || `rec-${mealIdx + 1}`,
           refeicao: refName,
           horario: refTime,
+          preparacao: refTipoPrep,
           tipoPreparacao: refTipoPrep,
           itens: itens,
           substituicoes: ""
@@ -4577,6 +4578,7 @@ document.addEventListener("DOMContentLoaded", () => {
           id: card.dataset.mealId || `ref-${mealIdx + 1}`,
           refeicao: refName,
           horario: refTime,
+          preparacao: refTipoPrep,
           tipoPreparacao: refTipoPrep,
           itens: itens,
           substituicoes: refSubs
@@ -4660,19 +4662,79 @@ document.addEventListener("DOMContentLoaded", () => {
     return html;
   }
 
-  // Renderiza a estrutura completa do cardápio com suporte a TACO, tipo de preparação, regra de três e medida caseira
+  // Verifica se o Planejamento Alimentar Qualitativo está habilitado para o caso clínico ativo (Simulação Clínica)
+  function isQualitativePlanningEnabled(caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
+    if (isReal) return false;
+    return Boolean(activeCase?.habilitarPlanejamentoQualitativo === true);
+  }
+  window.isQualitativePlanningEnabled = isQualitativePlanningEnabled;
+
+  // Aplica ou restaura a interface de Planejamento Alimentar Qualitativo (ocultando tabelas quantitativas, gramaturas, macros e micros)
+  function applyQualitativePlanningMode(caseOverride = null) {
+    const isQualitativo = isQualitativePlanningEnabled(caseOverride);
+    if (appState.currentProntuario) {
+      appState.currentProntuario.habilitarPlanejamentoQualitativo = isQualitativo;
+    }
+
+    const totalsPanel = document.getElementById("cardapioTotalsPanel");
+    const lipidPanel = document.getElementById("cardapioLipidQualityContainer");
+    const microPanel = document.getElementById("cardapioMicroAdequacyContainer");
+    if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
+    if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
+    if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
+
+    renderCardapioTable();
+    return isQualitativo;
+  }
+  window.applyQualitativePlanningMode = applyQualitativePlanningMode;
+
+  // Altera o texto do botão final do aluno quando 'Habilitar Correção Automática por IA' está ativo
+  function applyAiCorrectionButtonState(caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
+    const isAiEnabled = !isReal && Boolean(activeCase?.habilitarCorrecaoAutomaticaIA === true);
+    if (appState.currentProntuario) {
+      appState.currentProntuario.habilitarCorrecaoAutomaticaIA = isAiEnabled;
+    }
+
+    const finalizeBtn = document.getElementById("finalizeAndExportDocxBtn");
+    if (finalizeBtn) {
+      const labelSpan = finalizeBtn.querySelector("span:last-child") || finalizeBtn;
+      if (isAiEnabled) {
+        labelSpan.textContent = "Finalizar e Enviar para Correção IA";
+      } else if (isReal) {
+        labelSpan.textContent = "Emitir Relatório Clínico (Word / PDF)";
+      } else {
+        labelSpan.textContent = "Finalizar Caso";
+      }
+    }
+    return isAiEnabled;
+  }
+  window.applyAiCorrectionButtonState = applyAiCorrectionButtonState;
+
+  // Renderiza a estrutura completa do cardápio com suporte a TACO, preparação, regra de três, medida caseira e Modo Qualitativo
   function renderCardapioTable() {
     const container = document.getElementById("cardapioMealsContainer");
     if (!container) return;
 
+    const isQualitativo = isQualitativePlanningEnabled();
+    const totalsPanel = document.getElementById("cardapioTotalsPanel");
+    const lipidPanel = document.getElementById("cardapioLipidQualityContainer");
+    const microPanel = document.getElementById("cardapioMicroAdequacyContainer");
+    if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
+    if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
+    if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
+
     if (!appState.currentProntuario.planejamentoAlimentar || appState.currentProntuario.planejamentoAlimentar.length === 0) {
       appState.currentProntuario.planejamentoAlimentar = [
-        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-6", refeicao: "Ceia", horario: "22:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
       ];
     }
 
@@ -4689,7 +4751,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.mealId = meal.id || `ref-${mealIdx + 1}`;
       card.dataset.mealIdx = mealIdx;
 
-      // Cabeçalho da refeição: Nome/Horário seguido pelo Tipo de Preparação
+      // Cabeçalho da refeição: Nome/Horário seguido pelo Campo de Preparação
       let headerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
@@ -4698,7 +4760,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="time" class="cardapio-ref-time text-xs border border-slate-300 rounded px-2 py-0.5 w-24 bg-white" value="${escapeHtml(meal.horario || '08:00')}">
           </div>
           <div class="flex items-center space-x-2">
-            <span class="meal-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+            <span class="meal-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs ${isQualitativo ? 'hidden' : ''}">
               ${subtotal.kcal} kcal | CHO: ${subtotal.cho}g | PTN: ${subtotal.ptn}g | LIP: ${subtotal.lip}g
             </span>
             <button type="button" class="remove-meal-btn text-slate-400 hover:text-rose-600 p-1 text-sm rounded transition cursor-pointer" data-meal-idx="${mealIdx}" title="Excluir esta refeição">
@@ -4707,17 +4769,17 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
 
-        <!-- ESTRUTURA VISUAL: TIPO DE PREPARAÇÃO LOGO APÓS NOME/HORÁRIO -->
+        <!-- ESTRUTURA VISUAL: CAMPO 'PREPARAÇÃO' LOGO APÓS NOME/HORÁRIO -->
         <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-lg p-2 flex items-center space-x-2">
           <label class="text-[11px] font-bold text-emerald-950 whitespace-nowrap flex items-center space-x-1">
             <span>🍳</span>
-            <span>Tipo de Preparação:</span>
+            <span>Preparação:</span>
           </label>
-          <input type="text" class="cardapio-ref-tipo-prep w-full border border-emerald-300 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-medium" placeholder="Ex: Vitamina de banana, Omelete de claras com aveia, Sanduíche natural, Salada mista..." value="${escapeHtml(meal.tipoPreparacao || '')}" title="Defina a preparação culinária desta refeição antes dos alimentos da TACO">
+          <input type="text" data-field="preparacao" class="cardapio-ref-tipo-prep cardapio-ref-preparacao w-full border border-emerald-300 rounded px-2.5 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-medium" placeholder="Ex: Vitamina de banana, Mingau de aveia, Omelete de claras com aveia, Sanduíche natural..." value="${escapeHtml(meal.preparacao || meal.tipoPreparacao || '')}" title="Defina a preparação culinária desta refeição antes dos ingredientes individuais">
         </div>
       `;
 
-      // Tabela de itens da refeição
+      // Tabela de itens da refeição (em modo qualitativo, exibe apenas Alimento e Medida Caseira, ocultando Qtd, Gramatura, Kcal, CHO, PTN e LIP)
       let itemsTableHtml = `
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
@@ -4725,12 +4787,12 @@ document.addEventListener("DOMContentLoaded", () => {
               <tr>
                 <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO / Decisão)</th>
                 <th class="py-1.5 px-2 min-w-[140px]">Medida Caseira</th>
-                <th class="py-1.5 px-2 text-center w-16 text-emerald-800 font-bold" title="Quantidade de medidas caseiras">Qtd</th>
-                <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
-                <th class="py-1.5 px-2 text-right w-16 text-emerald-800 font-bold">Kcal</th>
-                <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
-                <th class="py-1.5 px-2 text-right w-16 text-sky-800">PTN</th>
-                <th class="py-1.5 px-2 text-right w-16 text-rose-800">LIP</th>
+                <th class="py-1.5 px-2 text-center w-16 text-emerald-800 font-bold ${isQualitativo ? 'hidden' : ''}" title="Quantidade de medidas caseiras">Qtd</th>
+                <th class="py-1.5 px-2 text-right w-24 ${isQualitativo ? 'hidden' : ''}">Gramatura (g)</th>
+                <th class="py-1.5 px-2 text-right w-16 text-emerald-800 font-bold ${isQualitativo ? 'hidden' : ''}">Kcal</th>
+                <th class="py-1.5 px-2 text-right w-16 text-amber-800 ${isQualitativo ? 'hidden' : ''}">CHO</th>
+                <th class="py-1.5 px-2 text-right w-16 text-sky-800 ${isQualitativo ? 'hidden' : ''}">PTN</th>
+                <th class="py-1.5 px-2 text-right w-16 text-rose-800 ${isQualitativo ? 'hidden' : ''}">LIP</th>
                 <th class="py-1.5 px-1 text-center w-8">Ação</th>
               </tr>
             </thead>
@@ -4740,8 +4802,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (meal.itens.length === 0) {
         itemsTableHtml += `
           <tr class="empty-items-row">
-            <td colspan="9" class="text-center py-2.5 text-slate-400 italic text-[11px]">
-              Nenhum alimento cadastrado nesta refeição. Clique no botão verde abaixo para adicionar alimentos da TACO.
+            <td colspan="${isQualitativo ? 3 : 9}" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+              Nenhum alimento cadastrado nesta refeição. Clique no botão verde abaixo para adicionar alimentos.
             </td>
           </tr>
         `;
@@ -4755,18 +4817,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 </select>
               </td>
               <td class="py-1.5 px-2">
-                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: unidade, colher..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
+                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: 1 unidade, 2 colheres de sopa..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
               </td>
-              <td class="py-1.5 px-2 text-center">
+              <td class="py-1.5 px-2 text-center ${isQualitativo ? 'hidden' : ''}">
                 <input type="number" min="0.1" step="0.5" class="cardapio-item-qtd w-16 border border-emerald-400 bg-emerald-50/60 rounded px-1.5 py-1 text-xs text-center font-bold text-emerald-950 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 shadow-2xs" placeholder="1" value="${it.quantidadeMedida !== undefined && it.quantidadeMedida !== null && it.quantidadeMedida !== '' ? it.quantidadeMedida : (it.qtd !== undefined ? it.qtd : 1)}" title="Quantidade da medida caseira: altere (ex: de 1 para 2) para recalcular gramatura e nutrientes em tempo real">
               </td>
-              <td class="py-1.5 px-2 text-right">
+              <td class="py-1.5 px-2 text-right ${isQualitativo ? 'hidden' : ''}">
                 <input type="number" min="0" step="1" class="cardapio-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-emerald-600" placeholder="g" value="${it.gramatura || ''}">
               </td>
-              <td class="py-1.5 px-2 text-right font-bold text-emerald-800 cardapio-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-ptn">${it.ptn !== undefined ? it.ptn : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-lip">${it.lip !== undefined ? it.lip : 0}</td>
+              <td class="py-1.5 px-2 text-right font-bold text-emerald-800 cardapio-item-kcal ${isQualitativo ? 'hidden' : ''}">${it.kcal !== undefined ? it.kcal : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-cho ${isQualitativo ? 'hidden' : ''}">${it.cho !== undefined ? it.cho : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-ptn ${isQualitativo ? 'hidden' : ''}">${it.ptn !== undefined ? it.ptn : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 cardapio-item-lip ${isQualitativo ? 'hidden' : ''}">${it.lip !== undefined ? it.lip : 0}</td>
               <td class="py-1.5 px-1 text-center">
                 <button type="button" class="remove-item-btn text-rose-400 hover:text-rose-700 font-bold px-1 text-xs cursor-pointer" data-meal-idx="${mealIdx}" data-item-idx="${itIdx}" title="Remover alimento">
                   ✕
@@ -5009,6 +5071,7 @@ document.addEventListener("DOMContentLoaded", () => {
         id: `ref-${Date.now()}`,
         refeicao: `Refeição ${nextNum}`,
         horario: "15:00",
+        preparacao: "",
         tipoPreparacao: "",
         itens: [],
         alimentos: "",
@@ -5035,6 +5098,7 @@ document.addEventListener("DOMContentLoaded", () => {
         id: `rec-${Date.now()}`,
         refeicao: `Refeição ${nextNum}`,
         horario: "15:00",
+        preparacao: "",
         tipoPreparacao: "",
         itens: [],
         substituicoes: "",
@@ -6686,8 +6750,8 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Rascunho salvo com sucesso no navegador!");
     });
 
-    // Finalizar caso e gerar Word (.docx)
-    finalizeAndExportDocxBtn.addEventListener("click", () => {
+    // Finalizar caso e gerar Word (.docx) + Correção Automática por IA quando habilitada pelo professor
+    finalizeAndExportDocxBtn.addEventListener("click", async () => {
       if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
         exportRealPatientDocx();
         return;
@@ -6707,6 +6771,35 @@ document.addEventListener("DOMContentLoaded", () => {
         ? firebaseSyncService.getUserId() 
         : "anon_user";
       data.userId = data.userId || uid;
+      data.habilitarPlanejamentoQualitativo = Boolean(appState.currentCase?.habilitarPlanejamentoQualitativo);
+      data.habilitarCorrecaoAutomaticaIA = Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA);
+
+      // Se a Correção Automática por IA estiver habilitada para o caso no Painel do Professor:
+      const aiResultContainer = document.getElementById("aiEvaluationResultContainer");
+      const aiGradeBadge = document.getElementById("aiEvaluationFinalGradeBadge");
+      const aiTextContent = document.getElementById("aiEvaluationTextContent");
+      const aiEmailStatus = document.getElementById("aiEvaluationEmailStatus");
+      const pedNotice = document.getElementById("submissionStandardPedagogicalNotice");
+
+      if (appState.currentCase?.habilitarCorrecaoAutomaticaIA === true) {
+        try {
+          const aiRes = await prontuarioManager.evaluateCaseWithAI(data, appState.currentCase);
+          data.avaliacaoIA = aiRes.avaliacaoIA;
+          data.notaIA = aiRes.notaFinal;
+          if (aiResultContainer) aiResultContainer.classList.remove("hidden");
+          if (pedNotice) pedNotice.classList.add("hidden");
+          if (aiGradeBadge) aiGradeBadge.textContent = `Nota Final: ${aiRes.notaFinal} / 10,0`;
+          if (aiTextContent) aiTextContent.textContent = aiRes.avaliacaoIA;
+          if (aiEmailStatus) {
+            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado ao Professor:</strong> Cópia completa da resolução de <strong>${escapeHtml(data.aluno.nome)}</strong> no caso <strong>${escapeHtml(appState.currentCase.title)}</strong> e Avaliação da IA (Nota ${escapeHtml(aiRes.notaFinal)}/10,0) enviada para <code>${escapeHtml(aiRes.professorEmail)}</code>.`;
+          }
+        } catch (aiErr) {
+          console.warn("⚠️ Aviso durante Correção Automática por IA:", aiErr);
+        }
+      } else {
+        if (aiResultContainer) aiResultContainer.classList.add("hidden");
+        if (pedNotice) pedNotice.classList.remove("hidden");
+      }
 
       // Salva rascunho final
       prontuarioManager.saveDraft(appState.currentCaseId, data);
@@ -6714,14 +6807,10 @@ document.addEventListener("DOMContentLoaded", () => {
         firebaseSyncService.saveProntuario(appState.currentCaseId, data);
       }
 
-      // REGRA SOLICITADA:
-      // "A proposta é que o aluno não receba feedback final do que acertou ou do que errou."
-      // "Gere um documento em Word e que ele crie no final todo o relatório necessário do caso clínico e resolução dietoterápica, com o planejamento alimentar do paciente."
-
       // 1. Gera e baixa o documento Word (.docx) imediatamente
       DietoterapiaDocxReport.generateReport(data, appState.currentCase);
 
-      // 2. Abre modal confirmando a submissão e informando que a avaliação será feita pelo docente (sem mostrar erros/acertos)
+      // 2. Abre modal confirmando a submissão (e exibindo a correção da IA e a nota final caso habilitada)
       document.getElementById("modalStudentName").textContent = data.aluno.nome;
       document.getElementById("modalCaseTitle").textContent = appState.currentCase.title;
       submissionConfirmModal.classList.remove("hidden");
@@ -7916,6 +8005,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!caseData) return;
+    applyQualitativePlanningMode(caseData);
+    applyAiCorrectionButtonState(caseData);
     const blockedTabs = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
     const questionsEnabled = caseData.habilitarQuestoesAvaliativas !== false;
 
@@ -8350,6 +8441,46 @@ document.addEventListener("DOMContentLoaded", () => {
     // Status de Questões Avaliativas (Habilitar / Desabilitar)
     const isQuestionsEnabled = c.habilitarQuestoesAvaliativas !== false;
     updateCaseQuestionsLabel(isQuestionsEnabled);
+
+    // Status de Planejamento Qualitativo (Habilitar / Desabilitar)
+    const isQualitativeEnabled = c.habilitarPlanejamentoQualitativo === true;
+    const qualCb = document.getElementById("admCaseEnableQualitativePlan");
+    const qualLabel = document.getElementById("admCaseEnableQualitativePlanLabel");
+    if (qualCb) {
+      qualCb.checked = isQualitativeEnabled;
+      qualCb.onchange = () => {
+        if (qualLabel) {
+          qualLabel.textContent = qualCb.checked ? "Habilitado" : "Desabilitado";
+          qualLabel.className = qualCb.checked ? "ml-2.5 text-xs font-bold text-indigo-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+        }
+      };
+    }
+    if (qualLabel) {
+      qualLabel.textContent = isQualitativeEnabled ? "Habilitado" : "Desabilitado";
+      qualLabel.className = isQualitativeEnabled ? "ml-2.5 text-xs font-bold text-indigo-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+    }
+
+    // Status de Correção Automática por IA e E-mail do Professor
+    const isAiCorrectionEnabled = c.habilitarCorrecaoAutomaticaIA === true;
+    const aiCb = document.getElementById("admCaseEnableAiCorrection");
+    const aiLabel = document.getElementById("admCaseEnableAiCorrectionLabel");
+    if (aiCb) {
+      aiCb.checked = isAiCorrectionEnabled;
+      aiCb.onchange = () => {
+        if (aiLabel) {
+          aiLabel.textContent = aiCb.checked ? "Habilitado" : "Desabilitado";
+          aiLabel.className = aiCb.checked ? "ml-2.5 text-xs font-bold text-emerald-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+        }
+      };
+    }
+    if (aiLabel) {
+      aiLabel.textContent = isAiCorrectionEnabled ? "Habilitado" : "Desabilitado";
+      aiLabel.className = isAiCorrectionEnabled ? "ml-2.5 text-xs font-bold text-emerald-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+    }
+    const profEmailInput = document.getElementById("admCaseProfessorEmail");
+    if (profEmailInput) {
+      profEmailInput.value = c.professorEmail || "professor@dietocase.edu.br";
+    }
     
     // Bloqueio de Abas do Aluno (Tempo Real)
     populateBlockedTabsInEditor(c.blockedTabs || []);
@@ -8680,6 +8811,9 @@ document.addEventListener("DOMContentLoaded", () => {
       isLocked: !(document.getElementById("admCaseIsUnlocked")?.checked),
       visivel: document.getElementById("admCaseIsVisible") ? document.getElementById("admCaseIsVisible").checked : true,
       habilitarQuestoesAvaliativas: document.getElementById("admCaseEnableQuestions") ? document.getElementById("admCaseEnableQuestions").checked : true,
+      habilitarPlanejamentoQualitativo: document.getElementById("admCaseEnableQualitativePlan") ? document.getElementById("admCaseEnableQualitativePlan").checked : false,
+      habilitarCorrecaoAutomaticaIA: document.getElementById("admCaseEnableAiCorrection") ? document.getElementById("admCaseEnableAiCorrection").checked : false,
+      professorEmail: document.getElementById("admCaseProfessorEmail") ? document.getElementById("admCaseProfessorEmail").value.trim() : "professor@dietocase.edu.br",
       blockedTabs: readBlockedTabsFromEditor(),
       patient: {
         name: document.getElementById("admPatName").value.trim(),
