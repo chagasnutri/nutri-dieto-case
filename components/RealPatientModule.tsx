@@ -45,6 +45,42 @@ export default function RealPatientModule() {
   const [recordatorioPreparacaoReal, setRecordatorioPreparacaoReal] = useState<string>('Vitamina de banana com pão e café com leite');
   const [cardapioPreparacaoReal, setCardapioPreparacaoReal] = useState<string>('Mingau de aveia com mamão e pão integral');
 
+  // Seletor de Tipo de Cardápio (Qualitativo vs Quantitativo) no Atendimento Real
+  const [tipoPlanejamentoReal, setTipoPlanejamentoReal] = useState<'qualitativo' | 'quantitativo'>('quantitativo');
+  const [blocosQualitativosReal, setBlocosQualitativosReal] = useState<Array<{
+    id: string;
+    refeicao: string;
+    horario: string;
+    preparacao: string;
+    tipoPreparacao?: string;
+    itens: Array<{ id: string; alimento: string; alimentoNome: string; medidaCaseira: string }>;
+  }>>([
+    {
+      id: 'real-qual-1',
+      refeicao: 'Desjejum',
+      horario: '07:30',
+      preparacao: 'Vitamina de banana com aveia',
+      tipoPreparacao: 'Vitamina de banana com aveia',
+      itens: [
+        { id: 'real-qit-1', alimento: 'Banana prata', alimentoNome: 'Banana prata', medidaCaseira: '1 unidade média' },
+        { id: 'real-qit-2', alimento: 'Leite desnatado', alimentoNome: 'Leite desnatado', medidaCaseira: '1 copo cheio' },
+        { id: 'real-qit-3', alimento: 'Aveia em flocos', alimentoNome: 'Aveia em flocos', medidaCaseira: '2 colheres de sopa' }
+      ]
+    },
+    {
+      id: 'real-qual-2',
+      refeicao: 'Almoço',
+      horario: '12:30',
+      preparacao: 'Prato executivo equilibrado',
+      tipoPreparacao: 'Prato executivo equilibrado',
+      itens: [
+        { id: 'real-qit-4', alimento: 'Arroz integral cozido', alimentoNome: 'Arroz integral cozido', medidaCaseira: '3 colheres de sopa' },
+        { id: 'real-qit-5', alimento: 'Feijão carioca cozido', alimentoNome: 'Feijão carioca cozido', medidaCaseira: '1 concha média' },
+        { id: 'real-qit-6', alimento: 'Filé de frango grelhado', alimentoNome: 'Filé de frango grelhado', medidaCaseira: '1 filé médio' }
+      ]
+    }
+  ]);
+
   // Regra 2: Estado das Fórmulas Preditivas no Atendimento Real (Trava de Validação: Exatas 3 Fórmulas)
   const [formulasReal, setFormulasReal] = useState<Array<{ id: string; formulaKey: string; nome: string; equacao: string; resultadoKcal: string }>>([]);
   const [novaFormulaKeyReal, setNovaFormulaKeyReal] = useState<string>('bolso');
@@ -117,12 +153,17 @@ export default function RealPatientModule() {
           sexo: 'Masculino',
           hipoteseDiagnostica: 'Sindrome Metabolica e Esteatose Hepatica Grau II'
         },
+        tipoPlanejamentoCardapio: tipoPlanejamentoReal,
+        habilitarPlanejamentoQualitativo: tipoPlanejamentoReal === 'qualitativo',
         recordatorioPreparacao: recordatorioPreparacaoReal,
         cardapioPreparacao: cardapioPreparacaoReal,
-        recordatorioItems: recordatorioItems.map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
-        cardapioItems: cardapioItems.map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
-        exams,
-        interactions,
+        recordatorioItems: (recordatorioItems || []).map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
+        planejamentoAlimentar: tipoPlanejamentoReal === 'qualitativo'
+          ? (blocosQualitativosReal || [])
+          : (cardapioItems || []).map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
+        cardapioItems: (cardapioItems || []).map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
+        exams: exams || [],
+        interactions: interactions || [],
         orientacoesNutricionais: orientacoesNutricionais || '',
         dataFinalizacao: new Date().toISOString()
       };
@@ -1128,6 +1169,248 @@ export default function RealPatientModule() {
                 );
               })()}
 
+              {/* Seletor de Tipo de Cardápio (Interface do Aluno): 'Planejamento Qualitativo' vs 'Planejamento Quantitativo' */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                <span className="text-xs font-bold text-indigo-400 block">
+                  🍽️ Selecione o Formato do Planejamento Dietético (Escolha do Aluno):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Tipo de Planejamento Dietético Real">
+                  <label
+                    onClick={() => setTipoPlanejamentoReal('qualitativo')}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                      tipoPlanejamentoReal === 'qualitativo'
+                        ? 'border-amber-500 bg-amber-950/30 text-white shadow'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tipoPlanejamentoCardapioReal"
+                      value="qualitativo"
+                      checked={tipoPlanejamentoReal === 'qualitativo'}
+                      onChange={() => setTipoPlanejamentoReal('qualitativo')}
+                      className="mt-1 accent-amber-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>🥗</span>
+                        <span>Planejamento Qualitativo</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Blocos limpos por refeição (Refeição, Horário, Preparação, Alimentos e Medidas Caseiras), ocultando tabelas quantitativas.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setTipoPlanejamentoReal('quantitativo')}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                      tipoPlanejamentoReal === 'quantitativo'
+                        ? 'border-indigo-500 bg-indigo-950/30 text-white shadow'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tipoPlanejamentoCardapioReal"
+                      value="quantitativo"
+                      checked={tipoPlanejamentoReal === 'quantitativo'}
+                      onChange={() => setTipoPlanejamentoReal('quantitativo')}
+                      className="mt-1 accent-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>📊</span>
+                        <span>Planejamento Quantitativo</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Esquema completo padrão com banco de alimentos, gramaturas, cálculos de VET, macros e adequação de DRIs.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {tipoPlanejamentoReal === 'qualitativo' ? (
+                <div className="space-y-4">
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-white text-sm">
+                        Planejamento Alimentar Qualitativo • Blocos por Refeição
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Adicione refeições com horário, preparação livre e múltiplos alimentos com medidas caseiras.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setBlocosQualitativosReal((prev) => [
+                          ...(prev || []),
+                          {
+                            id: `real-qual-${Date.now()}`,
+                            refeicao: 'Lanche da Tarde',
+                            horario: '16:00',
+                            preparacao: '',
+                            tipoPreparacao: '',
+                            itens: [{ id: `real-qit-${Date.now()}`, alimento: '', alimentoNome: '', medidaCaseira: '' }]
+                          }
+                        ])
+                      }
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow transition cursor-pointer"
+                    >
+                      ➕ Adicionar Nova Refeição
+                    </button>
+                  </div>
+
+                  {(blocosQualitativosReal || []).map((bloco, mIdx) => (
+                    <div key={bloco.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-slate-800 pb-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-indigo-400 mb-1">🍽️ Refeição:</label>
+                          <select
+                            value={bloco.refeicao}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBlocosQualitativosReal((prev) =>
+                                prev.map((b, i) => (i === mIdx ? { ...b, refeicao: val } : b))
+                              );
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:border-indigo-500 outline-none"
+                          >
+                            {['Desjejum', 'Colação', 'Almoço', 'Lanche da Tarde', 'Jantar', 'Ceia', 'Lanche Noturno'].map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-indigo-400 mb-1">⏰ Horário:</label>
+                          <input
+                            type="time"
+                            value={bloco.horario}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBlocosQualitativosReal((prev) =>
+                                prev.map((b, i) => (i === mIdx ? { ...b, horario: val } : b))
+                              );
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:border-indigo-500 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-indigo-400 mb-1">🍲 Preparação:</label>
+                          <input
+                            type="text"
+                            value={bloco.preparacao}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBlocosQualitativosReal((prev) =>
+                                prev.map((b, i) => (i === mIdx ? { ...b, preparacao: val, tipoPreparacao: val } : b))
+                              );
+                            }}
+                            placeholder="Ex: Vitamina de banana..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-indigo-300 font-medium focus:border-indigo-500 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {(bloco.itens || []).map((it, itIdx) => (
+                          <div key={it.id} className="grid grid-cols-12 gap-2 items-center">
+                            <div className="col-span-6">
+                              <input
+                                type="text"
+                                value={it.alimento}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBlocosQualitativosReal((prev) =>
+                                    prev.map((b, i) =>
+                                      i === mIdx
+                                        ? {
+                                            ...b,
+                                            itens: b.itens.map((item, j) =>
+                                              j === itIdx ? { ...item, alimento: val, alimentoNome: val } : item
+                                            )
+                                          }
+                                        : b
+                                    )
+                                  );
+                                }}
+                                placeholder="Alimento (ex: Banana prata)"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-indigo-500 outline-none"
+                              />
+                            </div>
+                            <div className="col-span-5">
+                              <input
+                                type="text"
+                                value={it.medidaCaseira}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBlocosQualitativosReal((prev) =>
+                                    prev.map((b, i) =>
+                                      i === mIdx
+                                        ? {
+                                            ...b,
+                                            itens: b.itens.map((item, j) =>
+                                              j === itIdx ? { ...item, medidaCaseira: val } : item
+                                            )
+                                          }
+                                        : b
+                                    )
+                                  );
+                                }}
+                                placeholder="Medida Caseira (ex: 1 copo cheio)"
+                                className="w-full bg-slate-950 border border-indigo-500/60 rounded-lg px-2.5 py-1.5 text-xs text-indigo-300 font-semibold focus:border-indigo-400 outline-none"
+                              />
+                            </div>
+                            <div className="col-span-1 text-center">
+                              <button
+                                type="button"
+                                disabled={(bloco.itens || []).length <= 1}
+                                onClick={() =>
+                                  setBlocosQualitativosReal((prev) =>
+                                    prev.map((b, i) =>
+                                      i === mIdx ? { ...b, itens: b.itens.filter((_, j) => j !== itIdx) } : b
+                                    )
+                                  )
+                                }
+                                className="text-rose-400 hover:text-rose-300 disabled:opacity-30 cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-1 border-t border-slate-800/80">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBlocosQualitativosReal((prev) =>
+                              prev.map((b, i) =>
+                                i === mIdx
+                                  ? {
+                                      ...b,
+                                      itens: [
+                                        ...(b.itens || []),
+                                        { id: `real-qit-${Date.now()}`, alimento: '', alimentoNome: '', medidaCaseira: '' }
+                                      ]
+                                    }
+                                  : b
+                              )
+                            )
+                          }
+                          className="bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+                        >
+                          ➕ Adicionar Alimento nesta Refeição
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
               {/* Seletor de Bases e Botao Cadastrar Alimento */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1268,6 +1551,8 @@ export default function RealPatientModule() {
                 }}
                 theme="indigo"
               />
+                </>
+              )}
             </div>
           )}
 
@@ -1353,11 +1638,15 @@ export default function RealPatientModule() {
                   },
                   recordatorioPreparacao: recordatorioPreparacaoReal,
                   cardapioPreparacao: cardapioPreparacaoReal,
-                  recordatorioItems: recordatorioItems.map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
-                  cardapioItems: cardapioItems.map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
-                  exams: exams,
-                  interactions: interactions,
-                  orientacoesNutricionais: orientacoesNutricionais
+                  habilitarPlanejamentoQualitativo: tipoPlanejamentoReal === 'qualitativo',
+                  planejamentoAlimentar: tipoPlanejamentoReal === 'qualitativo'
+                    ? (blocosQualitativosReal || [])
+                    : (cardapioItems || []).map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
+                  recordatorioItems: (recordatorioItems || []).map((it) => ({ ...it, preparacao: recordatorioPreparacaoReal, tipoPreparacao: recordatorioPreparacaoReal })),
+                  cardapioItems: (cardapioItems || []).map((it) => ({ ...it, preparacao: cardapioPreparacaoReal, tipoPreparacao: cardapioPreparacaoReal })),
+                  exams: exams || [],
+                  interactions: interactions || [],
+                  orientacoesNutricionais: orientacoesNutricionais || ''
                 }}
                 clinicalCase={{
                   isRealCase: true,

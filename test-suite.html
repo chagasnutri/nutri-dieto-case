@@ -3935,6 +3935,72 @@ Questões Avaliativas:
         asyncEmailResult.emailPayload.text.includes("Excelente conduta clínica segundo diretrizes BRASPEN."),
         "Seção 146.4 (Conteúdo Obrigatório do E-mail para chagasnutri@gmail.com): Contém Nome do Aluno, Título do Caso Clínico, Data/Hora, Relatório Final completo e anexa Nota e Feedback da IA quando ativada"
       );
+
+      // =========================================================================
+      // SEÇÃO 147: REFATORAÇÃO DA ABA CARDÁPIO / PLANEJAMENTO DIETÉTICO (SELETOR DO ALUNO: QUALITATIVO VS QUANTITATIVO)
+      // =========================================================================
+
+      // 147.1 Seletor de Tipo de Cardápio (Qualitativo vs Quantitativo) e Troca Segura de Modo
+      const prontSwitch = pmRules.getEmptyProntuario("caso-switch-cardapio");
+      const switchedToQual = pmRules.switchCardapioPlanningMode(prontSwitch, "qualitativo");
+      assert(
+        switchedToQual.tipoPlanejamentoCardapio === "qualitativo" &&
+        switchedToQual.habilitarPlanejamentoQualitativo === true &&
+        Array.isArray(switchedToQual.planejamentoAlimentar),
+        "Seção 147.1 (Seletor do Aluno - Modo Qualitativo): switchCardapioPlanningMode('qualitativo') ativa o modo qualitativo e preserva planejamentoAlimentar como array válido"
+      );
+
+      // 147.2 Blocos de Refeição no Modo Qualitativo (Refeição, Horário, Preparação e Múltiplos Alimentos com Medida Caseira)
+      switchedToQual.planejamentoAlimentar = [
+        {
+          id: "qual-ref-desjejum",
+          refeicao: "Desjejum",
+          horario: "07:30",
+          preparacao: "Vitamina de banana",
+          tipoPlanejamento: "qualitativo",
+          itens: [
+            { id: "it-1", alimento: "Banana prata", medidaCaseira: "1 unidade média" },
+            { id: "it-2", alimento: "Leite desnatado", medidaCaseira: "1 copo cheio" },
+            { id: "it-3", alimento: "Aveia em flocos", medidaCaseira: "2 colheres de sopa" }
+          ]
+        }
+      ];
+
+      const payloadQualitativoFinal = pmRules.buildSubmissionPayload(switchedToQual);
+      const htmlReportFromStudentChoice = DietoterapiaDocxReport.buildHtmlReport(payloadQualitativoFinal, {
+        id: "caso-switch-cardapio",
+        title: "Caso Escolha do Aluno no Planejamento"
+      });
+
+      assert(
+        payloadQualitativoFinal.tipoPlanejamentoCardapio === "qualitativo" &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].refeicao === "Desjejum" &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].horario === "07:30" &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].preparacao === "Vitamina de banana" &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].itens.length === 3 &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].itens[1].alimentoNome === "Leite desnatado" &&
+        payloadQualitativoFinal.planejamentoAlimentar[0].itens[1].medidaCaseira === "1 copo cheio" &&
+        htmlReportFromStudentChoice.includes("PLANEJAMENTO ALIMENTAR QUALITATIVO") &&
+        htmlReportFromStudentChoice.includes("Preparação: Vitamina de banana") &&
+        htmlReportFromStudentChoice.includes("Leite desnatado (1 copo cheio)") &&
+        !htmlReportFromStudentChoice.includes("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas (Análises Quantitativas)"),
+        "Seção 147.2 (Modo Qualitativo com Múltiplos Alimentos e Relatório Final): Salva Refeição, Horário, Preparação e múltiplos alimentos com Medida Caseira ('1 copo cheio'), ocultando tabelas quantitativas de gramaturas, macros e DRIs"
+      );
+
+      // 147.3 Troca de volta para 'Planejamento Quantitativo' sem perda de integridade e sem erro de null
+      const switchedBackToQuant = pmRules.switchCardapioPlanningMode(payloadQualitativoFinal, "quantitativo");
+      switchedBackToQuant.planejamentoAlimentar[0].itens[0].gramatura = 100;
+      switchedBackToQuant.planejamentoAlimentar[0].itens[0].kcal = 98;
+      const htmlReportQuantRestored = DietoterapiaDocxReport.buildHtmlReport(switchedBackToQuant, {
+        id: "caso-switch-cardapio",
+        title: "Caso Escolha do Aluno no Planejamento"
+      });
+      assert(
+        switchedBackToQuant.tipoPlanejamentoCardapio === "quantitativo" &&
+        switchedBackToQuant.habilitarPlanejamentoQualitativo === false &&
+        htmlReportQuantRestored.includes("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas (Análises Quantitativas)"),
+        "Seção 147.3 (Modo Quantitativo): Alternar para 'Planejamento Quantitativo' restaura o esquema completo com gramaturas, cálculos e consolidação nutricional sem quebrar o estado"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

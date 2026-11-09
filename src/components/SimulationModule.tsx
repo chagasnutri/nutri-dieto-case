@@ -8,7 +8,7 @@ import PreceptorDrawer from './PreceptorDrawer';
 import LipidQualitySection from './LipidQualitySection';
 import MicronutrientAdequacySection from './MicronutrientAdequacySection';
 import RelatorioFinal from './RelatorioFinal';
-import { useCaseDraft, CaseDraftData } from '../hooks/useCaseDraft';
+import { useCaseDraft, CaseDraftData, QualitativeMealBlock } from '../hooks/useCaseDraft';
 
 const SIMULATION_PATIENTS_MAP: Record<string, { nome: string; idade: number; sexo: 'Masculino' | 'Feminino'; hipotese: string }> = {
   'caso-dm2-has': {
@@ -197,6 +197,45 @@ const DEFAULT_INTERACTIONS = [
   { id: '1', med: '', classification: '', conduta: '' }
 ];
 
+const REFEICOES_QUALITATIVAS_OPCOES = [
+  'Desjejum',
+  'Colação',
+  'Almoço',
+  'Lanche da Tarde',
+  'Jantar',
+  'Ceia',
+  'Lanche Noturno'
+];
+
+const DEFAULT_QUALITATIVE_MEAL_BLOCKS: QualitativeMealBlock[] = [
+  {
+    id: 'qual-ref-1',
+    refeicao: 'Desjejum',
+    horario: '07:30',
+    preparacao: 'Vitamina de banana com aveia',
+    tipoPreparacao: 'Vitamina de banana com aveia',
+    tipoPlanejamento: 'qualitativo',
+    itens: [
+      { id: 'qual-it-1', alimento: 'Banana prata madura', alimentoNome: 'Banana prata madura', nome: 'Banana prata madura', medidaCaseira: '1 unidade média', medida: '1 unidade média' },
+      { id: 'qual-it-2', alimento: 'Leite desnatado', alimentoNome: 'Leite desnatado', nome: 'Leite desnatado', medidaCaseira: '1 copo cheio', medida: '1 copo cheio' },
+      { id: 'qual-it-3', alimento: 'Aveia em flocos', alimentoNome: 'Aveia em flocos', nome: 'Aveia em flocos', medidaCaseira: '2 colheres de sopa', medida: '2 colheres de sopa' }
+    ]
+  },
+  {
+    id: 'qual-ref-2',
+    refeicao: 'Almoço',
+    horario: '12:30',
+    preparacao: 'Prato cardioprotetor equilibrado',
+    tipoPreparacao: 'Prato cardioprotetor equilibrado',
+    tipoPlanejamento: 'qualitativo',
+    itens: [
+      { id: 'qual-it-4', alimento: 'Arroz integral cozido', alimentoNome: 'Arroz integral cozido', nome: 'Arroz integral cozido', medidaCaseira: '3 colheres de sopa', medida: '3 colheres de sopa' },
+      { id: 'qual-it-5', alimento: 'Feijão carioca cozido', alimentoNome: 'Feijão carioca cozido', nome: 'Feijão carioca cozido', medidaCaseira: '1 concha média', medida: '1 concha média' },
+      { id: 'qual-it-6', alimento: 'Filé de peito de frango grelhado', alimentoNome: 'Filé de peito de frango grelhado', nome: 'Filé de peito de frango grelhado', medidaCaseira: '1 filé médio', medida: '1 filé médio' }
+    ]
+  }
+];
+
 const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => ({
   studentId,
   studentName: 'Estudante de Nutrição',
@@ -223,8 +262,10 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   prescricaoLIP: '30',
   condutaPrescricao: 'Dieta normocalórica, normoglicídica com ênfase em carboidratos complexos de baixo IG, normoproteica e normolipídica com perfil cardioprotetor (< 7% gorduras saturadas, restrição de sódio < 2000 mg/dia).',
   formulasCalculadas: [],
+  tipoPlanejamentoCardapio: 'quantitativo',
   cardapioPreparacao: 'Mingau de aveia com mamão e pão integral',
   cardapioItems: DEFAULT_CARDAPIO_ITEMS,
+  planejamentoQualitativoBlocos: DEFAULT_QUALITATIVE_MEAL_BLOCKS,
   planejamentoAlimentar: DEFAULT_CARDAPIO_ITEMS,
   habilitarPlanejamentoQualitativo: false,
   habilitarCorrecaoAutomaticaIA: false,
@@ -389,8 +430,150 @@ export default function SimulationModule() {
     professorEmail: string;
   } | null>(null);
 
-  const habilitarPlanejamentoQualitativo = Boolean(draftData.habilitarPlanejamentoQualitativo);
-  const habilitarCorrecaoAutomaticaIA = Boolean(draftData.habilitarCorrecaoAutomaticaIA);
+  const tipoPlanejamentoCardapio: 'qualitativo' | 'quantitativo' =
+    draftData?.tipoPlanejamentoCardapio === 'qualitativo' || Boolean(draftData?.habilitarPlanejamentoQualitativo)
+      ? 'qualitativo'
+      : 'quantitativo';
+  const habilitarPlanejamentoQualitativo = tipoPlanejamentoCardapio === 'qualitativo';
+  const habilitarCorrecaoAutomaticaIA = Boolean(draftData?.habilitarCorrecaoAutomaticaIA);
+  const planejamentoQualitativoBlocos: QualitativeMealBlock[] =
+    Array.isArray(draftData?.planejamentoQualitativoBlocos) && draftData.planejamentoQualitativoBlocos.length > 0
+      ? draftData.planejamentoQualitativoBlocos
+      : DEFAULT_QUALITATIVE_MEAL_BLOCKS;
+
+  // Alterna entre 'Planejamento Qualitativo' e 'Planejamento Quantitativo' gerenciando planejamentoAlimentar com segurança
+  const handleSelectTipoPlanejamentoCardapio = (novoModo: 'qualitativo' | 'quantitativo') => {
+    const isQual = novoModo === 'qualitativo';
+    const safeBlocks = Array.isArray(draftData?.planejamentoQualitativoBlocos) && draftData.planejamentoQualitativoBlocos.length > 0
+      ? draftData.planejamentoQualitativoBlocos
+      : DEFAULT_QUALITATIVE_MEAL_BLOCKS;
+    const safeQuantItems = Array.isArray(draftData?.cardapioItems) && draftData.cardapioItems.length > 0
+      ? draftData.cardapioItems
+      : DEFAULT_CARDAPIO_ITEMS;
+
+    setDraftData((prev) => ({
+      ...(prev || buildInitialDraft(selectedCase, studentId)),
+      tipoPlanejamentoCardapio: novoModo,
+      habilitarPlanejamentoQualitativo: isQual,
+      planejamentoQualitativoBlocos: safeBlocks,
+      cardapioItems: safeQuantItems,
+      planejamentoAlimentar: isQual ? safeBlocks : safeQuantItems
+    }));
+  };
+
+  // Handlers de blocos de refeições e múltiplos alimentos por refeição no Modo Qualitativo
+  const syncQualitativeBlocks = (updatedBlocks: QualitativeMealBlock[]) => {
+    const safeBlocks = Array.isArray(updatedBlocks) ? updatedBlocks : [];
+    setDraftData((prev) => ({
+      ...(prev || buildInitialDraft(selectedCase, studentId)),
+      tipoPlanejamentoCardapio: 'qualitativo',
+      habilitarPlanejamentoQualitativo: true,
+      planejamentoQualitativoBlocos: safeBlocks,
+      planejamentoAlimentar: safeBlocks
+    }));
+  };
+
+  const handleAddQualitativoBlocoRefeicao = () => {
+    const novoBloco: QualitativeMealBlock = {
+      id: `qual-ref-${Date.now()}`,
+      refeicao: 'Lanche da Tarde',
+      horario: '16:00',
+      preparacao: '',
+      tipoPreparacao: '',
+      tipoPlanejamento: 'qualitativo',
+      itens: [
+        {
+          id: `qual-it-${Date.now()}-1`,
+          alimento: '',
+          alimentoNome: '',
+          nome: '',
+          medidaCaseira: '',
+          medida: ''
+        }
+      ]
+    };
+    syncQualitativeBlocks([...planejamentoQualitativoBlocos, novoBloco]);
+  };
+
+  const handleRemoveQualitativoBlocoRefeicao = (mealIdx: number) => {
+    if (planejamentoQualitativoBlocos.length <= 1) return;
+    const updated = planejamentoQualitativoBlocos.filter((_, idx) => idx !== mealIdx);
+    syncQualitativeBlocks(updated);
+  };
+
+  const handleUpdateQualitativoBlocoField = (
+    mealIdx: number,
+    field: 'refeicao' | 'horario' | 'preparacao',
+    value: string
+  ) => {
+    const updated = planejamentoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      return {
+        ...bloco,
+        [field]: value,
+        ...(field === 'preparacao' ? { tipoPreparacao: value } : {})
+      };
+    });
+    syncQualitativeBlocks(updated);
+  };
+
+  const handleAddQualitativoAlimentoInMeal = (mealIdx: number) => {
+    const updated = planejamentoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      const currentItens = Array.isArray(bloco?.itens) ? bloco.itens : [];
+      return {
+        ...bloco,
+        itens: [
+          ...currentItens,
+          {
+            id: `qual-it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            alimento: '',
+            alimentoNome: '',
+            nome: '',
+            medidaCaseira: '',
+            medida: ''
+          }
+        ]
+      };
+    });
+    syncQualitativeBlocks(updated);
+  };
+
+  const handleRemoveQualitativoAlimentoInMeal = (mealIdx: number, itemIdx: number) => {
+    const updated = planejamentoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      const currentItens = Array.isArray(bloco?.itens) ? bloco.itens : [];
+      if (currentItens.length <= 1) return bloco;
+      return {
+        ...bloco,
+        itens: currentItens.filter((_, i) => i !== itemIdx)
+      };
+    });
+    syncQualitativeBlocks(updated);
+  };
+
+  const handleUpdateQualitativoAlimentoField = (
+    mealIdx: number,
+    itemIdx: number,
+    field: 'alimento' | 'medidaCaseira',
+    value: string
+  ) => {
+    const updated = planejamentoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      const currentItens = Array.isArray(bloco?.itens) ? bloco.itens : [];
+      return {
+        ...bloco,
+        itens: currentItens.map((it, i) => {
+          if (i !== itemIdx) return it;
+          if (field === 'alimento') {
+            return { ...it, alimento: value, alimentoNome: value, nome: value };
+          }
+          return { ...it, medidaCaseira: value, medida: value };
+        })
+      };
+    });
+    syncQualitativeBlocks(updated);
+  };
 
   const handleRecordatorioPreparacaoChange = (val: string) => {
     const updatedItems = recordatorioItems.map((it) => ({
@@ -620,9 +803,17 @@ export default function SimulationModule() {
         : 'Caso 3: Doença Renal Crônica Conservadora';
 
       // Payload sanitizado com optional chaining (?.) e fallbacks (|| [] e || {}) para evitar quebras caso Planejamento Qualitativo esteja ativo ou tabelas vazias/nulas
-      const safePlanejamento = Array.isArray(draftData?.planejamentoAlimentar)
-        ? draftData.planejamentoAlimentar
-        : (Array.isArray(draftData?.cardapioItems) ? draftData.cardapioItems : []);
+      const safeQualitativoBlocos = Array.isArray(draftData?.planejamentoQualitativoBlocos) && draftData.planejamentoQualitativoBlocos.length > 0
+        ? draftData.planejamentoQualitativoBlocos
+        : DEFAULT_QUALITATIVE_MEAL_BLOCKS;
+      const safeQuantitativoItems = Array.isArray(draftData?.cardapioItems)
+        ? draftData.cardapioItems
+        : [];
+      const safePlanejamento = habilitarPlanejamentoQualitativo
+        ? safeQualitativoBlocos
+        : (Array.isArray(draftData?.planejamentoAlimentar) && draftData.planejamentoAlimentar.length > 0
+            ? draftData.planejamentoAlimentar
+            : safeQuantitativoItems);
       const safeRecordatorio = Array.isArray(draftData?.recordatorioItems) ? draftData.recordatorioItems : [];
       const safeExams = Array.isArray(draftData?.exams) ? draftData.exams : [];
       const safeInteractions = Array.isArray(draftData?.interactions) ? draftData.interactions : [];
@@ -634,8 +825,10 @@ export default function SimulationModule() {
         studentId: studentId || 'aluno-demo',
         studentName: draftData?.studentName || studentId || 'Estudante de Nutrição',
         caseId: selectedCase || 'caso-dm2-has',
+        tipoPlanejamentoCardapio: habilitarPlanejamentoQualitativo ? 'qualitativo' : 'quantitativo',
+        planejamentoQualitativoBlocos: safeQualitativoBlocos || [],
         planejamentoAlimentar: safePlanejamento || [],
-        cardapioItems: safePlanejamento || [],
+        cardapioItems: safeQuantitativoItems || [],
         recordatorioItems: safeRecordatorio || [],
         exams: safeExams || [],
         interactions: safeInteractions || [],
@@ -1665,105 +1858,258 @@ export default function SimulationModule() {
                     ? 'Planejamento Alimentar Qualitativo (Foco Comportamental)'
                     : 'Cardápio Quali-Quantitativo (Bancos Oficiais & Colaborativos)'}
                 </h3>
-                {habilitarPlanejamentoQualitativo && (
+                {habilitarPlanejamentoQualitativo ? (
                   <span className="text-[11px] font-bold bg-amber-950/70 text-amber-300 border border-amber-700/60 px-3 py-1 rounded-full">
                     Modo Qualitativo Ativo • Sem Análise Quantitativa
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-700/60 px-3 py-1 rounded-full">
+                    Modo Quantitativo Ativo • Banco de Alimentos, Gramaturas, Macros e DRIs
                   </span>
                 )}
               </div>
 
-              {/* Novo Campo de 'Preparação' no Cardápio/Planejamento Dietético (Simulação Clínica) antes de listar os ingredientes individuais */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5">
-                <label htmlFor="inputPreparacaoCardapioSim" className="text-xs font-bold text-emerald-400 whitespace-nowrap">
-                  🍲 Preparação (Nome do Prato / Agrupamento):
-                </label>
-                <input
-                  type="text"
-                  id="inputPreparacaoCardapioSim"
-                  value={draftData.cardapioPreparacao ?? 'Mingau de aveia com mamão e pão integral'}
-                  onChange={(e) => handleCardapioPreparacaoChange(e.target.value)}
-                  placeholder="Ex: Vitamina de banana, Mingau de aveia, Desjejum cardioprotetor..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-emerald-500 outline-none"
-                />
+              {/* 1. Seletor de Tipo de Cardápio (Interface do Aluno): 'Planejamento Qualitativo' vs 'Planejamento Quantitativo' */}
+              <div
+                id="seletorTipoPlanejamentoCardapioSim"
+                className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2"
+              >
+                <span className="text-xs font-bold text-emerald-400 block">
+                  🍽️ Selecione o Formato do Planejamento Dietético (Escolha do Aluno):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Tipo de Planejamento Dietético">
+                  <label
+                    id="btnModoQualitativoSim"
+                    onClick={() => handleSelectTipoPlanejamentoCardapio('qualitativo')}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                      habilitarPlanejamentoQualitativo
+                        ? 'border-amber-500 bg-amber-950/30 text-white shadow'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      id="radioModoQualitativoSim"
+                      name="tipoPlanejamentoCardapioSim"
+                      value="qualitativo"
+                      checked={habilitarPlanejamentoQualitativo}
+                      onChange={() => handleSelectTipoPlanejamentoCardapio('qualitativo')}
+                      className="mt-1 accent-amber-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>🥗</span>
+                        <span>Planejamento Qualitativo</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Blocos limpos por refeição (Refeição, Horário, Preparação, Alimentos e Medidas Caseiras), sem tabelas quantitativas de gramaturas, macros ou DRIs.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    id="btnModoQuantitativoSim"
+                    onClick={() => handleSelectTipoPlanejamentoCardapio('quantitativo')}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                      !habilitarPlanejamentoQualitativo
+                        ? 'border-emerald-500 bg-emerald-950/30 text-white shadow'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      id="radioModoQuantitativoSim"
+                      name="tipoPlanejamentoCardapioSim"
+                      value="quantitativo"
+                      checked={!habilitarPlanejamentoQualitativo}
+                      onChange={() => handleSelectTipoPlanejamentoCardapio('quantitativo')}
+                      className="mt-1 accent-emerald-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>📊</span>
+                        <span>Planejamento Quantitativo</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Esquema completo padrão com banco de alimentos (TACO / Decisão / Colaborativa), gramaturas, cálculos de VET, distribuição de macronutrientes e adequação de DRIs.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {habilitarPlanejamentoQualitativo ? (
-                /* Interface Simplificada de Planejamento Alimentar Qualitativo (apenas Refeição, Preparação, Alimento e Medida Caseira — ocultando toda tabela quantitativa, gramaturas, macros e micronutrientes) */
-                <div id="painelPlanejamentoQualitativoSim" className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
-                  <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                /* 2. Comportamento do Modo 'Qualitativo': Oculta todas as tabelas de composição nutricional, gramaturas, macros, micronutrientes e cálculos de DRIs/VET; exibe blocos limpos por refeição com múltiplos alimentos */
+                <div id="painelPlanejamentoQualitativoSim" className="space-y-4 text-xs">
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="font-bold text-white">Planejamento Dietético Qualitativo • Refeições, Preparações, Alimentos e Medidas Caseiras</div>
+                      <div className="font-bold text-white text-sm">
+                        Planejamento Alimentar Qualitativo • Blocos por Refeição
+                      </div>
                       <p className="text-[11px] text-slate-400">
-                        Modo estritamente comportamental/qualitativo configurado pelo professor. Tabelas quantitativas, gramaturas, calorias, macronutrientes e micronutrientes estão ocultos.
+                        Selecione a refeição, informe o horário e a preparação, e adicione quantos alimentos e medidas caseiras desejar em cada refeição.
                       </p>
                     </div>
                     <button
                       type="button"
-                      id="btnAddAlimentoQualitativoSim"
-                      onClick={handleAddQualitativeCardapioItem}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition cursor-pointer"
+                      id="btnAddRefeicaoQualitativaSim"
+                      onClick={handleAddQualitativoBlocoRefeicao}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
                     >
-                      + Adicionar Item Qualitativo
+                      <span>➕</span>
+                      <span>Adicionar Nova Refeição</span>
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table id="tabelaPlanejamentoQualitativoSim" className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
-                        <tr>
-                          <th className="py-2 px-2.5 w-1/4">Refeição</th>
-                          <th className="py-2 px-2.5 w-1/4">Preparação</th>
-                          <th className="py-2 px-2.5 w-1/4">Alimento</th>
-                          <th className="py-2 px-2.5 w-1/4">Medida Caseira</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-850">
-                        {cardapioItems.map((item, idx) => (
-                          <tr key={item.id} className="hover:bg-slate-850/50 transition">
-                            <td className="py-2 px-2">
+                  <div id="listaBlocosQualitativosSim" className="space-y-4">
+                    {(planejamentoQualitativoBlocos || []).map((bloco, mealIdx) => (
+                      <div
+                        key={bloco?.id || `qual-bloco-${mealIdx}`}
+                        className="qualitativo-meal-block bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3.5 shadow"
+                      >
+                        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-800 pb-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 w-full">
+                            {/* Refeição: Dropdown/Seletor */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-emerald-400 mb-1">
+                                🍽️ Refeição:
+                              </label>
+                              <select
+                                value={bloco?.refeicao || 'Desjejum'}
+                                onChange={(e) => handleUpdateQualitativoBlocoField(mealIdx, 'refeicao', e.target.value)}
+                                className="qualitativo-select-refeicao w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:border-emerald-500 outline-none"
+                              >
+                                {REFEICOES_QUALITATIVAS_OPCOES.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                                {bloco?.refeicao && !REFEICOES_QUALITATIVAS_OPCOES.includes(bloco.refeicao) && (
+                                  <option value={bloco.refeicao}>{bloco.refeicao}</option>
+                                )}
+                              </select>
+                            </div>
+
+                            {/* Horário: Input de hora */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-emerald-400 mb-1">
+                                ⏰ Horário:
+                              </label>
+                              <input
+                                type="time"
+                                value={bloco?.horario || '07:30'}
+                                onChange={(e) => handleUpdateQualitativoBlocoField(mealIdx, 'horario', e.target.value)}
+                                className="qualitativo-input-horario w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:border-emerald-500 outline-none"
+                              />
+                            </div>
+
+                            {/* Preparação: Input de texto livre */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-emerald-400 mb-1">
+                                🍲 Preparação:
+                              </label>
                               <input
                                 type="text"
-                                value={item.refeicao || 'Desjejum (07:30)'}
-                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'refeicao', e.target.value)}
-                                placeholder="Ex: Desjejum (07:30)"
-                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:border-emerald-500 outline-none"
+                                value={bloco?.preparacao ?? ''}
+                                onChange={(e) => handleUpdateQualitativoBlocoField(mealIdx, 'preparacao', e.target.value)}
+                                placeholder="Ex: Vitamina de banana, Mingau de aveia..."
+                                className="qualitativo-input-preparacao w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-medium focus:border-emerald-500 outline-none"
                               />
-                            </td>
-                            <td className="py-2 px-2">
-                              <input
-                                type="text"
-                                value={item.preparacao ?? draftData.cardapioPreparacao ?? 'Mingau de aveia'}
-                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'preparacao', e.target.value)}
-                                placeholder="Ex: Vitamina de banana, Mingau de aveia"
-                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-emerald-300 focus:border-emerald-500 outline-none"
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              <input
-                                type="text"
-                                value={item.nome}
-                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'nome', e.target.value)}
-                                placeholder="Ex: Aveia em flocos"
-                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-medium focus:border-emerald-500 outline-none"
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              <input
-                                type="text"
-                                value={`${item.qtd && !String(item.medida).match(/^\d/) ? `${item.qtd} ` : ''}${item.medida}`}
-                                onChange={(e) => handleCardapioQualitativeFieldChange(idx, 'medida', e.target.value)}
-                                placeholder="Ex: 2 colheres de sopa"
-                                className="w-full bg-slate-950 border border-emerald-500/60 rounded px-2 py-1 text-emerald-300 font-semibold focus:border-emerald-400 outline-none"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                          </div>
+
+                          {planejamentoQualitativoBlocos.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveQualitativoBlocoRefeicao(mealIdx)}
+                              className="text-rose-400 hover:text-rose-300 bg-rose-950/30 border border-rose-800/40 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition"
+                              title="Remover este bloco de refeição"
+                            >
+                              🗑️ Excluir Refeição
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Lista de múltiplos alimentos dentro da mesma refeição */}
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase text-slate-400 px-1">
+                            <div className="col-span-6">Alimento</div>
+                            <div className="col-span-5">Medida Caseira</div>
+                            <div className="col-span-1 text-center">Ação</div>
+                          </div>
+
+                          {(bloco?.itens || []).map((it, itemIdx) => (
+                            <div
+                              key={it?.id || `qual-it-${mealIdx}-${itemIdx}`}
+                              className="grid grid-cols-12 gap-2 items-center"
+                            >
+                              <div className="col-span-6">
+                                <input
+                                  type="text"
+                                  value={it?.alimento ?? it?.alimentoNome ?? it?.nome ?? ''}
+                                  onChange={(e) => handleUpdateQualitativoAlimentoField(mealIdx, itemIdx, 'alimento', e.target.value)}
+                                  placeholder="Ex: Banana prata, Leite desnatado, Aveia em flocos..."
+                                  className="qualitativo-input-alimento w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:border-emerald-500 outline-none"
+                                />
+                              </div>
+                              <div className="col-span-5">
+                                <input
+                                  type="text"
+                                  value={it?.medidaCaseira ?? it?.medida ?? ''}
+                                  onChange={(e) => handleUpdateQualitativoAlimentoField(mealIdx, itemIdx, 'medidaCaseira', e.target.value)}
+                                  placeholder="Ex: 1 copo cheio, 2 colheres de sopa..."
+                                  className="qualitativo-input-medida w-full bg-slate-950 border border-emerald-500/60 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-semibold focus:border-emerald-400 outline-none"
+                                />
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <button
+                                  type="button"
+                                  disabled={(bloco?.itens || []).length <= 1}
+                                  onClick={() => handleRemoveQualitativoAlimentoInMeal(mealIdx, itemIdx)}
+                                  className="text-rose-400 hover:text-rose-300 disabled:opacity-30 disabled:cursor-not-allowed font-bold px-1.5 py-1 rounded cursor-pointer"
+                                  title="Remover alimento desta refeição"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-1 flex items-center justify-between border-t border-slate-800/80">
+                          <button
+                            type="button"
+                            id={mealIdx === 0 ? 'btnAddAlimentoQualitativoSim' : undefined}
+                            onClick={() => handleAddQualitativoAlimentoInMeal(mealIdx)}
+                            className="bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>➕</span>
+                            <span>Adicionar Alimento nesta Refeição</span>
+                          </button>
+                          <span className="text-[11px] text-slate-400">
+                            {(bloco?.itens || []).length} alimento(s) nesta refeição
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : (
                 <>
+                  {/* Novo Campo de 'Preparação' no Cardápio/Planejamento Dietético (Modo Quantitativo) */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                    <label htmlFor="inputPreparacaoCardapioSim" className="text-xs font-bold text-emerald-400 whitespace-nowrap">
+                      🍲 Preparação (Nome do Prato / Agrupamento):
+                    </label>
+                    <input
+                      type="text"
+                      id="inputPreparacaoCardapioSim"
+                      value={draftData.cardapioPreparacao ?? 'Mingau de aveia com mamão e pão integral'}
+                      onChange={(e) => handleCardapioPreparacaoChange(e.target.value)}
+                      placeholder="Ex: Vitamina de banana, Mingau de aveia, Desjejum cardioprotetor..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-emerald-500 outline-none"
+                    />
+                  </div>
                   <p className="text-xs text-slate-400">
                     Alimentos vinculados às bases TACO (UNICAMP), Decisão Nutricional (Philippi) e Tabela Colaborativa Global com cálculo em tempo real de macro e micronutrientes.
                   </p>

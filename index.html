@@ -2473,16 +2473,47 @@
                 </div>
               </div>
 
-              <!-- CONTAINER DE DIETA ORAL (CARDÁPIO CONVENCIONAL TACO) -->
+              <!-- CONTAINER DE DIETA ORAL (CARDÁPIO CONVENCIONAL TACO OU QUALITATIVO) -->
               <div id="cardapioOralContainer" class="space-y-4">
+                <!-- SELETOR DE TIPO DE CARDÁPIO (INTERFACE DO ALUNO): PLANEJAMENTO QUALITATIVO VS PLANEJAMENTO QUANTITATIVO -->
+                <div id="seletorTipoPlanejamentoCardapioContainer" class="bg-gradient-to-r from-amber-50/50 via-white to-emerald-50/50 border border-slate-200 rounded-xl p-3.5 shadow-2xs space-y-2">
+                  <label class="block font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                    <span class="text-base">🎛️</span>
+                    <span>Formato do Cardápio / Planejamento Dietético (Escolha do Aluno):</span>
+                  </label>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Formato do Cardápio">
+                    <!-- Opção 1: Planejamento Qualitativo -->
+                    <label id="labelModoPlanejamentoQualitativo" class="relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-amber-400">
+                      <input type="radio" name="prontTipoPlanejamentoCardapio" id="radioModoPlanejamentoQualitativo" value="qualitativo" class="mt-0.5 mr-3 accent-amber-600 cursor-pointer">
+                      <div>
+                        <div class="font-bold text-xs text-slate-800 flex items-center space-x-1">
+                          <span>🥗</span> <span>Planejamento Qualitativo</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Blocos limpos por refeição (Refeição, Horário, Preparação, Alimentos e Medidas Caseiras), sem tabelas quantitativas de gramaturas, macros ou DRIs.</p>
+                      </div>
+                    </label>
+
+                    <!-- Opção 2: Planejamento Quantitativo -->
+                    <label id="labelModoPlanejamentoQuantitativo" class="relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-emerald-500 bg-emerald-50/60 shadow-xs">
+                      <input type="radio" name="prontTipoPlanejamentoCardapio" id="radioModoPlanejamentoQuantitativo" value="quantitativo" class="mt-0.5 mr-3 accent-emerald-600 cursor-pointer" checked>
+                      <div>
+                        <div class="font-bold text-xs text-slate-800 flex items-center space-x-1">
+                          <span>📊</span> <span>Planejamento Quantitativo</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Esquema completo padrão com banco de alimentos (TACO / Decisão / Colaborativa), gramaturas, cálculos de VET, macros e adequação de DRIs.</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 <!-- CABEÇALHO DA ABA E BOTÃO DE ADICIONAR REFEIÇÃO -->
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                   <div>
-                    <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                    <h4 id="cardapioHeaderMainTitle" class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
                       <span>🍽️</span>
                       <span>Planejamento Alimentar Quali-Quantitativo (Cardápio)</span>
                     </h4>
-                    <p class="text-[11px] text-slate-500">Estruture o cardápio do paciente selecionando os alimentos da TACO e definindo medidas caseiras e gramaturas.</p>
+                    <p id="cardapioHeaderSubtitle" class="text-[11px] text-slate-500">Estruture o cardápio do paciente selecionando os alimentos da TACO e definindo medidas caseiras e gramaturas.</p>
                   </div>
                   <button type="button" id="addCardapioMealBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
                     <span>➕</span>
@@ -2516,7 +2547,7 @@
                 </div>
 
               <!-- CARD INFORMATIVO OFICIAL: BASE TACO + REGRA DE TRÊS + MEDIDA CASEIRA LIVRE -->
-              <div class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
+              <div id="cardapioTacoInfoBanner" class="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-2">
                     <span class="text-base">🥦</span>

@@ -1237,7 +1237,11 @@ class DietoterapiaDocxReport {
       `;
     }
 
-    const isQualitativo = Boolean(clinicalCase?.habilitarPlanejamentoQualitativo || studentData?.habilitarPlanejamentoQualitativo);
+    const isQualitativo = Boolean(
+      studentData?.tipoPlanejamentoCardapio === "qualitativo" ||
+      clinicalCase?.habilitarPlanejamentoQualitativo ||
+      studentData?.habilitarPlanejamentoQualitativo
+    );
 
     return `
       <h2 class="sec-heading">${isQualitativo ? "3. PLANEJAMENTO ALIMENTAR QUALITATIVO (FOCO COMPORTAMENTAL)" : "3. PLANEJAMENTO ALIMENTAR QUALI-QUANTITATIVO (CARDÁPIO)"}</h2>
@@ -1254,8 +1258,8 @@ class DietoterapiaDocxReport {
               const itemsFormatted = (items.length > 0)
                 ? items.map(it =>
                     isQualitativo
-                      ? `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || '1 porção'})`
-                      : `• ${it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || it.quantidade || 0}g) [${it.kcal || 0} kcal]`
+                      ? `• ${it.alimento || it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || it.medida || '1 porção'})`
+                      : `• ${it.alimento || it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || it.medida || ''} - ${it.gramatura || it.quantidade || 0}g) [${it.kcal || 0} kcal]`
                   ).join("\n")
                 : (r.alimentos && typeof r.alimentos === 'string' ? r.alimentos : "Alimentos não especificados");
               return [

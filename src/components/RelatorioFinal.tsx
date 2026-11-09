@@ -466,11 +466,17 @@ export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCas
   }
 
   const rawPlano = safeData?.planejamentoAlimentar;
+  const isQualitativo = Boolean(
+    safeData?.tipoPlanejamentoCardapio === 'qualitativo' ||
+    safeData?.habilitarPlanejamentoQualitativo ||
+    safeCase?.habilitarPlanejamentoQualitativo
+  );
   const plano = Array.isArray(rawPlano)
     ? rawPlano
-    : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : (safeData?.cardapioItems || []));
+    : (isQualitativo && Array.isArray(safeData?.planejamentoQualitativoBlocos)
+        ? safeData.planejamentoQualitativoBlocos
+        : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : (safeData?.cardapioItems || [])));
   const prepCardapioGlobal = safeData?.cardapioPreparacao || rawPlano?.preparacao || "";
-  const isQualitativo = Boolean(safeData?.habilitarPlanejamentoQualitativo || safeCase?.habilitarPlanejamentoQualitativo);
 
   return (
     <div className="space-y-4 mb-6">
@@ -501,13 +507,13 @@ export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCas
                 ? r.itens
                     .map((it: any) =>
                       isQualitativo
-                        ? `• ${it.alimentoNome || it.nome} — ${it.medidaCaseira || it.medida || "1 porção"}`
-                        : `• ${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g) [${it.kcal || 0} kcal]`
+                        ? `• ${it.alimento || it.alimentoNome || it.nome} — ${it.medidaCaseira || it.medida || "1 porção"}`
+                        : `• ${it.alimento || it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g) [${it.kcal || 0} kcal]`
                     )
                     .join("\n")
                 : isQualitativo
-                ? `${r.alimentoNome || r.nome || r.alimentos || "Não informado"} — ${r.medidaCaseira || r.medida || "1 porção"}`
-                : r.alimentoNome || r.alimentos || (r.nome ? `${r.nome} (${r.gramas || 0}g) [${r.kcal || 0} kcal]` : "Não informado");
+                ? `${r.alimento || r.alimentoNome || r.nome || r.alimentos || "Não informado"} — ${r.medidaCaseira || r.medida || "1 porção"}`
+                : r.alimento || r.alimentoNome || r.alimentos || (r.nome ? `${r.nome} (${r.gramas || 0}g) [${r.kcal || 0} kcal]` : "Não informado");
               return (
                 <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                   <td className="border border-slate-300 px-3 py-1 font-semibold">{r.refeicao || r.nome || "Refeição"} ({r.horario || '--:--'})</td>

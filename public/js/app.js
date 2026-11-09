@@ -4547,9 +4547,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const itemRows = card.querySelectorAll(".cardapio-item-row");
         itemRows.forEach(row => {
           const tacoSelect = row.querySelector(".cardapio-item-food");
-          const tacoId = tacoSelect ? tacoSelect.value : "";
-          const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId);
-          const alimentoNome = food ? food.nome : "";
+          const alimentoLivreInput = row.querySelector(".cardapio-item-alimento-livre");
+          const tacoId = tacoSelect ? tacoSelect.value : (row.dataset.tacoId || "");
+          const food = tacoId
+            ? ((typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId))
+            : null;
+          const alimentoNome = alimentoLivreInput
+            ? alimentoLivreInput.value.trim()
+            : (food ? food.nome : (row.dataset.alimentoNome || ""));
 
           const medidaInput = row.querySelector(".cardapio-item-medida");
           const medidaCaseira = medidaInput ? medidaInput.value.trim() : ""; 
@@ -4561,16 +4566,19 @@ document.addEventListener("DOMContentLoaded", () => {
           const gramasVal = gramasInput ? gramasInput.value.trim() : "";
           const gramatura = parseFloat(gramasVal.replace(",", ".")) || 0;
 
-          // Regra de três da TACO
+          // Regra de três da TACO (no modo qualitativo, gramatura = 0 e nutri retorna 0 sem erros)
           const nutri = prontuarioManager.calculateItemNutrition(food, gramatura);
 
           itens.push({
             id: row.dataset.itemId || `it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: tacoId,
+            alimento: alimentoNome,
             alimentoNome: alimentoNome,
+            nome: alimentoNome,
             quantidadeMedida: quantidadeMedida,
             qtd: quantidadeMedida,
             medidaCaseira: medidaCaseira,
+            medida: medidaCaseira,
             gramatura: gramatura,
             kcal: nutri.kcal,
             cho: nutri.cho,
@@ -4677,28 +4685,117 @@ document.addEventListener("DOMContentLoaded", () => {
     return html;
   }
 
-  // Verifica se o Planejamento Alimentar Qualitativo está habilitado para o caso clínico ativo (Simulação Clínica)
+  // Verifica se o Planejamento Alimentar Qualitativo está ativo (pela escolha do aluno no seletor ou pela configuração do caso)
   function isQualitativePlanningEnabled(caseOverride = null) {
+    if (caseOverride && typeof caseOverride.habilitarPlanejamentoQualitativo === "boolean") {
+      return Boolean(caseOverride.habilitarPlanejamentoQualitativo);
+    }
+    if (appState.currentProntuario?.tipoPlanejamentoCardapio === "qualitativo") {
+      return true;
+    }
+    if (appState.currentProntuario?.tipoPlanejamentoCardapio === "quantitativo") {
+      return false;
+    }
+    const radioQual = document.getElementById("radioModoPlanejamentoQualitativo");
+    const radioQuant = document.getElementById("radioModoPlanejamentoQuantitativo");
+    if (radioQual && radioQual.checked) return true;
+    if (radioQuant && radioQuant.checked) return false;
+
     const activeCase = caseOverride || appState.currentCase;
     const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
-    if (isReal) return false;
-    return Boolean(activeCase?.habilitarPlanejamentoQualitativo === true);
+    if (isReal) return Boolean(appState.currentProntuario?.habilitarPlanejamentoQualitativo === true);
+    return Boolean(activeCase?.habilitarPlanejamentoQualitativo === true || appState.currentProntuario?.habilitarPlanejamentoQualitativo === true);
   }
   window.isQualitativePlanningEnabled = isQualitativePlanningEnabled;
+
+  // Sincroniza os botões de rádio e o visual do Seletor de Tipo de Cardápio (Qualitativo vs Quantitativo)
+  function syncCardapioSelectorUI(isQualitativo) {
+    const radioQual = document.getElementById("radioModoPlanejamentoQualitativo");
+    const radioQuant = document.getElementById("radioModoPlanejamentoQuantitativo");
+    const labelQual = document.getElementById("labelModoPlanejamentoQualitativo");
+    const labelQuant = document.getElementById("labelModoPlanejamentoQuantitativo");
+    const headerTitle = document.getElementById("cardapioHeaderMainTitle");
+    const headerSub = document.getElementById("cardapioHeaderSubtitle");
+
+    if (radioQual) radioQual.checked = Boolean(isQualitativo);
+    if (radioQuant) radioQuant.checked = !isQualitativo;
+
+    if (labelQual && labelQuant) {
+      if (isQualitativo) {
+        labelQual.className = "relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-amber-500 bg-amber-50/70 shadow-xs";
+        labelQuant.className = "relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-emerald-400";
+      } else {
+        labelQuant.className = "relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-emerald-500 bg-emerald-50/60 shadow-xs";
+        labelQual.className = "relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-amber-400";
+      }
+    }
+
+    if (headerTitle) {
+      headerTitle.innerHTML = isQualitativo
+        ? `<span>🥗</span><span>Planejamento Alimentar Qualitativo (Por Refeição e Medidas Caseiras)</span>`
+        : `<span>🍽️</span><span>Planejamento Alimentar Quali-Quantitativo (Cardápio)</span>`;
+    }
+    if (headerSub) {
+      headerSub.textContent = isQualitativo
+        ? "Modo Qualitativo Ativo: selecione a Refeição, Horário e Preparação, e adicione múltiplos alimentos com suas Medidas Caseiras (sem tabelas quantitativas)."
+        : "Estruture o cardápio do paciente selecionando os alimentos da TACO e definindo medidas caseiras e gramaturas.";
+    }
+  }
+
+  // Permite ao aluno alternar entre 'Planejamento Qualitativo' ('qualitativo') e 'Planejamento Quantitativo' ('quantitativo')
+  function setCardapioPlanningMode(mode) {
+    const cleanMode = mode === "qualitativo" ? "qualitativo" : "quantitativo";
+    const isQualitativo = cleanMode === "qualitativo";
+
+    if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+      appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+    }
+
+    // Preserva os dados já digitados no DOM antes de alternar o modo
+    if (document.getElementById("cardapioMealsContainer")?.querySelectorAll(".cardapio-meal-card").length > 0) {
+      readCardapioFromDOM();
+    }
+
+    appState.currentProntuario.tipoPlanejamentoCardapio = cleanMode;
+    appState.currentProntuario.habilitarPlanejamentoQualitativo = isQualitativo;
+    if (!Array.isArray(appState.currentProntuario.planejamentoAlimentar)) {
+      appState.currentProntuario.planejamentoAlimentar = [];
+    }
+
+    syncCardapioSelectorUI(isQualitativo);
+
+    const totalsPanel = document.getElementById("cardapioTotalsPanel");
+    const lipidPanel = document.getElementById("cardapioLipidQualityContainer");
+    const microPanel = document.getElementById("cardapioMicroAdequacyContainer");
+    const tacoBanner = document.getElementById("cardapioTacoInfoBanner");
+    if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
+    if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
+    if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
+    if (tacoBanner) tacoBanner.classList.toggle("hidden", isQualitativo);
+
+    renderCardapioTable();
+    return isQualitativo;
+  }
+  window.setCardapioPlanningMode = setCardapioPlanningMode;
 
   // Aplica ou restaura a interface de Planejamento Alimentar Qualitativo (ocultando tabelas quantitativas, gramaturas, macros e micros)
   function applyQualitativePlanningMode(caseOverride = null) {
     const isQualitativo = isQualitativePlanningEnabled(caseOverride);
     if (appState.currentProntuario) {
       appState.currentProntuario.habilitarPlanejamentoQualitativo = isQualitativo;
+      appState.currentProntuario.tipoPlanejamentoCardapio = isQualitativo ? "qualitativo" : "quantitativo";
     }
+
+    syncCardapioSelectorUI(isQualitativo);
 
     const totalsPanel = document.getElementById("cardapioTotalsPanel");
     const lipidPanel = document.getElementById("cardapioLipidQualityContainer");
     const microPanel = document.getElementById("cardapioMicroAdequacyContainer");
+    const tacoBanner = document.getElementById("cardapioTacoInfoBanner");
     if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
     if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
     if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
+    if (tacoBanner) tacoBanner.classList.toggle("hidden", isQualitativo);
 
     renderCardapioTable();
     return isQualitativo;
@@ -4735,12 +4832,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
 
     const isQualitativo = isQualitativePlanningEnabled();
+    syncCardapioSelectorUI(isQualitativo);
     const totalsPanel = document.getElementById("cardapioTotalsPanel");
     const lipidPanel = document.getElementById("cardapioLipidQualityContainer");
     const microPanel = document.getElementById("cardapioMicroAdequacyContainer");
+    const tacoBanner = document.getElementById("cardapioTacoInfoBanner");
     if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
     if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
     if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
+    if (tacoBanner) tacoBanner.classList.toggle("hidden", isQualitativo);
 
     if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
       appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
@@ -4748,8 +4848,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!Array.isArray(appState.currentProntuario?.planejamentoAlimentar) || appState.currentProntuario.planejamentoAlimentar.length === 0) {
       appState.currentProntuario.planejamentoAlimentar = [
-        { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-1", refeicao: "Desjejum", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "ref-2", refeicao: "Colação", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "ref-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "ref-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "ref-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
@@ -4757,6 +4857,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ];
     }
 
+    const refeicaoOptionsList = ["Desjejum", "Colação", "Almoço", "Lanche da Tarde", "Jantar", "Ceia", "Lanche Noturno"];
     const list = appState.currentProntuario?.planejamentoAlimentar || [];
     container.innerHTML = "";
 
@@ -4770,13 +4871,23 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.mealId = meal.id || `ref-${mealIdx + 1}`;
       card.dataset.mealIdx = mealIdx;
 
-      // Cabeçalho da refeição: Nome/Horário seguido pelo Campo de Preparação
+      const currentRefName = meal.refeicao || `Refeição ${mealIdx + 1}`;
+      let refSelectOptionsHtml = refeicaoOptionsList
+        .map(opt => `<option value="${escapeHtml(opt)}" ${currentRefName === opt ? "selected" : ""}>${escapeHtml(opt)}</option>`)
+        .join("");
+      if (!refeicaoOptionsList.includes(currentRefName)) {
+        refSelectOptionsHtml += `<option value="${escapeHtml(currentRefName)}" selected>${escapeHtml(currentRefName)}</option>`;
+      }
+
+      // Cabeçalho da refeição: Refeição (Dropdown no modo qualitativo ou seletor/input), Horário e Preparação
       let headerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-          <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+          <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
             <span class="text-base">🥣</span>
-            <input type="text" class="cardapio-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-transparent hover:border-slate-300 focus:border-emerald-600 rounded px-1.5 py-0.5 bg-transparent flex-1" value="${escapeHtml(meal.refeicao || `Refeição ${mealIdx + 1}`)}">
-            <input type="time" class="cardapio-ref-time text-xs border border-slate-300 rounded px-2 py-0.5 w-24 bg-white" value="${escapeHtml(meal.horario || '08:00')}">
+            <select class="cardapio-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-slate-300 focus:border-emerald-600 rounded px-2 py-1 bg-white flex-1" title="Selecione a Refeição">
+              ${refSelectOptionsHtml}
+            </select>
+            <input type="time" class="cardapio-ref-time text-xs border border-slate-300 rounded px-2 py-1 w-28 bg-white font-semibold" value="${escapeHtml(meal.horario || '08:00')}" title="Horário da Refeição">
           </div>
           <div class="flex items-center space-x-2">
             <span class="meal-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs ${isQualitativo ? 'hidden' : ''}">
@@ -4798,13 +4909,15 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      // Tabela de itens da refeição (em modo qualitativo, exibe apenas Alimento e Medida Caseira, ocultando Qtd, Gramatura, Kcal, CHO, PTN e LIP)
+      // Tabela de itens da refeição:
+      // - Modo Qualitativo: exibe apenas Alimento (Input de texto livre) e Medida Caseira (Input de texto livre, ex: '1 copo cheio'), ocultando todas as colunas quantitativas.
+      // - Modo Quantitativo: exibe esquema completo com banco de alimentos (TACO/Decisão/Colaborativa), Medida Caseira, Qtd, Gramatura (g), Kcal, CHO, PTN e LIP.
       let itemsTableHtml = `
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
               <tr>
-                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO / Decisão)</th>
+                <th class="py-1.5 px-2 min-w-[200px]">${isQualitativo ? 'Alimento' : 'Alimento Oficial (TACO / Decisão)'}</th>
                 <th class="py-1.5 px-2 min-w-[140px]">Medida Caseira</th>
                 <th class="py-1.5 px-2 text-center w-16 text-emerald-800 font-bold ${isQualitativo ? 'hidden' : ''}" title="Quantidade de medidas caseiras">Qtd</th>
                 <th class="py-1.5 px-2 text-right w-24 ${isQualitativo ? 'hidden' : ''}">Gramatura (g)</th>
@@ -4822,21 +4935,26 @@ document.addEventListener("DOMContentLoaded", () => {
         itemsTableHtml += `
           <tr class="empty-items-row">
             <td colspan="${isQualitativo ? 3 : 9}" class="text-center py-2.5 text-slate-400 italic text-[11px]">
-              Nenhum alimento cadastrado nesta refeição. Clique no botão verde abaixo para adicionar alimentos.
+              Nenhum alimento cadastrado nesta refeição. Clique no botão abaixo para adicionar múltiplos alimentos nesta refeição.
             </td>
           </tr>
         `;
       } else {
         meal.itens.forEach((it, itIdx) => {
+          const foodTextVal = it.alimento || it.alimentoNome || it.nome || "";
+          const medidaTextVal = it.medidaCaseira || it.medida || "";
           itemsTableHtml += `
-            <tr class="cardapio-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `it-${itIdx}`}" data-item-idx="${itIdx}">
+            <tr class="cardapio-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `it-${itIdx}`}" data-item-idx="${itIdx}" data-taco-id="${escapeHtml(it.tacoId || '')}" data-alimento-nome="${escapeHtml(foodTextVal)}">
               <td class="py-1.5 px-2">
-                <select class="cardapio-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600">
-                  ${buildTacoSelectOptions(it.tacoId)}
-                </select>
+                ${isQualitativo
+                  ? `<input type="text" class="cardapio-item-alimento-livre w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: Banana prata, Leite integral, Aveia em flocos..." value="${escapeHtml(foodTextVal)}" title="Nome do Alimento">`
+                  : `<select class="cardapio-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600">
+                      ${buildTacoSelectOptions(it.tacoId)}
+                    </select>`
+                }
               </td>
               <td class="py-1.5 px-2">
-                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: 1 unidade, 2 colheres de sopa..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
+                <input type="text" class="cardapio-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-emerald-600" placeholder="Ex: 1 copo cheio, 2 colheres de sopa..." value="${escapeHtml(medidaTextVal)}" title="Medida Caseira de referência">
               </td>
               <td class="py-1.5 px-2 text-center ${isQualitativo ? 'hidden' : ''}">
                 <input type="number" min="0.1" step="0.5" class="cardapio-item-qtd w-16 border border-emerald-400 bg-emerald-50/60 rounded px-1.5 py-1 text-xs text-center font-bold text-emerald-950 focus:border-emerald-600 focus:bg-white focus:ring-1 focus:ring-emerald-600 shadow-2xs" placeholder="1" value="${it.quantidadeMedida !== undefined && it.quantidadeMedida !== null && it.quantidadeMedida !== '' ? it.quantidadeMedida : (it.qtd !== undefined ? it.qtd : 1)}" title="Quantidade da medida caseira: altere (ex: de 1 para 2) para recalcular gramatura e nutrientes em tempo real">
@@ -4870,9 +4988,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="flex items-center space-x-2">
             <button type="button" class="add-food-item-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
               <span>➕</span>
-              <span>Adicionar Alimento (TACO / Decisão)</span>
+              <span>${isQualitativo ? 'Adicionar Alimento nesta Refeição' : 'Adicionar Alimento (TACO / Decisão)'}</span>
             </button>
-            <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer">
+            <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer ${isQualitativo ? 'hidden' : ''}">
               + Cadastrar Alimento
             </button>
           </div>
@@ -4978,8 +5096,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 4. Medida Caseira Livre -> Atualiza texto
-    container.querySelectorAll(".cardapio-item-medida").forEach(input => {
+    // 4. Medida Caseira Livre e Alimento Livre (Modo Qualitativo) -> Atualiza texto
+    container.querySelectorAll(".cardapio-item-medida, .cardapio-item-alimento-livre").forEach(input => {
       input.addEventListener("input", (e) => {
         delete e.target.dataset.autoFilled;
         readCardapioFromDOM();
@@ -4989,6 +5107,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 5. Edição de nomes, horários, tipo preparação e substituições
     container.querySelectorAll(".cardapio-ref-name, .cardapio-ref-time, .cardapio-ref-tipo-prep, .cardapio-ref-subs").forEach(input => {
       input.addEventListener("input", () => {
+        readCardapioFromDOM();
+      });
+      input.addEventListener("change", () => {
         readCardapioFromDOM();
       });
     });
@@ -5076,6 +5197,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
+  // Listeners do Seletor de Tipo de Cardápio (Planejamento Qualitativo vs Planejamento Quantitativo)
+  document.querySelectorAll('input[name="prontTipoPlanejamentoCardapio"]').forEach(radio => {
+    radio.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        setCardapioPlanningMode(e.target.value);
+      }
+    });
+  });
 
   // Adicionar nova refeição ao cardápio
   const addMealBtn = document.getElementById("addCardapioMealBtn");

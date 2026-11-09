@@ -70,6 +70,26 @@ export interface CardapioDraftItem {
   vitC?: number;
 }
 
+export interface QualitativeMealFoodItem {
+  id: string;
+  alimento: string;
+  alimentoNome?: string;
+  nome?: string;
+  medidaCaseira: string;
+  medida?: string;
+}
+
+export interface QualitativeMealBlock {
+  id: string;
+  refeicao: string;
+  horario: string;
+  preparacao: string;
+  tipoPreparacao?: string;
+  tipoPlanejamento?: 'qualitativo' | 'quantitativo';
+  itens: QualitativeMealFoodItem[];
+  substituicoes?: string;
+}
+
 export interface ExamDraftItem {
   id: string;
   name: string;
@@ -131,10 +151,12 @@ export interface CaseDraftData {
   prescricaoLIP: string;
   condutaPrescricao: string;
 
-  // 7. Cardápio TACO / Planejamento Dietético (Quali-Quantitativo ou Qualitativo)
+  // 7. Cardápio TACO / Planejamento Dietético (Seletor do Aluno: Qualitativo vs Quantitativo)
+  tipoPlanejamentoCardapio?: 'qualitativo' | 'quantitativo';
   cardapioPreparacao?: string;
   cardapioItems: CardapioDraftItem[];
-  planejamentoAlimentar?: CardapioDraftItem[];
+  planejamentoQualitativoBlocos?: QualitativeMealBlock[];
+  planejamentoAlimentar?: Array<CardapioDraftItem | QualitativeMealBlock | any>;
   habilitarPlanejamentoQualitativo?: boolean;
 
   // 8. Questões Avaliativas (respostas discursivas e opções selecionadas)
@@ -192,20 +214,27 @@ export function useCaseDraft(
         const safeParsed = (parsed && typeof parsed === 'object') ? parsed : {};
         const safeCardapio = Array.isArray(safeParsed?.cardapioItems) && safeParsed.cardapioItems.length > 0
           ? safeParsed.cardapioItems
-          : (Array.isArray(safeParsed?.planejamentoAlimentar) && safeParsed.planejamentoAlimentar.length > 0
-              ? safeParsed.planejamentoAlimentar
-              : (initialData?.cardapioItems || []));
+          : (initialData?.cardapioItems || []);
+        const safeQualitativoBlocos = Array.isArray(safeParsed?.planejamentoQualitativoBlocos) && safeParsed.planejamentoQualitativoBlocos.length > 0
+          ? safeParsed.planejamentoQualitativoBlocos
+          : (initialData?.planejamentoQualitativoBlocos || []);
+        const isQualitativoAtivo = safeParsed?.tipoPlanejamentoCardapio === 'qualitativo' || Boolean(safeParsed?.habilitarPlanejamentoQualitativo);
         // Merge seguro garantindo integridade de arrays e campos novos (mesmo se planejamentoAlimentar estiver nulo/vazio)
         const merged: CaseDraftData = {
           ...initialData,
           ...safeParsed,
           caseId: cleanCaseId,
           studentId: cleanStudentId,
+          tipoPlanejamentoCardapio: isQualitativoAtivo ? 'qualitativo' : 'quantitativo',
+          habilitarPlanejamentoQualitativo: isQualitativoAtivo,
           exams: Array.isArray(safeParsed?.exams) && safeParsed.exams.length > 0 ? safeParsed.exams : (initialData?.exams || []),
           interactions: Array.isArray(safeParsed?.interactions) && safeParsed.interactions.length > 0 ? safeParsed.interactions : (initialData?.interactions || []),
           recordatorioItems: Array.isArray(safeParsed?.recordatorioItems) && safeParsed.recordatorioItems.length > 0 ? safeParsed.recordatorioItems : (initialData?.recordatorioItems || []),
           cardapioItems: safeCardapio,
-          planejamentoAlimentar: Array.isArray(safeParsed?.planejamentoAlimentar) ? safeParsed.planejamentoAlimentar : safeCardapio,
+          planejamentoQualitativoBlocos: safeQualitativoBlocos,
+          planejamentoAlimentar: Array.isArray(safeParsed?.planejamentoAlimentar) && safeParsed.planejamentoAlimentar.length > 0
+            ? safeParsed.planejamentoAlimentar
+            : (isQualitativoAtivo ? safeQualitativoBlocos : safeCardapio),
           formulasCalculadas: Array.isArray(safeParsed?.formulasCalculadas) ? safeParsed.formulasCalculadas.slice(0, 3) : (initialData?.formulasCalculadas || []),
           respostasQuestoes: safeParsed?.respostasQuestoes || initialData?.respostasQuestoes || {},
           orientacoesNutricionais: typeof safeParsed?.orientacoesNutricionais === 'string'
@@ -221,6 +250,8 @@ export function useCaseDraft(
       } else {
         setDraftData({
           ...initialData,
+          tipoPlanejamentoCardapio: initialData?.tipoPlanejamentoCardapio || (initialData?.habilitarPlanejamentoQualitativo ? 'qualitativo' : 'quantitativo'),
+          planejamentoQualitativoBlocos: initialData?.planejamentoQualitativoBlocos || [],
           planejamentoAlimentar: initialData?.planejamentoAlimentar || initialData?.cardapioItems || [],
           caseId: cleanCaseId,
           studentId: cleanStudentId

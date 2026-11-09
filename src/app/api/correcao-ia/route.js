@@ -50,14 +50,16 @@ function compileResolutionSummaryText(rawStudentResolution = {}, rawClinicalCase
 
   const rawPlanejamento = Array.isArray(studentResolution?.planejamentoAlimentar)
     ? studentResolution.planejamentoAlimentar
-    : (Array.isArray(studentResolution?.planejamentoAlimentar?.refeicoes)
-        ? studentResolution.planejamentoAlimentar.refeicoes
-        : (Array.isArray(studentResolution?.cardapioItems) ? studentResolution.cardapioItems : []));
+    : (Array.isArray(studentResolution?.planejamentoQualitativoBlocos)
+        ? studentResolution.planejamentoQualitativoBlocos
+        : (Array.isArray(studentResolution?.planejamentoAlimentar?.refeicoes)
+            ? studentResolution.planejamentoAlimentar.refeicoes
+            : (Array.isArray(studentResolution?.cardapioItems) ? studentResolution.cardapioItems : [])));
 
   const cardapio = rawPlanejamento.length > 0
     ? rawPlanejamento
         .filter(Boolean)
-        .map((r) => `  - ${r?.refeicao || r?.nome || 'Refeição'} (${r?.horario || '--:--'}) | Preparação: ${r?.preparacao || r?.tipoPreparacao || studentResolution?.cardapioPreparacao || 'Não informada'} | Itens: ${r?.alimentos || (Array.isArray(r?.itens) ? r.itens.filter(Boolean).map((it) => `${it?.alimentoNome || it?.nome || ''} (${it?.medidaCaseira || it?.medida || ''})`).join(', ') : `${r?.nome || ''} (${r?.qtd ? r.qtd + ' ' : ''}${r?.medida || ''})`)}`)
+        .map((r) => `  - ${r?.refeicao || r?.nome || 'Refeição'} (${r?.horario || '--:--'}) | Preparação: ${r?.preparacao || r?.tipoPreparacao || studentResolution?.cardapioPreparacao || 'Não informada'} | Itens: ${r?.alimentos || (Array.isArray(r?.itens) ? r.itens.filter(Boolean).map((it) => `${it?.alimento || it?.alimentoNome || it?.nome || ''} (${it?.medidaCaseira || it?.medida || ''})`).join(', ') : `${r?.nome || ''} (${r?.qtd ? r.qtd + ' ' : ''}${r?.medida || ''})`)}`)
         .join('\n')
     : 'Não informado';
 

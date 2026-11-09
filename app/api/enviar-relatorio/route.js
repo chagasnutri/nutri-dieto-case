@@ -23,7 +23,7 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
     'Caso Clínico Supervisionado'
   ).trim();
 
-  const isQualitativo = Boolean(res?.habilitarPlanejamentoQualitativo);
+  const isQualitativo = Boolean(res?.tipoPlanejamentoCardapio === 'qualitativo' || res?.habilitarPlanejamentoQualitativo);
   const anamnese = res?.anamnese && typeof res.anamnese === 'object' ? res.anamnese : {};
   const antro = res?.antropometria && typeof res.antropometria === 'object' ? res.antropometria : {};
   const bio = res?.bioquimica && typeof res.bioquimica === 'object' ? res.bioquimica : {};
@@ -42,6 +42,7 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
 
   const rawPlanejamento =
     (Array.isArray(res?.planejamentoAlimentar) ? res.planejamentoAlimentar : null) ||
+    (isQualitativo && Array.isArray(res?.planejamentoQualitativoBlocos) ? res.planejamentoQualitativoBlocos : null) ||
     (Array.isArray(res?.planejamentoAlimentar?.refeicoes) ? res.planejamentoAlimentar.refeicoes : null) ||
     (Array.isArray(res?.cardapioItems) ? res.cardapioItems : null) ||
     [];
@@ -76,8 +77,8 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
               .filter(Boolean)
               .map((it) =>
                 isQualitativo
-                  ? `${it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'})`
-                  : `${it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'} / ${it?.gramatura ?? it?.gramas ?? 0}g - ${it?.kcal ?? 0} kcal)`
+                  ? `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'})`
+                  : `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'} / ${it?.gramatura ?? it?.gramas ?? 0}g - ${it?.kcal ?? 0} kcal)`
               )
               .join(', ');
             return `  • ${r?.refeicao || `Refeição ${idx + 1}`} (${r?.horario || '--:--'}) | Preparação: ${prep} | Itens: ${sub}`;

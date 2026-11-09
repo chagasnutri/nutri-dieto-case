@@ -45,11 +45,16 @@ class StudentProntuarioManager {
     const cId = raw?.caseId || fallbackCaseId || this.currentCaseId || "caso-padrao";
     const empty = this.getEmptyProntuario(cId);
 
+    const isQualitativo = raw?.tipoPlanejamentoCardapio === "qualitativo" || Boolean(raw?.habilitarPlanejamentoQualitativo);
+    const tipoPlanejamentoCardapio = isQualitativo ? "qualitativo" : "quantitativo";
+
     const rawPlano = Array.isArray(raw?.planejamentoAlimentar)
       ? raw.planejamentoAlimentar.filter(Boolean)
-      : (Array.isArray(raw?.planejamentoAlimentar?.refeicoes)
-          ? raw.planejamentoAlimentar.refeicoes.filter(Boolean)
-          : (Array.isArray(raw?.cardapioItems) ? raw.cardapioItems.filter(Boolean) : null));
+      : (Array.isArray(raw?.planejamentoQualitativoBlocos) && isQualitativo
+          ? raw.planejamentoQualitativoBlocos.filter(Boolean)
+          : (Array.isArray(raw?.planejamentoAlimentar?.refeicoes)
+              ? raw.planejamentoAlimentar.refeicoes.filter(Boolean)
+              : (Array.isArray(raw?.cardapioItems) ? raw.cardapioItems.filter(Boolean) : null)));
 
     const safePlanejamento = (Array.isArray(rawPlano) && rawPlano.length > 0 ? rawPlano : (empty.planejamentoAlimentar || [])).map((m, idx) => ({
       id: m?.id || `ref-${idx + 1}`,
@@ -57,7 +62,23 @@ class StudentProntuarioManager {
       horario: m?.horario || "08:00",
       preparacao: m?.preparacao ?? m?.tipoPreparacao ?? "",
       tipoPreparacao: m?.tipoPreparacao ?? m?.preparacao ?? "",
-      itens: Array.isArray(m?.itens) ? m.itens.filter(Boolean) : [],
+      tipoPlanejamento: m?.tipoPlanejamento || tipoPlanejamentoCardapio,
+      itens: Array.isArray(m?.itens)
+        ? m.itens.filter(Boolean).map((it, itIdx) => ({
+            ...it,
+            id: it?.id || `it-${idx + 1}-${itIdx + 1}`,
+            alimento: it?.alimento ?? it?.alimentoNome ?? it?.nome ?? "",
+            alimentoNome: it?.alimentoNome ?? it?.alimento ?? it?.nome ?? "",
+            nome: it?.nome ?? it?.alimentoNome ?? it?.alimento ?? "",
+            medidaCaseira: it?.medidaCaseira ?? it?.medida ?? "",
+            medida: it?.medida ?? it?.medidaCaseira ?? "",
+            gramatura: it?.gramatura ?? it?.gramas ?? 0,
+            kcal: it?.kcal ?? 0,
+            cho: it?.cho ?? 0,
+            ptn: it?.ptn ?? 0,
+            lip: it?.lip ?? 0
+          }))
+        : [],
       alimentos: m?.alimentos || "",
       substituicoes: m?.substituicoes || "",
       subtotal: (m?.subtotal && typeof m.subtotal === "object") ? m.subtotal : { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
@@ -116,6 +137,8 @@ class StudentProntuarioManager {
         formulasSelecionadas: Array.isArray(raw?.calculoNecessidades?.formulasSelecionadas) ? raw.calculoNecessidades.formulasSelecionadas : []
       },
       prescricaoDietoterapica: { ...(empty.prescricaoDietoterapica || {}), ...(raw?.prescricaoDietoterapica && typeof raw.prescricaoDietoterapica === "object" ? raw.prescricaoDietoterapica : {}) },
+      tipoPlanejamentoCardapio,
+      habilitarPlanejamentoQualitativo: isQualitativo,
       planejamentoAlimentar: safePlanejamento,
       totaisCardapio: { ...(empty.totaisCardapio || {}), ...(raw?.totaisCardapio && typeof raw.totaisCardapio === "object" ? raw.totaisCardapio : {}) },
       tne: { ...(empty.tne || {}), ...(raw?.tne && typeof raw.tne === "object" ? raw.tne : {}) },
@@ -134,6 +157,41 @@ class StudentProntuarioManager {
     localStorage.setItem(dynamicKey, json);
     // Mantém chave legada para retrocompatibilidade
     localStorage.setItem(`${this.draftKeyPrefix}${caseId}`, json);
+  }
+
+  // Alterna com segurança entre 'Planejamento Qualitativo' e 'Planejamento Quantitativo' gerenciando o estado planejamentoAlimentar
+  switchCardapioPlanningMode(prontuario, mode = "quantitativo") {
+    const cleanMode = mode === "qualitativo" ? "qualitativo" : "quantitativo";
+    const isQualitativo = cleanMode === "qualitativo";
+    const safe = this.sanitizeProntuarioPayload(prontuario, prontuario?.caseId);
+    safe.tipoPlanejamentoCardapio = cleanMode;
+    safe.habilitarPlanejamentoQualitativo = isQualitativo;
+    safe.planejamentoAlimentar = (safe.planejamentoAlimentar || []).map((meal, idx) => ({
+      ...meal,
+      id: meal?.id || `ref-${idx + 1}`,
+      refeicao: meal?.refeicao || "Desjejum",
+      horario: meal?.horario || "07:00",
+      preparacao: meal?.preparacao ?? meal?.tipoPreparacao ?? "",
+      tipoPreparacao: meal?.tipoPreparacao ?? meal?.preparacao ?? "",
+      tipoPlanejamento: cleanMode,
+      itens: Array.isArray(meal?.itens)
+        ? meal.itens.filter(Boolean).map((it, itIdx) => ({
+            ...it,
+            id: it?.id || `it-${idx + 1}-${itIdx + 1}`,
+            alimento: it?.alimento ?? it?.alimentoNome ?? it?.nome ?? "",
+            alimentoNome: it?.alimentoNome ?? it?.alimento ?? it?.nome ?? "",
+            nome: it?.nome ?? it?.alimentoNome ?? it?.alimento ?? "",
+            medidaCaseira: it?.medidaCaseira ?? it?.medida ?? "",
+            medida: it?.medida ?? it?.medidaCaseira ?? "",
+            gramatura: isQualitativo ? 0 : (it?.gramatura ?? it?.gramas ?? 0),
+            kcal: isQualitativo ? 0 : (it?.kcal ?? 0),
+            cho: isQualitativo ? 0 : (it?.cho ?? 0),
+            ptn: isQualitativo ? 0 : (it?.ptn ?? 0),
+            lip: isQualitativo ? 0 : (it?.lip ?? 0)
+          }))
+        : []
+    }));
+    return safe;
   }
 
   // Constrói o payload final padronizado enviado ao Firebase (Simulação e Atendimento Real)
@@ -1213,10 +1271,11 @@ class StudentProntuarioManager {
     }
     if (Array.isArray(meal.itens) && meal.itens.length > 0) {
       const itemsStr = meal.itens.map(item => {
-        let desc = item.alimentoNome || "Alimento";
+        let desc = item.alimento || item.alimentoNome || item.nome || "Alimento";
         const parts = [];
-        if (item.medidaCaseira && String(item.medidaCaseira).trim()) {
-          parts.push(String(item.medidaCaseira).trim());
+        const med = item.medidaCaseira || item.medida || "";
+        if (med && String(med).trim()) {
+          parts.push(String(med).trim());
         }
         if (item.gramatura) {
           parts.push(`${item.gramatura}g`);
@@ -1451,7 +1510,11 @@ class StudentProntuarioManager {
     const safeCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     const alunoNome = p?.aluno?.nome || p?.studentName || "Estudante de Nutrição";
     const casoNome = safeCase?.title || p?.caseTitle || p?.caseId || "Caso Clínico Supervisionado";
-    const isQualitativo = Boolean(safeCase?.habilitarPlanejamentoQualitativo || p?.habilitarPlanejamentoQualitativo);
+    const isQualitativo = Boolean(
+      p?.tipoPlanejamentoCardapio === "qualitativo" ||
+      safeCase?.habilitarPlanejamentoQualitativo ||
+      p?.habilitarPlanejamentoQualitativo
+    );
 
     const anamnese = (p?.anamnese && typeof p.anamnese === "object") ? p.anamnese : {};
     const antro = (p?.antropometria && typeof p.antropometria === "object") ? p.antropometria : {};
@@ -1486,8 +1549,8 @@ class StudentProntuarioManager {
         const prep = r?.preparacao || r?.tipoPreparacao || p?.cardapioPreparacao || "Não informada";
         const itensStr = Array.isArray(r?.itens) && r.itens.length > 0
           ? r.itens.filter(Boolean).map((it) => isQualitativo
-              ? `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"})`
-              : `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g - ${it?.kcal ?? 0} kcal)`
+              ? `${it?.alimento || it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"})`
+              : `${it?.alimento || it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g - ${it?.kcal ?? 0} kcal)`
             ).join(", ")
           : (r?.alimentos || (r?.nome ? (isQualitativo ? `${r.nome} (${r?.medida || "1 porção"})` : `${r.nome} (${r?.medida || "1 porção"} / ${r?.gramas || 0}g - ${r?.kcal || 0} kcal)`) : "Não informado"));
         return `  • ${r?.refeicao || r?.nome || "Refeição"} (${r?.horario || "--:--"}) | Preparação: ${prep} | Alimentos: ${itensStr}`;
