@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 /**
  * Rota Oficial de API para Correção Automática por IA com Fluxo de Confirmação do Professor
@@ -565,152 +566,37 @@ function buildFormattedProfessorEmail({
 async function dispatchProfessorEmail(emailPayload) {
   const results = {
     dispatched: false,
-    provider: 'none',
+    provider: 'nodemailer_gmail',
     to: FIXED_PROFESSOR_EMAIL,
     timestamp: new Date().toISOString(),
     errors: []
   };
 
-  // 1. Disparo via Resend API se RESEND_API_KEY estiver configurada em process.env (com await antes de retornar 200)
-  const resendKey = (process.env.RESEND_API_KEY || '').trim();
-  if (resendKey) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: process.env.EMAIL_FROM || process.env.RESEND_FROM || 'DietoCase Avaliador <onboarding@resend.dev>',
-          to: [FIXED_PROFESSOR_EMAIL],
-          subject: emailPayload.subject,
-          html: emailPayload.html,
-          text: emailPayload.text
-        })
-      });
-      if (res.ok) {
-        await res.json().catch(() => ({}));
-        results.dispatched = true;
-        results.provider = 'resend';
-        return results;
-      } else {
-        const errText = await res.text().catch(() => '');
-        const msg = `Resend HTTP ${res.status}: ${errText}`;
-        results.errors.push(msg);
-        console.error('[API /api/correcao-ia][Resend] Falha ao enviar e-mail para chagasnutri@gmail.com:', msg);
-      }
-    } catch (e) {
-      results.errors.push(`Resend Exception: ${e?.message || String(e)}`);
-      console.error('[API /api/correcao-ia][Resend] Exceção ao disparar via Resend:', e);
+  // Configuração rigorosa do Transporter do Nodemailer com o serviço do Gmail (process.env.EMAIL_USER e process.env.EMAIL_PASS)
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
+  });
+
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER || FIXED_PROFESSOR_EMAIL,
+      to: FIXED_PROFESSOR_EMAIL,
+      subject: emailPayload.subject,
+      text: emailPayload.text,
+      html: emailPayload.html
+    });
+    results.dispatched = true;
+    results.messageId = info?.messageId || null;
+    return results;
+  } catch (e) {
+    results.errors.push(`Nodemailer Gmail Exception: ${e?.message || String(e)}`);
+    console.error('[API /api/correcao-ia][Nodemailer Gmail] Erro ao enviar e-mail via transporter.sendMail:', e);
+    return results;
   }
-
-  // 2. Disparo via SendGrid API se SENDGRID_API_KEY estiver configurada em process.env (com await antes de retornar 200)
-  const sendgridKey = (process.env.SENDGRID_API_KEY || '').trim();
-  if (sendgridKey) {
-    try {
-      const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${sendgridKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: FIXED_PROFESSOR_EMAIL }] }],
-          from: { email: process.env.EMAIL_FROM || process.env.SENDGRID_FROM || FIXED_PROFESSOR_EMAIL, name: 'DietoCase Avaliador' },
-          subject: emailPayload.subject,
-          content: [
-            { type: 'text/plain', value: emailPayload.text },
-            { type: 'text/html', value: emailPayload.html }
-          ]
-        })
-      });
-      if (sgRes.ok || sgRes.status === 202) {
-        results.dispatched = true;
-        results.provider = 'sendgrid';
-        return results;
-      } else {
-        const errText = await sgRes.text().catch(() => '');
-        const msg = `SendGrid HTTP ${sgRes.status}: ${errText}`;
-        results.errors.push(msg);
-        console.error('[API /api/correcao-ia][SendGrid] Falha ao enviar e-mail para chagasnutri@gmail.com:', msg);
-      }
-    } catch (e) {
-      results.errors.push(`SendGrid Exception: ${e?.message || String(e)}`);
-      console.error('[API /api/correcao-ia][SendGrid] Exceção ao disparar via SendGrid:', e);
-    }
-  }
-
-  // 3. Disparo via Nodemailer se SMTP_HOST / SMTP_USER / EMAIL_USER / GMAIL_USER estiver configurado em process.env (com await antes de retornar 200)
-  const smtpUser = (
-    process.env.SMTP_USER ||
-    process.env.EMAIL_USER ||
-    process.env.GMAIL_USER ||
-    process.env.MAIL_USER ||
-    process.env.NODEMAILER_USER ||
-    ''
-  ).trim();
-  const smtpPass = (
-    process.env.SMTP_PASS ||
-    process.env.EMAIL_PASS ||
-    process.env.GMAIL_PASS ||
-    process.env.GMAIL_APP_PASSWORD ||
-    process.env.EMAIL_PASSWORD ||
-    process.env.MAIL_PASS ||
-    process.env.APP_PASSWORD ||
-    process.env.NODEMAILER_PASS ||
-    ''
-  ).trim();
-  const smtpHost = (
-    process.env.SMTP_HOST ||
-    process.env.EMAIL_HOST ||
-    process.env.MAIL_HOST ||
-    (smtpUser.includes('@gmail.com') ? 'smtp.gmail.com' : '')
-  ).trim();
-  const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const nodemailerModule = await import('nodemailer').catch((err) => {
-        console.error('[API /api/correcao-ia][Nodemailer] Erro ao importar nodemailer:', err);
-        return null;
-      });
-      const nodemailer = nodemailerModule?.default || nodemailerModule;
-      if (nodemailer && typeof nodemailer.createTransport === 'function') {
-        const transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: {
-            user: smtpUser,
-            pass: smtpPass
-          }
-        });
-        await transporter.sendMail({
-          from: process.env.EMAIL_FROM || smtpUser,
-          to: FIXED_PROFESSOR_EMAIL,
-          subject: emailPayload.subject,
-          text: emailPayload.text,
-          html: emailPayload.html
-        });
-        results.dispatched = true;
-        results.provider = 'nodemailer';
-        return results;
-      }
-    } catch (e) {
-      results.errors.push(`Nodemailer Exception: ${e?.message || String(e)}`);
-      console.error('[API /api/correcao-ia][Nodemailer] Erro detalhado ao disparar via Nodemailer SMTP:', e);
-    }
-  }
-
-  console.error(
-    '[API /api/correcao-ia] Atenção: E-mail não pôde ser enviado diretamente pelo servidor para chagasnutri@gmail.com. Verifique as variáveis de ambiente na Vercel (RESEND_API_KEY, SENDGRID_API_KEY ou SMTP_HOST/SMTP_USER/SMTP_PASS / EMAIL_USER/EMAIL_PASS). Erros:',
-    results.errors
-  );
-  results.dispatched = true;
-  results.provider = 'firebase-email-trigger-and-api';
-  return results;
 }
 
 export async function POST(req) {
