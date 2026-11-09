@@ -3803,11 +3803,20 @@ Questões Avaliativas:
       // 145.3 Módulo de Correção Automática por IA com Disparo de E-mail (System Prompt Obrigatório + Nota 0,0 a 10,0 + E-mail ao Professor)
       const mandatoryPrompt = pmRules.getAiEvaluatorSystemPrompt();
       assert(
-        mandatoryPrompt === "Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.",
-        "Regra 3 (System Prompt Obrigatório da IA): O System Prompt corresponde exatamente à especificação com diretrizes BRASPEN, SBC e nota de 0,0 a 10,0"
+        mandatoryPrompt.includes("Atue como um preceptor de Nutrição Clínica extremamente rigoroso e crítico") &&
+        mandatoryPrompt.includes("REGRA 1 (Defesa contra vazio)") &&
+        mandatoryPrompt.includes("REGRA 2 (Patologia)") &&
+        mandatoryPrompt.includes("REGRA 3 (Preferências e Aversões)") &&
+        mandatoryPrompt.includes("REGRA 4 (Estrutura)"),
+        "Regra 3 (System Prompt Obrigatório da IA): O System Prompt corresponde exatamente à especificação rigorosa do Preceptor Clínico (Regras 1 a 4)"
       );
 
       prontPrepTest.aluno = { id: "aluno-123", nome: "Mariana Costa" };
+      prontPrepTest.prescricaoDietoterapica = {
+        justificativaFisiopatologica: "Conduta dietoterápica cardioprotetora e hipolipemiante segundo diretrizes SBC e BRASPEN, com foco em fibras solúveis.",
+        viaAlimentacao: "Oral",
+        consistencia: "Normal"
+      };
       const casoComCorrecaoIA = {
         id: "caso-ia-1",
         title: "Caso Síndrome Metabólica e Dislipidemia",
@@ -4000,6 +4009,125 @@ Questões Avaliativas:
         switchedBackToQuant.habilitarPlanejamentoQualitativo === false &&
         htmlReportQuantRestored.includes("3.1. Consolidação Nutricional do Cardápio vs Metas Prescritas (Análises Quantitativas)"),
         "Seção 147.3 (Modo Quantitativo): Alternar para 'Planejamento Quantitativo' restaura o esquema completo com gramaturas, cálculos e consolidação nutricional sem quebrar o estado"
+      );
+
+      // =========================================================================
+      // SEÇÃO 148: CORREÇÃO AUTOMÁTICA POR IA RIGOROSA (REGRAS 1-4), TAG 'Nota Sugerida (Aguardando Confirmação do Professor)', FLUXO DE CONFIRMAÇÃO DO PROFESSOR E DISPARO DE E-MAIL PARA chagasnutri@gmail.com
+      // =========================================================================
+
+      // 148.1 Novo System Prompt para a IA Avaliadora (Rigor Clínico - Regras 1 a 4)
+      const expectedRigorousPrompt = `Atue como um preceptor de Nutrição Clínica extremamente rigoroso e crítico. Sua função é avaliar a resolução do caso clínico enviada pelo aluno. Siga estas regras OBRIGATÓRIAS:
+REGRA 1 (Defesa contra vazio): Se o aluno enviar o planejamento, recordatório ou conduta em branco, ou com informações nitidamente insuficientes, a nota DEVE ser 0 (zero). Sem exceções.
+REGRA 2 (Patologia): Avalie criticamente se os alimentos, a via de administração e a conduta estão corretos para a patologia de base do paciente. Penalize erros graves.
+REGRA 3 (Preferências e Aversões): Cruze a dieta planejada com os dados de anamnese. Se o aluno prescreveu algo que o paciente tem aversão, alergia ou intolerância, reduza drasticamente a nota.
+REGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos, Pontos de Melhoria, Acertos e a Nota Sugerida. Atribua a nota de 0.0 a 10.0.`;
+
+      assert(
+        pmRules.getAiEvaluatorSystemPrompt() === expectedRigorousPrompt,
+        "Seção 148.1 (Novo System Prompt Rigoroso): O System Prompt corresponde caractere por caractere ao prompt do Preceptor de Nutrição Clínica (Regras 1 a 4)"
+      );
+
+      // 148.2 REGRA 1 (Defesa contra vazio): Planejamento, recordatório ou conduta em branco resulta obrigatoriamente em Nota 0 (zero)
+      const prontEmptyResolution = pmRules.getEmptyProntuario("caso-vazio-regra1");
+      prontEmptyResolution.aluno = { id: "aluno-vazio", nome: "Aluno Teste Vazio" };
+      const casoRigorousTest = {
+        id: "caso-vazio-regra1",
+        title: "Caso Insuficiência Renal Crônica e Hipertensão",
+        clinicalHistory: "Paciente com DRC estágio 4 e hipertensão arterial severa.",
+        dietaryAversions: "peixe, coentro",
+        allergies: "camarão, amendoim",
+        habilitarCorrecaoAutomaticaIA: true
+      };
+      const evalEmptyResult = await pmRules.evaluateCaseWithAI(prontEmptyResolution, casoRigorousTest);
+      assert(
+        evalEmptyResult &&
+        evalEmptyResult.notaSugerida === 0 &&
+        evalEmptyResult.notaFinal === "0,0" &&
+        evalEmptyResult.avaliacaoIAObjeto &&
+        evalEmptyResult.avaliacaoIAObjeto.notaSugerida === 0 &&
+        evalEmptyResult.avaliacaoIA.includes("REGRA 1 - Defesa contra vazio"),
+        "Seção 148.2 (REGRA 1 - Defesa contra vazio): Quando planejamento, recordatório ou conduta estão em branco, a nota sugerida pela IA é estritamente 0 (zero / 0,0) sem exceções"
+      );
+
+      // 148.3 REGRA 2 (Patologia) e REGRA 3 (Preferências e Aversões): Penalização severa ao prescrever alimento com aversão/alergia relatada na anamnese
+      const prontWithAversionError = pmRules.getEmptyProntuario("caso-aversao-regra3");
+      prontWithAversionError.aluno = { id: "aluno-aversao", nome: "Carlos Eduardo" };
+      prontWithAversionError.anamnese = {
+        queixaPrincipal: "Inchaço e pressão alta",
+        historiaDoencaAtual: "Paciente hipertenso e renal crônico",
+        alergiasIntolerancias: "Alergia a camarão e intolerância a lactose"
+      };
+      prontWithAversionError.consumoAlimentar = {
+        aversoesAlimentares: "Peixe, fígado bovino",
+        alergiasIntolerancias: "Camarão, leite integral",
+        refeicoesRecordatorio: [
+          {
+            id: "rec-av-1",
+            nome: "Almoço",
+            preparacao: "Prato executivo",
+            itens: [{ alimentoNome: "Arroz branco", medidaCaseira: "4 colheres de sopa", gramatura: 100, kcal: 128 }]
+          }
+        ]
+      };
+      prontWithAversionError.prescricaoDietoterapica = {
+        viaAlimentacao: "Oral",
+        consistencia: "Normal",
+        justificativaFisiopatologica: "Dieta hipossódica com controle proteico e hídrico segundo diretrizes BRASPEN e KDOQI para DRC."
+      };
+      prontWithAversionError.planejamentoAlimentar = [
+        {
+          id: "plan-av-1",
+          nome: "Almoço",
+          preparacao: "Moqueca de peixe com camarão",
+          itens: [
+            { alimentoNome: "Filé de peixe ao molho de camarão", medidaCaseira: "1 posta média", gramatura: 150, kcal: 220 }
+          ]
+        }
+      ];
+
+      const evalAversionResult = await pmRules.evaluateCaseWithAI(prontWithAversionError, casoRigorousTest);
+      assert(
+        evalAversionResult &&
+        evalAversionResult.notaSugerida < 6.0 &&
+        evalAversionResult.avaliacaoIA.includes("REGRA 3 - Preferências/Aversões/Alergias") &&
+        evalAversionResult.avaliacaoIA.includes("1. Erros Críticos:") &&
+        evalAversionResult.avaliacaoIA.includes("2. Pontos de Melhoria:") &&
+        evalAversionResult.avaliacaoIA.includes("3. Acertos:") &&
+        evalAversionResult.avaliacaoIA.includes("4. Nota Sugerida:"),
+        "Seção 148.3 (REGRAS 2, 3 e 4 - Cruzamento de Aversões/Alergias e Estrutura): Penaliza drasticamente a prescrição de alimentos com aversão/alergia na anamnese e estrutura o feedback em Erros Críticos, Pontos de Melhoria, Acertos e Nota Sugerida"
+      );
+
+      // 148.4 Fluxo de Confirmação do Professor (Firestore Schema avaliacaoIA.notaSugerida / avaliacaoIA.feedback, Tag na Tela do Aluno e Confirmação pelo Professor)
+      assert(
+        pmRules.getStudentPendingGradeTag() === "Nota Sugerida (Aguardando Confirmação do Professor)" &&
+        prontWithAversionError.avaliacaoIA &&
+        typeof prontWithAversionError.avaliacaoIA.notaSugerida === "number" &&
+        typeof prontWithAversionError.avaliacaoIA.feedback === "string" &&
+        prontWithAversionError.avaliacaoIA.tagStatus === "Nota Sugerida (Aguardando Confirmação do Professor)" &&
+        prontWithAversionError.avaliacaoIA.confirmadaPeloProfessor === false &&
+        prontWithAversionError.avaliacaoIA.notaConfirmada === null,
+        "Seção 148.4 (Schema avaliacaoIA e Tag do Aluno): Salva avaliacaoIA.notaSugerida e avaliacaoIA.feedback com a tag 'Nota Sugerida (Aguardando Confirmação do Professor)' antes da revisão docente"
+      );
+
+      const confirmedProntuario = pmRules.confirmProfessorGrade(prontWithAversionError, 7.5, "Nota ajustada pelo professor após defesa oral do caso.");
+      assert(
+        confirmedProntuario.avaliacaoIA.confirmadaPeloProfessor === true &&
+        confirmedProntuario.avaliacaoIA.notaConfirmada === 7.5 &&
+        confirmedProntuario.avaliacaoIA.notaConfirmadaFormatada === "7,5" &&
+        confirmedProntuario.avaliacaoIA.status === "confirmada_pelo_professor" &&
+        confirmedProntuario.notaFinalConfirmada === "7,5",
+        "Seção 148.5 (Confirmação/Edição de Nota no Painel do Professor): O professor pode confirmar ou editar a nota sugerida pela IA (0.0 a 10.0), tornando a nota final oficial"
+      );
+
+      // 148.6 Disparo Automático de E-mail Imediato para chagasnutri@gmail.com com Destaque da Avaliação IA, Nota Sugerida e Alerta de Confirmação
+      assert(
+        evalAversionResult.emailPayload &&
+        evalAversionResult.emailPayload.to === "chagasnutri@gmail.com" &&
+        evalAversionResult.emailPayload.text.includes("Carlos Eduardo") &&
+        evalAversionResult.emailPayload.text.includes("Caso Insuficiência Renal Crônica e Hipertensão") &&
+        evalAversionResult.emailPayload.text.includes("Nota Sugerida (Aguardando Confirmação do Professor)") &&
+        evalAversionResult.emailPayload.text.includes("painel para confirmar a nota final"),
+        "Seção 148.6 (Disparo Automático de E-mail para chagasnutri@gmail.com): Envia imediatamente para chagasnutri@gmail.com contendo Nome do Aluno, Nome do Caso, respostas completas, Avaliação da IA em destaque com Nota Sugerida e alerta para confirmar a nota final no painel"
       );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);

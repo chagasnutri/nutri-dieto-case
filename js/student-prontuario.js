@@ -1493,14 +1493,277 @@ class StudentProntuarioManager {
     };
   }
 
-  // Regra 3: System Prompt Obrigatório para Correção Automática por IA (Simulação Clínica)
+  // Novo System Prompt Obrigatório para Correção Automática por IA (Rigor Clínico - Regras 1 a 4)
   getAiEvaluatorSystemPrompt() {
-    return "Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.";
+    return "Atue como um preceptor de Nutrição Clínica extremamente rigoroso e crítico. Sua função é avaliar a resolução do caso clínico enviada pelo aluno. Siga estas regras OBRIGATÓRIAS:\nREGRA 1 (Defesa contra vazio): Se o aluno enviar o planejamento, recordatório ou conduta em branco, ou com informações nitidamente insuficientes, a nota DEVE ser 0 (zero). Sem exceções.\nREGRA 2 (Patologia): Avalie criticamente se os alimentos, a via de administração e a conduta estão corretos para a patologia de base do paciente. Penalize erros graves.\nREGRA 3 (Preferências e Aversões): Cruze a dieta planejada com os dados de anamnese. Se o aluno prescreveu algo que o paciente tem aversão, alergia ou intolerância, reduza drasticamente a nota.\nREGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos, Pontos de Melhoria, Acertos e a Nota Sugerida. Atribua a nota de 0.0 a 10.0.";
+  }
+
+  // Tag oficial exibida ao aluno enquanto aguarda validação do professor
+  getStudentPendingGradeTag() {
+    return "Nota Sugerida (Aguardando Confirmação do Professor)";
   }
 
   // Destinatário Fixo Obrigatório do Professor para o Relatório Final
   getFixedProfessorEmail() {
     return "chagasnutri@gmail.com";
+  }
+
+  // Avaliador rigoroso determinístico (aplica Regras 1, 2, 3 e 4 com defesa estrita contra vazio = nota 0)
+  evaluateRigorousClinicalRules(prontuario, clinicalCase = {}) {
+    const p = (prontuario && typeof prontuario === "object") ? prontuario : {};
+    const c = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const norm = (str) => String(str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    const studentName = p?.aluno?.nome || p?.studentName || "Estudante de Nutrição";
+    const caseTitle = c?.title || p?.caseTitle || p?.caseId || "Caso Clínico Supervisionado";
+
+    // Extrai alimentos do planejamento (qualitativo ou quantitativo)
+    const rawPlano = Array.isArray(p?.planejamentoAlimentar)
+      ? p.planejamentoAlimentar
+      : (Array.isArray(p?.planejamentoQualitativoBlocos)
+          ? p.planejamentoQualitativoBlocos
+          : (Array.isArray(p?.planejamentoAlimentar?.refeicoes)
+              ? p.planejamentoAlimentar.refeicoes
+              : (Array.isArray(p?.cardapioItems) ? p.cardapioItems : [])));
+
+    const plannedFoods = [];
+    (rawPlano || []).filter(Boolean).forEach((meal) => {
+      if (meal?.alimentos) plannedFoods.push(String(meal.alimentos));
+      if (meal?.nome && !Array.isArray(meal?.itens)) plannedFoods.push(String(meal.nome));
+      if (Array.isArray(meal?.itens)) {
+        meal.itens.filter(Boolean).forEach((it) => {
+          const foodName = String(it?.alimento || it?.alimentoNome || it?.nome || "").trim();
+          if (foodName) plannedFoods.push(foodName);
+        });
+      }
+    });
+    if (Array.isArray(p?.cardapioItems)) {
+      p.cardapioItems.filter(Boolean).forEach((it) => {
+        if (it?.nome) plannedFoods.push(String(it.nome).trim());
+      });
+    }
+
+    // Extrai alimentos do recordatório 24h
+    const rawRec = Array.isArray(p?.consumoAlimentar?.refeicoesRecordatorio)
+      ? p.consumoAlimentar.refeicoesRecordatorio
+      : (Array.isArray(p?.recordatorioItems) ? p.recordatorioItems : []);
+
+    const recFoods = [];
+    (rawRec || []).filter(Boolean).forEach((meal) => {
+      if (meal?.alimentos) recFoods.push(String(meal.alimentos));
+      if (meal?.nome && !Array.isArray(meal?.itens)) recFoods.push(String(meal.nome));
+      if (Array.isArray(meal?.itens)) {
+        meal.itens.filter(Boolean).forEach((it) => {
+          const foodName = String(it?.alimento || it?.alimentoNome || it?.nome || "").trim();
+          if (foodName) recFoods.push(foodName);
+        });
+      }
+    });
+
+    // Conduta / Diagnóstico
+    const condutaText = String(
+      p?.prescricaoDietoterapica?.justificativaFisiopatologica ||
+      p?.condutaPrescricao ||
+      p?.diagnosticoPES?.textoCompletoPES ||
+      p?.diagnosticoPES?.problema ||
+      p?.diagnosticoPESTexto ||
+      p?.diagnosticoProblema ||
+      p?.orientacoesNutricionais ||
+      ""
+    ).trim();
+
+    const isPlanejamentoEmpty = plannedFoods.filter(Boolean).length === 0;
+    const isRecordatorioEmpty = recFoods.filter(Boolean).length === 0;
+    const isCondutaEmpty = condutaText.length < 3;
+
+    const errosCriticos = [];
+    const pontosMelhoria = [];
+    const acertos = [];
+
+    // REGRA 1 (Defesa contra vazio): Se planejamento, recordatório ou conduta estiverem em branco ou nitidamente insuficientes -> Nota 0 (zero) sem exceções
+    if (isPlanejamentoEmpty || isRecordatorioEmpty || isCondutaEmpty) {
+      if (isPlanejamentoEmpty) {
+        errosCriticos.push("REGRA 1 - Defesa contra vazio: Planejamento alimentar / cardápio enviado em branco ou nitidamente insuficiente.");
+      }
+      if (isRecordatorioEmpty) {
+        errosCriticos.push("REGRA 1 - Defesa contra vazio: Recordatório de 24h enviado em branco ou sem alimentos descritos.");
+      }
+      if (isCondutaEmpty) {
+        errosCriticos.push("REGRA 1 - Defesa contra vazio: Conduta dietoterápica / diagnóstico enviado em branco ou nitidamente insuficiente.");
+      }
+      pontosMelhoria.push("Preencher obrigatoriamente o Recordatório de 24h, a Conduta Dietoterápica e o Planejamento Alimentar completo antes de finalizar.");
+      acertos.push("Nenhum acerto validado devido ao envio em branco ou nitidamente insuficiente (REGRA 1).");
+
+      const feedbackZero = [
+        `PARECER DO PRECEPTOR DE NUTRIÇÃO CLÍNICA (AVALIAÇÃO RIGOROSA POR IA)`,
+        `Aluno(a): ${studentName} | Caso Clínico: ${caseTitle}`,
+        `Status: ${this.getStudentPendingGradeTag()}`,
+        ``,
+        `1. Erros Críticos:`,
+        ...errosCriticos.map((e) => `• ${e}`),
+        ``,
+        `2. Pontos de Melhoria:`,
+        ...pontosMelhoria.map((m) => `• ${m}`),
+        ``,
+        `3. Acertos:`,
+        ...acertos.map((a) => `• ${a}`),
+        ``,
+        `4. Nota Sugerida:`,
+        `Nota Sugerida: 0.0 / 10.0 (0,0) — ${this.getStudentPendingGradeTag()}`
+      ].join("\n");
+
+      return {
+        notaSugerida: 0,
+        notaSugeridaDot: "0.0",
+        notaSugeridaComma: "0,0",
+        feedback: feedbackZero,
+        errosCriticos,
+        pontosMelhoria,
+        acertos,
+        violouRegra1Vazio: true,
+        violouRegra2Patologia: false,
+        violouRegra3Aversoes: false
+      };
+    }
+
+    let score = 9.0;
+    let violouRegra2Patologia = false;
+    let violouRegra3Aversoes = false;
+
+    const patologiaNorm = norm(
+      [
+        c?.title,
+        c?.description,
+        c?.clinicalHistory,
+        c?.hipoteseDiagnostica,
+        c?.history?.hipoteseDiagnostica,
+        p?.anamnese?.hipoteseDiagnostica,
+        p?.anamnese?.historiaDoencaAtual,
+        p?.anamnese?.historiaClinica
+      ].join(" ")
+    );
+    const viaAdminNorm = norm(p?.prescricaoDietoterapica?.viaAlimentacao || p?.viaAdministracao || "oral");
+    const plannedNorm = norm(plannedFoods.join(" | "));
+    const condutaNorm = norm(condutaText);
+
+    // REGRA 2 (Patologia)
+    if (
+      (patologiaNorm.includes("diabetes") || patologiaNorm.includes("dm2") || patologiaNorm.includes("hiperglicemia")) &&
+      /\b(refrigerante|acucar refinado|doce de leite|leite condensado|bala|xarope)\b/.test(plannedNorm)
+    ) {
+      violouRegra2Patologia = true;
+      score -= 3.5;
+      errosCriticos.push("REGRA 2 (Patologia): Prescrição de açúcares simples ou bebidas açucaradas incompatíveis com o controle glicêmico no Diabetes Mellitus.");
+    }
+
+    if (
+      (patologiaNorm.includes("hipertensao") || patologiaNorm.includes("has") || patologiaNorm.includes("renal") || patologiaNorm.includes("drc")) &&
+      /\b(salsicha|presunto|salame|embutido|macarrao instantaneo|bacon|caldo industrializado)\b/.test(plannedNorm)
+    ) {
+      violouRegra2Patologia = true;
+      score -= 3.0;
+      errosCriticos.push("REGRA 2 (Patologia): Prescrição de embutidos/ultraprocessados ricos em sódio e fósforo inorgânico, contraindicados para a patologia de base.");
+    }
+
+    if (
+      (patologiaNorm.includes("disfagia grave") || patologiaNorm.includes("sonda") || patologiaNorm.includes("enteral exclusiva")) &&
+      viaAdminNorm === "oral" &&
+      !condutaNorm.includes("enteral") &&
+      !condutaNorm.includes("espessante")
+    ) {
+      violouRegra2Patologia = true;
+      score -= 3.0;
+      errosCriticos.push("REGRA 2 (Patologia / Via de Administração): Via de administração oral sem adaptação de segurança para o quadro de disfagia/via alternativa.");
+    }
+
+    // REGRA 3 (Preferências e Aversões)
+    const aversoesText = norm(
+      [
+        p?.consumoAlimentar?.aguaPreferenciasAversoes,
+        p?.consumoAlimentar?.aversoes,
+        p?.consumoAlimentar?.aversoesAlimentares,
+        p?.consumoAlimentar?.alergiasIntolerancias,
+        p?.anamnese?.aversoesIntolerancias,
+        p?.anamnese?.alergiasIntolerancias,
+        p?.anamnese?.alergias,
+        c?.consumoAlimentar?.aversoesIntolerancias,
+        c?.dietaryAversions,
+        c?.allergies
+      ].filter(Boolean).join(" ")
+    );
+
+    const commonFoodsCheck = [
+      "leite", "lactose", "queijo", "iogurte", "peixe", "camarao", "frutos do mar",
+      "ovo", "amendoim", "castanha", "gluten", "trigo", "soja", "coentro", "jilo",
+      "figado", "quiabo", "abobora", "chuchu", "mamao", "banana", "aveia"
+    ];
+
+    const violatedFoods = [];
+    if (aversoesText) {
+      commonFoodsCheck.forEach((token) => {
+        if (aversoesText.includes(token) && plannedNorm.includes(token)) {
+          violatedFoods.push(token);
+        }
+      });
+    }
+
+    if (violatedFoods.length > 0) {
+      violouRegra3Aversoes = true;
+      score -= 4.0;
+      errosCriticos.push(
+        `REGRA 3 - Preferências/Aversões/Alergias: Foram prescritos alimentos incompatíveis com as aversões, alergias ou intolerâncias do paciente na anamnese (${Array.from(new Set(violatedFoods)).join(", ")}).`
+      );
+    }
+
+    if (!violouRegra2Patologia) {
+      acertos.push("Coerência clínica entre patologia de base, escolhas alimentares, preparações, via de administração e conduta dietoterápica (REGRA 2).");
+    }
+    if (!violouRegra3Aversoes) {
+      acertos.push("Respeito às preferências, aversões, alergias e intolerâncias alimentares relatadas na anamnese (REGRA 3).");
+    }
+
+    pontosMelhoria.push("Manter monitoramento ambulatorial periódico de metas bioquímicas, sinais clínicos e adesão comportamental.");
+
+    if (errosCriticos.length === 0) {
+      errosCriticos.push("Nenhum erro crítico identificado na conduta, via de administração ou segurança alimentar.");
+    }
+
+    if (score < 0) score = 0;
+    if (score > 10) score = 10;
+
+    const notaSugeridaDot = score.toFixed(1);
+    const notaSugeridaComma = notaSugeridaDot.replace(".", ",");
+
+    const feedback = [
+      `PARECER DO PRECEPTOR DE NUTRIÇÃO CLÍNICA (AVALIAÇÃO RIGOROSA POR IA)`,
+      `Aluno(a): ${studentName} | Caso Clínico: ${caseTitle}`,
+      `Status: ${this.getStudentPendingGradeTag()}`,
+      ``,
+      `1. Erros Críticos:`,
+      ...errosCriticos.map((e) => `• ${e}`),
+      ``,
+      `2. Pontos de Melhoria:`,
+      ...pontosMelhoria.map((m) => `• ${m}`),
+      ``,
+      `3. Acertos:`,
+      ...acertos.map((a) => `• ${a}`),
+      ``,
+      `4. Nota Sugerida:`,
+      `Nota Sugerida: ${notaSugeridaDot} / 10.0 (${notaSugeridaComma}) — ${this.getStudentPendingGradeTag()}`
+    ].join("\n");
+
+    return {
+      notaSugerida: Number(notaSugeridaDot),
+      notaSugeridaDot,
+      notaSugeridaComma,
+      feedback,
+      errosCriticos,
+      pontosMelhoria,
+      acertos,
+      violouRegra1Vazio: false,
+      violouRegra2Patologia,
+      violouRegra3Aversoes
+    };
   }
 
   // Compila todas as respostas do aluno (anamnese, cálculos, conduta qualitativa/quantitativa) para envio à API de IA e E-mail
@@ -1565,6 +1828,7 @@ class StudentProntuarioManager {
       ``,
       `1. ANAMNESE E AVALIAÇÃO ANTROPOMÉTRICA:`,
       `- Queixa Principal / HDA: ${anamnese?.queixaPrincipal || "---"} / ${anamnese?.historiaClinica || p?.evolucaoTexto || "---"}`,
+      `- Preferências / Aversões / Alergias: ${ca?.aguaPreferenciasAversoes || anamnese?.aversoesIntolerancias || "---"}`,
       `- Peso / Estatura / IMC: ${antro?.pesoAtual || p?.peso || "--"} kg | ${antro?.estatura || p?.estatura || "--"} m | IMC: ${antro?.imc || "--"} kg/m² (${antro?.diagnosticoNutricionalExtenso || "--"})`,
       ``,
       `2. RECORDATÓRIO DE 24H (CONSUMO HABITUAL E PREPARAÇÕES):`,
@@ -1597,6 +1861,7 @@ class StudentProntuarioManager {
       dataHora,
       resolutionText,
       avaliacaoIA,
+      notaSugerida,
       notaFinal,
       habilitarCorrecaoAutomaticaIA
     } = params || {};
@@ -1606,18 +1871,30 @@ class StudentProntuarioManager {
       dataHora ||
       new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
     ).trim();
-    const hasAi = Boolean(habilitarCorrecaoAutomaticaIA ?? (avaliacaoIA || notaFinal));
+    const evalText = typeof avaliacaoIA === "object" && avaliacaoIA !== null
+      ? (avaliacaoIA.feedback || "")
+      : String(avaliacaoIA || "");
+    const gradeStr = String(
+      notaSugerida ??
+      notaFinal ??
+      (typeof avaliacaoIA === "object" && avaliacaoIA !== null ? (avaliacaoIA.notaSugeridaFormatada || avaliacaoIA.notaSugerida) : "") ??
+      "8,5"
+    ).replace(".", ",");
+
+    const hasAi = Boolean(habilitarCorrecaoAutomaticaIA ?? (evalText || notaSugerida !== undefined || notaFinal !== undefined));
     const subject = hasAi
-      ? `[DietoCase - Relatório Final + Correção IA] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"} (Nota: ${notaFinal || "8,5"}/10,0)`
+      ? `[DietoCase - Revisão Docente Necessária + Correção IA] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"} (Nota Sugerida: ${gradeStr}/10,0)`
       : `[DietoCase - Relatório Final] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"}`;
 
     const aiSection = hasAi
       ? [
-          `Nota Final Atribuída pela IA: ${notaFinal || "8,5"} / 10,0`,
+          `⚠️ ALERTA AO PROFESSOR: Você precisa acessar o painel para confirmar a nota final (ou editá-la) no Painel do Professor do DietoCase!`,
+          `Status da Nota: ${this.getStudentPendingGradeTag()}`,
+          `Nota Sugerida pela IA: ${gradeStr} / 10,0`,
           `====================================================================`,
           ``,
-          `--- CÓPIA INTEGRAL DA AVALIAÇÃO DA IA COM A NOTA FINAL ---`,
-          avaliacaoIA || ""
+          `--- EM DESTAQUE: AVALIAÇÃO COMPLETA DA IA COM A NOTA SUGERIDA ---`,
+          evalText
         ].join("\n")
       : `====================================================================`;
 
@@ -1630,7 +1907,7 @@ class StudentProntuarioManager {
       `Data/Hora de Finalização: ${timestampStr}`,
       aiSection,
       ``,
-      `--- CÓPIA COMPLETA DO RELATÓRIO FINAL GERADO PELO ALUNO ---`,
+      `--- RESPOSTAS COMPLETAS DO ALUNO (RELATÓRIO FINAL GERADO PELO ALUNO) ---`,
       resolutionText || ""
     ].join("\n");
 
@@ -1643,9 +1920,12 @@ class StudentProntuarioManager {
       caseTitle: caseTitle || "Caso Clínico Supervisionado",
       dataHora: timestampStr,
       habilitarCorrecaoAutomaticaIA: hasAi,
-      notaFinal: hasAi ? (notaFinal || "8,5") : null,
+      notaSugerida: hasAi ? gradeStr : null,
+      notaFinal: hasAi ? gradeStr : null,
+      tagStatus: hasAi ? this.getStudentPendingGradeTag() : null,
+      requiresProfessorConfirmation: hasAi,
       resolutionText: resolutionText || "",
-      avaliacaoIA: hasAi ? (avaliacaoIA || "") : null,
+      avaliacaoIA: hasAi ? evalText : null,
       text: textBody
     };
   }
@@ -1676,8 +1956,22 @@ class StudentProntuarioManager {
       safeCase?.habilitarCorrecaoAutomaticaIA ??
       safeProntuario?.habilitarCorrecaoAutomaticaIA
     );
-    const notaFinal = String(options?.notaFinal || safeProntuario?.notaIA || "").trim();
-    const avaliacaoIA = String(options?.avaliacaoIA || safeProntuario?.avaliacaoIA || "").trim();
+    const rawEvalObj = (safeProntuario?.avaliacaoIA && typeof safeProntuario.avaliacaoIA === "object")
+      ? safeProntuario.avaliacaoIA
+      : null;
+    const notaFinal = String(
+      options?.notaSugerida ||
+      options?.notaFinal ||
+      rawEvalObj?.notaSugeridaFormatada ||
+      (rawEvalObj?.notaSugerida !== undefined ? String(rawEvalObj.notaSugerida).replace(".", ",") : "") ||
+      safeProntuario?.notaIA ||
+      ""
+    ).trim();
+    const avaliacaoIA = String(
+      typeof options?.avaliacaoIA === "string"
+        ? options.avaliacaoIA
+        : (rawEvalObj?.feedback || (typeof safeProntuario?.avaliacaoIA === "string" ? safeProntuario.avaliacaoIA : ""))
+    ).trim();
     const relatorioFinalTexto = String(
       options?.relatorioFinalTexto ||
       this.compileStudentResolutionForAI(safeProntuario, safeCase)
@@ -1691,6 +1985,7 @@ class StudentProntuarioManager {
       dataHora,
       resolutionText: relatorioFinalTexto,
       avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : "",
+      notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : "",
       notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : "",
       habilitarCorrecaoAutomaticaIA
     });
@@ -1709,6 +2004,7 @@ class StudentProntuarioManager {
               caseTitle,
               dataHora,
               habilitarCorrecaoAutomaticaIA,
+              notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
               notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
               avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
               relatorioFinalTexto,
@@ -1740,6 +2036,7 @@ class StudentProntuarioManager {
         caseTitle,
         dataHora,
         habilitarCorrecaoAutomaticaIA,
+        notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
         notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
         avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
         apiDispatched,
@@ -1750,9 +2047,139 @@ class StudentProntuarioManager {
     return backgroundPromise;
   }
 
-  // Executa a avaliação automática por IA (via /api/correcao-ia com fallback científico determinístico BRASPEN/SBC) e dispara o e-mail ao professor
+  // Confirma ou edita a nota sugerida pela IA no Painel do Professor, tornando a nota oficial/final
+  confirmProfessorGrade(prontuarioOrSubmission, notaConfirmadaInput, professorComentario = "") {
+    const p = (prontuarioOrSubmission && typeof prontuarioOrSubmission === "object")
+      ? prontuarioOrSubmission
+      : {};
+    const parsedNum = Math.min(10, Math.max(0, parseFloat(String(notaConfirmadaInput ?? "0").replace(",", ".")) || 0));
+    const formattedDot = parsedNum.toFixed(1);
+    const formattedComma = formattedDot.replace(".", ",");
+
+    const prevEval = (p.avaliacaoIA && typeof p.avaliacaoIA === "object")
+      ? p.avaliacaoIA
+      : {
+          notaSugerida: p.notaIA ? parseFloat(String(p.notaIA).replace(",", ".")) : parsedNum,
+          notaSugeridaFormatada: p.notaIA || formattedComma,
+          feedback: typeof p.avaliacaoIA === "string" ? p.avaliacaoIA : ""
+        };
+
+    const confirmedAt = new Date().toISOString();
+    const updatedAvaliacaoIA = {
+      ...prevEval,
+      notaSugerida: prevEval.notaSugerida ?? parsedNum,
+      notaSugeridaFormatada: prevEval.notaSugeridaFormatada || formattedComma,
+      feedback: prevEval.feedback || "",
+      notaConfirmada: parsedNum,
+      notaConfirmadaFormatada: formattedComma,
+      notaFinal: parsedNum,
+      notaFinalFormatada: formattedComma,
+      status: "confirmada_pelo_professor",
+      tagStatus: "Nota Final Confirmada pelo Professor",
+      confirmadaPeloProfessor: true,
+      comentarioProfessor: String(professorComentario || "").trim(),
+      confirmadoEm: confirmedAt
+    };
+
+    p.avaliacaoIA = updatedAvaliacaoIA;
+    p.avaliacaoIATexto = updatedAvaliacaoIA.feedback;
+    p.notaIA = formattedComma;
+    p.notaConfirmada = parsedNum;
+    p.notaConfirmadaFormatada = formattedComma;
+    p.notaFinal = parsedNum;
+    p.notaFinalFormatada = formattedComma;
+    p.notaFinalConfirmada = formattedComma;
+    p.notaConfirmadaPeloProfessor = true;
+    p.confirmadaPeloProfessor = true;
+    p.status = "confirmada_pelo_professor";
+    p.tagStatus = "Nota Final Confirmada pelo Professor";
+
+    // Salva no localStorage de submissões para revisão do professor e sincroniza com Firestore em background
+    this.saveSubmissionForProfessorReview(p);
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService && typeof firebaseSyncService.saveProntuario === "function") {
+      try {
+        Promise.resolve(firebaseSyncService.saveProntuario(p.caseId || "caso-clinico", p)).catch((e) => {
+          console.warn("⚠️ Aviso ao confirmar nota no Firestore:", e);
+        });
+      } catch (e) {
+        console.warn("⚠️ Aviso ao confirmar nota no Firestore:", e);
+      }
+    }
+
+    return p;
+  }
+
+  // Persiste a submissão do aluno para listagem imediata na Área de Revisão do Painel do Professor
+  saveSubmissionForProfessorReview(prontuarioData, clinicalCase = {}) {
+    if (!prontuarioData || typeof prontuarioData !== "object") return null;
+    const storageKey = "dietocase_submissoes_avaliacao_ia_v1";
+    const caseId = prontuarioData.caseId || clinicalCase?.id || "caso-clinico";
+    const uid = prontuarioData.userId || prontuarioData?.aluno?.id || prontuarioData?.studentId || "aluno-1";
+    const subId = prontuarioData.submissionId || `${caseId}_${uid}`;
+
+    const evalObj = (prontuarioData.avaliacaoIA && typeof prontuarioData.avaliacaoIA === "object")
+      ? prontuarioData.avaliacaoIA
+      : {
+          notaSugerida: parseFloat(String(prontuarioData.notaIA || "0").replace(",", ".")) || 0,
+          notaSugeridaFormatada: String(prontuarioData.notaIA || "0,0"),
+          feedback: typeof prontuarioData.avaliacaoIA === "string" ? prontuarioData.avaliacaoIA : (prontuarioData.avaliacaoIATexto || ""),
+          status: prontuarioData.notaConfirmadaPeloProfessor ? "confirmada_pelo_professor" : "aguardando_confirmacao_professor",
+          tagStatus: prontuarioData.notaConfirmadaPeloProfessor ? "Nota Final Confirmada pelo Professor" : this.getStudentPendingGradeTag(),
+          confirmadaPeloProfessor: Boolean(prontuarioData.notaConfirmadaPeloProfessor),
+          notaConfirmada: prontuarioData.notaConfirmadaPeloProfessor ? (parseFloat(String(prontuarioData.notaFinalConfirmada || prontuarioData.notaIA || "0").replace(",", ".")) || 0) : null,
+          notaFinalFormatada: prontuarioData.notaFinalConfirmada || null
+        };
+
+    const record = {
+      ...prontuarioData,
+      submissionId: subId,
+      caseId,
+      caseTitle: clinicalCase?.title || prontuarioData.caseTitle || caseId,
+      studentName: prontuarioData?.aluno?.nome || prontuarioData.studentName || "Estudante de Nutrição",
+      avaliacaoIA: evalObj,
+      avaliacaoIATexto: evalObj.feedback,
+      notaSugerida: evalObj.notaSugerida,
+      notaSugeridaFormatada: evalObj.notaSugeridaFormatada,
+      resolutionText: prontuarioData.resolutionText || this.compileStudentResolutionForAI(prontuarioData, clinicalCase),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      if (typeof localStorage !== "undefined") {
+        const raw = localStorage.getItem(storageKey);
+        const list = raw ? JSON.parse(raw) : [];
+        const idx = list.findIndex((item) => item.submissionId === subId);
+        if (idx >= 0) {
+          list[idx] = record;
+        } else {
+          list.unshift(record);
+        }
+        localStorage.setItem(storageKey, JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    return record;
+  }
+
+  getSubmissionsForProfessorReview() {
+    const storageKey = "dietocase_submissoes_avaliacao_ia_v1";
+    try {
+      if (typeof localStorage !== "undefined") {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  // Executa a avaliação automática por IA (com Regras 1 a 4 rigorosas), salva avaliacaoIA.{notaSugerida, feedback} e dispara o e-mail imediato para chagasnutri@gmail.com
   async evaluateCaseWithAI(prontuario, clinicalCase = {}) {
     const safeProntuario = this.sanitizeProntuarioPayload(prontuario, clinicalCase?.id || prontuario?.caseId);
+    // Preserva os itens originais para verificação rigorosa de vazio (REGRA 1) caso o aluno tenha enviado arrays vazios
+    const rawProntuarioForValidation = (prontuario && typeof prontuario === "object") ? prontuario : {};
     const systemPrompt = this.getAiEvaluatorSystemPrompt();
     const studentName = safeProntuario?.aluno?.nome || safeProntuario?.studentName || "Estudante de Nutrição";
     const caseTitle = clinicalCase?.title || safeProntuario?.caseTitle || safeProntuario?.caseId || "Caso Clínico Supervisionado";
@@ -1760,89 +2187,97 @@ class StudentProntuarioManager {
     const dataHora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const resolutionText = this.compileStudentResolutionForAI(safeProntuario, clinicalCase);
 
-    try {
-      if (typeof fetch === "function") {
-        const resp = await fetch("/api/correcao-ia", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            studentId: safeProntuario?.aluno?.id || safeProntuario?.studentId || "aluno-demo",
-            studentName,
-            caseId: clinicalCase?.id || safeProntuario?.caseId || "caso-clinico",
-            caseTitle,
-            professorEmail,
-            dataHora,
-            systemPrompt,
-            studentResolution: safeProntuario,
-            resolutionData: safeProntuario
-          })
-        });
-        if (resp && resp.ok) {
-          const json = await resp.json();
-          if (json && json.avaliacaoIA) {
-            return {
-              success: true,
-              systemPromptUsed: systemPrompt,
+    // Avalia deterministicamente as Regras 1 a 4
+    const rigorousCheck = this.evaluateRigorousClinicalRules(rawProntuarioForValidation, clinicalCase);
+
+    let feedbackText = rigorousCheck.feedback;
+    let notaSugeridaNum = rigorousCheck.notaSugerida;
+    let notaSugeridaComma = rigorousCheck.notaSugeridaComma;
+    let apiEmailPayload = null;
+
+    // Se NÃO violou a REGRA 1 (vazio), consulta a API /api/correcao-ia se disponível
+    if (!rigorousCheck.violouRegra1Vazio) {
+      try {
+        if (typeof fetch === "function") {
+          const resp = await fetch("/api/correcao-ia", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: safeProntuario?.aluno?.id || safeProntuario?.studentId || "aluno-demo",
               studentName,
+              caseId: clinicalCase?.id || safeProntuario?.caseId || "caso-clinico",
               caseTitle,
               professorEmail,
               dataHora,
-              notaFinal: json.notaFinal || "9,0",
-              avaliacaoIA: json.avaliacaoIA,
-              resolutionText: json.resolutionText || json.resolucaoCompleta || resolutionText,
-              emailPayload: json.emailPayload || this.buildProfessorEvaluationEmailPayload({
-                studentName,
-                caseTitle,
-                professorEmail,
-                dataHora,
-                resolutionText,
-                avaliacaoIA: json.avaliacaoIA,
-                notaFinal: json.notaFinal || "9,0",
-                habilitarCorrecaoAutomaticaIA: true
-              }),
-              emailDispatched: true
-            };
+              systemPrompt,
+              studentResolution: rawProntuarioForValidation,
+              resolutionData: rawProntuarioForValidation,
+              clinicalCase
+            })
+          });
+          if (resp && resp.ok) {
+            const json = await resp.json();
+            if (json && json.avaliacaoIA) {
+              feedbackText = typeof json.avaliacaoIA === "string" ? json.avaliacaoIA : (json.avaliacaoIA.feedback || feedbackText);
+              notaSugeridaComma = String(json.notaSugerida || json.notaFinal || notaSugeridaComma).replace(".", ",");
+              notaSugeridaNum = parseFloat(notaSugeridaComma.replace(",", ".")) || 0;
+              apiEmailPayload = json.emailPayload || null;
+            }
           }
         }
+      } catch (e) {
+        // Continua com o avaliador rigoroso determinístico
       }
-    } catch (e) {
-      // Continua para o avaliador científico estruturado
     }
 
-    const notaFinal = "9,0";
-    const avaliacaoIA = [
-      `PARECER DOCENTE AUTOMATIZADO POR IA — NUTRIÇÃO CLÍNICA`,
-      `Referencial Científico: Diretrizes BRASPEN, SBC (Sociedade Brasileira de Cardiologia) e SBD.`,
-      `Aluno(a): ${studentName} | Caso Clínico: ${caseTitle}`,
-      ``,
-      `1. ACERTOS NO RACIOCÍNIO CLÍNICO:`,
-      `• Coerência propedêutica entre a avaliação antropométrica/bioquímica, o Diagnóstico em Nutrição (PES) e a conduta dietoterápica proposta.`,
-      `• Adequação das preparações e escolhas alimentares frente às diretrizes da BRASPEN e da SBC.`,
-      ``,
-      `2. APONTAMENTOS E OPORTUNIDADES DE APRIMORAMENTO:`,
-      `• Reforçar o monitoramento periódico de exames bioquímicos, frações lipídicas e metas de adesão comportamental no seguimento ambulatorial.`,
-      ``,
-      `3. NOTA FINAL ATRIBUÍDA:`,
-      `Nota Final: ${notaFinal} / 10,0`
-    ].join("\n");
+    const avaliacaoIAData = {
+      notaSugerida: notaSugeridaNum,
+      notaSugeridaFormatada: notaSugeridaComma,
+      feedback: feedbackText,
+      status: "aguardando_confirmacao_professor",
+      tagStatus: this.getStudentPendingGradeTag(),
+      confirmadaPeloProfessor: false,
+      notaConfirmada: null,
+      notaFinalFormatada: null,
+      avaliadoEm: new Date().toISOString()
+    };
 
-    const emailPayload = this.buildProfessorEvaluationEmailPayload({
+    // Atualiza o prontuário com o formato estruturado para o Firestore: avaliacaoIA.notaSugerida e avaliacaoIA.feedback
+    if (prontuario && typeof prontuario === "object") {
+      prontuario.avaliacaoIA = avaliacaoIAData;
+      prontuario.avaliacaoIATexto = feedbackText;
+      prontuario.notaIA = notaSugeridaComma;
+      prontuario.tagNotaIA = this.getStudentPendingGradeTag();
+      this.saveSubmissionForProfessorReview(prontuario, clinicalCase);
+    }
+
+    const emailPayload = apiEmailPayload || this.buildProfessorEvaluationEmailPayload({
       studentName,
       caseTitle,
       professorEmail,
       dataHora,
       resolutionText,
-      avaliacaoIA,
-      notaFinal,
+      avaliacaoIA: feedbackText,
+      notaSugerida: notaSugeridaComma,
+      notaFinal: notaSugeridaComma,
       habilitarCorrecaoAutomaticaIA: true
     });
 
-    // Se o Firebase estiver configurado, registra também na coleção 'mail' (Firebase Email Trigger)
-    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService && typeof firebaseSyncService.saveMailTrigger === "function") {
-      try {
-        await firebaseSyncService.saveMailTrigger(emailPayload);
-      } catch (err) {
-        console.warn("⚠️ Aviso ao disparar Firebase Email Trigger:", err);
+    // Se o Firebase estiver configurado, registra também na coleção 'mail' e salva no Firestore em 'prontuarios'
+    if (typeof firebaseSyncService !== "undefined" && firebaseSyncService) {
+      if (typeof firebaseSyncService.saveMailTrigger === "function") {
+        try {
+          await firebaseSyncService.saveMailTrigger(emailPayload);
+        } catch (err) {
+          console.warn("⚠️ Aviso ao disparar Firebase Email Trigger:", err);
+        }
+      }
+      if (typeof firebaseSyncService.saveProntuario === "function" && prontuario && typeof prontuario === "object") {
+        try {
+          await firebaseSyncService.saveProntuario(clinicalCase?.id || prontuario?.caseId || "caso-clinico", prontuario);
+        } catch (err) {
+          console.warn("⚠️ Aviso ao salvar avaliacaoIA no Firestore:", err);
+        }
       }
     }
 
@@ -1853,8 +2288,13 @@ class StudentProntuarioManager {
       caseTitle,
       professorEmail,
       dataHora,
-      notaFinal,
-      avaliacaoIA,
+      notaSugerida: notaSugeridaNum,
+      notaSugeridaFormatada: notaSugeridaComma,
+      notaFinal: notaSugeridaComma,
+      tagNotaAluno: this.getStudentPendingGradeTag(),
+      avaliacaoIA: feedbackText,
+      avaliacaoIAData,
+      avaliacaoIAObjeto: avaliacaoIAData,
       resolutionText,
       emailPayload,
       emailDispatched: true

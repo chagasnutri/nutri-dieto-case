@@ -6935,6 +6935,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Se a Correção Automática por IA estiver habilitada para o caso no Painel do Professor:
       const aiResultContainer = document.getElementById("aiEvaluationResultContainer");
       const aiGradeBadge = document.getElementById("aiEvaluationFinalGradeBadge");
+      const aiPendingTagEl = document.getElementById("aiEvaluationPendingProfessorTag");
       const aiTextContent = document.getElementById("aiEvaluationTextContent");
       const aiEmailStatus = document.getElementById("aiEvaluationEmailStatus");
       const pedNotice = document.getElementById("submissionStandardPedagogicalNotice");
@@ -6942,14 +6943,42 @@ document.addEventListener("DOMContentLoaded", () => {
       if (appState.currentCase?.habilitarCorrecaoAutomaticaIA === true) {
         try {
           const aiRes = await prontuarioManager.evaluateCaseWithAI(data, appState.currentCase);
-          data.avaliacaoIA = aiRes?.avaliacaoIA || "";
-          data.notaIA = aiRes?.notaFinal || "9,0";
+          const feedbackStr = typeof aiRes?.avaliacaoIA === "string"
+            ? aiRes.avaliacaoIA
+            : (aiRes?.avaliacaoIA?.feedback || aiRes?.avaliacaoIAData?.feedback || "");
+          const notaSugeridaStr = String(
+            aiRes?.notaSugeridaFormatada ||
+            aiRes?.notaFinal ||
+            (aiRes?.notaSugerida !== undefined ? String(aiRes.notaSugerida).replace(".", ",") : "9,0")
+          );
+
+          data.avaliacaoIA = aiRes?.avaliacaoIAData || {
+            notaSugerida: parseFloat(notaSugeridaStr.replace(",", ".")) || 0,
+            notaSugeridaFormatada: notaSugeridaStr,
+            feedback: feedbackStr,
+            status: "aguardando_confirmacao_professor",
+            tagStatus: "Nota Sugerida (Aguardando Confirmação do Professor)",
+            confirmadaPeloProfessor: false,
+            notaConfirmada: null
+          };
+          data.avaliacaoIATexto = feedbackStr;
+          data.notaIA = notaSugeridaStr;
+          data.tagNotaIA = "Nota Sugerida (Aguardando Confirmação do Professor)";
+
           if (aiResultContainer) aiResultContainer.classList.remove("hidden");
           if (pedNotice) pedNotice.classList.add("hidden");
-          if (aiGradeBadge) aiGradeBadge.textContent = `Nota Final: ${data.notaIA} / 10,0`;
-          if (aiTextContent) aiTextContent.textContent = data.avaliacaoIA;
+          if (aiPendingTagEl) {
+            aiPendingTagEl.textContent = "Nota Sugerida (Aguardando Confirmação do Professor)";
+          }
+          if (aiGradeBadge) {
+            aiGradeBadge.textContent = `Nota Sugerida: ${notaSugeridaStr} / 10,0`;
+          }
+          if (aiTextContent) aiTextContent.textContent = feedbackStr;
           if (aiEmailStatus) {
-            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado ao Professor:</strong> Cópia completa do Relatório Final de <strong>${escapeHtml(data?.aluno?.nome || "")}</strong> no caso <strong>${escapeHtml(appState.currentCase?.title || "")}</strong> e Avaliação da IA (Nota ${escapeHtml(data.notaIA)}/10,0) enviada para <code>chagasnutri@gmail.com</code>.`;
+            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado Imediatamente ao Professor:</strong> Cópia completa da resolução de <strong>${escapeHtml(data?.aluno?.nome || "")}</strong> no caso <strong>${escapeHtml(appState.currentCase?.title || "")}</strong> e Avaliação da IA com a <strong>Nota Sugerida (${escapeHtml(notaSugeridaStr)}/10,0 — Aguardando Confirmação do Professor)</strong> enviada automaticamente para <code>chagasnutri@gmail.com</code>.`;
+          }
+          if (typeof renderAdminAiSubmissionsReview === "function") {
+            renderAdminAiSubmissionsReview();
           }
         } catch (aiErr) {
           console.warn("⚠️ Aviso durante Correção Automática por IA:", aiErr);
@@ -8378,12 +8407,133 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
+  // Renderiza a Área de Revisão Docente (Validação e Confirmação das Avaliações por IA no Painel do Professor)
+  function renderAdminAiSubmissionsReview() {
+    const container = document.getElementById("adminAiSubmissionsListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const submissions = (typeof prontuarioManager !== "undefined" && typeof prontuarioManager.getSubmissionsForProfessorReview === "function")
+      ? prontuarioManager.getSubmissionsForProfessorReview()
+      : [];
+
+    if (!Array.isArray(submissions) || submissions.length === 0) {
+      container.innerHTML = `
+        <div class="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-6 text-center text-xs text-slate-500">
+          <div class="text-2xl mb-1">🤖</div>
+          <strong class="block text-slate-700 mb-0.5">Nenhuma submissão pendente de confirmação docente no momento.</strong>
+          <span>Assim que um aluno finalizar um caso com a Correção Automática por IA ativa, a resolução, o feedback da IA e o campo numérico para confirmar/editar a nota aparecerão aqui.</span>
+        </div>
+      `;
+      return;
+    }
+
+    submissions.forEach((sub, idx) => {
+      const evalObj = (sub.avaliacaoIA && typeof sub.avaliacaoIA === "object")
+        ? sub.avaliacaoIA
+        : {
+            notaSugerida: sub.notaSugerida ?? (parseFloat(String(sub.notaIA || "0").replace(",", ".")) || 0),
+            notaSugeridaFormatada: sub.notaSugeridaFormatada || sub.notaIA || "0,0",
+            feedback: typeof sub.avaliacaoIA === "string" ? sub.avaliacaoIA : (sub.avaliacaoIATexto || ""),
+            confirmadaPeloProfessor: Boolean(sub.notaConfirmadaPeloProfessor),
+            notaConfirmada: sub.notaFinalConfirmada ? parseFloat(String(sub.notaFinalConfirmada).replace(",", ".")) : null,
+            notaFinalFormatada: sub.notaFinalConfirmada || null
+          };
+
+      const isConfirmed = Boolean(evalObj.confirmadaPeloProfessor || sub.notaConfirmadaPeloProfessor);
+      const suggestedStr = String(evalObj.notaSugeridaFormatada || evalObj.notaSugerida || "0,0").replace(".", ",");
+      const confirmedStr = String(evalObj.notaFinalFormatada || evalObj.notaConfirmada || suggestedStr).replace(".", ",");
+      const inputDefaultVal = String(isConfirmed ? (evalObj.notaConfirmada ?? evalObj.notaSugerida ?? 0) : (evalObj.notaSugerida ?? 0)).replace(",", ".");
+
+      const card = document.createElement("div");
+      card.className = `border ${isConfirmed ? "border-emerald-300 bg-emerald-50/30" : "border-amber-300 bg-amber-50/20"} rounded-xl p-4 space-y-3 text-xs`;
+      card.dataset.submissionId = sub.submissionId || `sub-${idx}`;
+
+      card.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+          <div>
+            <span class="font-bold text-slate-900 text-sm">👤 Aluno(a): ${escapeHtml(sub.studentName || sub.aluno?.nome || "Estudante")}</span>
+            <span class="mx-2 text-slate-300">|</span>
+            <span class="font-semibold text-indigo-800">📋 Caso: ${escapeHtml(sub.caseTitle || sub.caseId || "Caso Clínico")}</span>
+          </div>
+          <span class="px-3 py-1 rounded-full font-bold text-[11px] border ${
+            isConfirmed
+              ? "bg-emerald-100 text-emerald-900 border-emerald-400"
+              : "bg-amber-100 text-amber-900 border-amber-400"
+          }">
+            ${isConfirmed ? `✅ Nota Final Confirmada: ${escapeHtml(confirmedStr)} / 10,0` : `⏳ Nota Sugerida (Aguardando Confirmação do Professor): ${escapeHtml(suggestedStr)} / 10,0`}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-1.5">
+            <strong class="block text-slate-800 border-b border-slate-100 pb-1">1. Resolução Completa do Aluno:</strong>
+            <pre class="whitespace-pre-wrap font-sans text-[11px] text-slate-700 max-h-48 overflow-y-auto leading-relaxed">${escapeHtml(sub.resolutionText || "")}</pre>
+          </div>
+          <div class="bg-white border border-emerald-200 rounded-lg p-3 space-y-1.5">
+            <strong class="block text-emerald-900 border-b border-emerald-100 pb-1">2. Feedback Estruturado da IA (Regras 1 a 4):</strong>
+            <pre class="whitespace-pre-wrap font-sans text-[11px] text-slate-800 max-h-48 overflow-y-auto leading-relaxed">${escapeHtml(evalObj.feedback || "")}</pre>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap items-end justify-between gap-3">
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="block font-bold text-slate-800 text-[11px] mb-1">Confirmar ou Editar Nota Final (0.0 a 10.0):</label>
+              <input type="number" min="0" max="10" step="0.1" value="${escapeHtml(inputDefaultVal)}" class="adm-confirm-grade-input w-28 border-2 border-amber-400 focus:border-emerald-600 rounded-lg px-2.5 py-1.5 text-sm font-extrabold text-center text-slate-900">
+            </div>
+            <div class="min-w-[220px]">
+              <label class="block font-semibold text-slate-600 text-[11px] mb-1">Observação do Professor (Opcional):</label>
+              <input type="text" value="${escapeHtml(evalObj.comentarioProfessor || "")}" placeholder="Comentário final..." class="adm-confirm-comment-input w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800">
+            </div>
+          </div>
+          <button type="button" class="adm-confirm-grade-btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow transition cursor-pointer">
+            ✅ Confirmar Nota Final
+          </button>
+        </div>
+      `;
+
+      const confirmBtn = card.querySelector(".adm-confirm-grade-btn");
+      const gradeInput = card.querySelector(".adm-confirm-grade-input");
+      const commentInput = card.querySelector(".adm-confirm-comment-input");
+
+      if (confirmBtn && gradeInput) {
+        confirmBtn.addEventListener("click", async () => {
+          const val = gradeInput.value;
+          const comment = commentInput ? commentInput.value : "";
+          const updatedEval = await prontuarioManager.confirmProfessorGrade(sub, val, comment);
+          // Se o aluno estiver com o modal aberto no mesmo navegador, atualiza o badge para Nota Final Confirmada
+          const pendingTagEl = document.getElementById("aiEvaluationPendingProfessorTag");
+          const finalBadgeEl = document.getElementById("aiEvaluationFinalGradeBadge");
+          if (pendingTagEl) {
+            pendingTagEl.textContent = "Nota Final Confirmada pelo Professor";
+            pendingTagEl.className = "bg-emerald-100 text-emerald-900 border border-emerald-400 font-bold px-2.5 py-0.5 rounded-full text-[10px]";
+          }
+          if (finalBadgeEl && updatedEval) {
+            finalBadgeEl.textContent = `Nota Final: ${updatedEval.notaFinalFormatada} / 10,0`;
+          }
+          renderAdminAiSubmissionsReview();
+          showToast(`✅ Nota Final (${updatedEval.notaFinalFormatada}/10,0) confirmada pelo professor com sucesso!`);
+        });
+      }
+
+      container.appendChild(card);
+    });
+  }
+  window.renderAdminAiSubmissionsReview = renderAdminAiSubmissionsReview;
+
+  document.getElementById("adminRefreshSubmissionsBtn")?.addEventListener("click", () => {
+    renderAdminAiSubmissionsReview();
+    showToast("🔄 Lista de submissões atualizada!");
+  });
+
   // Renderiza a lista de casos no painel do professor filtrada pela disciplina ativa
   function renderAdminCasesList() {
     adminManager.refreshCases();
     adminManager.refreshDisciplinas();
     updateAdminMetrics();
     renderStudentCatalog();
+    renderAdminAiSubmissionsReview();
     const container = document.getElementById("adminCasesListContainer");
     if (!container) return;
     container.innerHTML = "";

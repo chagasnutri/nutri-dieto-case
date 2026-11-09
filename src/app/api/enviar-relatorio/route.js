@@ -193,24 +193,43 @@ export async function POST(request) {
       resolutionData?.habilitarCorrecaoAutomaticaIA ??
       Boolean(body?.avaliacaoIA || resolutionData?.avaliacaoIA)
     );
-    const notaFinal = String(body?.notaFinal || body?.notaIA || resolutionData?.notaIA || '').trim();
-    const avaliacaoIA = String(body?.avaliacaoIA || resolutionData?.avaliacaoIA || '').trim();
+    const rawAvaliacaoObj =
+      (body?.avaliacaoIA && typeof body.avaliacaoIA === 'object')
+        ? body.avaliacaoIA
+        : ((resolutionData?.avaliacaoIA && typeof resolutionData.avaliacaoIA === 'object') ? resolutionData.avaliacaoIA : null);
+
+    const notaFinal = String(
+      body?.notaSugerida ||
+      body?.notaFinal ||
+      body?.notaIA ||
+      rawAvaliacaoObj?.notaSugeridaFormatada ||
+      (rawAvaliacaoObj?.notaSugerida !== undefined ? String(rawAvaliacaoObj.notaSugerida).replace('.', ',') : '') ||
+      resolutionData?.notaIA ||
+      ''
+    ).trim();
+    const avaliacaoIA = String(
+      typeof body?.avaliacaoIA === 'string'
+        ? body.avaliacaoIA
+        : (rawAvaliacaoObj?.feedback || (typeof resolutionData?.avaliacaoIA === 'string' ? resolutionData.avaliacaoIA : ''))
+    ).trim();
 
     const relatorioFinalTexto =
       String(body?.relatorioFinalTexto || '').trim() ||
       buildSafeFinalReportText(resolutionData, caseTitle, studentName);
 
     const subject = habilitarCorrecaoAutomaticaIA && notaFinal
-      ? `[DietoCase - Relatório Final + IA] ${caseTitle} — Aluno(a): ${studentName} (Nota: ${notaFinal}/10,0)`
+      ? `[DietoCase - Relatório Final + IA] ${caseTitle} — Aluno(a): ${studentName} (Nota Sugerida: ${notaFinal}/10,0)`
       : `[DietoCase - Relatório Final] ${caseTitle} — Aluno(a): ${studentName}`;
 
     const aiSectionText = habilitarCorrecaoAutomaticaIA && (avaliacaoIA || notaFinal)
       ? [
           ``,
           `====================================================================`,
-          `AVALIAÇÃO E NOTA AUTOMÁTICA POR IA (DIRETRIZES BRASPEN / SBC)`,
+          `⚠️ EM DESTAQUE: AVALIAÇÃO COMPLETA DA IA COM NOTA SUGERIDA`,
+          `ALERTA AO PROFESSOR: Acesse o Painel do Professor no DietoCase para revisar o caso e CONFIRMAR a nota final!`,
           `====================================================================`,
-          `Nota Final Atribuída pela IA: ${notaFinal || '9,0'} / 10,0`,
+          `Status da Nota: Nota Sugerida (Aguardando Confirmação do Professor)`,
+          `Nota Sugerida pela IA: ${notaFinal || '0,0'} / 10,0`,
           ``,
           avaliacaoIA || 'Avaliação processada com sucesso.'
         ].join('\n')
@@ -223,11 +242,11 @@ export async function POST(request) {
       `Nome do Aluno: ${studentName}`,
       `Título do Caso Clínico: ${caseTitle}`,
       `Data/Hora da Finalização: ${dataHora}`,
-      `Correção Automática por IA: ${habilitarCorrecaoAutomaticaIA ? `Ativada (Nota: ${notaFinal || '9,0'}/10,0)` : 'Desativada'}`,
+      `Correção Automática por IA: ${habilitarCorrecaoAutomaticaIA ? `Ativada — Nota Sugerida: ${notaFinal || '0,0'}/10,0 (Aguardando Confirmação do Professor)` : 'Desativada'}`,
       `====================================================================`,
       aiSectionText,
       ``,
-      `--- RELATÓRIO FINAL COMPLETO GERADO PELO ALUNO ---`,
+      `--- RESPOSTAS COMPLETAS DO ALUNO / RELATÓRIO FINAL ---`,
       relatorioFinalTexto
     ]
       .filter((part) => part !== '')
@@ -241,9 +260,12 @@ export async function POST(request) {
 
     const aiSectionHtml = habilitarCorrecaoAutomaticaIA && (avaliacaoIA || notaFinal)
       ? `
-        <div style="background: #f0fdf4; border-left: 4px solid #059669; padding: 14px; margin: 16px 0; border-radius: 6px;">
-          <h3 style="margin: 0 0 8px 0; color: #065f46; font-size: 15px;">Avaliação Automática por IA (BRASPEN / SBC)</h3>
-          <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #047857;">Nota Final da IA: ${escapeHtmlSafe(notaFinal || '9,0')} / 10,0</p>
+        <div style="background: #fffbeb; border: 2px solid #f59e0b; padding: 12px 16px; margin: 16px 0; border-radius: 8px; color: #92400e; font-size: 13px;">
+          <strong>⚠️ AÇÃO NECESSÁRIA DO PROFESSOR:</strong> Acesse o <strong>Painel do Professor</strong> no DietoCase para revisar o feedback da IA e confirmar ou ajustar a nota final do aluno.
+        </div>
+        <div style="background: #f0fdf4; border: 2px solid #059669; padding: 16px; margin: 16px 0; border-radius: 8px;">
+          <h3 style="margin: 0 0 8px 0; color: #065f46; font-size: 15px;">EM DESTAQUE: Avaliação Completa da IA com Nota Sugerida</h3>
+          <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #047857;">Nota Sugerida (Aguardando Confirmação do Professor): ${escapeHtmlSafe(notaFinal || '0,0')} / 10,0</p>
           <pre style="white-space: pre-wrap; background: #ffffff; border: 1px solid #a7f3d0; padding: 12px; border-radius: 6px; font-size: 12px; color: #1e293b; margin: 0;">${escapeHtmlSafe(avaliacaoIA)}</pre>
         </div>
       `

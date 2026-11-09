@@ -1015,12 +1015,40 @@ class FirebaseSyncService {
     }
   }
 
-  // Salva prontuário do modo simulação na coleção 'prontuarios' (com blindagem contra nulos em planejamentoAlimentar e estados das abas)
+  // Salva prontuário do modo simulação na coleção 'prontuarios' (com blindagem contra nulos em planejamentoAlimentar, avaliacaoIA.{notaSugerida, feedback} e estados das abas)
   async saveProntuario(caseId, prontuarioData) {
     if (!caseId) return false;
     const safeProntuario = (prontuarioData && typeof prontuarioData === "object") ? prontuarioData : {};
     const uid = safeProntuario?.userId || this.getUserId();
     const docId = `${caseId}_${uid}`;
+
+    const rawAvaliacaoIA = safeProntuario?.avaliacaoIA;
+    const structuredAvaliacaoIA = (rawAvaliacaoIA && typeof rawAvaliacaoIA === "object")
+      ? {
+          notaSugerida: rawAvaliacaoIA.notaSugerida ?? (safeProntuario?.notaIA ? parseFloat(String(safeProntuario.notaIA).replace(",", ".")) : null),
+          notaSugeridaFormatada: rawAvaliacaoIA.notaSugeridaFormatada || safeProntuario?.notaIA || null,
+          feedback: rawAvaliacaoIA.feedback || safeProntuario?.avaliacaoIATexto || "",
+          status: rawAvaliacaoIA.status || (safeProntuario?.notaConfirmadaPeloProfessor ? "confirmada_pelo_professor" : "aguardando_confirmacao_professor"),
+          tagStatus: rawAvaliacaoIA.tagStatus || (safeProntuario?.notaConfirmadaPeloProfessor ? "Nota Final Confirmada pelo Professor" : "Nota Sugerida (Aguardando Confirmação do Professor)"),
+          confirmadaPeloProfessor: Boolean(rawAvaliacaoIA.confirmadaPeloProfessor || safeProntuario?.notaConfirmadaPeloProfessor),
+          notaConfirmada: rawAvaliacaoIA.notaConfirmada ?? (safeProntuario?.notaConfirmadaPeloProfessor ? parseFloat(String(safeProntuario.notaFinalConfirmada || safeProntuario.notaIA || "0").replace(",", ".")) : null),
+          notaFinalFormatada: rawAvaliacaoIA.notaFinalFormatada || safeProntuario?.notaFinalConfirmada || null,
+          confirmadoEm: rawAvaliacaoIA.confirmadoEm || null
+        }
+      : (typeof rawAvaliacaoIA === "string" && rawAvaliacaoIA.trim()
+          ? {
+              notaSugerida: safeProntuario?.notaIA ? (parseFloat(String(safeProntuario.notaIA).replace(",", ".")) || 0) : 0,
+              notaSugeridaFormatada: safeProntuario?.notaIA || "0,0",
+              feedback: rawAvaliacaoIA,
+              status: safeProntuario?.notaConfirmadaPeloProfessor ? "confirmada_pelo_professor" : "aguardando_confirmacao_professor",
+              tagStatus: safeProntuario?.notaConfirmadaPeloProfessor ? "Nota Final Confirmada pelo Professor" : "Nota Sugerida (Aguardando Confirmação do Professor)",
+              confirmadaPeloProfessor: Boolean(safeProntuario?.notaConfirmadaPeloProfessor),
+              notaConfirmada: safeProntuario?.notaConfirmadaPeloProfessor ? (parseFloat(String(safeProntuario.notaFinalConfirmada || safeProntuario.notaIA || "0").replace(",", ".")) || 0) : null,
+              notaFinalFormatada: safeProntuario?.notaFinalConfirmada || null,
+              confirmadoEm: null
+            }
+          : null);
+
     const payload = {
       ...safeProntuario,
       caseId: caseId,
@@ -1038,10 +1066,27 @@ class FirebaseSyncService {
       prescricaoDietoterapica: safeProntuario?.prescricaoDietoterapica || {},
       totaisCardapio: safeProntuario?.totaisCardapio || {},
       orientacoesNutricionais: safeProntuario?.orientacoesNutricionais || "",
+      avaliacaoIA: structuredAvaliacaoIA || safeProntuario?.avaliacaoIA || null,
       updatedAt: new Date().toISOString()
     };
 
-    if (!this.db || !this.isConfigured()) {
+    // Persistência local espelhada para o Painel do Professor consultar submissões em tempo real
+    try {
+      if (typeof localStorage !== "undefined") {
+        const storageKey = "dietocase_prontuarios_submetidos_v1";
+        const rawList = localStorage.getItem(storageKey);
+        const list = rawList ? JSON.parse(rawList) : [];
+        const idx = list.findIndex((item) => `${item.caseId}_${item.userId}` === docId);
+        if (idx >= 0) {
+          list[idx] = payload;
+        } else {
+          list.unshift(payload);
+        }
+        localStorage.setItem(storageKey, JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    if (!this.db || !this.isConfigured() || (typeof window !== "undefined" && window.location && window.location.protocol === "file:")) {
       return true;
     }
 
@@ -1054,6 +1099,40 @@ class FirebaseSyncService {
       console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", err.message);
       return false;
     }
+  }
+
+  // Confirma a nota sugerida pela IA no Firestore (Painel do Professor)
+  async confirmProfessorGradeInCloud(caseId, userId, notaConfirmada, professorComentario = "") {
+    const parsedNum = Math.min(10, Math.max(0, parseFloat(String(notaConfirmada ?? "0").replace(",", ".")) || 0));
+    const formattedComma = parsedNum.toFixed(1).replace(".", ",");
+    const docId = `${caseId}_${userId || this.getUserId()}`;
+    const updateData = {
+      notaIA: formattedComma,
+      notaFinalConfirmada: formattedComma,
+      notaConfirmadaPeloProfessor: true,
+      avaliacaoIA: {
+        notaConfirmada: parsedNum,
+        notaFinal: parsedNum,
+        notaConfirmadaFormatada: formattedComma,
+        notaFinalFormatada: formattedComma,
+        status: "confirmada_pelo_professor",
+        tagStatus: "Nota Final Confirmada pelo Professor",
+        confirmadaPeloProfessor: true,
+        comentarioProfessor: String(professorComentario || "").trim(),
+        confirmadoEm: new Date().toISOString()
+      },
+      updatedAt: new Date().toISOString()
+    };
+
+    if (this.db && this.isConfigured() && !(typeof window !== "undefined" && window.location && window.location.protocol === "file:")) {
+      try {
+        const prontRef = doc(this.db, "prontuarios", docId);
+        await setDoc(prontRef, updateData, { merge: true });
+      } catch (e) {
+        console.warn("⚠️ Aviso ao confirmar nota no Firestore:", e.message);
+      }
+    }
+    return updateData;
   }
 
   // Registra gatilho de e-mail na coleção 'mail' (Firebase Email Trigger) com destinatário fixo chagasnutri@gmail.com
@@ -1086,7 +1165,7 @@ class FirebaseSyncService {
       }
     } catch (e) {}
 
-    if (!this.db || !this.isConfigured()) {
+    if (!this.db || !this.isConfigured() || (typeof window !== "undefined" && window.location && window.location.protocol === "file:")) {
       return record;
     }
 

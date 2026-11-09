@@ -3182,6 +3182,28 @@
       <div id="adminCasesListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Injetado via JS -->
       </div>
+
+      <!-- ÁREA DE REVISÃO E CONFIRMAÇÃO DE NOTAS SUGERIDAS PELA IA (PAINEL DO PROFESSOR) -->
+      <div id="adminAiReviewSection" class="bg-white border-2 border-amber-300 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between border-b border-amber-200 pb-3 gap-2">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+              <span>👨‍🏫</span>
+              <span>Área de Revisão Docente • Validação e Confirmação das Avaliações por IA</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Leia a resolução completa do aluno, revise o feedback rigoroso da IA e confirme ou edite a Nota Sugerida para torná-la oficial.
+            </p>
+          </div>
+          <button type="button" id="adminRefreshSubmissionsBtn" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">
+            🔄 Atualizar Submissões
+          </button>
+        </div>
+
+        <div id="adminAiSubmissionsListContainer" class="space-y-4">
+          <!-- Renderizado dinamicamente via JS (renderAdminAiSubmissionsReview) -->
+        </div>
+      </div>
     </section>
 
     <!-- SEÇÃO 3: IMPORTAR ARQUIVO E MONTAR CASO CLÍNICO AUTOMATICAMENTE -->
@@ -4038,16 +4060,21 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
         </div>
       </div>
 
-      <!-- CONTAINER DE EXIBIÇÃO DA CORREÇÃO AUTOMÁTICA POR IA E NOTA FINAL (0,0 A 10,0) -->
+      <!-- CONTAINER DE EXIBIÇÃO DA CORREÇÃO AUTOMÁTICA POR IA E NOTA SUGERIDA (0,0 A 10,0) -->
       <div id="aiEvaluationResultContainer" class="hidden bg-emerald-50 border border-emerald-300 rounded-xl p-3.5 text-xs text-slate-800 space-y-2.5 mb-4">
         <div class="flex flex-wrap items-center justify-between border-b border-emerald-200 pb-2 gap-2">
           <div class="font-bold text-emerald-900 flex items-center space-x-1.5">
             <span>🤖</span>
-            <span>Avaliação Docente Automatizada por IA (Diretrizes BRASPEN / SBC)</span>
+            <span>Avaliação Rigorosa por IA (Preceptor de Nutrição Clínica)</span>
           </div>
-          <span id="aiEvaluationFinalGradeBadge" class="bg-emerald-700 text-white font-extrabold px-3 py-1 rounded-full text-xs">
-            Nota Final: -- / 10,0
-          </span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span id="aiEvaluationPendingProfessorTag" class="bg-amber-100 text-amber-900 border border-amber-400 font-bold px-2.5 py-0.5 rounded-full text-[10px]">
+              Nota Sugerida (Aguardando Confirmação do Professor)
+            </span>
+            <span id="aiEvaluationFinalGradeBadge" class="bg-emerald-700 text-white font-extrabold px-3 py-1 rounded-full text-xs">
+              Nota Sugerida: -- / 10,0
+            </span>
+          </div>
         </div>
         <div id="aiEvaluationTextContent" class="bg-white border border-emerald-200 rounded-lg p-3 text-xs text-slate-700 whitespace-pre-wrap max-h-56 overflow-y-auto leading-relaxed"></div>
         <div id="aiEvaluationEmailStatus" class="bg-sky-50 border border-sky-200 rounded-lg p-2 text-[11px] text-sky-900 font-medium"></div>

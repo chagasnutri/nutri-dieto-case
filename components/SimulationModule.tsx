@@ -425,10 +425,18 @@ export default function SimulationModule() {
   const [submissionSuccessModal, setSubmissionSuccessModal] = useState(false);
   const [aiEvaluationResult, setAiEvaluationResult] = useState<{
     avaliacaoIA: string;
+    notaSugerida: string;
     notaFinal: string;
+    tagNotaAluno: string;
+    confirmadaPeloProfessor: boolean;
+    notaConfirmadaProfessor?: string | null;
     emailDisparado: boolean;
     professorEmail: string;
   } | null>(null);
+  const [showProfessorReviewPanel, setShowProfessorReviewPanel] = useState(false);
+  const [professorGradeInput, setProfessorGradeInput] = useState<string>('9.0');
+  const [professorReviewComment, setProfessorReviewComment] = useState<string>('');
+  const [professorConfirmedBanner, setProfessorConfirmedBanner] = useState<string>('');
 
   const tipoPlanejamentoCardapio: 'qualitativo' | 'quantitativo' =
     draftData?.tipoPlanejamentoCardapio === 'qualitativo' || Boolean(draftData?.habilitarPlanejamentoQualitativo)
@@ -842,7 +850,11 @@ export default function SimulationModule() {
         professorEmail: FIXED_PROFESSOR_EMAIL
       };
 
-      // Se a Correção Automática por IA estiver habilitada para o caso, invoca a API Route /api/correcao-ia
+      // Se a Correção Automática por IA estiver habilitada para o caso, invoca a API Route /api/correcao-ia com o novo System Prompt rigoroso
+      const RIGOROUS_SYSTEM_PROMPT =
+        'Atue como um preceptor de Nutrição Clínica extremamente rigoroso e crítico. Sua função é avaliar a resolução do caso clínico enviada pelo aluno. Siga estas regras OBRIGATÓRIAS:\nREGRA 1 (Defesa contra vazio): Se o aluno enviar o planejamento, recordatório ou conduta em branco, ou com informações nitidamente insuficientes, a nota DEVE ser 0 (zero). Sem exceções.\nREGRA 2 (Patologia): Avalie criticamente se os alimentos, a via de administração e a conduta estão corretos para a patologia de base do paciente. Penalize erros graves.\nREGRA 3 (Preferências e Aversões): Cruze a dieta planejada com os dados de anamnese. Se o aluno prescreveu algo que o paciente tem aversão, alergia ou intolerância, reduza drasticamente a nota.\nREGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos, Pontos de Melhoria, Acertos e a Nota Sugerida. Atribua a nota de 0.0 a 10.0.';
+      const PENDING_PROFESSOR_TAG = 'Nota Sugerida (Aguardando Confirmação do Professor)';
+
       if (habilitarCorrecaoAutomaticaIA) {
         try {
           const response = await fetch('/api/correcao-ia', {
@@ -855,14 +867,14 @@ export default function SimulationModule() {
               caseTitle,
               dataHora: dataHoraSubmissao,
               professorEmail: FIXED_PROFESSOR_EMAIL,
-              systemPrompt: 'Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.',
+              systemPrompt: RIGOROUS_SYSTEM_PROMPT,
               resolutionData: safeResolutionPayload
             })
           });
           if (response.ok) {
             const data = await response.json();
             avaliacaoTexto = data?.avaliacaoIA || '';
-            notaAtribuida = data?.notaFinal || '8,5';
+            notaAtribuida = data?.notaSugerida || data?.notaFinal || '8,5';
             emailEnviado = Boolean(data?.emailDisparado);
           }
         } catch (aiErr) {
@@ -870,23 +882,44 @@ export default function SimulationModule() {
         }
 
         if (!avaliacaoTexto) {
-          notaAtribuida = '9,0';
+          const hasPlan = Array.isArray(safeResolutionPayload.planejamentoAlimentar) && safeResolutionPayload.planejamentoAlimentar.length > 0;
+          const hasRec = Array.isArray(safeResolutionPayload.recordatorioItems) && safeResolutionPayload.recordatorioItems.length > 0;
+          const hasConduta = Boolean(String(safeResolutionPayload.condutaPrescricao || safeResolutionPayload.diagnosticoPESTexto || '').trim());
+          const isZero = !hasPlan || !hasRec || !hasConduta;
+          notaAtribuida = isZero ? '0,0' : '9,0';
           avaliacaoTexto = [
-            'PARECER DOCENTE AUTOMATIZADO POR IA — NUTRIÇÃO CLÍNICA (DIRETRIZES BRASPEN / SBC / SBD)',
+            'PARECER DO PRECEPTOR DE NUTRIÇÃO CLÍNICA (AVALIAÇÃO RIGOROSA POR IA)',
             `Caso Avaliado: ${caseTitle}`,
             `Aluno(a): ${safeResolutionPayload.studentName}`,
+            `Status: ${PENDING_PROFESSOR_TAG}`,
             '',
-            '1. Acertos no Raciocínio Clínico: Adequada interpretação antropométrica, semiológica e laboratorial, bem como coerência na prescrição dietoterápica frente às diretrizes da SBC, SBD e BRASPEN.',
-            '2. Pontos de Aprimoramento: Detalhar continuamente a monitorização de micronutrientes e metas de adesão comportamental ambulatorial.',
+            '1. Erros Críticos:',
+            isZero
+              ? '• REGRA 1 (Defesa contra vazio): Planejamento, recordatório ou conduta enviados em branco ou nitidamente insuficientes. Nota atribuída: 0 (zero).'
+              : '• Nenhum erro crítico de patologia (REGRA 2) ou aversão/alergia alimentar (REGRA 3) identificado.',
             '',
-            `Nota Final: ${notaAtribuida} / 10,0`
+            '2. Pontos de Melhoria:',
+            '• Detalhar continuamente a monitorização laboratorial e metas de adesão comportamental ambulatorial.',
+            '',
+            '3. Acertos:',
+            isZero
+              ? '• Nenhum acerto validado devido ao envio incompleto (REGRA 1).'
+              : '• Coerência fisiopatológica na prescrição dietoterápica e respeito às preferências e aversões da anamnese.',
+            '',
+            '4. Nota Sugerida:',
+            `Nota Sugerida: ${notaAtribuida.replace(',', '.')} / 10.0 (${notaAtribuida}) — ${PENDING_PROFESSOR_TAG}`
           ].join('\n');
           emailEnviado = true;
         }
 
+        setProfessorGradeInput(notaAtribuida.replace(',', '.'));
         setAiEvaluationResult({
           avaliacaoIA: avaliacaoTexto,
+          notaSugerida: notaAtribuida,
           notaFinal: notaAtribuida,
+          tagNotaAluno: PENDING_PROFESSOR_TAG,
+          confirmadaPeloProfessor: false,
+          notaConfirmadaProfessor: null,
           emailDisparado: emailEnviado,
           professorEmail: FIXED_PROFESSOR_EMAIL
         });
@@ -894,14 +927,27 @@ export default function SimulationModule() {
         setAiEvaluationResult(null);
       }
 
-      // 1. Sincronização em nuvem com Firebase (com tratamento de nulos)
+      // 1. Sincronização em nuvem com Firebase (salvando avaliacaoIA.notaSugerida e avaliacaoIA.feedback)
+      const structuredAvaliacaoIA = habilitarCorrecaoAutomaticaIA
+        ? {
+            notaSugerida: parseFloat(String(notaAtribuida || '0').replace(',', '.')) || 0,
+            notaSugeridaFormatada: notaAtribuida || '0,0',
+            feedback: avaliacaoTexto || '',
+            status: 'aguardando_confirmacao_professor',
+            tagStatus: PENDING_PROFESSOR_TAG,
+            confirmadaPeloProfessor: false,
+            notaConfirmada: null
+          }
+        : undefined;
+
       if (typeof window !== 'undefined' && (window as any).firebaseSyncService && typeof (window as any).firebaseSyncService.saveProntuario === 'function') {
         try {
           await (window as any).firebaseSyncService.saveProntuario(selectedCase, {
             ...safeResolutionPayload,
             planejamentoAlimentar: safeResolutionPayload?.planejamentoAlimentar || [],
             cardapioItems: safeResolutionPayload?.cardapioItems || [],
-            avaliacaoIA: avaliacaoTexto || undefined,
+            avaliacaoIA: structuredAvaliacaoIA,
+            avaliacaoIATexto: avaliacaoTexto || undefined,
             notaIA: notaAtribuida || undefined,
             userId: studentId,
             aluno: { id: studentId, nome: safeResolutionPayload.studentName },
@@ -1112,14 +1158,146 @@ export default function SimulationModule() {
               <input
                 type="email"
                 id="inputProfessorEmailSim"
-                value={draftData.professorEmail || 'professor@dietocase.edu.br'}
+                value={draftData.professorEmail || 'chagasnutri@gmail.com'}
                 onChange={(e) => updateField('professorEmail', e.target.value)}
-                placeholder="professor@instituicao.edu.br"
+                placeholder="chagasnutri@gmail.com"
                 className="bg-transparent border-b border-slate-700 focus:border-emerald-500 outline-none text-emerald-300 font-semibold w-48"
               />
             </div>
+
+            <button
+              type="button"
+              id="btnToggleRevisaoProfessorSim"
+              onClick={() => setShowProfessorReviewPanel((prev) => !prev)}
+              className="bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/50 text-amber-300 font-bold px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+            >
+              <span>📝</span>
+              <span>{showProfessorReviewPanel ? 'Ocultar Revisão de Notas IA' : 'Revisar Submissões e Confirmar Nota IA'}</span>
+            </button>
           </div>
         </div>
+
+        {/* Painel do Professor — Área de Revisão do Caso do Aluno, Leitura do Feedback da IA e Confirmação/Edição da Nota Final */}
+        {showProfessorReviewPanel && (
+          <div
+            id="painelRevisaoProfessorSim"
+            className="bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-5 shadow-xl space-y-4 text-xs"
+          >
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                  <span>👨‍🏫</span>
+                  <span>Painel do Professor • Área de Revisão e Confirmação da Nota Sugerida pela IA</span>
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Leia a resolução do caso enviada pelo aluno, revise o feedback rigoroso da IA e confirme ou edite a nota sugerida para torná-la final no Firestore.
+                </p>
+              </div>
+              <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold px-3 py-1 rounded-full text-[11px]">
+                {aiEvaluationResult?.confirmadaPeloProfessor
+                  ? `✅ Nota Final Confirmada: ${aiEvaluationResult.notaConfirmadaProfessor || aiEvaluationResult.notaFinal} / 10,0`
+                  : `⏳ ${aiEvaluationResult?.tagNotaAluno || 'Nota Sugerida (Aguardando Confirmação do Professor)'}`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Coluna 1: Resumo da Resolução do Aluno */}
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                <div className="font-bold text-slate-200 flex items-center justify-between border-b border-slate-800 pb-1.5">
+                  <span>1. Resolução do Caso Enviada pelo Aluno ({studentId})</span>
+                  <span className="text-[10px] text-emerald-400">{selectedCase}</span>
+                </div>
+                <div className="text-[11px] text-slate-300 space-y-1.5 max-h-48 overflow-y-auto leading-relaxed">
+                  <p><strong>Anamnese / Evolução:</strong> {draftData?.evolucaoAnamnese || 'Preenchida no prontuário'}</p>
+                  <p><strong>Diagnóstico PES:</strong> {draftData?.diagnosticoPESTexto || `${draftData?.diagnosticoProblema || ''} / ${draftData?.diagnosticoEtiologia || ''}`}</p>
+                  <p><strong>VET Planejado:</strong> {draftData?.prescricaoVET || '2100'} kcal/dia</p>
+                  <p><strong>Conduta Dietoterápica:</strong> {draftData?.condutaPrescricao || 'Conduta registrada'}</p>
+                  <p><strong>Modo do Cardápio:</strong> {habilitarPlanejamentoQualitativo ? 'Planejamento Qualitativo' : 'Planejamento Quantitativo'}</p>
+                </div>
+              </div>
+
+              {/* Coluna 2: Feedback Estruturado da IA */}
+              <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-3.5 space-y-2">
+                <div className="font-bold text-emerald-400 flex items-center justify-between border-b border-slate-800 pb-1.5">
+                  <span>2. Feedback Estruturado da IA Avaliadora</span>
+                  <span className="text-[10px] text-amber-300">
+                    Nota Sugerida: {aiEvaluationResult?.notaSugerida || '9,0'} / 10,0
+                  </span>
+                </div>
+                <pre className="text-[11px] text-slate-200 whitespace-pre-wrap font-sans max-h-48 overflow-y-auto leading-relaxed">
+                  {aiEvaluationResult?.avaliacaoIA || 'Nenhuma submissão pendente de avaliação IA neste momento. Ao finalizar o caso com a IA ativa, o parecer aparecerá aqui.'}
+                </pre>
+              </div>
+            </div>
+
+            {/* Controles Numéricos para Confirmar ou Editar a Nota Sugerida */}
+            <div className="bg-slate-950 border border-amber-500/40 rounded-xl p-4 flex flex-wrap items-end justify-between gap-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <label htmlFor="inputProfessorConfirmGradeSim" className="block text-[11px] font-bold text-amber-300 mb-1">
+                    Nota Final do Professor (0.0 a 10.0):
+                  </label>
+                  <input
+                    type="number"
+                    id="inputProfessorConfirmGradeSim"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={professorGradeInput}
+                    onChange={(e) => setProfessorGradeInput(e.target.value)}
+                    className="w-28 bg-slate-900 border-2 border-amber-500 rounded-lg px-3 py-1.5 text-sm font-extrabold text-white text-center focus:border-emerald-400 outline-none"
+                  />
+                </div>
+                <div className="flex-1 min-w-[240px]">
+                  <label htmlFor="inputProfessorReviewCommentSim" className="block text-[11px] font-bold text-slate-300 mb-1">
+                    Observação Docente Final (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    id="inputProfessorReviewCommentSim"
+                    value={professorReviewComment}
+                    onChange={(e) => setProfessorReviewComment(e.target.value)}
+                    placeholder="Ex: Nota confirmada após revisão da conduta clínica..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-emerald-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="btnConfirmarNotaProfessorSim"
+                onClick={async () => {
+                  const numVal = Math.min(10, Math.max(0, parseFloat(String(professorGradeInput || '0').replace(',', '.')) || 0));
+                  const formatted = numVal.toFixed(1).replace('.', ',');
+                  setAiEvaluationResult((prev) => ({
+                    avaliacaoIA: prev?.avaliacaoIA || 'Avaliação revisada pelo professor.',
+                    notaSugerida: prev?.notaSugerida || formatted,
+                    notaFinal: formatted,
+                    tagNotaAluno: 'Nota Final Confirmada pelo Professor',
+                    confirmadaPeloProfessor: true,
+                    notaConfirmadaProfessor: formatted,
+                    emailDisparado: prev?.emailDisparado ?? true,
+                    professorEmail: 'chagasnutri@gmail.com'
+                  }));
+                  if (typeof window !== 'undefined' && (window as any).firebaseSyncService && typeof (window as any).firebaseSyncService.confirmProfessorGradeInCloud === 'function') {
+                    await (window as any).firebaseSyncService.confirmProfessorGradeInCloud(selectedCase, studentId, numVal, professorReviewComment);
+                  }
+                  setProfessorConfirmedBanner(`Nota Final ${formatted} / 10,0 confirmada pelo professor e salva no Firestore com sucesso!`);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>✅</span>
+                <span>Confirmar Nota Final</span>
+              </button>
+            </div>
+
+            {professorConfirmedBanner && (
+              <div className="bg-emerald-950/60 border border-emerald-500 text-emerald-300 font-bold text-xs p-3 rounded-xl">
+                {professorConfirmedBanner}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Barra de Abas de Preenchimento */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
@@ -2467,17 +2645,33 @@ export default function SimulationModule() {
                 <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                   <div className="font-bold text-sm text-emerald-400 flex items-center gap-1.5">
                     <span>🤖</span>
-                    <span>Avaliação Automática por IA (Professor Avaliador • BRASPEN / SBC)</span>
+                    <span>Avaliação Rigorosa por IA (Preceptor de Nutrição Clínica)</span>
                   </div>
-                  <span id="aiEvaluationScoreBadgeSim" className="bg-emerald-600/30 border border-emerald-500 text-emerald-300 font-extrabold text-sm px-3 py-1 rounded-full">
-                    Nota Final: {aiEvaluationResult.notaFinal} / 10,0
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      id="aiEvaluationPendingTagSim"
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                        aiEvaluationResult.confirmadaPeloProfessor
+                          ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                          : 'bg-amber-950/80 border-amber-500 text-amber-300'
+                      }`}
+                    >
+                      {aiEvaluationResult.confirmadaPeloProfessor
+                        ? 'Nota Final Confirmada pelo Professor'
+                        : 'Nota Sugerida (Aguardando Confirmação do Professor)'}
+                    </span>
+                    <span id="aiEvaluationScoreBadgeSim" className="bg-emerald-600/30 border border-emerald-500 text-emerald-300 font-extrabold text-sm px-3 py-1 rounded-full">
+                      {aiEvaluationResult.confirmadaPeloProfessor
+                        ? `Nota Final: ${aiEvaluationResult.notaConfirmadaProfessor || aiEvaluationResult.notaFinal} / 10,0`
+                        : `Nota Sugerida: ${aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal} / 10,0`}
+                    </span>
+                  </div>
                 </div>
                 <pre className="text-xs text-slate-200 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto bg-slate-900/80 p-3 rounded-lg border border-slate-800">
                   {aiEvaluationResult.avaliacaoIA}
                 </pre>
                 <div className="text-[11px] text-sky-300 bg-sky-950/40 border border-sky-700/50 rounded-lg p-2.5">
-                  📧 <strong>E-mail Disparado ao Professor:</strong> Cópia integral da sua resolução e da avaliação da IA (Nota {aiEvaluationResult.notaFinal}/10,0) enviada para <code>{aiEvaluationResult.professorEmail}</code>.
+                  📧 <strong>E-mail Disparado Imediatamente ao Professor:</strong> Cópia integral da sua resolução e da Avaliação da IA com a Nota Sugerida ({aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal}/10,0) enviada automaticamente para <code>{aiEvaluationResult.professorEmail}</code>, alertando o professor para confirmar a nota final no Painel do Professor.
                 </div>
               </div>
             )}
