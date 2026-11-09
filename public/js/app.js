@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activeStudentTab: "anamnese",
     activeAdminTab: "identificacao",
     chatHistories: {}, // caseId -> { role -> [messages] }
-    currentProntuario: null,
+    currentProntuario: prontuarioManager.getEmptyProntuario("caso-padrao"),
     studentSelectedDisciplinaId: null
   };
 
@@ -2751,15 +2751,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Coleta dados digitados pelo aluno
+  // Coleta dados digitados pelo aluno (100% blindado contra valores nulos com optional chaining ?. e fallbacks || [] e || {})
   function readProntuarioFromForm() {
+    if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+      appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+    }
+    appState.currentProntuario = prontuarioManager.sanitizeProntuarioPayload(appState.currentProntuario, appState.currentCaseId || "caso-padrao");
     const p = appState.currentProntuario;
-    if (!p) return null;
+    if (!p.aluno) p.aluno = {};
+    if (!p.anamnese) p.anamnese = {};
 
     // Aluno
-    p.aluno.nome = document.getElementById("alunoNome").value.trim();
-    p.aluno.matriculaTurma = document.getElementById("alunoMatricula").value.trim();
-    p.aluno.data = document.getElementById("alunoData").value;
+    p.aluno.nome = document.getElementById("alunoNome")?.value?.trim() || p.aluno.nome || "";
+    p.aluno.matriculaTurma = document.getElementById("alunoMatricula")?.value?.trim() || p.aluno.matriculaTurma || "";
+    p.aluno.data = document.getElementById("alunoData")?.value || p.aluno.data || "";
 
     // Atendimento Real: Coleta dadosPacienteReal & Histórico Social
     if (p.isRealPatient || appState.workflowMode === "real" || p.dadosPacienteReal) {
@@ -2809,10 +2814,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (p.isRealPatient && p.dadosPacienteReal && !p.dadosPacienteReal.hipoteseDiagnostica) {
       p.dadosPacienteReal.hipoteseDiagnostica = hip;
     }
-    p.anamnese.queixaPrincipal = document.getElementById("prontQueixaPrincipal").value.trim();
-    p.anamnese.historiaClinica = document.getElementById("prontHistoriaClinica").value.trim();
-    p.anamnese.antecedentesMedicamentos = document.getElementById("prontAntecedentesMed").value.trim();
-    p.anamnese.habitosEstiloVida = document.getElementById("prontHabitosEstiloVida").value.trim();
+    p.anamnese.queixaPrincipal = document.getElementById("prontQueixaPrincipal")?.value?.trim() || "";
+    p.anamnese.historiaClinica = document.getElementById("prontHistoriaClinica")?.value?.trim() || "";
+    p.anamnese.antecedentesMedicamentos = document.getElementById("prontAntecedentesMed")?.value?.trim() || "";
+    p.anamnese.habitosEstiloVida = document.getElementById("prontHabitosEstiloVida")?.value?.trim() || "";
 
     // Interações Droga-Nutriente & Farmacoterapia
     if (document.getElementById("prontObsFarmacoterapia")) {
@@ -2846,9 +2851,9 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.triagemNutricional.pontuacao = document.getElementById("prontTriagemPontuacao") ? document.getElementById("prontTriagemPontuacao").value.trim() : "";
     p.antropometria.triagemNutricional.diagnostico = document.getElementById("prontTriagemDiagnostico") ? document.getElementById("prontTriagemDiagnostico").value.trim() : "";
 
-    p.antropometria.pesoAtual = document.getElementById("prontPesoAtual").value.trim();
-    p.antropometria.pesoHabitual = document.getElementById("prontPesoHabitual").value.trim();
-    p.antropometria.estatura = document.getElementById("prontEstatura").value.trim();
+    p.antropometria.pesoAtual = document.getElementById("prontPesoAtual")?.value?.trim() || "";
+    p.antropometria.pesoHabitual = document.getElementById("prontPesoHabitual")?.value?.trim() || "";
+    p.antropometria.estatura = document.getElementById("prontEstatura")?.value?.trim() || "";
     p.antropometria.alturaJoelho = document.getElementById("prontAlturaJoelho") ? document.getElementById("prontAlturaJoelho").value.trim() : "";
     p.antropometria.circBraco = document.getElementById("prontCircBraco") ? document.getElementById("prontCircBraco").value.trim() : "";
     p.antropometria.circCintura = document.getElementById("prontCircCintura") ? document.getElementById("prontCircCintura").value.trim() : "";
@@ -2862,14 +2867,14 @@ document.addEventListener("DOMContentLoaded", () => {
     p.antropometria.dobraAbdominal = document.getElementById("prontDobraAbdominal") ? document.getElementById("prontDobraAbdominal").value.trim() : "";
     p.antropometria.dobraCoxa = document.getElementById("prontDobraCoxa") ? document.getElementById("prontDobraCoxa").value.trim() : "";
     p.antropometria.demaisAvaliacoes = document.getElementById("prontDemaisAvaliacoes") ? document.getElementById("prontDemaisAvaliacoes").value.trim() : "";
-    p.antropometria.imc = document.getElementById("calculatedImcDisplay").textContent.trim();
-    p.antropometria.classificacaoImc = document.getElementById("calculatedImcClassDisplay").textContent.trim();
+    p.antropometria.imc = document.getElementById("calculatedImcDisplay")?.textContent?.trim() || "";
+    p.antropometria.classificacaoImc = document.getElementById("calculatedImcClassDisplay")?.textContent?.trim() || "";
     p.antropometria.diagnosticoNutricionalExtenso = document.getElementById("calculatedImcExtensoDisplay") ? document.getElementById("calculatedImcExtensoDisplay").textContent.trim() : "";
     p.antropometria.imcIdeal = document.getElementById("prontImcIdeal") ? document.getElementById("prontImcIdeal").value.trim() : "";
     const manualLoss = document.getElementById("prontPercentualPerda") ? document.getElementById("prontPercentualPerda").value.trim() : "";
-    p.antropometria.percentualPerda = manualLoss || document.getElementById("calculatedLossDisplay").textContent.trim();
+    p.antropometria.percentualPerda = manualLoss || document.getElementById("calculatedLossDisplay")?.textContent?.trim() || "";
     p.antropometria.perdaPesoPct = p.antropometria.percentualPerda;
-    p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias").value.trim();
+    p.antropometria.circunferenciasDobras = document.getElementById("prontCircunferencias")?.value?.trim() || "";
 
     // Bioquímica (Tabela Moderna de 4 Colunas e Raciocínio Clínico)
     if (!p.bioquimica) p.bioquimica = {};
@@ -2926,26 +2931,28 @@ document.addEventListener("DOMContentLoaded", () => {
     p.exameFisico.condicoesTGIeEdemas = document.getElementById("prontTGIEdemas") ? document.getElementById("prontTGIEdemas").value.trim() : (p.exameFisico.condicoesTGIeEdemas || "");
 
     // Consumo Alimentar (Recordatório de 24h)
-    p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio") ? document.getElementById("prontVetRecordatorio").value.trim() : "";
-    p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo").value.trim();
-    p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias").value.trim();
-    p.consumoAlimentar.refeicoesRecordatorio = readRecordatorioFromDOM();
+    if (!p.consumoAlimentar) p.consumoAlimentar = {};
+    p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio")?.value?.trim() || "";
+    p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo")?.value?.trim() || "";
+    p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias")?.value?.trim() || "";
+    p.consumoAlimentar.refeicoesRecordatorio = readRecordatorioFromDOM() || [];
     if (!p.consumoAlimentar.totaisRecordatorio) {
       p.consumoAlimentar.totaisRecordatorio = {};
     }
-    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaG = document.getElementById("prontRecGorduraSaturadaG")?.value.trim() || "";
-    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value.trim() || "";
-    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaG = document.getElementById("prontRecGorduraMonoG")?.value.trim() || "";
-    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value.trim() || "";
-    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaG = document.getElementById("prontRecGorduraPoliG")?.value.trim() || "";
-    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaG = document.getElementById("prontRecGorduraSaturadaG")?.value?.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraSaturadaPct = document.getElementById("prontRecGorduraSaturadaPct")?.value?.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaG = document.getElementById("prontRecGorduraMonoG")?.value?.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraMonoinsaturadaPct = document.getElementById("prontRecGorduraMonoPct")?.value?.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaG = document.getElementById("prontRecGorduraPoliG")?.value?.trim() || "";
+    p.consumoAlimentar.totaisRecordatorio.gorduraPoliinsaturadaPct = document.getElementById("prontRecGorduraPoliPct")?.value?.trim() || "";
 
     // Diagnóstico PES
-    p.diagnosticoPES.problema = document.getElementById("prontPesProblema").value.trim();
-    p.diagnosticoPES.etiologia = document.getElementById("prontPesEtiologia").value.trim();
-    p.diagnosticoPES.sinaisSintomas = document.getElementById("prontPesSinais").value.trim();
-    p.diagnosticoPES.textoCompletoPES = document.getElementById("prontPesTextoCompleto").value.trim();
-    p.diagnosticoPES.objetivosDietoterapicos = document.getElementById("prontObjetivosDietoterapicos")?.value.trim() || "";
+    if (!p.diagnosticoPES) p.diagnosticoPES = {};
+    p.diagnosticoPES.problema = document.getElementById("prontPesProblema")?.value?.trim() || "";
+    p.diagnosticoPES.etiologia = document.getElementById("prontPesEtiologia")?.value?.trim() || "";
+    p.diagnosticoPES.sinaisSintomas = document.getElementById("prontPesSinais")?.value?.trim() || "";
+    p.diagnosticoPES.textoCompletoPES = document.getElementById("prontPesTextoCompleto")?.value?.trim() || "";
+    p.diagnosticoPES.objetivosDietoterapicos = document.getElementById("prontObjetivosDietoterapicos")?.value?.trim() || "";
 
     // Cálculos de Necessidades
     if (!p.calculoNecessidades) p.calculoNecessidades = {};
@@ -3102,8 +3109,9 @@ document.addEventListener("DOMContentLoaded", () => {
     p.calculoNecessidades.taxaMetabolicaCalculada = document.getElementById("dispTaxaMetabolicaCalculada")?.textContent.replace(" kcal/kg", "").trim() || "";
 
     // Prescrição Dietoterápica
-    p.prescricaoDietoterapica.vetKcal = document.getElementById("prontVetKcal").value.trim();
-    p.prescricaoDietoterapica.regraBolsoKcalKg = document.getElementById("prontRegraBolso").value.trim();
+    if (!p.prescricaoDietoterapica) p.prescricaoDietoterapica = {};
+    p.prescricaoDietoterapica.vetKcal = document.getElementById("prontVetKcal")?.value?.trim() || "";
+    p.prescricaoDietoterapica.regraBolsoKcalKg = document.getElementById("prontRegraBolso")?.value?.trim() || "";
     p.prescricaoDietoterapica.distribuicaoMacros = {
       cho: {
         minPct: document.getElementById("prontChoMinPct")?.value.trim() || "45",
@@ -3136,12 +3144,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const finalOralCons = selectOralCons === "Personalizada" && customOralCons ? customOralCons : (selectOralCons || document.getElementById("prontConsistencia")?.value || "Dieta Livre / Normal");
     p.consistenciaDietaOral = finalOralCons;
     p.prescricaoDietoterapica.consistencia = finalOralCons;
-    p.prescricaoDietoterapica.fracionamento = document.getElementById("prontFracionamento").value;
-    p.prescricaoDietoterapica.fibrasMicronutrientes = document.getElementById("prontFibrasMicronutrientes").value.trim();
-    p.prescricaoDietoterapica.justificativaFisiopatologica = document.getElementById("prontJustificativa").value.trim();
+    p.prescricaoDietoterapica.fracionamento = document.getElementById("prontFracionamento")?.value || "5 a 6 refeições/dia";
+    p.prescricaoDietoterapica.fibrasMicronutrientes = document.getElementById("prontFibrasMicronutrientes")?.value?.trim() || "";
+    p.prescricaoDietoterapica.justificativaFisiopatologica = document.getElementById("prontJustificativa")?.value?.trim() || "";
 
-    // Planejamento Alimentar (Cardápio Oral)
-    p.planejamentoAlimentar = readCardapioFromDOM();
+    // Planejamento Alimentar (Cardápio Oral) — Blindado com fallback || [] caso tabela quantitativa esteja vazia ou oculta
+    const domPlano = readCardapioFromDOM();
+    p.planejamentoAlimentar = Array.isArray(domPlano) && domPlano.length > 0
+      ? domPlano
+      : (Array.isArray(p?.planejamentoAlimentar) ? p.planejamentoAlimentar : []);
 
     // Terapia Nutricional Enteral (TNE)
     const viaAlimentacao = document.querySelector('input[name="prontViaAlimentacao"]:checked')?.value || "oral";
@@ -3708,17 +3719,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("recordatorioMealsContainer");
     if (!container) return;
 
+    if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+      appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+    }
+
     if (!appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio || appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.length === 0) {
       if (!appState.currentProntuario.consumoAlimentar) {
         appState.currentProntuario.consumoAlimentar = {};
       }
       appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [
-        { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-3", refeicao: "Almoço", horario: "12:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-5", refeicao: "Jantar", horario: "19:30", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-6", refeicao: "Ceia", horario: "22:00", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
+        { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-6", refeicao: "Ceia", horario: "22:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } }
       ];
     }
 
@@ -4727,7 +4742,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lipidPanel) lipidPanel.classList.toggle("hidden", isQualitativo);
     if (microPanel) microPanel.classList.toggle("hidden", isQualitativo);
 
-    if (!appState.currentProntuario.planejamentoAlimentar || appState.currentProntuario.planejamentoAlimentar.length === 0) {
+    if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+      appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+    }
+
+    if (!Array.isArray(appState.currentProntuario?.planejamentoAlimentar) || appState.currentProntuario.planejamentoAlimentar.length === 0) {
       appState.currentProntuario.planejamentoAlimentar = [
         { id: "ref-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "ref-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], alimentos: "", substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
@@ -4738,7 +4757,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ];
     }
 
-    const list = appState.currentProntuario.planejamentoAlimentar;
+    const list = appState.currentProntuario?.planejamentoAlimentar || [];
     container.innerHTML = "";
 
     list.forEach((meal, mealIdx) => {
@@ -5062,8 +5081,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const addMealBtn = document.getElementById("addCardapioMealBtn");
   if (addMealBtn) {
     addMealBtn.addEventListener("click", () => {
+      if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+        appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+      }
       readCardapioFromDOM();
-      if (!appState.currentProntuario.planejamentoAlimentar) {
+      if (!Array.isArray(appState.currentProntuario?.planejamentoAlimentar)) {
         appState.currentProntuario.planejamentoAlimentar = [];
       }
       const nextNum = appState.currentProntuario.planejamentoAlimentar.length + 1;
@@ -5086,11 +5108,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const addRecMealBtn = document.getElementById("addRecordatorioMealBtn");
   if (addRecMealBtn) {
     addRecMealBtn.addEventListener("click", () => {
+      if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+        appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+      }
       readRecordatorioFromDOM();
-      if (!appState.currentProntuario.consumoAlimentar) {
+      if (!appState.currentProntuario?.consumoAlimentar) {
         appState.currentProntuario.consumoAlimentar = {};
       }
-      if (!appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio) {
+      if (!Array.isArray(appState.currentProntuario?.consumoAlimentar?.refeicoesRecordatorio)) {
         appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [];
       }
       const nextNum = appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio.length + 1;
@@ -6750,20 +6775,21 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Rascunho salvo com sucesso no navegador!");
     });
 
-    // Finalizar caso e gerar Word (.docx) + Correção Automática por IA quando habilitada pelo professor
+    // Finalizar caso e gerar Word (.docx) + Correção Automática por IA + Disparo Assíncrono de E-mail do Relatório Final para chagasnutri@gmail.com
     finalizeAndExportDocxBtn.addEventListener("click", async () => {
       if (appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient) {
         exportRealPatientDocx();
         return;
       }
-      const data = readProntuarioFromForm();
+      const rawData = readProntuarioFromForm();
+      const data = prontuarioManager.sanitizeProntuarioPayload(rawData, appState.currentCaseId);
       if (!data) return;
 
       // Validação amigável
-      if (!data.aluno.nome) {
+      if (!data?.aluno?.nome) {
         alert("Por favor, preencha o seu nome completo na identificação do prontuário.");
-        document.querySelector('[data-tab="anamnese"]').click();
-        document.getElementById("alunoNome").focus();
+        document.querySelector('[data-tab="anamnese"]')?.click();
+        document.getElementById("alunoNome")?.focus();
         return;
       }
 
@@ -6771,8 +6797,10 @@ document.addEventListener("DOMContentLoaded", () => {
         ? firebaseSyncService.getUserId() 
         : "anon_user";
       data.userId = data.userId || uid;
+      data.planejamentoAlimentar = data?.planejamentoAlimentar || [];
       data.habilitarPlanejamentoQualitativo = Boolean(appState.currentCase?.habilitarPlanejamentoQualitativo);
       data.habilitarCorrecaoAutomaticaIA = Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA);
+      data.professorEmail = "chagasnutri@gmail.com";
 
       // Se a Correção Automática por IA estiver habilitada para o caso no Painel do Professor:
       const aiResultContainer = document.getElementById("aiEvaluationResultContainer");
@@ -6784,14 +6812,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (appState.currentCase?.habilitarCorrecaoAutomaticaIA === true) {
         try {
           const aiRes = await prontuarioManager.evaluateCaseWithAI(data, appState.currentCase);
-          data.avaliacaoIA = aiRes.avaliacaoIA;
-          data.notaIA = aiRes.notaFinal;
+          data.avaliacaoIA = aiRes?.avaliacaoIA || "";
+          data.notaIA = aiRes?.notaFinal || "9,0";
           if (aiResultContainer) aiResultContainer.classList.remove("hidden");
           if (pedNotice) pedNotice.classList.add("hidden");
-          if (aiGradeBadge) aiGradeBadge.textContent = `Nota Final: ${aiRes.notaFinal} / 10,0`;
-          if (aiTextContent) aiTextContent.textContent = aiRes.avaliacaoIA;
+          if (aiGradeBadge) aiGradeBadge.textContent = `Nota Final: ${data.notaIA} / 10,0`;
+          if (aiTextContent) aiTextContent.textContent = data.avaliacaoIA;
           if (aiEmailStatus) {
-            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado ao Professor:</strong> Cópia completa da resolução de <strong>${escapeHtml(data.aluno.nome)}</strong> no caso <strong>${escapeHtml(appState.currentCase.title)}</strong> e Avaliação da IA (Nota ${escapeHtml(aiRes.notaFinal)}/10,0) enviada para <code>${escapeHtml(aiRes.professorEmail)}</code>.`;
+            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado ao Professor:</strong> Cópia completa do Relatório Final de <strong>${escapeHtml(data?.aluno?.nome || "")}</strong> no caso <strong>${escapeHtml(appState.currentCase?.title || "")}</strong> e Avaliação da IA (Nota ${escapeHtml(data.notaIA)}/10,0) enviada para <code>chagasnutri@gmail.com</code>.`;
           }
         } catch (aiErr) {
           console.warn("⚠️ Aviso durante Correção Automática por IA:", aiErr);
@@ -6801,18 +6829,44 @@ document.addEventListener("DOMContentLoaded", () => {
         if (pedNotice) pedNotice.classList.remove("hidden");
       }
 
-      // Salva rascunho final
+      // Salva rascunho final e sincroniza com Firestore
       prontuarioManager.saveDraft(appState.currentCaseId, data);
       if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveProntuario === "function") {
-        firebaseSyncService.saveProntuario(appState.currentCaseId, data);
+        try {
+          await firebaseSyncService.saveProntuario(appState.currentCaseId, data);
+        } catch (fbErr) {
+          console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", fbErr);
+        }
+      }
+
+      // Disparo Automático Assíncrono (Não-Bloqueante) do E-mail do Relatório Final para chagasnutri@gmail.com
+      try {
+        const htmlReportStr = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
+          ? DietoterapiaDocxReport.buildHtmlReport(data, appState.currentCase)
+          : "";
+        prontuarioManager.dispatchFinalReportEmailAsync(data, appState.currentCase, {
+          studentName: data?.aluno?.nome || "Estudante de Nutrição",
+          caseTitle: appState.currentCase?.title || appState.currentCaseId || "Caso Clínico Supervisionado",
+          dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+          habilitarCorrecaoAutomaticaIA: Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA),
+          notaFinal: data?.notaIA || "",
+          avaliacaoIA: data?.avaliacaoIA || "",
+          relatorioFinalHtml: htmlReportStr
+        }).catch((err) => console.warn("⚠️ Aviso no envio assíncrono de e-mail:", err));
+      } catch (mailErr) {
+        console.warn("⚠️ Aviso ao disparar e-mail assíncrono do relatório final:", mailErr);
       }
 
       // 1. Gera e baixa o documento Word (.docx) imediatamente
       DietoterapiaDocxReport.generateReport(data, appState.currentCase);
 
       // 2. Abre modal confirmando a submissão (e exibindo a correção da IA e a nota final caso habilitada)
-      document.getElementById("modalStudentName").textContent = data.aluno.nome;
-      document.getElementById("modalCaseTitle").textContent = appState.currentCase.title;
+      if (document.getElementById("modalStudentName")) {
+        document.getElementById("modalStudentName").textContent = data?.aluno?.nome || "";
+      }
+      if (document.getElementById("modalCaseTitle")) {
+        document.getElementById("modalCaseTitle").textContent = appState.currentCase?.title || "";
+      }
       submissionConfirmModal.classList.remove("hidden");
     });
 

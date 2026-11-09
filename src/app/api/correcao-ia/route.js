@@ -10,39 +10,56 @@ import { NextResponse } from 'next/server';
 export const PROFESSOR_EVALUATOR_SYSTEM_PROMPT =
   'Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.';
 
-function compileResolutionSummaryText(studentResolution = {}, clinicalCase = {}) {
-  if (typeof studentResolution === 'string' && studentResolution.trim()) {
-    return studentResolution.trim();
+export const FIXED_PROFESSOR_EMAIL = 'chagasnutri@gmail.com';
+
+function compileResolutionSummaryText(rawStudentResolution = {}, rawClinicalCase = {}) {
+  if (typeof rawStudentResolution === 'string' && rawStudentResolution.trim()) {
+    return rawStudentResolution.trim();
   }
+
+  const studentResolution = rawStudentResolution && typeof rawStudentResolution === 'object' ? rawStudentResolution : {};
+  const clinicalCase = rawClinicalCase && typeof rawClinicalCase === 'object' ? rawClinicalCase : {};
 
   const alunoNome = studentResolution?.aluno?.nome || studentResolution?.studentName || 'Aluno(a)';
   const casoTitulo = clinicalCase?.title || studentResolution?.caseTitle || studentResolution?.caseId || 'Caso Clínico';
   const anamnese = studentResolution?.anamnese || {};
-  const evolucao = studentResolution?.evolucaoAnamnese || studentResolution?.evolucaoTexto || anamnese.historiaClinica || '';
+  const evolucao = studentResolution?.evolucaoAnamnese || studentResolution?.evolucaoTexto || anamnese?.historiaClinica || '';
   const pes = studentResolution?.diagnosticoPES || {};
   const calc = studentResolution?.calculoNecessidades || {};
   const presc = studentResolution?.prescricaoDietoterapica || {};
   const orientacoes = studentResolution?.orientacoesNutricionais || '';
 
-  const formulas = Array.isArray(calc.formulasCalculadas)
-    ? calc.formulasCalculadas.map((f, i) => `  ${i + 1}. ${f.nome || f.formulaKey}: ${f.equacao || ''} = ${f.resultadoKcal || ''} kcal/dia`).join('\n')
-    : (Array.isArray(calc.formulasSelecionadas) ? calc.formulasSelecionadas.join(', ') : 'Não informadas');
+  const formulasArr = Array.isArray(calc?.formulasCalculadas)
+    ? calc.formulasCalculadas
+    : (Array.isArray(studentResolution?.formulasCalculadas) ? studentResolution.formulasCalculadas : null);
 
-  const recordatorio = Array.isArray(studentResolution?.consumoAlimentar?.refeicoesRecordatorio)
+  const formulas = Array.isArray(formulasArr) && formulasArr.length > 0
+    ? formulasArr.filter(Boolean).map((f, i) => `  ${i + 1}. ${f?.nome || f?.formulaKey || 'Fórmula'}: ${f?.equacao || ''} = ${f?.resultadoKcal || ''} kcal/dia`).join('\n')
+    : (Array.isArray(calc?.formulasSelecionadas) ? calc.formulasSelecionadas.join(', ') : 'Não informadas');
+
+  const rawRecordatorio = Array.isArray(studentResolution?.consumoAlimentar?.refeicoesRecordatorio)
     ? studentResolution.consumoAlimentar.refeicoesRecordatorio
-        .map((r) => `  - ${r.refeicao || 'Refeição'} (${r.horario || '--:--'}) | Preparação: ${r.preparacao || r.tipoPreparacao || 'Não informada'} | Itens: ${r.alimentos || (Array.isArray(r.itens) ? r.itens.map((it) => `${it.alimentoNome || it.nome} (${it.medidaCaseira || it.medida || ''})`).join(', ') : '')}`)
-        .join('\n')
-    : (Array.isArray(studentResolution?.recordatorioItems)
-        ? studentResolution.recordatorioItems.map((it) => `  - [Preparação: ${it.preparacao || studentResolution?.recordatorioPreparacao || 'Não informada'}] ${it.nome} (${it.qtd} ${it.medida})`).join('\n')
-        : 'Não informado');
+    : (Array.isArray(studentResolution?.recordatorioItems) ? studentResolution.recordatorioItems : []);
 
-  const cardapio = Array.isArray(studentResolution?.planejamentoAlimentar)
-    ? studentResolution.planejamentoAlimentar
-        .map((r) => `  - ${r.refeicao || 'Refeição'} (${r.horario || '--:--'}) | Preparação: ${r.preparacao || r.tipoPreparacao || 'Não informada'} | Itens: ${r.alimentos || (Array.isArray(r.itens) ? r.itens.map((it) => `${it.alimentoNome || it.nome} (${it.medidaCaseira || it.medida || ''})`).join(', ') : '')}`)
+  const recordatorio = rawRecordatorio.length > 0
+    ? rawRecordatorio
+        .filter(Boolean)
+        .map((r) => `  - ${r?.refeicao || r?.nome || 'Refeição'} (${r?.horario || '--:--'}) | Preparação: ${r?.preparacao || r?.tipoPreparacao || studentResolution?.recordatorioPreparacao || 'Não informada'} | Itens: ${r?.alimentos || (Array.isArray(r?.itens) ? r.itens.filter(Boolean).map((it) => `${it?.alimentoNome || it?.nome || ''} (${it?.medidaCaseira || it?.medida || ''})`).join(', ') : `${r?.nome || ''} (${r?.qtd || 1} ${r?.medida || ''})`)}`)
         .join('\n')
-    : (Array.isArray(studentResolution?.cardapioItems)
-        ? studentResolution.cardapioItems.map((it) => `  - [Preparação: ${it.preparacao || studentResolution?.cardapioPreparacao || 'Não informada'}] ${it.nome} (${it.qtd ? it.qtd + ' ' : ''}${it.medida})`).join('\n')
-        : 'Não informado');
+    : 'Não informado';
+
+  const rawPlanejamento = Array.isArray(studentResolution?.planejamentoAlimentar)
+    ? studentResolution.planejamentoAlimentar
+    : (Array.isArray(studentResolution?.planejamentoAlimentar?.refeicoes)
+        ? studentResolution.planejamentoAlimentar.refeicoes
+        : (Array.isArray(studentResolution?.cardapioItems) ? studentResolution.cardapioItems : []));
+
+  const cardapio = rawPlanejamento.length > 0
+    ? rawPlanejamento
+        .filter(Boolean)
+        .map((r) => `  - ${r?.refeicao || r?.nome || 'Refeição'} (${r?.horario || '--:--'}) | Preparação: ${r?.preparacao || r?.tipoPreparacao || studentResolution?.cardapioPreparacao || 'Não informada'} | Itens: ${r?.alimentos || (Array.isArray(r?.itens) ? r.itens.filter(Boolean).map((it) => `${it?.alimentoNome || it?.nome || ''} (${it?.medidaCaseira || it?.medida || ''})`).join(', ') : `${r?.nome || ''} (${r?.qtd ? r.qtd + ' ' : ''}${r?.medida || ''})`)}`)
+        .join('\n')
+    : 'Não informado';
 
   return [
     `=== RESOLUÇÃO COMPLETA DO CASO CLÍNICO ===`,
@@ -287,14 +304,17 @@ async function dispatchProfessorEmail(emailPayload) {
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const body = (await req.json().catch(() => ({}))) || {};
     const {
       studentName: rawStudentName,
       caseTitle: rawCaseTitle,
-      professorEmail: rawProfEmail,
-      studentResolution = {},
-      clinicalCase = {}
+      professorEmail: rawProfEmail
     } = body || {};
+
+    const rawResolution = body?.studentResolution ?? body?.resolutionData ?? body?.prontuario ?? {};
+    const studentResolution = rawResolution && typeof rawResolution === 'object' ? rawResolution : {};
+    const rawCase = body?.clinicalCase ?? {};
+    const clinicalCase = rawCase && typeof rawCase === 'object' ? rawCase : {};
 
     const studentName =
       rawStudentName ||
@@ -309,11 +329,11 @@ export async function POST(req) {
       studentResolution?.caseId ||
       'Caso Clínico Simulado';
 
-    const professorEmail =
-      rawProfEmail ||
-      clinicalCase?.professorEmail ||
-      studentResolution?.professorEmail ||
-      'professor@dietocase.edu.br';
+    const professorEmail = FIXED_PROFESSOR_EMAIL || rawProfEmail || 'chagasnutri@gmail.com';
+    const dataHora = String(
+      body?.dataHora ||
+      new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    ).trim();
 
     const systemPrompt = PROFESSOR_EVALUATOR_SYSTEM_PROMPT;
     const resolucaoCompletaTexto = compileResolutionSummaryText(studentResolution, clinicalCase);

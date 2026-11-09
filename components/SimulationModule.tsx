@@ -225,9 +225,10 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   formulasCalculadas: [],
   cardapioPreparacao: 'Mingau de aveia com mamão e pão integral',
   cardapioItems: DEFAULT_CARDAPIO_ITEMS,
+  planejamentoAlimentar: DEFAULT_CARDAPIO_ITEMS,
   habilitarPlanejamentoQualitativo: false,
   habilitarCorrecaoAutomaticaIA: false,
-  professorEmail: 'professor@dietocase.edu.br',
+  professorEmail: 'chagasnutri@gmail.com',
   avaliacaoIA: '',
   notaIA: '',
   respostasQuestoes: {
@@ -309,12 +310,13 @@ export default function SimulationModule() {
     }
   });
 
-  // Aliases reativos para compatibilidade total de estados e testes
-  const exams = draftData.exams || DEFAULT_EXAMS;
-  const interactions = draftData.interactions || DEFAULT_INTERACTIONS;
-  const recordatorioItems = draftData.recordatorioItems || DEFAULT_RECORDATORIO_ITEMS;
-  const cardapioItems = draftData.cardapioItems || DEFAULT_CARDAPIO_ITEMS;
-  const formulasCalculadas = draftData.formulasCalculadas || [];
+  // Aliases reativos com tratamento de nulos (Optional Chaining ?. e fallbacks || [] / || {})
+  const exams = draftData?.exams || DEFAULT_EXAMS || [];
+  const interactions = draftData?.interactions || DEFAULT_INTERACTIONS || [];
+  const recordatorioItems = draftData?.recordatorioItems || DEFAULT_RECORDATORIO_ITEMS || [];
+  const cardapioItems = draftData?.cardapioItems || draftData?.planejamentoAlimentar || DEFAULT_CARDAPIO_ITEMS || [];
+  const planejamentoAlimentar = draftData?.planejamentoAlimentar || cardapioItems || [];
+  const formulasCalculadas = draftData?.formulasCalculadas || [];
 
   // Regra 1: Vinculação Dinâmica da NEE (Recordatório 24h <> VET Planejado) — SEM valor hardcoded de 2000 kcal
   const vetPlanejadoNumerico = (() => {
@@ -589,7 +591,7 @@ export default function SimulationModule() {
     updateField('interactions', updated);
   };
 
-  // Submissão do Caso Clínico (Finalização e Limpeza do Rascunho no Storage + Correção Automática por IA quando habilitada)
+  // Submissão do Caso Clínico (Finalização, Tratamento de Nulos, Correção IA quando habilitada e Disparo Automático Assíncrono de E-mail do Relatório Final para chagasnutri@gmail.com)
   const handleFinalizarCaso = async () => {
     if (!studentId.trim()) {
       alert("Por favor, informe a identificação do aluno.");
@@ -597,8 +599,8 @@ export default function SimulationModule() {
     }
 
     const confirmMsg = habilitarCorrecaoAutomaticaIA
-      ? "Deseja finalizar e enviar este caso clínico para Correção Automática por IA? A avaliação científica e a nota final serão geradas imediatamente e enviadas ao e-mail do professor."
-      : "Deseja realmente finalizar e enviar este caso clínico ao professor? O rascunho local deste caso será removido do dispositivo.";
+      ? "Deseja finalizar e enviar este caso clínico para Correção Automática por IA? A avaliação científica e a nota final serão geradas imediatamente e o relatório final será enviado para chagasnutri@gmail.com."
+      : "Deseja realmente finalizar e enviar este caso clínico ao professor (chagasnutri@gmail.com)? O rascunho local deste caso será removido do dispositivo.";
 
     const confirmSubmit = window.confirm(confirmMsg);
     if (!confirmSubmit) return;
@@ -608,12 +610,44 @@ export default function SimulationModule() {
       let avaliacaoTexto = '';
       let notaAtribuida = '';
       let emailEnviado = false;
-      const profEmail = draftData.professorEmail || 'professor@dietocase.edu.br';
+      const FIXED_PROFESSOR_EMAIL = 'chagasnutri@gmail.com';
+      const profEmail = FIXED_PROFESSOR_EMAIL;
+      const dataHoraSubmissao = new Date().toLocaleString('pt-BR');
       const caseTitle = selectedCase === 'caso-dm2-has'
         ? 'Caso 1: DM2 e HAS (Adulto/Idoso)'
         : selectedCase === 'caso-desnutricao'
         ? 'Caso 2: Desnutrição Hospitalar Grave'
         : 'Caso 3: Doença Renal Crônica Conservadora';
+
+      // Payload sanitizado com optional chaining (?.) e fallbacks (|| [] e || {}) para evitar quebras caso Planejamento Qualitativo esteja ativo ou tabelas vazias/nulas
+      const safePlanejamento = Array.isArray(draftData?.planejamentoAlimentar)
+        ? draftData.planejamentoAlimentar
+        : (Array.isArray(draftData?.cardapioItems) ? draftData.cardapioItems : []);
+      const safeRecordatorio = Array.isArray(draftData?.recordatorioItems) ? draftData.recordatorioItems : [];
+      const safeExams = Array.isArray(draftData?.exams) ? draftData.exams : [];
+      const safeInteractions = Array.isArray(draftData?.interactions) ? draftData.interactions : [];
+      const safeFormulas = Array.isArray(draftData?.formulasCalculadas) ? draftData.formulasCalculadas : [];
+      const safeRespostas = (draftData?.respostasQuestoes && typeof draftData.respostasQuestoes === 'object') ? draftData.respostasQuestoes : {};
+
+      const safeResolutionPayload = {
+        ...(draftData || {}),
+        studentId: studentId || 'aluno-demo',
+        studentName: draftData?.studentName || studentId || 'Estudante de Nutrição',
+        caseId: selectedCase || 'caso-dm2-has',
+        planejamentoAlimentar: safePlanejamento || [],
+        cardapioItems: safePlanejamento || [],
+        recordatorioItems: safeRecordatorio || [],
+        exams: safeExams || [],
+        interactions: safeInteractions || [],
+        formulasCalculadas: safeFormulas || [],
+        respostasQuestoes: safeRespostas || {},
+        recordatorioPreparacao: draftData?.recordatorioPreparacao || 'Vitamina de banana com pão e café com leite',
+        cardapioPreparacao: draftData?.cardapioPreparacao || 'Mingau de aveia com mamão e pão integral',
+        orientacoesNutricionais: draftData?.orientacoesNutricionais || '',
+        habilitarPlanejamentoQualitativo: Boolean(habilitarPlanejamentoQualitativo),
+        habilitarCorrecaoAutomaticaIA: Boolean(habilitarCorrecaoAutomaticaIA),
+        professorEmail: FIXED_PROFESSOR_EMAIL
+      };
 
       // Se a Correção Automática por IA estiver habilitada para o caso, invoca a API Route /api/correcao-ia
       if (habilitarCorrecaoAutomaticaIA) {
@@ -623,24 +657,20 @@ export default function SimulationModule() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               studentId,
-              studentName: draftData.studentName || studentId || 'Estudante de Nutrição',
+              studentName: safeResolutionPayload.studentName,
               caseId: selectedCase,
               caseTitle,
-              professorEmail: profEmail,
+              dataHora: dataHoraSubmissao,
+              professorEmail: FIXED_PROFESSOR_EMAIL,
               systemPrompt: 'Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.',
-              resolutionData: {
-                ...draftData,
-                recordatorioPreparacao: draftData.recordatorioPreparacao || 'Vitamina de banana com pão e café com leite',
-                cardapioPreparacao: draftData.cardapioPreparacao || 'Mingau de aveia com mamão e pão integral',
-                habilitarPlanejamentoQualitativo
-              }
+              resolutionData: safeResolutionPayload
             })
           });
           if (response.ok) {
             const data = await response.json();
-            avaliacaoTexto = data.avaliacaoIA || '';
-            notaAtribuida = data.notaFinal || '8,5';
-            emailEnviado = Boolean(data.emailDisparado);
+            avaliacaoTexto = data?.avaliacaoIA || '';
+            notaAtribuida = data?.notaFinal || '8,5';
+            emailEnviado = Boolean(data?.emailDisparado);
           }
         } catch (aiErr) {
           console.warn('⚠️ Fallback local acionado para Correção IA:', aiErr);
@@ -651,7 +681,7 @@ export default function SimulationModule() {
           avaliacaoTexto = [
             'PARECER DOCENTE AUTOMATIZADO POR IA — NUTRIÇÃO CLÍNICA (DIRETRIZES BRASPEN / SBC / SBD)',
             `Caso Avaliado: ${caseTitle}`,
-            `Aluno(a): ${draftData.studentName || studentId}`,
+            `Aluno(a): ${safeResolutionPayload.studentName}`,
             '',
             '1. Acertos no Raciocínio Clínico: Adequada interpretação antropométrica, semiológica e laboratorial, bem como coerência na prescrição dietoterápica frente às diretrizes da SBC, SBD e BRASPEN.',
             '2. Pontos de Aprimoramento: Detalhar continuamente a monitorização de micronutrientes e metas de adesão comportamental ambulatorial.',
@@ -665,27 +695,23 @@ export default function SimulationModule() {
           avaliacaoIA: avaliacaoTexto,
           notaFinal: notaAtribuida,
           emailDisparado: emailEnviado,
-          professorEmail: profEmail
+          professorEmail: FIXED_PROFESSOR_EMAIL
         });
       } else {
         setAiEvaluationResult(null);
       }
 
-      // 1. Sincronização em nuvem com Firebase (se disponível)
+      // 1. Sincronização em nuvem com Firebase (com tratamento de nulos)
       if (typeof window !== 'undefined' && (window as any).firebaseSyncService && typeof (window as any).firebaseSyncService.saveProntuario === 'function') {
         try {
           await (window as any).firebaseSyncService.saveProntuario(selectedCase, {
-            ...draftData,
-            recordatorioPreparacao: draftData.recordatorioPreparacao || '',
-            cardapioPreparacao: draftData.cardapioPreparacao || '',
-            habilitarPlanejamentoQualitativo,
-            habilitarCorrecaoAutomaticaIA,
-            professorEmail: profEmail,
+            ...safeResolutionPayload,
+            planejamentoAlimentar: safeResolutionPayload?.planejamentoAlimentar || [],
+            cardapioItems: safeResolutionPayload?.cardapioItems || [],
             avaliacaoIA: avaliacaoTexto || undefined,
             notaIA: notaAtribuida || undefined,
-            orientacoesNutricionais: draftData.orientacoesNutricionais || '',
             userId: studentId,
-            aluno: { id: studentId, nome: draftData.studentName || 'Estudante' },
+            aluno: { id: studentId, nome: safeResolutionPayload.studentName },
             dataFinalizacao: new Date().toISOString()
           });
         } catch (fbErr) {
@@ -693,10 +719,35 @@ export default function SimulationModule() {
         }
       }
 
-      // 2. Limpeza estrita (Clear) do rascunho local SOMENTE após o clique em Finalizar/Enviar com sucesso
+      // 2. Disparo Automático Assíncrono (não-bloqueante) do E-mail do Relatório Final para chagasnutri@gmail.com (após salvar no Firestore)
+      Promise.resolve().then(async () => {
+        try {
+          await fetch('/api/enviar-relatorio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: FIXED_PROFESSOR_EMAIL,
+              professorEmail: FIXED_PROFESSOR_EMAIL,
+              studentId,
+              studentName: safeResolutionPayload.studentName,
+              caseId: selectedCase,
+              caseTitle,
+              dataHora: dataHoraSubmissao,
+              habilitarCorrecaoAutomaticaIA: Boolean(habilitarCorrecaoAutomaticaIA),
+              notaFinal: notaAtribuida || '',
+              avaliacaoIA: avaliacaoTexto || '',
+              resolutionData: safeResolutionPayload
+            })
+          });
+        } catch (emailErr) {
+          console.warn('⚠️ Aviso no disparo assíncrono de /api/enviar-relatorio:', emailErr);
+        }
+      });
+
+      // 3. Limpeza estrita (Clear) do rascunho local SOMENTE após o clique em Finalizar/Enviar com sucesso
       clearDraft();
 
-      // 3. Abre modal de confirmação (com exibição da Avaliação da IA e Nota Final se habilitada)
+      // 4. Abre modal de confirmação (com exibição da Avaliação da IA e Nota Final se habilitada)
       setSubmissionSuccessModal(true);
     } catch (err: any) {
       console.error("Erro ao finalizar caso:", err);

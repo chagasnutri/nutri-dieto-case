@@ -3823,13 +3823,117 @@ Questões Avaliativas:
         aiEvalResult.avaliacaoIA.length > 50 &&
         /^\d{1,2},\d$/.test(aiEvalResult.notaFinal) &&
         aiEvalResult.emailPayload &&
-        aiEvalResult.emailPayload.to === "docente.nutricao@universidade.edu.br" &&
+        aiEvalResult.emailPayload.to === "chagasnutri@gmail.com" &&
         aiEvalResult.emailPayload.text.includes("Mariana Costa") &&
         aiEvalResult.emailPayload.text.includes("Caso Síndrome Metabólica e Dislipidemia") &&
         aiEvalResult.emailPayload.text.includes("Vitamina de banana") &&
         aiEvalResult.emailPayload.text.includes("Mingau de aveia") &&
         aiEvalResult.emailPayload.text.includes(aiEvalResult.notaFinal),
-        "Regra 3 (Avaliação por IA e Disparo de E-mail ao Professor): Compila a resolução completa, retorna avaliação com nota exata (0,0 a 10,0) e gera o e-mail para o professor com Nome do Aluno, Nome do Caso, Resolução Completa e Avaliação da IA"
+        "Regra 3 (Avaliação por IA e Disparo de E-mail ao Professor): Compila a resolução completa, retorna avaliação com nota exata (0,0 a 10,0) e gera o e-mail para o destinatário fixo chagasnutri@gmail.com com Nome do Aluno, Nome do Caso, Resolução Completa e Avaliação da IA"
+      );
+
+      // =========================================================================
+      // SEÇÃO 146: TRATAMENTO DE NULOS (planejamentoAlimentar NULL SAFETY) & DISPARO AUTOMÁTICO ASSÍNCRONO DE E-MAIL PARA chagasnutri@gmail.com
+      // =========================================================================
+
+      // 146.1 Tratamento de Nulos: prontuario = null ou planejamentoAlimentar = null com Planejamento Qualitativo ativo
+      let noNullThrow = true;
+      let compiledNullSafe = "";
+      let htmlNullSafe = "";
+      let submissionNullSafe = null;
+      try {
+        const sanitizedFromNull = pmRules.sanitizeProntuarioPayload(null, "caso-null-test");
+        const sanitizedWithNullFields = pmRules.sanitizeProntuarioPayload({
+          caseId: "caso-qualitativo-null",
+          planejamentoAlimentar: null,
+          anamnese: null,
+          antropometria: null,
+          bioquimica: null,
+          exameFisico: null,
+          consumoAlimentar: null,
+          diagnosticoPES: null,
+          calculoNecessidades: null,
+          prescricaoDietoterapica: null,
+          totaisCardapio: null,
+          respostasQuestoes: null,
+          habilitarPlanejamentoQualitativo: true
+        }, "caso-qualitativo-null");
+
+        submissionNullSafe = pmRules.buildSubmissionPayload(null, { id: "caso-null-test", habilitarPlanejamentoQualitativo: true });
+        compiledNullSafe = pmRules.compileStudentResolutionForAI(null, { id: "caso-null-test", title: "Caso Null Safety", habilitarPlanejamentoQualitativo: true });
+        const compiledPartialNull = pmRules.compileStudentResolutionForAI(
+          { planejamentoAlimentar: null, consumoAlimentar: { refeicoesRecordatorio: null } },
+          { id: "caso-qualitativo-null", title: "Caso Qualitativo Sem Tabela Quantitativa", habilitarPlanejamentoQualitativo: true }
+        );
+        htmlNullSafe = DietoterapiaDocxReport.buildHtmlReport(
+          { planejamentoAlimentar: null, anamnese: null, consumoAlimentar: null },
+          { id: "caso-qualitativo-null", title: "Caso Qualitativo Sem Tabela Quantitativa", habilitarPlanejamentoQualitativo: true }
+        );
+        noNullThrow = Array.isArray(sanitizedFromNull.planejamentoAlimentar) &&
+                      Array.isArray(sanitizedWithNullFields.planejamentoAlimentar) &&
+                      Array.isArray(submissionNullSafe.planejamentoAlimentar) &&
+                      compiledNullSafe.includes("PLANEJAMENTO ALIMENTAR") &&
+                      compiledPartialNull.includes("Qualitativo") &&
+                      htmlNullSafe.includes("PLANEJAMENTO ALIMENTAR QUALITATIVO");
+      } catch (nullErr) {
+        noNullThrow = false;
+      }
+
+      assert(
+        noNullThrow === true,
+        "Seção 146.1 (Null Safety em planejamentoAlimentar e Abas): Nenhuma exceção 'Cannot read properties of null (reading planejamentoAlimentar)' ocorre mesmo com prontuário nulo, abas nulas ou Planejamento Qualitativo ativo com tabela quantitativa vazia"
+      );
+
+      // 146.2 Disparo Automático Assíncrono de E-mail do Relatório Final para Destinatário Fixo chagasnutri@gmail.com (Sem e Com Correção IA)
+      assert(
+        pmRules.getFixedProfessorEmail() === "chagasnutri@gmail.com",
+        "Seção 146.2 (Destinatário Fixo): getFixedProfessorEmail retorna obrigatoriamente 'chagasnutri@gmail.com'"
+      );
+
+      const prontEmailFinal = pmRules.getEmptyProntuario("caso-relatorio-email");
+      prontEmailFinal.aluno = { id: "aluno-999", nome: "Lucas Albuquerque" };
+      prontEmailFinal.planejamentoAlimentar = [
+        {
+          id: "ref-1",
+          nome: "Desjejum",
+          horario: "07:30",
+          preparacao: "Crepioca com queijo branco",
+          itens: [{ alimentoNome: "Ovo de galinha", medidaCaseira: "1 unidade", gramatura: 50, kcal: 73 }]
+        }
+      ];
+
+      const casoEmailFinal = {
+        id: "caso-relatorio-email",
+        title: "Caso Clínico Hepatopatia Crônica",
+        habilitarPlanejamentoQualitativo: true,
+        habilitarCorrecaoAutomaticaIA: true
+      };
+
+      const asyncEmailPromise = pmRules.dispatchFinalReportEmailAsync(prontEmailFinal, casoEmailFinal, {
+        habilitarCorrecaoAutomaticaIA: true,
+        notaFinal: "9,5",
+        avaliacaoIA: "Excelente conduta clínica segundo diretrizes BRASPEN."
+      });
+
+      assert(
+        asyncEmailPromise && typeof asyncEmailPromise.then === "function",
+        "Seção 146.3 (Assincronicidade Não-Bloqueante): dispatchFinalReportEmailAsync retorna uma Promise assíncrona que não bloqueia a thread de interface"
+      );
+
+      const asyncEmailResult = await asyncEmailPromise;
+      assert(
+        asyncEmailResult &&
+        asyncEmailResult.success === true &&
+        asyncEmailResult.recipient === "chagasnutri@gmail.com" &&
+        asyncEmailResult.emailPayload &&
+        asyncEmailResult.emailPayload.to === "chagasnutri@gmail.com" &&
+        asyncEmailResult.emailPayload.text.includes("Lucas Albuquerque") &&
+        asyncEmailResult.emailPayload.text.includes("Caso Clínico Hepatopatia Crônica") &&
+        asyncEmailResult.emailPayload.text.includes("Data/Hora de Finalização:") &&
+        asyncEmailResult.emailPayload.text.includes("Crepioca com queijo branco") &&
+        asyncEmailResult.emailPayload.text.includes("9,5") &&
+        asyncEmailResult.emailPayload.text.includes("Excelente conduta clínica segundo diretrizes BRASPEN."),
+        "Seção 146.4 (Conteúdo Obrigatório do E-mail para chagasnutri@gmail.com): Contém Nome do Aluno, Título do Caso Clínico, Data/Hora, Relatório Final completo e anexa Nota e Feedback da IA quando ativada"
       );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);

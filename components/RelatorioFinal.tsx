@@ -112,17 +112,19 @@ interface RelatorioFinalProps {
 
 // 1.1, 1.2, 1.3: Seção Anamnese & Identificação
 export function AnamneseSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("anamnese", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("anamnese", safeCase)) {
     return null;
   }
 
-  const anamnese = data.anamnese || {};
-  const patient = clinicalCase.patient || {};
-  const patName = data.dadosPacienteReal?.nome || patient.name || "Paciente Simulado";
-  const patAge = data.dadosPacienteReal?.idade ? `${data.dadosPacienteReal.idade} anos` : (patient.age ? `${patient.age} anos` : "Não informada / ---");
-  const patGender = data.dadosPacienteReal?.sexo || patient.gender || "Não informado / ---";
-  const patOccupation = data.dadosPacienteReal?.ocupacao || patient.occupation || "Não informada / ---";
-  const hipoteseDiagnostica = data.dadosPacienteReal?.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase.hipoteseDiagnostica || clinicalCase.history?.hipoteseDiagnostica || "Não informada / ---";
+  const anamnese = safeData?.anamnese || {};
+  const patient = safeCase?.patient || {};
+  const patName = safeData?.dadosPacienteReal?.nome || patient?.name || "Paciente Simulado";
+  const patAge = safeData?.dadosPacienteReal?.idade ? `${safeData.dadosPacienteReal.idade} anos` : (patient?.age ? `${patient.age} anos` : "Não informada / ---");
+  const patGender = safeData?.dadosPacienteReal?.sexo || patient?.gender || "Não informado / ---";
+  const patOccupation = safeData?.dadosPacienteReal?.ocupacao || patient?.occupation || "Não informada / ---";
+  const hipoteseDiagnostica = safeData?.dadosPacienteReal?.hipoteseDiagnostica || anamnese?.hipoteseDiagnostica || safeCase?.hipoteseDiagnostica || safeCase?.history?.hipoteseDiagnostica || "Não informada / ---";
 
   return (
     <div className="space-y-4 mb-6">
@@ -160,11 +162,13 @@ export function AnamneseSection({ data, clinicalCase }: { data: any; clinicalCas
 
 // 1.4: Droga-Nutriente
 export function DrogaNutrienteSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("droganutriente", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("droganutriente", safeCase)) {
     return null;
   }
 
-  const interacoes = data.interacaoDrogaNutriente || data.interactions || [];
+  const interacoes = safeData?.interacaoDrogaNutriente || safeData?.interactions || [];
 
   return (
     <div className="space-y-4 mb-6">
@@ -191,18 +195,20 @@ export function DrogaNutrienteSection({ data, clinicalCase }: { data: any; clini
           )}
         </tbody>
       </table>
-      <p className="text-xs text-slate-700"><strong>Observações Farmacoterapêuticas:</strong> {data.observacoesFarmacoterapia || "Não preenchido / ---"}</p>
+      <p className="text-xs text-slate-700"><strong>Observações Farmacoterapêuticas:</strong> {safeData?.observacoesFarmacoterapia || "Não preenchido / ---"}</p>
     </div>
   );
 }
 
 // 1.5: Avaliação Antropométrica
 export function AntropometriaSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("antropometria", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("antropometria", safeCase)) {
     return null;
   }
 
-  const antro = data.antropometria || {};
+  const antro = safeData?.antropometria || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -233,12 +239,14 @@ export function AntropometriaSection({ data, clinicalCase }: { data: any; clinic
 
 // 1.6: Bioquímica
 export function BioquimicaSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("bioquimica", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("bioquimica", safeCase)) {
     return null;
   }
 
-  const bio = data.bioquimica || {};
-  const exams = bio.exames || data.exams || clinicalCase.bioquimica || [];
+  const bio = safeData?.bioquimica || {};
+  const exams = bio?.exames || safeData?.exams || safeCase?.bioquimica || [];
 
   return (
     <div className="space-y-4 mb-6">
@@ -276,13 +284,15 @@ export function BioquimicaSection({ data, clinicalCase }: { data: any; clinicalC
 
 // 1.7: Exame Físico
 export function ExameFisicoSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("examefisico", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("examefisico", safeCase)) {
     return null;
   }
 
-  const ef = data.exameFisico || {};
-  const sis = ef.orgaosSistemas || {};
-  const comp = ef.compartimentos || {};
+  const ef = safeData?.exameFisico || {};
+  const sis = ef?.orgaosSistemas || {};
+  const comp = ef?.compartimentos || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -323,13 +333,15 @@ export function ExameFisicoSection({ data, clinicalCase }: { data: any; clinical
 
 // 1.8: Consumo Alimentar & R24h
 export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("consumo", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("consumo", safeCase)) {
     return null;
   }
 
-  const ca = data.consumoAlimentar || {};
-  const recItems = ca.refeicoesRecordatorio || data.recordatorioItems || [];
-  const prepRecordatorioGlobal = data.recordatorioPreparacao || ca.preparacao || "";
+  const ca = safeData?.consumoAlimentar || {};
+  const recItems = ca?.refeicoesRecordatorio || safeData?.recordatorioItems || [];
+  const prepRecordatorioGlobal = safeData?.recordatorioPreparacao || ca?.preparacao || "";
 
   return (
     <div className="space-y-4 mb-6">
@@ -370,11 +382,13 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
 
 // 2.1: Diagnóstico PES
 export function DiagnosticoPesSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("pes", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("pes", safeCase)) {
     return null;
   }
 
-  const pes = data.diagnosticoPES || {};
+  const pes = safeData?.diagnosticoPES || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -392,11 +406,13 @@ export function DiagnosticoPesSection({ data, clinicalCase }: { data: any; clini
 
 // 2.2: Cálculos de Necessidades
 export function CalculoNecessidadesSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("necessidades", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("necessidades", safeCase)) {
     return null;
   }
 
-  const calc = data.calculoNecessidades || {};
+  const calc = safeData?.calculoNecessidades || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -410,11 +426,13 @@ export function CalculoNecessidadesSection({ data, clinicalCase }: { data: any; 
 
 // 2.3: Prescrição Dietoterápica
 export function PrescricaoSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("prescricao", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("prescricao", safeCase)) {
     return null;
   }
 
-  const presc = data.prescricaoDietoterapica || {};
+  const presc = safeData?.prescricaoDietoterapica || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -439,16 +457,20 @@ export function PrescricaoSection({ data, clinicalCase }: { data: any; clinicalC
   );
 }
 
-// Seção 3: Cardápio TACO ou TNE (com suporte ao Campo 'Preparação' e Modo Planejamento Qualitativo)
+// Seção 3: Cardápio TACO ou TNE (com suporte ao Campo 'Preparação', Modo Planejamento Qualitativo e Tratamento de Nulos)
 export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (!isSectionLiberada("cardapio", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (!isSectionLiberada("cardapio", safeCase)) {
     return null;
   }
 
-  const rawPlano = data.planejamentoAlimentar;
-  const plano = Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : (data.cardapioItems || []));
-  const prepCardapioGlobal = data.cardapioPreparacao || rawPlano?.preparacao || "";
-  const isQualitativo = Boolean(data.habilitarPlanejamentoQualitativo || clinicalCase?.habilitarPlanejamentoQualitativo);
+  const rawPlano = safeData?.planejamentoAlimentar;
+  const plano = Array.isArray(rawPlano)
+    ? rawPlano
+    : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : (safeData?.cardapioItems || []));
+  const prepCardapioGlobal = safeData?.cardapioPreparacao || rawPlano?.preparacao || "";
+  const isQualitativo = Boolean(safeData?.habilitarPlanejamentoQualitativo || safeCase?.habilitarPlanejamentoQualitativo);
 
   return (
     <div className="space-y-4 mb-6">
@@ -506,12 +528,14 @@ export function CardapioSection({ data, clinicalCase }: { data: any; clinicalCas
 
 // Seção 4: Questões Avaliativas
 export function QuestoesSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
-  if (data.isRealPatient === true || clinicalCase?.isRealCase === true || !isSectionLiberada("questoes", clinicalCase)) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  if (safeData?.isRealPatient === true || safeCase?.isRealCase === true || !isSectionLiberada("questoes", safeCase)) {
     return null;
   }
 
-  const questoes = clinicalCase.questoesAvaliativas || [];
-  const respostas = data.respostasQuestoes || {};
+  const questoes = safeCase?.questoesAvaliativas || [];
+  const respostas = safeData?.respostasQuestoes || {};
 
   return (
     <div className="space-y-4 mb-6">
@@ -557,10 +581,12 @@ export function OrientacoesNutricionaisSection({ data, clinicalCase }: { data: a
 
 // Componente Principal do Relatório Final (Tela e PDF)
 export default function RelatorioFinal({ draftData = {}, studentData, clinicalCase = {}, onClose }: RelatorioFinalProps) {
-  const mergedData = studentData || draftData || {};
-  const aluno = mergedData.aluno || {};
-  const patient = clinicalCase.patient || {};
-  const patName = mergedData.dadosPacienteReal?.nome || patient.name || "Paciente Simulado";
+  const rawMerged = studentData || draftData || {};
+  const mergedData = (rawMerged && typeof rawMerged === 'object') ? rawMerged : {};
+  const safeClinicalCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+  const aluno = mergedData?.aluno || {};
+  const patient = safeClinicalCase?.patient || {};
+  const patName = mergedData?.dadosPacienteReal?.nome || patient?.name || "Paciente Simulado";
 
   const handlePrint = () => {
     window.print();

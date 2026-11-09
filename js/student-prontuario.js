@@ -32,25 +32,105 @@ class StudentProntuarioManager {
     }
     try {
       const parsed = JSON.parse(raw);
-      if (typeof parsed.orientacoesNutricionais !== "string") {
-        parsed.orientacoesNutricionais = parsed.orientacaoNutricional || "";
-      }
-      return parsed;
+      return this.sanitizeProntuarioPayload(parsed, caseId);
     } catch (e) {
       console.error("Erro ao carregar rascunho do prontuário:", e);
       return this.getEmptyProntuario(caseId);
     }
   }
 
+  // Sanitiza e blinda o prontuário contra estados nulos (null/undefined) usando optional chaining (?.) e fallbacks (|| [] e || {})
+  sanitizeProntuarioPayload(rawProntuario, fallbackCaseId = null) {
+    const raw = (rawProntuario && typeof rawProntuario === "object") ? rawProntuario : {};
+    const cId = raw?.caseId || fallbackCaseId || this.currentCaseId || "caso-padrao";
+    const empty = this.getEmptyProntuario(cId);
+
+    const rawPlano = Array.isArray(raw?.planejamentoAlimentar)
+      ? raw.planejamentoAlimentar.filter(Boolean)
+      : (Array.isArray(raw?.planejamentoAlimentar?.refeicoes)
+          ? raw.planejamentoAlimentar.refeicoes.filter(Boolean)
+          : (Array.isArray(raw?.cardapioItems) ? raw.cardapioItems.filter(Boolean) : null));
+
+    const safePlanejamento = (Array.isArray(rawPlano) && rawPlano.length > 0 ? rawPlano : (empty.planejamentoAlimentar || [])).map((m, idx) => ({
+      id: m?.id || `ref-${idx + 1}`,
+      refeicao: m?.refeicao || m?.nome || `Refeição ${idx + 1}`,
+      horario: m?.horario || "08:00",
+      preparacao: m?.preparacao ?? m?.tipoPreparacao ?? "",
+      tipoPreparacao: m?.tipoPreparacao ?? m?.preparacao ?? "",
+      itens: Array.isArray(m?.itens) ? m.itens.filter(Boolean) : [],
+      alimentos: m?.alimentos || "",
+      substituicoes: m?.substituicoes || "",
+      subtotal: (m?.subtotal && typeof m.subtotal === "object") ? m.subtotal : { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
+    }));
+
+    const rawConsumo = (raw?.consumoAlimentar && typeof raw.consumoAlimentar === "object") ? raw.consumoAlimentar : {};
+    const rawRefRec = Array.isArray(rawConsumo?.refeicoesRecordatorio)
+      ? rawConsumo.refeicoesRecordatorio.filter(Boolean)
+      : null;
+
+    const safeRefRec = (Array.isArray(rawRefRec) && rawRefRec.length > 0 ? rawRefRec : (empty.consumoAlimentar?.refeicoesRecordatorio || [])).map((m, idx) => ({
+      id: m?.id || `rec-${idx + 1}`,
+      refeicao: m?.refeicao || m?.nome || `Refeição ${idx + 1}`,
+      horario: m?.horario || "08:00",
+      preparacao: m?.preparacao ?? m?.tipoPreparacao ?? "",
+      tipoPreparacao: m?.tipoPreparacao ?? m?.preparacao ?? "",
+      itens: Array.isArray(m?.itens) ? m.itens.filter(Boolean) : [],
+      substituicoes: m?.substituicoes || "",
+      subtotal: (m?.subtotal && typeof m.subtotal === "object") ? m.subtotal : { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
+    }));
+
+    const orientacoes = String(raw?.orientacoesNutricionais ?? raw?.orientacaoNutricional ?? "").trim();
+
+    return {
+      ...empty,
+      ...raw,
+      caseId: cId,
+      aluno: { ...(empty.aluno || {}), ...(raw?.aluno && typeof raw.aluno === "object" ? raw.aluno : {}) },
+      dadosPacienteReal: { ...(empty.dadosPacienteReal || {}), ...(raw?.dadosPacienteReal && typeof raw.dadosPacienteReal === "object" ? raw.dadosPacienteReal : {}) },
+      anamnese: { ...(empty.anamnese || {}), ...(raw?.anamnese && typeof raw.anamnese === "object" ? raw.anamnese : {}) },
+      antropometria: { ...(empty.antropometria || {}), ...(raw?.antropometria && typeof raw.antropometria === "object" ? raw.antropometria : {}) },
+      bioquimica: {
+        ...(empty.bioquimica || {}),
+        ...(raw?.bioquimica && typeof raw.bioquimica === "object" ? raw.bioquimica : {}),
+        interpretacoes: (raw?.bioquimica?.interpretacoes && typeof raw.bioquimica.interpretacoes === "object") ? raw.bioquimica.interpretacoes : {},
+        exames: Array.isArray(raw?.bioquimica?.exames) ? raw.bioquimica.exames.filter(Boolean) : [],
+        listaCustom: Array.isArray(raw?.bioquimica?.listaCustom) ? raw.bioquimica.listaCustom.filter(Boolean) : []
+      },
+      interacaoDrogaNutriente: Array.isArray(raw?.interacaoDrogaNutriente) ? raw.interacaoDrogaNutriente.filter(Boolean) : [],
+      exameFisico: {
+        ...(empty.exameFisico || {}),
+        ...(raw?.exameFisico && typeof raw.exameFisico === "object" ? raw.exameFisico : {}),
+        orgaosSistemas: { ...(empty.exameFisico?.orgaosSistemas || {}), ...(raw?.exameFisico?.orgaosSistemas || {}) },
+        compartimentos: { ...(empty.exameFisico?.compartimentos || {}), ...(raw?.exameFisico?.compartimentos || {}) }
+      },
+      consumoAlimentar: {
+        ...(empty.consumoAlimentar || {}),
+        ...rawConsumo,
+        refeicoesRecordatorio: safeRefRec,
+        totaisRecordatorio: { ...(empty.consumoAlimentar?.totaisRecordatorio || {}), ...(rawConsumo?.totaisRecordatorio || {}) }
+      },
+      diagnosticoPES: { ...(empty.diagnosticoPES || {}), ...(raw?.diagnosticoPES && typeof raw.diagnosticoPES === "object" ? raw.diagnosticoPES : {}) },
+      calculoNecessidades: {
+        ...(empty.calculoNecessidades || {}),
+        ...(raw?.calculoNecessidades && typeof raw.calculoNecessidades === "object" ? raw.calculoNecessidades : {}),
+        formulasSelecionadas: Array.isArray(raw?.calculoNecessidades?.formulasSelecionadas) ? raw.calculoNecessidades.formulasSelecionadas : []
+      },
+      prescricaoDietoterapica: { ...(empty.prescricaoDietoterapica || {}), ...(raw?.prescricaoDietoterapica && typeof raw.prescricaoDietoterapica === "object" ? raw.prescricaoDietoterapica : {}) },
+      planejamentoAlimentar: safePlanejamento,
+      totaisCardapio: { ...(empty.totaisCardapio || {}), ...(raw?.totaisCardapio && typeof raw.totaisCardapio === "object" ? raw.totaisCardapio : {}) },
+      tne: { ...(empty.tne || {}), ...(raw?.tne && typeof raw.tne === "object" ? raw.tne : {}) },
+      respostasQuestoes: (raw?.respostasQuestoes && typeof raw.respostasQuestoes === "object") ? raw.respostasQuestoes : {},
+      orientacoesNutricionais: orientacoes
+    };
+  }
+
   // Salva rascunho no localStorage
   saveDraft(caseId, data, studentId) {
     this.currentCaseId = caseId;
-    if (data && typeof data === "object") {
-      data.orientacoesNutricionais = String(data.orientacoesNutricionais ?? data.orientacaoNutricional ?? "");
-    }
-    const sId = studentId || (data && (data.userId || data.aluno?.id)) || null;
+    const safeData = this.sanitizeProntuarioPayload(data, caseId);
+    const sId = studentId || safeData?.userId || safeData?.aluno?.id || null;
     const dynamicKey = this.getStorageKey(caseId, sId);
-    const json = JSON.stringify(data);
+    const json = JSON.stringify(safeData);
     localStorage.setItem(dynamicKey, json);
     // Mantém chave legada para retrocompatibilidade
     localStorage.setItem(`${this.draftKeyPrefix}${caseId}`, json);
@@ -58,11 +138,13 @@ class StudentProntuarioManager {
 
   // Constrói o payload final padronizado enviado ao Firebase (Simulação e Atendimento Real)
   buildSubmissionPayload(data = {}) {
-    const orientacoes = String(data.orientacoesNutricionais ?? data.orientacaoNutricional ?? "").trim();
+    const safeData = this.sanitizeProntuarioPayload(data, data?.caseId);
+    const orientacoes = String(safeData?.orientacoesNutricionais ?? safeData?.orientacaoNutricional ?? "").trim();
     return {
-      ...data,
+      ...safeData,
+      planejamentoAlimentar: safeData?.planejamentoAlimentar || [],
       orientacoesNutricionais: orientacoes,
-      dataFinalizacao: data.dataFinalizacao || new Date().toISOString()
+      dataFinalizacao: safeData?.dataFinalizacao || new Date().toISOString()
     };
   }
 
@@ -1357,44 +1439,58 @@ class StudentProntuarioManager {
     return "Atue como um professor avaliador de Nutrição Clínica. Faça uma análise minuciosa da resolução do caso clínico enviada pelo aluno, com forte embasamento científico (diretrizes como BRASPEN, SBC, etc.). Aponte acertos e erros no raciocínio clínico. Ao final, atribua uma nota exata de 0,0 a 10,0.";
   }
 
-  // Compila todas as respostas do aluno (anamnese, cálculos, conduta qualitativa/quantitativa) para envio à API de IA e E-mail
-  compileStudentResolutionForAI(prontuario, clinicalCase = {}) {
-    const p = prontuario || {};
-    const alunoNome = p.aluno?.nome || p.studentName || "Estudante de Nutrição";
-    const casoNome = clinicalCase?.title || p.caseTitle || p.caseId || "Caso Clínico Supervisionado";
-    const isQualitativo = Boolean(clinicalCase?.habilitarPlanejamentoQualitativo || p.habilitarPlanejamentoQualitativo);
+  // Destinatário Fixo Obrigatório do Professor para o Relatório Final
+  getFixedProfessorEmail() {
+    return "chagasnutri@gmail.com";
+  }
 
-    const anamnese = p.anamnese || {};
-    const antro = p.antropometria || {};
-    const pes = p.diagnosticoPES || {};
-    const calc = p.calculoNecessidades || {};
-    const presc = p.prescricaoDietoterapica || {};
-    const ca = p.consumoAlimentar || {};
-    const refRec = Array.isArray(ca.refeicoesRecordatorio) ? ca.refeicoesRecordatorio : [];
-    const plano = Array.isArray(p.planejamentoAlimentar) ? p.planejamentoAlimentar : [];
+  // Compila todas as respostas do aluno (anamnese, cálculos, conduta qualitativa/quantitativa) para envio à API de IA e E-mail
+  // 100% blindado contra valores nulos (null/undefined) com optional chaining (?.) e fallbacks (|| [] e || {})
+  compileStudentResolutionForAI(prontuario, clinicalCase = {}) {
+    const p = (prontuario && typeof prontuario === "object") ? prontuario : {};
+    const safeCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const alunoNome = p?.aluno?.nome || p?.studentName || "Estudante de Nutrição";
+    const casoNome = safeCase?.title || p?.caseTitle || p?.caseId || "Caso Clínico Supervisionado";
+    const isQualitativo = Boolean(safeCase?.habilitarPlanejamentoQualitativo || p?.habilitarPlanejamentoQualitativo);
+
+    const anamnese = (p?.anamnese && typeof p.anamnese === "object") ? p.anamnese : {};
+    const antro = (p?.antropometria && typeof p.antropometria === "object") ? p.antropometria : {};
+    const pes = (p?.diagnosticoPES && typeof p.diagnosticoPES === "object") ? p.diagnosticoPES : {};
+    const calc = (p?.calculoNecessidades && typeof p.calculoNecessidades === "object") ? p.calculoNecessidades : {};
+    const presc = (p?.prescricaoDietoterapica && typeof p.prescricaoDietoterapica === "object") ? p.prescricaoDietoterapica : {};
+    const ca = (p?.consumoAlimentar && typeof p.consumoAlimentar === "object") ? p.consumoAlimentar : {};
+    const refRec = Array.isArray(ca?.refeicoesRecordatorio)
+      ? ca.refeicoesRecordatorio.filter(Boolean)
+      : (Array.isArray(p?.recordatorioItems) ? p.recordatorioItems.filter(Boolean) : []);
+    const rawPlano = Array.isArray(p?.planejamentoAlimentar)
+      ? p.planejamentoAlimentar
+      : (Array.isArray(p?.planejamentoAlimentar?.refeicoes)
+          ? p.planejamentoAlimentar.refeicoes
+          : (Array.isArray(p?.cardapioItems) ? p.cardapioItems : []));
+    const plano = (rawPlano || []).filter(Boolean);
 
     const recLines = refRec
-      .filter((r) => (r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0))
+      .filter((r) => r && ((r?.preparacao || r?.tipoPreparacao) || (Array.isArray(r?.itens) && r.itens.length > 0) || r?.nome || r?.alimentos))
       .map((r) => {
-        const prep = r.preparacao || r.tipoPreparacao || "Não informada";
-        const itensStr = Array.isArray(r.itens)
-          ? r.itens.map((it) => `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"} / ${it.gramatura || 0}g)`).join(", ")
-          : r.alimentos || "";
-        return `  • ${r.refeicao || "Refeição"} (${r.horario || "--:--"}) | Preparação: ${prep} | Ingredientes: ${itensStr}`;
+        const prep = r?.preparacao || r?.tipoPreparacao || p?.recordatorioPreparacao || "Não informada";
+        const itensStr = Array.isArray(r?.itens) && r.itens.length > 0
+          ? r.itens.filter(Boolean).map((it) => `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g)`).join(", ")
+          : (r?.alimentos || (r?.nome ? `${r.nome} (${r?.qtd || 1} ${r?.medida || "porção"} / ${r?.gramas || 0}g)` : ""));
+        return `  • ${r?.refeicao || r?.nome || "Refeição"} (${r?.horario || "--:--"}) | Preparação: ${prep} | Ingredientes: ${itensStr}`;
       })
       .join("\n") || "  • Nenhuma refeição detalhada.";
 
     const planoLines = plano
-      .filter((r) => (r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0) || r.alimentos)
+      .filter((r) => r && ((r?.preparacao || r?.tipoPreparacao) || (Array.isArray(r?.itens) && r.itens.length > 0) || r?.alimentos || r?.nome))
       .map((r) => {
-        const prep = r.preparacao || r.tipoPreparacao || "Não informada";
-        const itensStr = Array.isArray(r.itens) && r.itens.length > 0
-          ? r.itens.map((it) => isQualitativo
-              ? `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"})`
-              : `${it.alimentoNome || it.nome} (${it.medidaCaseira || "1 porção"} / ${it.gramatura || 0}g - ${it.kcal || 0} kcal)`
+        const prep = r?.preparacao || r?.tipoPreparacao || p?.cardapioPreparacao || "Não informada";
+        const itensStr = Array.isArray(r?.itens) && r.itens.length > 0
+          ? r.itens.filter(Boolean).map((it) => isQualitativo
+              ? `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"})`
+              : `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g - ${it?.kcal ?? 0} kcal)`
             ).join(", ")
-          : (r.alimentos || "Não informado");
-        return `  • ${r.refeicao || "Refeição"} (${r.horario || "--:--"}) | Preparação: ${prep} | Alimentos: ${itensStr}`;
+          : (r?.alimentos || (r?.nome ? (isQualitativo ? `${r.nome} (${r?.medida || "1 porção"})` : `${r.nome} (${r?.medida || "1 porção"} / ${r?.gramas || 0}g - ${r?.kcal || 0} kcal)`) : "Não informado"));
+        return `  • ${r?.refeicao || r?.nome || "Refeição"} (${r?.horario || "--:--"}) | Preparação: ${prep} | Alimentos: ${itensStr}`;
       })
       .join("\n") || "  • Nenhuma refeição planejada.";
 
@@ -1405,68 +1501,201 @@ class StudentProntuarioManager {
       `Modalidade de Planejamento: ${isQualitativo ? "Planejamento Alimentar Qualitativo (Foco Comportamental)" : "Planejamento Quali-Quantitativo Completo"}`,
       ``,
       `1. ANAMNESE E AVALIAÇÃO ANTROPOMÉTRICA:`,
-      `- Queixa Principal / HDA: ${anamnese.queixaPrincipal || "---"} / ${anamnese.historiaClinica || p.evolucaoTexto || "---"}`,
-      `- Peso / Estatura / IMC: ${antro.pesoAtual || p.peso || "--"} kg | ${antro.estatura || p.estatura || "--"} m | IMC: ${antro.imc || "--"} kg/m² (${antro.diagnosticoNutricionalExtenso || "--"})`,
+      `- Queixa Principal / HDA: ${anamnese?.queixaPrincipal || "---"} / ${anamnese?.historiaClinica || p?.evolucaoTexto || "---"}`,
+      `- Peso / Estatura / IMC: ${antro?.pesoAtual || p?.peso || "--"} kg | ${antro?.estatura || p?.estatura || "--"} m | IMC: ${antro?.imc || "--"} kg/m² (${antro?.diagnosticoNutricionalExtenso || "--"})`,
       ``,
       `2. RECORDATÓRIO DE 24H (CONSUMO HABITUAL E PREPARAÇÕES):`,
       recLines,
       ``,
       `3. DIAGNÓSTICO EM NUTRIÇÃO (PES) E OBJETIVOS:`,
-      `- Diagnóstico PES: ${pes.textoCompletoPES || p.diagnosticoPESTexto || "---"}`,
-      `- Objetivos Dietoterápicos: ${pes.objetivosDietoterapicos || p.objetivosDietoterapicos || "---"}`,
+      `- Diagnóstico PES: ${pes?.textoCompletoPES || p?.diagnosticoPESTexto || "---"}`,
+      `- Objetivos Dietoterápicos: ${pes?.objetivosDietoterapicos || p?.objetivosDietoterapicos || "---"}`,
       ``,
       `4. CÁLCULO DE NECESSIDADES ENERGÉTICAS E PRESCRIÇÃO DIETOTERÁPICA:`,
-      `- VET Planejado: ${calc.vetPlanejadoKcal || presc.vetKcal || p.prescricaoVET || "---"} kcal/dia`,
-      `- Justificativa do Cálculo: ${calc.justificativaEscolha || p.notasCalculo || "---"}`,
-      `- Distribuição Prescrita: CHO ${presc.carboidratosPct || p.prescricaoCHO || "--"}% | PTN ${presc.proteinasPct || p.prescricaoPTN || "--"}% | LIP ${presc.lipidiosPct || p.prescricaoLIP || "--"}%`,
-      `- Conduta Dietoterápica: ${presc.justificativaFisiopatologica || p.condutaPrescricao || "---"}`,
+      `- VET Planejado: ${calc?.vetPlanejadoKcal || presc?.vetKcal || p?.prescricaoVET || "---"} kcal/dia`,
+      `- Justificativa do Cálculo: ${calc?.justificativaEscolha || p?.notasCalculo || "---"}`,
+      `- Distribuição Prescrita: CHO ${presc?.carboidratosPct || p?.prescricaoCHO || "--"}% | PTN ${presc?.proteinasPct || p?.prescricaoPTN || "--"}% | LIP ${presc?.lipidiosPct || p?.prescricaoLIP || "--"}%`,
+      `- Conduta Dietoterápica: ${presc?.justificativaFisiopatologica || p?.condutaPrescricao || "---"}`,
       ``,
       `5. PLANEJAMENTO ALIMENTAR / CARDÁPIO (COM PREPARAÇÕES):`,
       planoLines,
       ``,
       `6. ORIENTAÇÕES NUTRICIONAIS E ALTA:`,
-      `${p.orientacoesNutricionais || "---"}`
+      `${p?.orientacoesNutricionais || "---"}`
     ].join("\n");
   }
 
-  // Constrói o payload formatado de e-mail para o professor vinculado ao caso
-  buildProfessorEvaluationEmailPayload({ studentName, caseTitle, professorEmail, resolutionText, avaliacaoIA, notaFinal }) {
-    const to = String(professorEmail || "professor@dietocase.edu.br").trim();
-    const subject = `[DietoCase - Correção IA] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"} (Nota: ${notaFinal || "8,5"}/10,0)`;
+  // Constrói o payload formatado de e-mail para o professor vinculado ao caso (Destinatário Fixo Obrigatório: chagasnutri@gmail.com)
+  buildProfessorEvaluationEmailPayload(params = {}) {
+    const {
+      studentName,
+      caseTitle,
+      professorEmail,
+      dataHora,
+      resolutionText,
+      avaliacaoIA,
+      notaFinal,
+      habilitarCorrecaoAutomaticaIA
+    } = params || {};
+
+    const to = this.getFixedProfessorEmail();
+    const timestampStr = String(
+      dataHora ||
+      new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    ).trim();
+    const hasAi = Boolean(habilitarCorrecaoAutomaticaIA ?? (avaliacaoIA || notaFinal));
+    const subject = hasAi
+      ? `[DietoCase - Relatório Final + Correção IA] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"} (Nota: ${notaFinal || "8,5"}/10,0)`
+      : `[DietoCase - Relatório Final] ${caseTitle || "Caso Clínico"} - Aluno(a): ${studentName || "Estudante"}`;
+
+    const aiSection = hasAi
+      ? [
+          `Nota Final Atribuída pela IA: ${notaFinal || "8,5"} / 10,0`,
+          `====================================================================`,
+          ``,
+          `--- CÓPIA INTEGRAL DA AVALIAÇÃO DA IA COM A NOTA FINAL ---`,
+          avaliacaoIA || ""
+        ].join("\n")
+      : `====================================================================`;
+
     const textBody = [
-      `RELATÓRIO DE CORREÇÃO AUTOMÁTICA POR IA — DIETOCASE`,
+      `RELATÓRIO FINAL DO CASO CLÍNICO — DIETOCASE`,
       `====================================================================`,
+      `Destinatário Fixo: ${to}`,
       `Nome do Aluno: ${studentName || "Estudante de Nutrição"}`,
-      `Nome do Caso: ${caseTitle || "Caso Clínico Supervisionado"}`,
-      `Nota Final Atribuída pela IA: ${notaFinal || "8,5"} / 10,0`,
-      `====================================================================`,
+      `Título do Caso Clínico / Nome do Caso: ${caseTitle || "Caso Clínico Supervisionado"}`,
+      `Data/Hora de Finalização: ${timestampStr}`,
+      aiSection,
       ``,
-      `--- CÓPIA INTEGRAL DA AVALIAÇÃO DA IA COM A NOTA FINAL ---`,
-      avaliacaoIA || "",
-      ``,
-      `--- CÓPIA COMPLETA DA RESOLUÇÃO DO ALUNO ---`,
+      `--- CÓPIA COMPLETA DO RELATÓRIO FINAL GERADO PELO ALUNO ---`,
       resolutionText || ""
     ].join("\n");
 
     return {
       to,
+      recipientFixed: to,
+      professorEmailSecondary: professorEmail || to,
       subject,
       studentName: studentName || "Estudante de Nutrição",
       caseTitle: caseTitle || "Caso Clínico Supervisionado",
-      notaFinal: notaFinal || "8,5",
+      dataHora: timestampStr,
+      habilitarCorrecaoAutomaticaIA: hasAi,
+      notaFinal: hasAi ? (notaFinal || "8,5") : null,
       resolutionText: resolutionText || "",
-      avaliacaoIA: avaliacaoIA || "",
+      avaliacaoIA: hasAi ? (avaliacaoIA || "") : null,
       text: textBody
     };
   }
 
+  // Disparo Automático e Assíncrono (Não-Bloqueante) de E-mail do Relatório Final para chagasnutri@gmail.com
+  dispatchFinalReportEmailAsync(prontuario, clinicalCase = {}, options = {}) {
+    const safeProntuario = this.sanitizeProntuarioPayload(prontuario, clinicalCase?.id || prontuario?.caseId);
+    const safeCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const studentName = String(
+      options?.studentName ||
+      safeProntuario?.aluno?.nome ||
+      safeProntuario?.studentName ||
+      "Estudante de Nutrição"
+    ).trim();
+    const caseTitle = String(
+      options?.caseTitle ||
+      safeCase?.title ||
+      safeProntuario?.caseTitle ||
+      safeProntuario?.caseId ||
+      "Caso Clínico Supervisionado"
+    ).trim();
+    const dataHora = String(
+      options?.dataHora ||
+      new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    ).trim();
+    const habilitarCorrecaoAutomaticaIA = Boolean(
+      options?.habilitarCorrecaoAutomaticaIA ??
+      safeCase?.habilitarCorrecaoAutomaticaIA ??
+      safeProntuario?.habilitarCorrecaoAutomaticaIA
+    );
+    const notaFinal = String(options?.notaFinal || safeProntuario?.notaIA || "").trim();
+    const avaliacaoIA = String(options?.avaliacaoIA || safeProntuario?.avaliacaoIA || "").trim();
+    const relatorioFinalTexto = String(
+      options?.relatorioFinalTexto ||
+      this.compileStudentResolutionForAI(safeProntuario, safeCase)
+    ).trim();
+    const relatorioFinalHtml = String(options?.relatorioFinalHtml || "").trim();
+
+    const emailPayload = this.buildProfessorEvaluationEmailPayload({
+      studentName,
+      caseTitle,
+      professorEmail: this.getFixedProfessorEmail(),
+      dataHora,
+      resolutionText: relatorioFinalTexto,
+      avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : "",
+      notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : "",
+      habilitarCorrecaoAutomaticaIA
+    });
+
+    // Processo assíncrono em background para não travar a tela de carregamento do usuário final
+    const backgroundPromise = (async () => {
+      let apiDispatched = false;
+      try {
+        if (typeof fetch === "function") {
+          const resp = await fetch("/api/enviar-relatorio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: this.getFixedProfessorEmail(),
+              studentName,
+              caseTitle,
+              dataHora,
+              habilitarCorrecaoAutomaticaIA,
+              notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
+              avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
+              relatorioFinalTexto,
+              relatorioFinalHtml,
+              resolutionData: safeProntuario
+            })
+          });
+          if (resp && resp.ok) {
+            apiDispatched = true;
+          }
+        }
+      } catch (e) {
+        console.warn("⚠️ Aviso no disparo assíncrono via /api/enviar-relatorio:", e);
+      }
+
+      if (typeof firebaseSyncService !== "undefined" && firebaseSyncService && typeof firebaseSyncService.saveMailTrigger === "function") {
+        try {
+          await firebaseSyncService.saveMailTrigger(emailPayload);
+        } catch (fbErr) {
+          console.warn("⚠️ Aviso ao salvar trigger de e-mail no Firestore:", fbErr);
+        }
+      }
+
+      return {
+        success: true,
+        to: this.getFixedProfessorEmail(),
+        recipient: this.getFixedProfessorEmail(),
+        studentName,
+        caseTitle,
+        dataHora,
+        habilitarCorrecaoAutomaticaIA,
+        notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
+        avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
+        apiDispatched,
+        emailPayload
+      };
+    })();
+
+    return backgroundPromise;
+  }
+
   // Executa a avaliação automática por IA (via /api/correcao-ia com fallback científico determinístico BRASPEN/SBC) e dispara o e-mail ao professor
   async evaluateCaseWithAI(prontuario, clinicalCase = {}) {
+    const safeProntuario = this.sanitizeProntuarioPayload(prontuario, clinicalCase?.id || prontuario?.caseId);
     const systemPrompt = this.getAiEvaluatorSystemPrompt();
-    const studentName = prontuario?.aluno?.nome || prontuario?.studentName || "Estudante de Nutrição";
-    const caseTitle = clinicalCase?.title || prontuario?.caseTitle || prontuario?.caseId || "Caso Clínico Supervisionado";
-    const professorEmail = clinicalCase?.professorEmail || prontuario?.professorEmail || "professor@dietocase.edu.br";
-    const resolutionText = this.compileStudentResolutionForAI(prontuario, clinicalCase);
+    const studentName = safeProntuario?.aluno?.nome || safeProntuario?.studentName || "Estudante de Nutrição";
+    const caseTitle = clinicalCase?.title || safeProntuario?.caseTitle || safeProntuario?.caseId || "Caso Clínico Supervisionado";
+    const professorEmail = this.getFixedProfessorEmail();
+    const dataHora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const resolutionText = this.compileStudentResolutionForAI(safeProntuario, clinicalCase);
 
     try {
       if (typeof fetch === "function") {
@@ -1474,13 +1703,15 @@ class StudentProntuarioManager {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            studentId: prontuario?.aluno?.id || prontuario?.studentId || "aluno-demo",
+            studentId: safeProntuario?.aluno?.id || safeProntuario?.studentId || "aluno-demo",
             studentName,
-            caseId: clinicalCase?.id || prontuario?.caseId || "caso-clinico",
+            caseId: clinicalCase?.id || safeProntuario?.caseId || "caso-clinico",
             caseTitle,
             professorEmail,
+            dataHora,
             systemPrompt,
-            resolutionData: prontuario
+            studentResolution: safeProntuario,
+            resolutionData: safeProntuario
           })
         });
         if (resp && resp.ok) {
@@ -1492,16 +1723,19 @@ class StudentProntuarioManager {
               studentName,
               caseTitle,
               professorEmail,
+              dataHora,
               notaFinal: json.notaFinal || "9,0",
               avaliacaoIA: json.avaliacaoIA,
-              resolutionText: json.resolutionText || resolutionText,
+              resolutionText: json.resolutionText || json.resolucaoCompleta || resolutionText,
               emailPayload: json.emailPayload || this.buildProfessorEvaluationEmailPayload({
                 studentName,
                 caseTitle,
                 professorEmail,
+                dataHora,
                 resolutionText,
                 avaliacaoIA: json.avaliacaoIA,
-                notaFinal: json.notaFinal || "9,0"
+                notaFinal: json.notaFinal || "9,0",
+                habilitarCorrecaoAutomaticaIA: true
               }),
               emailDispatched: true
             };
@@ -1533,9 +1767,11 @@ class StudentProntuarioManager {
       studentName,
       caseTitle,
       professorEmail,
+      dataHora,
       resolutionText,
       avaliacaoIA,
-      notaFinal
+      notaFinal,
+      habilitarCorrecaoAutomaticaIA: true
     });
 
     // Se o Firebase estiver configurado, registra também na coleção 'mail' (Firebase Email Trigger)
@@ -1553,6 +1789,7 @@ class StudentProntuarioManager {
       studentName,
       caseTitle,
       professorEmail,
+      dataHora,
       notaFinal,
       avaliacaoIA,
       resolutionText,

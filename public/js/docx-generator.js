@@ -116,33 +116,35 @@ class DietoterapiaDocxReport {
     return true;
   }
 
-  static buildReportDocument(studentData, clinicalCase) {
+  static buildReportDocument(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     const doc = new MiniDocx();
     // Configuração do componente nativo de Rodapé (Footer) do Word para todas as páginas
     doc.setFooter("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
 
-    const aluno = studentData.aluno || {};
-    const anamnese = studentData.anamnese || {};
-    const antro = studentData.antropometria || {};
-    const bio = studentData.bioquimica || {};
-    const ef = studentData.exameFisico || {};
-    const ca = studentData.consumoAlimentar || {};
-    const pes = studentData.diagnosticoPES || {};
-    const presc = studentData.prescricaoDietoterapica || {};
-    const rawPlano = studentData.planejamentoAlimentar;
-    const plano = Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : []);
-    const respostas = studentData.respostasQuestoes || {};
+    const aluno = studentData?.aluno || {};
+    const anamnese = studentData?.anamnese || {};
+    const antro = studentData?.antropometria || {};
+    const bio = studentData?.bioquimica || {};
+    const ef = studentData?.exameFisico || {};
+    const ca = studentData?.consumoAlimentar || {};
+    const pes = studentData?.diagnosticoPES || {};
+    const presc = studentData?.prescricaoDietoterapica || {};
+    const rawPlano = studentData?.planejamentoAlimentar || studentData?.cardapioItems || [];
+    const plano = (Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : [])).filter(Boolean);
+    const respostas = studentData?.respostasQuestoes || {};
 
-    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
-    const realPat = studentData.dadosPacienteReal || {};
-    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase.patient || {}) : (clinicalCase.patient || {});
+    const isRealPatient = studentData?.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const realPat = studentData?.dadosPacienteReal || {};
+    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase?.patient || {}) : (clinicalCase?.patient || {});
     const patName = isRealPatient ? (realPat.nome || "Paciente Real") : (patient.name || "Paciente");
     const patAge = isRealPatient ? (realPat.idade ? `${realPat.idade} anos` : "--") : (patient.age ? `${patient.age} anos` : "--");
     const patGender = isRealPatient ? (realPat.sexo || "--") : (patient.gender || "--");
     const patOccupation = isRealPatient ? (realPat.ocupacao || patient.occupation || "Não informada") : (patient.occupation || "Não informada");
 
     // Hipótese Diagnóstica / Diagnóstico Médico de Base
-    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase.hipoteseDiagnostica || clinicalCase.history?.hipoteseDiagnostica || "Não informada";
+    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase?.hipoteseDiagnostica || clinicalCase?.history?.hipoteseDiagnostica || "Não informada";
 
     // 1. CABEÇALHO INSTITUCIONAL
     doc.addParagraph("DIETOCASE - DISCIPLINA DE DIETOTERAPIA", {
@@ -799,18 +801,20 @@ class DietoterapiaDocxReport {
   }
 
   // 1.1, 1.2, 1.3: Seção Anamnese & Histórico Clínico
-  static renderAnamneseSectionHtml(studentData, clinicalCase = {}) {
+  static renderAnamneseSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("anamnese", clinicalCase)) return null;
 
-    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
-    const anamnese = studentData.anamnese || {};
-    const realPat = studentData.dadosPacienteReal || {};
-    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase.patient || {}) : (clinicalCase.patient || {});
+    const isRealPatient = studentData?.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const anamnese = studentData?.anamnese || {};
+    const realPat = studentData?.dadosPacienteReal || {};
+    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase?.patient || {}) : (clinicalCase?.patient || {});
     const patName = isRealPatient ? (realPat.nome || "Paciente Real") : (patient.name || "Paciente Simulado");
     const patAge = isRealPatient ? (realPat.idade ? `${realPat.idade} anos` : "Não informada / ---") : (patient.age ? `${patient.age} anos` : "Não informada / ---");
     const patGender = isRealPatient ? (realPat.genero || realPat.sexo || "Não informado / ---") : (patient.gender || "Não informado / ---");
     const patOccupation = isRealPatient ? (realPat.historicoSocial?.profissao || realPat.profissao || realPat.ocupacao || patient.occupation || "Não informada / ---") : (patient.occupation || "Não informada / ---");
-    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase.hipoteseDiagnostica || clinicalCase.history?.hipoteseDiagnostica || "Não informada / ---";
+    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || anamnese.hipoteseDiagnostica || clinicalCase?.hipoteseDiagnostica || clinicalCase?.history?.hipoteseDiagnostica || "Não informada / ---";
 
     return `
       <h3 class="subsec-heading">1.1. Identificação do Paciente & Histórico Social</h3>
@@ -842,26 +846,30 @@ class DietoterapiaDocxReport {
   }
 
   // 1.4: Seção Interações Droga-Nutriente & Farmacoterapia
-  static renderDrogaNutrienteSectionHtml(studentData, clinicalCase = {}) {
+  static renderDrogaNutrienteSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("droganutriente", clinicalCase)) return null;
 
     return `
       <h3 class="subsec-heading">1.4. Interações Droga-Nutriente & Farmacoterapia Aplicada</h3>
       ${this.renderTableHtml(
         ["Medicação (Nome do remédio em uso)", "Classificação (Classe farmacológica)", "Interação (Descrição manual da interação)"],
-        (Array.isArray(studentData.interacaoDrogaNutriente) && studentData.interacaoDrogaNutriente.length > 0)
-          ? studentData.interacaoDrogaNutriente.map(i => [i.medicacao || i.medicamento || "---", i.classificacao || i.nutrientes || "---", i.interacao || i.conduta || "---"])
+        (Array.isArray(studentData?.interacaoDrogaNutriente) && studentData.interacaoDrogaNutriente.length > 0)
+          ? studentData.interacaoDrogaNutriente.filter(Boolean).map(i => [i?.medicacao || i?.medicamento || "---", i?.classificacao || i?.nutrientes || "---", i?.interacao || i?.conduta || "---"])
           : [["---", "---", "Nenhuma interação medicamentosa registrada / Não preenchido"]]
       )}
-      <p><strong>Observações Farmacoterapêuticas:</strong> ${studentData.observacoesFarmacoterapia || "Não preenchido / ---"}</p>
+      <p><strong>Observações Farmacoterapêuticas:</strong> ${studentData?.observacoesFarmacoterapia || "Não preenchido / ---"}</p>
     `;
   }
 
   // 1.5: Seção Avaliação Antropométrica
-  static renderAntropometriaSectionHtml(studentData, clinicalCase = {}) {
+  static renderAntropometriaSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("antropometria", clinicalCase)) return null;
 
-    const antro = studentData.antropometria || {};
+    const antro = studentData?.antropometria || {};
     return `
       <h3 class="subsec-heading">1.5. Avaliação Antropométrica e Estado Nutricional</h3>
       ${antro.triagemNutricional?.tipo === "hospitalar"
@@ -917,20 +925,22 @@ class DietoterapiaDocxReport {
   }
 
   // 1.6: Seção Avaliação Bioquímica
-  static renderBioquimicaSectionHtml(studentData, clinicalCase = {}) {
+  static renderBioquimicaSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("bioquimica", clinicalCase)) return null;
 
-    const bio = studentData.bioquimica || {};
+    const bio = studentData?.bioquimica || {};
     return `
       <h3 class="subsec-heading">1.6. Avaliação Bioquímica Relevante e Raciocínio Clínico</h3>
       ${this.renderTableHtml(
         ["Exame Bioquímico", "Valor de Referência", "Valor Achado", "Interpretação Clínica do Aluno"],
         (Array.isArray(bio.exames) && bio.exames.length > 0)
-          ? bio.exames.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
+          ? bio.exames.filter(Boolean).map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
           : ((Array.isArray(bio.listaCustom) && bio.listaCustom.length > 0)
-            ? bio.listaCustom.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
+            ? bio.listaCustom.filter(Boolean).map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (item.interpretacao && typeof item.interpretacao === "string" && item.interpretacao.trim()) ? item.interpretacao.trim() : ((bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---")])
             : ((Array.isArray(clinicalCase?.bioquimica) && clinicalCase.bioquimica.length > 0)
-              ? clinicalCase.bioquimica.map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---"])
+              ? clinicalCase.bioquimica.filter(Boolean).map(item => [item.exame || "Não preenchido", item.referencia || "---", item.valor || "Não preenchido", (bio.interpretacoes && typeof bio.interpretacoes[item.exame] === "string" && bio.interpretacoes[item.exame].trim()) ? bio.interpretacoes[item.exame].trim() : "Não preenchido / ---"])
               : [["---", "---", "Não preenchido", "Nenhum exame laboratorial registrado nesta avaliação"]]))
       )}
       <p><strong>Exames Laboratoriais Apurados / Anotações:</strong> ${bio.examesRelevantes || "Não preenchido / ---"}</p>
@@ -944,10 +954,12 @@ class DietoterapiaDocxReport {
   }
 
   // 1.7: Seção Exame Físico Nutricional
-  static renderExameFisicoSectionHtml(studentData, clinicalCase = {}) {
+  static renderExameFisicoSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("examefisico", clinicalCase)) return null;
 
-    const ef = studentData.exameFisico || {};
+    const ef = studentData?.exameFisico || {};
     return `
       <h3 class="subsec-heading">1.7. Exame Físico Nutricional e Semiologia Clínica</h3>
       ${this.renderTableHtml(
@@ -975,10 +987,12 @@ class DietoterapiaDocxReport {
   }
 
   // 1.8: Seção Consumo Alimentar & R24h
-  static renderConsumoSectionHtml(studentData, clinicalCase = {}) {
+  static renderConsumoSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("consumo", clinicalCase)) return null;
 
-    const ca = studentData.consumoAlimentar || {};
+    const ca = studentData?.consumoAlimentar || {};
     return `
       <h3 class="subsec-heading">1.8. Consumo Alimentar e Inquérito Nutricional</h3>
       <p><strong>Resumo do Recordatório Alimentar / Padrão Dietético:</strong> ${ca.inqueritoResumo || "Não preenchido / ---"}</p>
@@ -987,10 +1001,10 @@ class DietoterapiaDocxReport {
       <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h</h3>
       ${this.renderTableHtml(
         ["Refeição e Horário", "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
-        (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)))
-          ? ca.refeicoesRecordatorio.filter(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)).map(r => {
+        (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => r && ((r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))))
+          ? ca.refeicoesRecordatorio.filter(r => r && ((r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))).map(r => {
               const prep = r.preparacao || r.tipoPreparacao || "";
-              const itensStr = (r.itens || []).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
+              const itensStr = (r.itens || []).filter(Boolean).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
               return [
                 `${r.refeicao} (${r.horario || '--:--'})`,
                 (prep ? `Preparação: ${prep}\n` : "") + itensStr
@@ -1021,10 +1035,12 @@ class DietoterapiaDocxReport {
   }
 
   // 2.1: Diagnóstico PES e Metas
-  static renderPesSectionHtml(studentData, clinicalCase = {}) {
+  static renderPesSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("pes", clinicalCase)) return null;
 
-    const pes = studentData.diagnosticoPES || {};
+    const pes = studentData?.diagnosticoPES || {};
     return `
       <h3 class="subsec-heading">2.1. Diagnóstico em Nutrição (Metodologia PES)</h3>
       ${this.renderCalloutHtml(
@@ -1042,11 +1058,13 @@ class DietoterapiaDocxReport {
   }
 
   // 2.2: Cálculos de Necessidades Energéticas
-  static renderNecessidadesSectionHtml(studentData, clinicalCase = {}) {
+  static renderNecessidadesSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("necessidades", clinicalCase)) return null;
 
-    const calc = studentData.calculoNecessidades || {};
-    const presc = studentData.prescricaoDietoterapica || {};
+    const calc = studentData?.calculoNecessidades || {};
+    const presc = studentData?.prescricaoDietoterapica || {};
     return `
       <h3 class="subsec-heading">2.2. Cálculos de Necessidades Energéticas e Equações Preditivas</h3>
       ${this.renderTableHtml(
@@ -1089,11 +1107,13 @@ class DietoterapiaDocxReport {
   }
 
   // 2.3 & 2.4: Prescrição Dietoterápica & Conduta
-  static renderPrescricaoSectionHtml(studentData, clinicalCase = {}) {
+  static renderPrescricaoSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("prescricao", clinicalCase)) return null;
 
-    const presc = studentData.prescricaoDietoterapica || {};
-    const viaAlimentacao = (studentData.tne?.viaAlimentacao || studentData.viaAlimentacao || presc.viaAlimentacao || "oral").toLowerCase();
+    const presc = studentData?.prescricaoDietoterapica || {};
+    const viaAlimentacao = (studentData?.tne?.viaAlimentacao || studentData?.viaAlimentacao || presc.viaAlimentacao || "oral").toLowerCase();
     const isTne = viaAlimentacao === "tne";
 
     return `
@@ -1108,7 +1128,7 @@ class DietoterapiaDocxReport {
           ["Lipídios (LIP - 9 kcal/g)", presc.distribuicaoMacros?.lip ? `${presc.distribuicaoMacros.lip.minPct}% a ${presc.distribuicaoMacros.lip.maxPct}%` : `${presc.lipidiosPct || '--'}%`, presc.distribuicaoMacros?.lip ? `${presc.distribuicaoMacros.lip.minKcal} a ${presc.distribuicaoMacros.lip.maxKcal} kcal (${presc.distribuicaoMacros.lip.minG}g a ${presc.distribuicaoMacros.lip.maxG}g)` : `${presc.lipidiosG || '--'} g`],
           ["Via de Alimentação Prescrita", isTne ? "Terapia Nutricional Enteral (TNE)" : "Via Oral", isTne ? "Aporte enteral especializado" : "Alimentação por via oral"],
           ...(isTne ? [] : [
-            ["Consistência da Dieta", presc.consistencia || studentData.consistenciaDietaOral || "Normal", "-"],
+            ["Consistência da Dieta", presc.consistencia || studentData?.consistenciaDietaOral || "Normal", "-"],
             ["Fracionamento", presc.fracionamento || "5 a 6 refeições", "-"]
           ])
         ]
@@ -1121,17 +1141,19 @@ class DietoterapiaDocxReport {
   }
 
   // Seção 3: Cardápio TACO ou TNE
-  static renderCardapioSectionHtml(studentData, clinicalCase = {}) {
+  static renderCardapioSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("cardapio", clinicalCase)) return null;
 
-    const presc = studentData.prescricaoDietoterapica || {};
-    const rawPlano = studentData.planejamentoAlimentar;
-    const plano = Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : []);
-    const viaAlimentacao = (studentData.tne?.viaAlimentacao || studentData.viaAlimentacao || presc.viaAlimentacao || "oral").toLowerCase();
+    const presc = studentData?.prescricaoDietoterapica || {};
+    const rawPlano = studentData?.planejamentoAlimentar || studentData?.cardapioItems || [];
+    const plano = (Array.isArray(rawPlano) ? rawPlano : (Array.isArray(rawPlano?.refeicoes) ? rawPlano.refeicoes : [])).filter(Boolean);
+    const viaAlimentacao = (studentData?.tne?.viaAlimentacao || studentData?.viaAlimentacao || presc.viaAlimentacao || "oral").toLowerCase();
     const isTne = viaAlimentacao === "tne";
-    const tne = studentData.tne || {};
+    const tne = studentData?.tne || {};
 
-    let totaisCardapio = studentData.totaisCardapio || {};
+    let totaisCardapio = studentData?.totaisCardapio || {};
     if (!totaisCardapio.vetTotalKcal) {
       let sumKcal = 0, sumCho = 0, sumPtn = 0, sumLip = 0, sumFib = 0, sumCa = 0, sumFe = 0, sumNa = 0, sumK = 0;
       plano.forEach(ref => {
@@ -1270,11 +1292,13 @@ class DietoterapiaDocxReport {
   }
 
   // Seção 4: Questões Avaliativas
-  static renderQuestoesSectionHtml(studentData, clinicalCase = {}) {
-    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
+  static renderQuestoesSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const isRealPatient = studentData?.isRealPatient === true || clinicalCase?.isRealCase === true;
     if (isRealPatient || !this.isSectionLiberada("questoes", clinicalCase)) return null;
 
-    const respostas = studentData.respostasQuestoes || {};
+    const respostas = studentData?.respostasQuestoes || {};
     return `
       <h2 class="sec-heading">4. AVALIAÇÃO ACADÊMICA & PRECEPTORIA CLÍNICA</h2>
       ${(clinicalCase.questoesAvaliativas && clinicalCase.questoesAvaliativas.length > 0)
@@ -1292,7 +1316,9 @@ class DietoterapiaDocxReport {
   // Seção Final Condicional: Orientações Nutricionais (Simulação e Atendimento Real)
   // Só deve aparecer no PDF/Relatório se a aba estiver liberada para o aluno (nas configurações do professor)
   // E se o aluno tiver de fato preenchido algum conteúdo nela (ignorar se estiver vazia).
-  static renderOrientacoesSectionHtml(studentData, clinicalCase = {}) {
+  static renderOrientacoesSectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("orientacao", clinicalCase)) return null;
     const texto = String(studentData?.orientacoesNutricionais || studentData?.orientacaoNutricional || "").trim();
     if (!texto) return null;
@@ -1304,16 +1330,18 @@ class DietoterapiaDocxReport {
   }
 
   // Constrói relatório HTML completo (espelho 100% fiel com esqueleto imutável) para visualização e impressão direta em PDF
-  static buildHtmlReport(studentData, clinicalCase = {}) {
-    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
-    const aluno = studentData.aluno || {};
-    const realPat = studentData.dadosPacienteReal || {};
-    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase.patient || {}) : (clinicalCase.patient || {});
+  static buildHtmlReport(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const isRealPatient = studentData?.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const aluno = studentData?.aluno || {};
+    const realPat = studentData?.dadosPacienteReal || {};
+    const patient = isRealPatient ? (realPat.nome ? realPat : clinicalCase?.patient || {}) : (clinicalCase?.patient || {});
     const patName = isRealPatient ? (realPat.nome || "Paciente Real") : (patient.name || "Paciente Simulado");
     const patAge = isRealPatient ? (realPat.idade ? `${realPat.idade} anos` : "Não informada / ---") : (patient.age ? `${patient.age} anos` : "Não informada / ---");
     const patGender = isRealPatient ? (realPat.genero || realPat.sexo || "Não informado / ---") : (patient.gender || "Não informado / ---");
     const patOccupation = isRealPatient ? (realPat.historicoSocial?.profissao || realPat.profissao || realPat.ocupacao || patient.occupation || "Não informada / ---") : (patient.occupation || "Não informada / ---");
-    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || studentData.anamnese?.hipoteseDiagnostica || clinicalCase.hipoteseDiagnostica || clinicalCase.history?.hipoteseDiagnostica || "Não informada / ---";
+    const hipoteseDiagnostica = realPat.hipoteseDiagnostica || studentData?.anamnese?.hipoteseDiagnostica || clinicalCase?.hipoteseDiagnostica || clinicalCase?.history?.hipoteseDiagnostica || "Não informada / ---";
 
     const dataFormatada = (isRealPatient && realPat.dataAtendimento)
       ? realPat.dataAtendimento.split("-").reverse().join("/")
@@ -1553,12 +1581,14 @@ class DietoterapiaDocxReport {
     }
   }
 
-  static generateReport(studentData, clinicalCase) {
+  static generateReport(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     const doc = this.buildReportDocument(studentData, clinicalCase);
-    const aluno = studentData.aluno || {};
+    const aluno = studentData?.aluno || {};
     const cleanStudentName = (aluno.nome || "Estudante").replace(/[^a-zA-Z0-9]/g, "_");
-    const isRealPatient = studentData.isRealPatient === true || clinicalCase?.isRealCase === true;
-    const caseTag = isRealPatient ? "Atendimento_Real" : (clinicalCase.id || "caso");
+    const isRealPatient = studentData?.isRealPatient === true || clinicalCase?.isRealCase === true;
+    const caseTag = isRealPatient ? "Atendimento_Real" : (clinicalCase?.id || "caso");
     const filename = `DietoCase_Relatorio_${cleanStudentName}_${caseTag}.docx`;
     doc.download(filename);
     return doc;

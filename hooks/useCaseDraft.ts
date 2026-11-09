@@ -134,6 +134,7 @@ export interface CaseDraftData {
   // 7. Cardápio TACO / Planejamento Dietético (Quali-Quantitativo ou Qualitativo)
   cardapioPreparacao?: string;
   cardapioItems: CardapioDraftItem[];
+  planejamentoAlimentar?: CardapioDraftItem[];
   habilitarPlanejamentoQualitativo?: boolean;
 
   // 8. Questões Avaliativas (respostas discursivas e opções selecionadas)
@@ -188,31 +189,39 @@ export function useCaseDraft(
       const raw = window.localStorage.getItem(draftKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        // Merge seguro garantindo integridade de arrays e campos novos
+        const safeParsed = (parsed && typeof parsed === 'object') ? parsed : {};
+        const safeCardapio = Array.isArray(safeParsed?.cardapioItems) && safeParsed.cardapioItems.length > 0
+          ? safeParsed.cardapioItems
+          : (Array.isArray(safeParsed?.planejamentoAlimentar) && safeParsed.planejamentoAlimentar.length > 0
+              ? safeParsed.planejamentoAlimentar
+              : (initialData?.cardapioItems || []));
+        // Merge seguro garantindo integridade de arrays e campos novos (mesmo se planejamentoAlimentar estiver nulo/vazio)
         const merged: CaseDraftData = {
           ...initialData,
-          ...parsed,
+          ...safeParsed,
           caseId: cleanCaseId,
           studentId: cleanStudentId,
-          exams: Array.isArray(parsed.exams) && parsed.exams.length > 0 ? parsed.exams : initialData.exams,
-          interactions: Array.isArray(parsed.interactions) && parsed.interactions.length > 0 ? parsed.interactions : initialData.interactions,
-          recordatorioItems: Array.isArray(parsed.recordatorioItems) && parsed.recordatorioItems.length > 0 ? parsed.recordatorioItems : initialData.recordatorioItems,
-          cardapioItems: Array.isArray(parsed.cardapioItems) && parsed.cardapioItems.length > 0 ? parsed.cardapioItems : initialData.cardapioItems,
-          formulasCalculadas: Array.isArray(parsed.formulasCalculadas) ? parsed.formulasCalculadas.slice(0, 3) : (initialData.formulasCalculadas || []),
-          respostasQuestoes: parsed.respostasQuestoes || initialData.respostasQuestoes || {},
-          orientacoesNutricionais: typeof parsed.orientacoesNutricionais === 'string'
-            ? parsed.orientacoesNutricionais
-            : (initialData.orientacoesNutricionais || '')
+          exams: Array.isArray(safeParsed?.exams) && safeParsed.exams.length > 0 ? safeParsed.exams : (initialData?.exams || []),
+          interactions: Array.isArray(safeParsed?.interactions) && safeParsed.interactions.length > 0 ? safeParsed.interactions : (initialData?.interactions || []),
+          recordatorioItems: Array.isArray(safeParsed?.recordatorioItems) && safeParsed.recordatorioItems.length > 0 ? safeParsed.recordatorioItems : (initialData?.recordatorioItems || []),
+          cardapioItems: safeCardapio,
+          planejamentoAlimentar: Array.isArray(safeParsed?.planejamentoAlimentar) ? safeParsed.planejamentoAlimentar : safeCardapio,
+          formulasCalculadas: Array.isArray(safeParsed?.formulasCalculadas) ? safeParsed.formulasCalculadas.slice(0, 3) : (initialData?.formulasCalculadas || []),
+          respostasQuestoes: safeParsed?.respostasQuestoes || initialData?.respostasQuestoes || {},
+          orientacoesNutricionais: typeof safeParsed?.orientacoesNutricionais === 'string'
+            ? safeParsed.orientacoesNutricionais
+            : (initialData?.orientacoesNutricionais || '')
         };
         setDraftData(merged);
-        if (parsed.lastUpdated) {
-          setLastSaved(new Date(parsed.lastUpdated));
+        if (safeParsed?.lastUpdated) {
+          setLastSaved(new Date(safeParsed.lastUpdated));
         }
         if (onLoad) onLoad(draftKey, merged);
         console.log(`📥 [Auto-Save] Rascunho recuperado com sucesso para "${draftKey}"`);
       } else {
         setDraftData({
           ...initialData,
+          planejamentoAlimentar: initialData?.planejamentoAlimentar || initialData?.cardapioItems || [],
           caseId: cleanCaseId,
           studentId: cleanStudentId
         });

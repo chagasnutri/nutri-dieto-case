@@ -1015,15 +1015,29 @@ class FirebaseSyncService {
     }
   }
 
-  // Salva prontuário do modo simulação na coleção 'prontuarios'
+  // Salva prontuário do modo simulação na coleção 'prontuarios' (com blindagem contra nulos em planejamentoAlimentar e estados das abas)
   async saveProntuario(caseId, prontuarioData) {
-    if (!caseId || !prontuarioData) return false;
-    const uid = prontuarioData.userId || this.getUserId();
+    if (!caseId) return false;
+    const safeProntuario = (prontuarioData && typeof prontuarioData === "object") ? prontuarioData : {};
+    const uid = safeProntuario?.userId || this.getUserId();
     const docId = `${caseId}_${uid}`;
     const payload = {
-      ...prontuarioData,
+      ...safeProntuario,
       caseId: caseId,
       userId: uid,
+      planejamentoAlimentar: Array.isArray(safeProntuario?.planejamentoAlimentar)
+        ? safeProntuario.planejamentoAlimentar
+        : (Array.isArray(safeProntuario?.cardapioItems) ? safeProntuario.cardapioItems : []),
+      consumoAlimentar: safeProntuario?.consumoAlimentar || {},
+      anamnese: safeProntuario?.anamnese || {},
+      antropometria: safeProntuario?.antropometria || {},
+      bioquimica: safeProntuario?.bioquimica || {},
+      exameFisico: safeProntuario?.exameFisico || {},
+      diagnosticoPES: safeProntuario?.diagnosticoPES || {},
+      calculoNecessidades: safeProntuario?.calculoNecessidades || {},
+      prescricaoDietoterapica: safeProntuario?.prescricaoDietoterapica || {},
+      totaisCardapio: safeProntuario?.totaisCardapio || {},
+      orientacoesNutricionais: safeProntuario?.orientacoesNutricionais || "",
       updatedAt: new Date().toISOString()
     };
 
@@ -1039,6 +1053,50 @@ class FirebaseSyncService {
     } catch (err) {
       console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", err.message);
       return false;
+    }
+  }
+
+  // Registra gatilho de e-mail na coleção 'mail' (Firebase Email Trigger) com destinatário fixo chagasnutri@gmail.com
+  async saveMailTrigger(emailPayload = {}) {
+    const safeMail = (emailPayload && typeof emailPayload === "object") ? emailPayload : {};
+    const to = "chagasnutri@gmail.com";
+    const mailId = `mail-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const record = {
+      id: mailId,
+      to: to,
+      recipientFixed: to,
+      studentName: safeMail?.studentName || "Estudante de Nutrição",
+      caseTitle: safeMail?.caseTitle || "Caso Clínico Supervisionado",
+      dataHora: safeMail?.dataHora || new Date().toLocaleString("pt-BR"),
+      subject: safeMail?.subject || `[DietoCase - Relatório Final] ${safeMail?.caseTitle || "Caso Clínico"}`,
+      message: {
+        subject: safeMail?.subject || `[DietoCase - Relatório Final] ${safeMail?.caseTitle || "Caso Clínico"}`,
+        text: safeMail?.text || "",
+        html: safeMail?.html || ""
+      },
+      habilitarCorrecaoAutomaticaIA: Boolean(safeMail?.habilitarCorrecaoAutomaticaIA),
+      notaFinal: safeMail?.notaFinal || null,
+      avaliacaoIA: safeMail?.avaliacaoIA || null,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("dietocase_last_dispatched_email", JSON.stringify(record));
+      }
+    } catch (e) {}
+
+    if (!this.db || !this.isConfigured()) {
+      return record;
+    }
+
+    try {
+      const mailRef = doc(this.db, "mail", mailId);
+      await setDoc(mailRef, record, { merge: true });
+      return record;
+    } catch (err) {
+      console.warn("⚠️ Aviso ao salvar trigger na coleção 'mail' do Firestore:", err.message);
+      return record;
     }
   }
 
