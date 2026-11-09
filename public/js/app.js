@@ -6933,15 +6933,21 @@ document.addEventListener("DOMContentLoaded", () => {
       data.professorEmail = "chagasnutri@gmail.com";
 
       // Se a Correção Automática por IA estiver habilitada para o caso no Painel do Professor:
+      const aiLoadingModal = document.getElementById("aiPreceptorLoadingModal");
       const aiResultContainer = document.getElementById("aiEvaluationResultContainer");
       const aiGradeBadge = document.getElementById("aiEvaluationFinalGradeBadge");
       const aiPendingTagEl = document.getElementById("aiEvaluationPendingProfessorTag");
       const aiTextContent = document.getElementById("aiEvaluationTextContent");
       const aiEmailStatus = document.getElementById("aiEvaluationEmailStatus");
       const pedNotice = document.getElementById("submissionStandardPedagogicalNotice");
+      const originalBtnHtml = finalizeAndExportDocxBtn.innerHTML;
 
       if (appState.currentCase?.habilitarCorrecaoAutomaticaIA === true) {
         try {
+          if (aiLoadingModal) aiLoadingModal.classList.remove("hidden");
+          finalizeAndExportDocxBtn.disabled = true;
+          finalizeAndExportDocxBtn.textContent = "O Preceptor IA está avaliando o seu caso...";
+
           const aiRes = await prontuarioManager.evaluateCaseWithAI(data, appState.currentCase);
           const feedbackStr = typeof aiRes?.avaliacaoIA === "string"
             ? aiRes.avaliacaoIA
@@ -6958,37 +6964,44 @@ document.addEventListener("DOMContentLoaded", () => {
             feedback: feedbackStr,
             status: "aguardando_confirmacao_professor",
             tagStatus: "Nota Sugerida (Aguardando Confirmação do Professor)",
+            avisoValidacaoProfessor: "Nota Sugerida (Sujeita à validação do Professor)",
             confirmadaPeloProfessor: false,
             notaConfirmada: null
           };
           data.avaliacaoIATexto = feedbackStr;
           data.notaIA = notaSugeridaStr;
-          data.tagNotaIA = "Nota Sugerida (Aguardando Confirmação do Professor)";
+          data.tagNotaIA = "Nota Sugerida (Sujeita à validação do Professor)";
+          appState.currentProntuario = data;
 
           if (aiResultContainer) aiResultContainer.classList.remove("hidden");
           if (pedNotice) pedNotice.classList.add("hidden");
           if (aiPendingTagEl) {
-            aiPendingTagEl.textContent = "Nota Sugerida (Aguardando Confirmação do Professor)";
+            aiPendingTagEl.textContent = "Nota Sugerida (Sujeita à validação do Professor) — Nota Sugerida (Aguardando Confirmação do Professor)";
           }
           if (aiGradeBadge) {
             aiGradeBadge.textContent = `Nota Sugerida: ${notaSugeridaStr} / 10,0`;
           }
           if (aiTextContent) aiTextContent.textContent = feedbackStr;
           if (aiEmailStatus) {
-            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado Imediatamente ao Professor:</strong> Cópia completa da resolução de <strong>${escapeHtml(data?.aluno?.nome || "")}</strong> no caso <strong>${escapeHtml(appState.currentCase?.title || "")}</strong> e Avaliação da IA com a <strong>Nota Sugerida (${escapeHtml(notaSugeridaStr)}/10,0 — Aguardando Confirmação do Professor)</strong> enviada automaticamente para <code>chagasnutri@gmail.com</code>.`;
+            aiEmailStatus.innerHTML = `📧 <strong>E-mail Disparado Imediatamente ao Professor:</strong> O Relatório Final consolidado de <strong>${escapeHtml(data?.aluno?.nome || "")}</strong> no caso <strong>${escapeHtml(appState.currentCase?.title || "")}</strong> contendo a seção <strong>Avaliação do Preceptor IA</strong> e a <strong>Nota Sugerida (${escapeHtml(notaSugeridaStr)}/10,0 — Sujeita à validação do Professor)</strong> foi enviado automaticamente para <code>chagasnutri@gmail.com</code>.`;
           }
           if (typeof renderAdminAiSubmissionsReview === "function") {
             renderAdminAiSubmissionsReview();
           }
         } catch (aiErr) {
           console.warn("⚠️ Aviso durante Correção Automática por IA:", aiErr);
+        } finally {
+          if (aiLoadingModal) aiLoadingModal.classList.add("hidden");
+          finalizeAndExportDocxBtn.disabled = false;
+          finalizeAndExportDocxBtn.innerHTML = originalBtnHtml;
         }
       } else {
         if (aiResultContainer) aiResultContainer.classList.add("hidden");
         if (pedNotice) pedNotice.classList.remove("hidden");
       }
 
-      // Salva rascunho final e sincroniza com Firestore
+      // Salva rascunho final e sincroniza com Firestore (já contendo avaliacaoIA populada)
+      appState.currentProntuario = data;
       prontuarioManager.saveDraft(appState.currentCaseId, data);
       if (typeof firebaseSyncService !== "undefined" && typeof firebaseSyncService.saveProntuario === "function") {
         try {
@@ -6998,28 +7011,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Disparo Automático Assíncrono (Não-Bloqueante) do E-mail do Relatório Final para chagasnutri@gmail.com
-      try {
-        const htmlReportStr = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
-          ? DietoterapiaDocxReport.buildHtmlReport(data, appState.currentCase)
-          : "";
-        prontuarioManager.dispatchFinalReportEmailAsync(data, appState.currentCase, {
-          studentName: data?.aluno?.nome || "Estudante de Nutrição",
-          caseTitle: appState.currentCase?.title || appState.currentCaseId || "Caso Clínico Supervisionado",
-          dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-          habilitarCorrecaoAutomaticaIA: Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA),
-          notaFinal: data?.notaIA || "",
-          avaliacaoIA: data?.avaliacaoIA || "",
-          relatorioFinalHtml: htmlReportStr
-        }).catch((err) => console.warn("⚠️ Aviso no envio assíncrono de e-mail:", err));
-      } catch (mailErr) {
-        console.warn("⚠️ Aviso ao disparar e-mail assíncrono do relatório final:", mailErr);
+      // Disparo Automático Assíncrono (Não-Bloqueante) do E-mail do Relatório Final consolidado para chagasnutri@gmail.com
+      // (Quando habilitarCorrecaoAutomaticaIA === true, evaluateCaseWithAI já disparou o e-mail consolidado com a Avaliação do Preceptor IA embutida)
+      if (appState.currentCase?.habilitarCorrecaoAutomaticaIA !== true) {
+        try {
+          const htmlReportStr = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
+            ? DietoterapiaDocxReport.buildHtmlReport(data, appState.currentCase)
+            : "";
+          prontuarioManager.dispatchFinalReportEmailAsync(data, appState.currentCase, {
+            studentName: data?.aluno?.nome || "Estudante de Nutrição",
+            caseTitle: appState.currentCase?.title || appState.currentCaseId || "Caso Clínico Supervisionado",
+            dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+            habilitarCorrecaoAutomaticaIA: Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA),
+            notaFinal: data?.notaIA || "",
+            avaliacaoIA: data?.avaliacaoIA || "",
+            relatorioFinalHtml: htmlReportStr
+          }).catch((err) => console.warn("⚠️ Aviso no envio assíncrono de e-mail:", err));
+        } catch (mailErr) {
+          console.warn("⚠️ Aviso ao disparar e-mail assíncrono do relatório final:", mailErr);
+        }
       }
 
-      // 1. Gera e baixa o documento Word (.docx) imediatamente
+      // 1. Gera e baixa o documento Word (.docx) somente após a promise da IA resolver e o estado estar populado
       DietoterapiaDocxReport.generateReport(data, appState.currentCase);
 
-      // 2. Abre modal confirmando a submissão (e exibindo a correção da IA e a nota final caso habilitada)
+      // 2. Abre modal confirmando a submissão (com a Avaliação do Preceptor IA e a nota sugerida)
       if (document.getElementById("modalStudentName")) {
         document.getElementById("modalStudentName").textContent = data?.aluno?.nome || "";
       }

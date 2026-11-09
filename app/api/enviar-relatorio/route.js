@@ -156,7 +156,26 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
       : null,
     ``,
     `8. ORIENTAÇÕES NUTRICIONAIS E ALTA:`,
-    `${res?.orientacoesNutricionais || res?.orientacaoNutricional || '---'}`
+    `${res?.orientacoesNutricionais || res?.orientacaoNutricional || '---'}`,
+    (res?.habilitarCorrecaoAutomaticaIA || res?.avaliacaoIA || res?.avaliacaoIATexto) && (res?.avaliacaoIA || res?.avaliacaoIATexto || res?.notaIA)
+      ? [
+          ``,
+          `9. Avaliação do Preceptor IA:`,
+          `Nota Sugerida (Sujeita à validação do Professor): ${
+            (typeof res?.avaliacaoIA === 'object' && res?.avaliacaoIA !== null
+              ? (res.avaliacaoIA.notaConfirmadaFormatada || res.avaliacaoIA.notaSugeridaFormatada || (res.avaliacaoIA.notaSugerida !== undefined ? String(res.avaliacaoIA.notaSugerida).replace('.', ',') : ''))
+              : '') ||
+            res?.notaFinalConfirmada ||
+            res?.notaIA ||
+            '0,0'
+          } / 10,0`,
+          `${
+            typeof res?.avaliacaoIA === 'object' && res?.avaliacaoIA !== null
+              ? (res.avaliacaoIA.feedback || res?.avaliacaoIATexto || '')
+              : (typeof res?.avaliacaoIA === 'string' ? res.avaliacaoIA : (res?.avaliacaoIATexto || ''))
+          }`
+        ].join('\n')
+      : null
   ]
     .filter((line) => line !== null)
     .join('\n');

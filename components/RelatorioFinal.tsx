@@ -107,6 +107,7 @@ interface RelatorioFinalProps {
   draftData?: any;
   studentData?: any;
   clinicalCase?: any;
+  isEvaluatingAI?: boolean;
   onClose?: () => void;
 }
 
@@ -585,8 +586,101 @@ export function OrientacoesNutricionaisSection({ data, clinicalCase }: { data: a
   );
 }
 
+// Seção de Destaque no Final do Documento (Abaixo das Orientações Nutricionais): Avaliação do Preceptor IA
+export function AvaliacaoPreceptorIASection({
+  data,
+  clinicalCase,
+  isEvaluatingAI = false
+}: {
+  data: any;
+  clinicalCase: any;
+  isEvaluatingAI?: boolean;
+}) {
+  const safeData = (data && typeof data === 'object') ? data : {};
+  const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
+
+  const isAiEnabled = Boolean(
+    safeCase?.habilitarCorrecaoAutomaticaIA ||
+    safeCase?.caseConfig?.habilitarCorrecaoAutomaticaIA ||
+    safeData?.habilitarCorrecaoAutomaticaIA ||
+    safeData?.avaliacaoIA ||
+    safeData?.avaliacaoIATexto
+  );
+
+  if (!isAiEnabled) {
+    return null;
+  }
+
+  if (isEvaluatingAI) {
+    return (
+      <div id="relatorioLoadingPreceptorIA" className="space-y-2 mb-6 bg-emerald-50 border-2 border-emerald-400 rounded-xl p-5 text-center animate-pulse">
+        <div className="text-lg">🤖⏳</div>
+        <strong className="text-sm font-black text-emerald-900 block">
+          O Preceptor IA está avaliando o seu caso...
+        </strong>
+        <p className="text-xs text-emerald-800">
+          Aguarde enquanto a resolução clínica, cálculos e planejamento alimentar são analisados para consolidar o Relatório Final e o PDF.
+        </p>
+      </div>
+    );
+  }
+
+  const rawEval = safeData?.avaliacaoIA;
+  const feedback = String(
+    typeof rawEval === 'object' && rawEval !== null
+      ? (rawEval.feedback || safeData?.avaliacaoIATexto || '')
+      : (typeof rawEval === 'string' ? rawEval : (safeData?.avaliacaoIATexto || ''))
+  ).trim();
+  const nota = String(
+    (typeof rawEval === 'object' && rawEval !== null
+      ? (rawEval.notaConfirmadaFormatada || rawEval.notaSugeridaFormatada || (rawEval.notaSugerida !== undefined ? String(rawEval.notaSugerida).replace('.', ',') : ''))
+      : '') ||
+    safeData?.notaFinalConfirmada ||
+    safeData?.notaIA ||
+    safeData?.notaFinal ||
+    ''
+  ).trim();
+
+  if (!feedback && !nota) {
+    return null;
+  }
+
+  const notaDisplay = nota || '0,0';
+
+  return (
+    <div id="relatorioSecaoAvaliacaoPreceptorIA" className="space-y-3 mb-6 pt-2">
+      <h2 className="text-sm font-black text-emerald-950 uppercase bg-emerald-100 p-2.5 rounded border-l-4 border-emerald-700">
+        Avaliação do Preceptor IA
+      </h2>
+      <div className="bg-emerald-50/80 border-2 border-emerald-500 rounded-xl p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200 pb-2.5">
+          <div>
+            <span className="text-xs font-extrabold text-emerald-950 block">
+              Nota Sugerida (Sujeita à validação do Professor)
+            </span>
+            <span className="text-[11px] text-emerald-800 font-semibold">
+              Nota Sugerida (Aguardando Confirmação do Professor) • Nota Sugerida (Sujeita à validação do Professor)
+            </span>
+          </div>
+          <div className="bg-emerald-700 text-white font-black text-sm px-4 py-1.5 rounded-full shadow-xs">
+            Nota: {notaDisplay} / 10,0
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <strong className="text-[11px] font-bold text-emerald-900 uppercase tracking-wide block">
+            Feedback Detalhado Gerado pela IA (Erros, Acertos e Justificativas Clínicas):
+          </strong>
+          <div className="bg-white border border-emerald-200 rounded-lg p-3.5 text-xs text-slate-800 whitespace-pre-line leading-relaxed">
+            {feedback || 'Parecer clínico consolidado pelo Preceptor IA.'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Componente Principal do Relatório Final (Tela e PDF)
-export default function RelatorioFinal({ draftData = {}, studentData, clinicalCase = {}, onClose }: RelatorioFinalProps) {
+export default function RelatorioFinal({ draftData = {}, studentData, clinicalCase = {}, isEvaluatingAI = false, onClose }: RelatorioFinalProps) {
   const rawMerged = studentData || draftData || {};
   const mergedData = (rawMerged && typeof rawMerged === 'object') ? rawMerged : {};
   const safeClinicalCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
@@ -595,6 +689,7 @@ export default function RelatorioFinal({ draftData = {}, studentData, clinicalCa
   const patName = mergedData?.dadosPacienteReal?.nome || patient?.name || "Paciente Simulado";
 
   const handlePrint = () => {
+    if (isEvaluatingAI) return;
     window.print();
   };
 
@@ -621,9 +716,10 @@ export default function RelatorioFinal({ draftData = {}, studentData, clinicalCa
           <button
             type="button"
             onClick={handlePrint}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
+            disabled={isEvaluatingAI}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
           >
-            <span>🖨️ Imprimir / Salvar em PDF</span>
+            <span>{isEvaluatingAI ? '⏳ O Preceptor IA está avaliando o seu caso...' : '🖨️ Imprimir / Salvar em PDF'}</span>
           </button>
           {onClose && (
             <button
@@ -681,6 +777,9 @@ export default function RelatorioFinal({ draftData = {}, studentData, clinicalCa
 
         {/* BLOCO FINAL: ORIENTAÇÕES NUTRICIONAIS (Condicional: Liberada + Não-Vazia) */}
         <OrientacoesNutricionaisSection data={mergedData} clinicalCase={clinicalCase} />
+
+        {/* SEÇÃO DE DESTAQUE NO FINAL DO DOCUMENTO (ABAIXO DAS ORIENTAÇÕES NUTRICIONAIS): AVALIAÇÃO DO PRECEPTOR IA */}
+        <AvaliacaoPreceptorIASection data={mergedData} clinicalCase={clinicalCase} isEvaluatingAI={isEvaluatingAI} />
 
         {/* Rodapé Obrigatório */}
         <footer className="border-t border-slate-300 pt-3 text-center text-[10px] text-slate-500 mt-8">

@@ -774,6 +774,46 @@ class DietoterapiaDocxReport {
       doc.addParagraph(textoOrientacoesDocx);
     }
 
+    // 8. SEÇÃO DE DESTAQUE NO FINAL DO DOCUMENTO (ABAIXO DAS ORIENTAÇÕES NUTRICIONAIS): AVALIAÇÃO DO PRECEPTOR IA
+    const isAiEnabledDocx = Boolean(
+      clinicalCase?.habilitarCorrecaoAutomaticaIA ||
+      clinicalCase?.caseConfig?.habilitarCorrecaoAutomaticaIA ||
+      studentData?.habilitarCorrecaoAutomaticaIA ||
+      studentData?.avaliacaoIA ||
+      studentData?.avaliacaoIATexto
+    );
+    const rawEvalDocx = studentData?.avaliacaoIA;
+    const feedbackDocx = String(
+      typeof rawEvalDocx === "object" && rawEvalDocx !== null
+        ? (rawEvalDocx.feedback || studentData?.avaliacaoIATexto || "")
+        : (typeof rawEvalDocx === "string" ? rawEvalDocx : (studentData?.avaliacaoIATexto || ""))
+    ).trim();
+    const notaDocx = String(
+      (typeof rawEvalDocx === "object" && rawEvalDocx !== null
+        ? (rawEvalDocx.notaConfirmadaFormatada || rawEvalDocx.notaSugeridaFormatada || (rawEvalDocx.notaSugerida !== undefined ? String(rawEvalDocx.notaSugerida).replace(".", ",") : ""))
+        : "") ||
+      studentData?.notaFinalConfirmada ||
+      studentData?.notaIA ||
+      studentData?.notaFinal ||
+      ""
+    ).trim();
+
+    if (isAiEnabledDocx && (feedbackDocx || notaDocx)) {
+      doc.addHeading("Avaliação do Preceptor IA", 1);
+      doc.addCallout(
+        "Nota Sugerida (Sujeita à validação do Professor):",
+        `Nota Gerada: ${notaDocx || "0,0"} / 10,0 — Nota Sugerida (Sujeita à validação do Professor)`,
+        "047857",
+        "ecfdf5"
+      );
+      doc.addCallout(
+        "Feedback Detalhado do Preceptor IA (Erros, Acertos e Justificativas Clínicas):",
+        feedbackDocx || "Avaliação consolidada pelo Preceptor IA.",
+        "0f766e",
+        "f0fdfa"
+      );
+    }
+
     // Componente nativo de Rodapé (Footer) do Word para repetição obrigatória em todas as páginas
     doc.setFooter("© 2026 DietoCase - Desenvolvido por Prof. Chagas Neto. Todos os direitos reservados.");
 
@@ -1333,6 +1373,69 @@ class DietoterapiaDocxReport {
     `;
   }
 
+  // Seção de Destaque no Final do Documento (Abaixo das Orientações Nutricionais): Avaliação do Preceptor IA
+  // Renderizada quando 'Habilitar Correção Automática por IA' está ativa nas configurações do caso e após o retorno da API da IA
+  static renderAvaliacaoPreceptorIASectionHtml(studentData = {}, clinicalCase = {}) {
+    studentData = (studentData && typeof studentData === "object") ? studentData : {};
+    clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+
+    const isAiEnabled = Boolean(
+      clinicalCase?.habilitarCorrecaoAutomaticaIA ||
+      clinicalCase?.caseConfig?.habilitarCorrecaoAutomaticaIA ||
+      studentData?.habilitarCorrecaoAutomaticaIA ||
+      studentData?.avaliacaoIA ||
+      studentData?.avaliacaoIATexto
+    );
+    if (!isAiEnabled) return null;
+
+    const rawEval = studentData?.avaliacaoIA;
+    const feedback = String(
+      typeof rawEval === "object" && rawEval !== null
+        ? (rawEval.feedback || studentData?.avaliacaoIATexto || "")
+        : (typeof rawEval === "string" ? rawEval : (studentData?.avaliacaoIATexto || ""))
+    ).trim();
+    const nota = String(
+      (typeof rawEval === "object" && rawEval !== null
+        ? (rawEval.notaConfirmadaFormatada || rawEval.notaSugeridaFormatada || (rawEval.notaSugerida !== undefined ? String(rawEval.notaSugerida).replace(".", ",") : ""))
+        : "") ||
+      studentData?.notaFinalConfirmada ||
+      studentData?.notaIA ||
+      studentData?.notaFinal ||
+      ""
+    ).trim();
+
+    if (!feedback && !nota) return null;
+
+    const notaDisplay = nota || "0,0";
+    const isConfirmed = Boolean(
+      (typeof rawEval === "object" && rawEval !== null && rawEval.confirmadaPeloProfessor) ||
+      studentData?.notaConfirmadaPeloProfessor
+    );
+
+    return `
+      <div id="relatorioSecaoAvaliacaoPreceptorIA" style="margin-top: 18px; margin-bottom: 14px; page-break-inside: avoid;">
+        <h2 class="sec-heading" style="border-bottom: 2px solid #047857; color: #064e3b;">Avaliação do Preceptor IA</h2>
+        <div style="background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #a7f3d0; padding-bottom: 8px; margin-bottom: 10px;">
+            <div>
+              <strong style="font-size: 13px; color: #064e3b; display: block;">Nota Sugerida (Sujeita à validação do Professor)</strong>
+              <span style="font-size: 10px; color: #047857; font-weight: 600;">
+                ${isConfirmed ? "Nota Final Confirmada pelo Professor" : "Nota Sugerida (Aguardando Confirmação do Professor) • Nota Sugerida (Sujeita à validação do Professor)"}
+              </span>
+            </div>
+            <div style="background-color: #047857; color: #ffffff; font-weight: 800; font-size: 14px; padding: 6px 14px; border-radius: 999px;">
+              Nota: ${notaDisplay} / 10,0
+            </div>
+          </div>
+          <div style="font-weight: 700; font-size: 11px; color: #065f46; margin-bottom: 6px; text-transform: uppercase;">
+            Feedback Detalhado do Preceptor IA (Erros, Acertos e Justificativas Clínicas):
+          </div>
+          <div style="background-color: #ffffff; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px 12px; white-space: pre-wrap; font-size: 11px; color: #1e293b; line-height: 1.5;">${feedback || "Parecer clínico consolidado pelo Preceptor IA."}</div>
+        </div>
+      </div>
+    `;
+  }
+
   // Constrói relatório HTML completo (espelho 100% fiel com esqueleto imutável) para visualização e impressão direta em PDF
   static buildHtmlReport(studentData = {}, clinicalCase = {}) {
     studentData = (studentData && typeof studentData === "object") ? studentData : {};
@@ -1376,6 +1479,7 @@ class DietoterapiaDocxReport {
     const secCardapioHtml = this.renderCardapioSectionHtml(studentData, clinicalCase) || "";
     const secQuestoesHtml = this.renderQuestoesSectionHtml(studentData, clinicalCase) || "";
     const secOrientacoesHtml = this.renderOrientacoesSectionHtml(studentData, clinicalCase) || "";
+    const secAvaliacaoPreceptorIAHtml = this.renderAvaliacaoPreceptorIASectionHtml(studentData, clinicalCase) || "";
 
     return `
 <!DOCTYPE html>
@@ -1538,6 +1642,7 @@ class DietoterapiaDocxReport {
           ${secCardapioHtml}
           ${secQuestoesHtml}
           ${secOrientacoesHtml}
+          ${secAvaliacaoPreceptorIAHtml}
         </td>
       </tr>
     </tbody>

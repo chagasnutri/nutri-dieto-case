@@ -1503,6 +1503,16 @@ class StudentProntuarioManager {
     return "Nota Sugerida (Aguardando Confirmação do Professor)";
   }
 
+  // Aviso oficial da seção Avaliação do Preceptor IA no Relatório Final e PDF
+  getStudentValidationNotice() {
+    return "Nota Sugerida (Sujeita à validação do Professor)";
+  }
+
+  // Mensagem de loading enquanto o Preceptor IA avalia o caso antes de liberar o Relatório Final / PDF
+  getPreceptorLoadingMessage() {
+    return "O Preceptor IA está avaliando o seu caso...";
+  }
+
   // Destinatário Fixo Obrigatório do Professor para o Relatório Final
   getFixedProfessorEmail() {
     return "chagasnutri@gmail.com";
@@ -1848,7 +1858,29 @@ class StudentProntuarioManager {
       planoLines,
       ``,
       `6. ORIENTAÇÕES NUTRICIONAIS E ALTA:`,
-      `${p?.orientacoesNutricionais || "---"}`
+      `${p?.orientacoesNutricionais || "---"}`,
+      ...(
+        (safeCase?.habilitarCorrecaoAutomaticaIA || p?.habilitarCorrecaoAutomaticaIA || p?.avaliacaoIA || p?.avaliacaoIATexto) &&
+        (p?.avaliacaoIA || p?.avaliacaoIATexto || p?.notaIA)
+          ? [
+              ``,
+              `7. Avaliação do Preceptor IA:`,
+              `Nota Sugerida (Sujeita à validação do Professor): ${
+                (typeof p?.avaliacaoIA === "object" && p?.avaliacaoIA !== null
+                  ? (p.avaliacaoIA.notaConfirmadaFormatada || p.avaliacaoIA.notaSugeridaFormatada || (p.avaliacaoIA.notaSugerida !== undefined ? String(p.avaliacaoIA.notaSugerida).replace(".", ",") : ""))
+                  : "") ||
+                p?.notaFinalConfirmada ||
+                p?.notaIA ||
+                "0,0"
+              } / 10,0`,
+              `${
+                typeof p?.avaliacaoIA === "object" && p?.avaliacaoIA !== null
+                  ? (p.avaliacaoIA.feedback || p?.avaliacaoIATexto || "")
+                  : (typeof p?.avaliacaoIA === "string" ? p.avaliacaoIA : (p?.avaliacaoIATexto || ""))
+              }`
+            ]
+          : []
+      )
     ].join("\n");
   }
 
@@ -1860,6 +1892,7 @@ class StudentProntuarioManager {
       professorEmail,
       dataHora,
       resolutionText,
+      relatorioFinalHtml,
       avaliacaoIA,
       notaSugerida,
       notaFinal,
@@ -1889,11 +1922,14 @@ class StudentProntuarioManager {
     const aiSection = hasAi
       ? [
           `⚠️ ALERTA AO PROFESSOR: Você precisa acessar o painel para confirmar a nota final (ou editá-la) no Painel do Professor do DietoCase!`,
-          `Status da Nota: ${this.getStudentPendingGradeTag()}`,
+          `Status da Nota: ${this.getStudentPendingGradeTag()} | ${this.getStudentValidationNotice()}`,
           `Nota Sugerida pela IA: ${gradeStr} / 10,0`,
           `====================================================================`,
           ``,
-          `--- EM DESTAQUE: AVALIAÇÃO COMPLETA DA IA COM A NOTA SUGERIDA ---`,
+          `--- EM DESTAQUE: AVALIAÇÃO COMPLETA DA IA COM A NOTA SUGERIDA (Avaliação do Preceptor IA) ---`,
+          `Título da Seção no Relatório Final: Avaliação do Preceptor IA`,
+          `Aviso: ${this.getStudentValidationNotice()}`,
+          `Nota Final Gerada: ${gradeStr} / 10,0`,
           evalText
         ].join("\n")
       : `====================================================================`;
@@ -1923,9 +1959,11 @@ class StudentProntuarioManager {
       notaSugerida: hasAi ? gradeStr : null,
       notaFinal: hasAi ? gradeStr : null,
       tagStatus: hasAi ? this.getStudentPendingGradeTag() : null,
+      avisoValidacao: hasAi ? this.getStudentValidationNotice() : null,
       requiresProfessorConfirmation: hasAi,
       resolutionText: resolutionText || "",
       avaliacaoIA: hasAi ? evalText : null,
+      html: relatorioFinalHtml || "",
       text: textBody
     };
   }
@@ -1972,11 +2010,32 @@ class StudentProntuarioManager {
         ? options.avaliacaoIA
         : (rawEvalObj?.feedback || (typeof safeProntuario?.avaliacaoIA === "string" ? safeProntuario.avaliacaoIA : ""))
     ).trim();
+
+    if (habilitarCorrecaoAutomaticaIA && (avaliacaoIA || notaFinal)) {
+      safeProntuario.habilitarCorrecaoAutomaticaIA = true;
+      safeProntuario.avaliacaoIATexto = avaliacaoIA;
+      safeProntuario.notaIA = notaFinal;
+      if (!safeProntuario.avaliacaoIA || typeof safeProntuario.avaliacaoIA !== "object") {
+        safeProntuario.avaliacaoIA = {
+          notaSugerida: parseFloat(String(notaFinal || "0").replace(",", ".")) || 0,
+          notaSugeridaFormatada: notaFinal || "0,0",
+          feedback: avaliacaoIA,
+          avisoValidacao: this.getStudentValidationNotice(),
+          tagStatus: this.getStudentPendingGradeTag()
+        };
+      }
+    }
+
     const relatorioFinalTexto = String(
       options?.relatorioFinalTexto ||
-      this.compileStudentResolutionForAI(safeProntuario, safeCase)
+      this.compileStudentResolutionForAI(safeProntuario, { ...safeCase, habilitarCorrecaoAutomaticaIA })
     ).trim();
-    const relatorioFinalHtml = String(options?.relatorioFinalHtml || "").trim();
+    const relatorioFinalHtml = String(
+      options?.relatorioFinalHtml ||
+      ((typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
+        ? DietoterapiaDocxReport.buildHtmlReport(safeProntuario, { ...safeCase, habilitarCorrecaoAutomaticaIA })
+        : "")
+    ).trim();
 
     const emailPayload = this.buildProfessorEvaluationEmailPayload({
       studentName,
@@ -1984,6 +2043,7 @@ class StudentProntuarioManager {
       professorEmail: this.getFixedProfessorEmail(),
       dataHora,
       resolutionText: relatorioFinalTexto,
+      relatorioFinalHtml,
       avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : "",
       notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : "",
       notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : "",
@@ -2236,27 +2296,46 @@ class StudentProntuarioManager {
       feedback: feedbackText,
       status: "aguardando_confirmacao_professor",
       tagStatus: this.getStudentPendingGradeTag(),
+      avisoValidacao: this.getStudentValidationNotice(),
       confirmadaPeloProfessor: false,
       notaConfirmada: null,
       notaFinalFormatada: null,
       avaliadoEm: new Date().toISOString()
     };
 
+    safeProntuario.habilitarCorrecaoAutomaticaIA = true;
+    safeProntuario.avaliacaoIA = avaliacaoIAData;
+    safeProntuario.avaliacaoIATexto = feedbackText;
+    safeProntuario.notaIA = notaSugeridaComma;
+    safeProntuario.tagNotaIA = this.getStudentPendingGradeTag();
+    safeProntuario.avisoValidacaoIA = this.getStudentValidationNotice();
+
     // Atualiza o prontuário com o formato estruturado para o Firestore: avaliacaoIA.notaSugerida e avaliacaoIA.feedback
     if (prontuario && typeof prontuario === "object") {
+      prontuario.habilitarCorrecaoAutomaticaIA = true;
       prontuario.avaliacaoIA = avaliacaoIAData;
       prontuario.avaliacaoIATexto = feedbackText;
       prontuario.notaIA = notaSugeridaComma;
       prontuario.tagNotaIA = this.getStudentPendingGradeTag();
+      prontuario.avisoValidacaoIA = this.getStudentValidationNotice();
       this.saveSubmissionForProfessorReview(prontuario, clinicalCase);
     }
+
+    const consolidatedResolutionText = this.compileStudentResolutionForAI(safeProntuario, {
+      ...clinicalCase,
+      habilitarCorrecaoAutomaticaIA: true
+    });
+    const consolidatedReportHtml = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
+      ? DietoterapiaDocxReport.buildHtmlReport(safeProntuario, { ...clinicalCase, habilitarCorrecaoAutomaticaIA: true })
+      : "";
 
     const emailPayload = apiEmailPayload || this.buildProfessorEvaluationEmailPayload({
       studentName,
       caseTitle,
       professorEmail,
       dataHora,
-      resolutionText,
+      resolutionText: consolidatedResolutionText,
+      relatorioFinalHtml: consolidatedReportHtml,
       avaliacaoIA: feedbackText,
       notaSugerida: notaSugeridaComma,
       notaFinal: notaSugeridaComma,
@@ -2292,10 +2371,12 @@ class StudentProntuarioManager {
       notaSugeridaFormatada: notaSugeridaComma,
       notaFinal: notaSugeridaComma,
       tagNotaAluno: this.getStudentPendingGradeTag(),
+      avisoValidacao: this.getStudentValidationNotice(),
       avaliacaoIA: feedbackText,
       avaliacaoIAData,
       avaliacaoIAObjeto: avaliacaoIAData,
-      resolutionText,
+      resolutionText: consolidatedResolutionText,
+      relatorioFinalHtml: consolidatedReportHtml,
       emailPayload,
       emailDispatched: true
     };

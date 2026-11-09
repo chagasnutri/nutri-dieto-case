@@ -1098,7 +1098,9 @@ export default function SimulationModule() {
             >
               <span>
                 {isSubmittingCase
-                  ? 'Enviando...'
+                  ? habilitarCorrecaoAutomaticaIA
+                    ? 'O Preceptor IA está avaliando o seu caso...'
+                    : 'Enviando...'
                   : habilitarCorrecaoAutomaticaIA
                   ? 'Finalizar e Enviar para Correção IA'
                   : 'Finalizar Caso'}
@@ -2564,10 +2566,26 @@ export default function SimulationModule() {
           {activeTab === 'relatorio' && (
             <div className="space-y-4">
               <RelatorioFinal
-                draftData={draftData}
+                draftData={{
+                  ...draftData,
+                  habilitarCorrecaoAutomaticaIA,
+                  avaliacaoIA: aiEvaluationResult
+                    ? {
+                        notaSugerida: parseFloat(String(aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal || '0').replace(',', '.')) || 0,
+                        notaSugeridaFormatada: aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal || '0,0',
+                        notaConfirmadaFormatada: aiEvaluationResult.notaConfirmadaProfessor || null,
+                        confirmadaPeloProfessor: Boolean(aiEvaluationResult.confirmadaPeloProfessor),
+                        feedback: aiEvaluationResult.avaliacaoIA || ''
+                      }
+                    : draftData?.avaliacaoIA,
+                  avaliacaoIATexto: aiEvaluationResult?.avaliacaoIA || draftData?.avaliacaoIATexto,
+                  notaIA: aiEvaluationResult?.notaFinal || draftData?.notaIA
+                }}
+                isEvaluatingAI={isSubmittingCase && habilitarCorrecaoAutomaticaIA}
                 clinicalCase={{
                   id: selectedCase,
                   title: selectedCase === 'caso-dm2-has' ? 'Caso 1: DM2 e HAS (Adulto/Idoso)' : (selectedCase === 'caso-desnutricao' ? 'Caso 2: Desnutrição Hospitalar Grave' : 'Caso 3: DRC Conservadora'),
+                  habilitarCorrecaoAutomaticaIA,
                   patient: {
                     name: draftData.patientName || (selectedCase === 'caso-dm2-has' ? 'Carlos Alberto Souza' : 'Paciente Simulado'),
                     age: selectedCase === 'caso-dm2-has' ? '58' : '65',
@@ -2616,7 +2634,9 @@ export default function SimulationModule() {
               <span>🚀</span>
               <span>
                 {isSubmittingCase
-                  ? 'Finalizando...'
+                  ? habilitarCorrecaoAutomaticaIA
+                    ? 'O Preceptor IA está avaliando o seu caso...'
+                    : 'Finalizando...'
                   : habilitarCorrecaoAutomaticaIA
                   ? 'Finalizar e Enviar para Correção IA'
                   : 'Finalizar Caso'}
@@ -2625,6 +2645,26 @@ export default function SimulationModule() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Loading enquanto o Preceptor IA avalia o caso antes de liberar o Relatório Final / PDF e a Tela de Conclusão */}
+      {isSubmittingCase && habilitarCorrecaoAutomaticaIA && (
+        <div
+          id="aiPreceptorLoadingOverlaySim"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50"
+        >
+          <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-2xl max-w-md w-full p-6 text-center space-y-3 shadow-2xl">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto border border-emerald-500/40 animate-spin">
+              🤖
+            </div>
+            <h4 className="text-base font-bold text-white">
+              O Preceptor IA está avaliando o seu caso...
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Aguarde a conclusão da análise clínica rigorosa para liberar o Relatório Final consolidado e o PDF com a seção <strong>Avaliação do Preceptor IA</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Confirmação de Sucesso da Submissão, Avaliação por IA e Limpeza de Rascunho */}
       {submissionSuccessModal && (
@@ -2645,7 +2685,7 @@ export default function SimulationModule() {
                 <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                   <div className="font-bold text-sm text-emerald-400 flex items-center gap-1.5">
                     <span>🤖</span>
-                    <span>Avaliação Rigorosa por IA (Preceptor de Nutrição Clínica)</span>
+                    <span>Avaliação do Preceptor IA</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span
@@ -2658,7 +2698,7 @@ export default function SimulationModule() {
                     >
                       {aiEvaluationResult.confirmadaPeloProfessor
                         ? 'Nota Final Confirmada pelo Professor'
-                        : 'Nota Sugerida (Aguardando Confirmação do Professor)'}
+                        : 'Nota Sugerida (Sujeita à validação do Professor) • Nota Sugerida (Aguardando Confirmação do Professor)'}
                     </span>
                     <span id="aiEvaluationScoreBadgeSim" className="bg-emerald-600/30 border border-emerald-500 text-emerald-300 font-extrabold text-sm px-3 py-1 rounded-full">
                       {aiEvaluationResult.confirmadaPeloProfessor
@@ -2671,7 +2711,7 @@ export default function SimulationModule() {
                   {aiEvaluationResult.avaliacaoIA}
                 </pre>
                 <div className="text-[11px] text-sky-300 bg-sky-950/40 border border-sky-700/50 rounded-lg p-2.5">
-                  📧 <strong>E-mail Disparado Imediatamente ao Professor:</strong> Cópia integral da sua resolução e da Avaliação da IA com a Nota Sugerida ({aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal}/10,0) enviada automaticamente para <code>{aiEvaluationResult.professorEmail}</code>, alertando o professor para confirmar a nota final no Painel do Professor.
+                  📧 <strong>Relatório Consolidado Disparado Imediatamente ao Professor:</strong> O mesmo Relatório Final com a seção <strong>Avaliação do Preceptor IA</strong> e a Nota Sugerida ({aiEvaluationResult.notaSugerida || aiEvaluationResult.notaFinal}/10,0) foi enviado automaticamente para <code>{aiEvaluationResult.professorEmail}</code>.
                 </div>
               </div>
             )}
@@ -2680,7 +2720,17 @@ export default function SimulationModule() {
               🧹 <strong>Isolamento Garantido:</strong> O rascunho local deste caso foi removido do seu dispositivo com sucesso.
             </div>
 
-            <div className="pt-2 flex justify-center gap-2">
+            <div className="pt-2 flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmissionSuccessModal(false);
+                  setActiveTab('relatorio');
+                }}
+                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition cursor-pointer"
+              >
+                🖨️ Visualizar Relatório Final / PDF
+              </button>
               <button
                 type="button"
                 onClick={() => setSubmissionSuccessModal(false)}

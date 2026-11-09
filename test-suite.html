@@ -4129,6 +4129,56 @@ REGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos,
         evalAversionResult.emailPayload.text.includes("painel para confirmar a nota final"),
         "Seção 148.6 (Disparo Automático de E-mail para chagasnutri@gmail.com): Envia imediatamente para chagasnutri@gmail.com contendo Nome do Aluno, Nome do Caso, respostas completas, Avaliação da IA em destaque com Nota Sugerida e alerta para confirmar a nota final no painel"
       );
+
+      // ==========================================
+      // 149. INTEGRAÇÃO DA 'AVALIAÇÃO DO PRECEPTOR IA' NO RELATÓRIO FINAL (TELA, PDF E E-MAIL CONSOLIDADO)
+      // ==========================================
+      prontWithAversionError.orientacoesNutricionais = "Evitar alimentos ultraprocessados, controlar adição de sal de cozinha e manter hidratação fracionada conforme prescrição nefrológica.";
+      const htmlReportWithAI = DietoterapiaDocxReport.buildHtmlReport(prontWithAversionError, casoRigorousTest);
+      const idxOrientacoes = htmlReportWithAI.indexOf("Orientações Nutricionais");
+      const idxAvaliacaoPreceptorIA = htmlReportWithAI.indexOf("Avaliação do Preceptor IA");
+
+      // 149.1 Anexo da Correção no Relatório Final (abaixo das Orientações Nutricionais)
+      assert(
+        idxOrientacoes !== -1 &&
+        idxAvaliacaoPreceptorIA !== -1 &&
+        idxAvaliacaoPreceptorIA > idxOrientacoes &&
+        htmlReportWithAI.includes('id="relatorioSecaoAvaliacaoPreceptorIA"'),
+        "Seção 149.1 (Anexo no Relatório Final / PDF): Quando 'Habilitar Correção Automática por IA' está ativa, renderiza a seção de destaque 'Avaliação do Preceptor IA' no final do documento (abaixo das Orientações Nutricionais)"
+      );
+
+      // 149.2 Conteúdo da Seção de Avaliação (Feedback detalhado + Nota Final em destaque + Aviso 'Nota Sugerida (Sujeita à validação do Professor)')
+      assert(
+        htmlReportWithAI.includes("Nota Sugerida (Sujeita à validação do Professor)") &&
+        htmlReportWithAI.includes(evalAversionResult.notaSugeridaFormatada) &&
+        htmlReportWithAI.includes("Erros Críticos") &&
+        htmlReportWithAI.includes("Pontos de Melhoria") &&
+        htmlReportWithAI.includes("Acertos"),
+        "Seção 149.2 (Conteúdo da Seção de Avaliação no Relatório Final): Renderiza o feedback detalhado da IA (Erros, Acertos, Justificativas Clínicas) e a nota sugerida em destaque acompanhada do aviso 'Nota Sugerida (Sujeita à validação do Professor)'"
+      );
+
+      // 149.3 Sincronia de Dados e Estado de Loading ('O Preceptor IA está avaliando o seu caso...')
+      assert(
+        typeof pmRules.getPreceptorLoadingMessage === "function" &&
+        pmRules.getPreceptorLoadingMessage() === "O Preceptor IA está avaliando o seu caso..." &&
+        typeof pmRules.getStudentValidationNotice === "function" &&
+        pmRules.getStudentValidationNotice() === "Nota Sugerida (Sujeita à validação do Professor)" &&
+        Boolean(prontWithAversionError.avaliacaoIA) &&
+        Boolean(evalAversionResult.relatorioFinalHtml) &&
+        evalAversionResult.relatorioFinalHtml.includes("Avaliação do Preceptor IA"),
+        "Seção 149.3 (Sincronia de Dados e Loading): Possui mensagem de loading 'O Preceptor IA está avaliando o seu caso...' e aguarda a resolução da promise da IA antes de liberar o Relatório Final/PDF com o estado da avaliação populado"
+      );
+
+      // 149.4 Continuidade do Fluxo (Mesmo documento consolidado no Relatório Final em Tela/PDF e no E-mail para chagasnutri@gmail.com)
+      assert(
+        evalAversionResult.emailPayload &&
+        evalAversionResult.emailPayload.to === "chagasnutri@gmail.com" &&
+        evalAversionResult.emailPayload.html.includes("Avaliação do Preceptor IA") &&
+        evalAversionResult.emailPayload.html.includes("Nota Sugerida (Sujeita à validação do Professor)") &&
+        evalAversionResult.emailPayload.text.includes("Avaliação do Preceptor IA") &&
+        evalAversionResult.emailPayload.text.includes("Nota Sugerida (Sujeita à validação do Professor)"),
+        "Seção 149.4 (Continuidade do Fluxo e Documento Consolidado no E-mail): O Relatório Final/PDF gerado com a seção 'Avaliação do Preceptor IA' embutida é o mesmo conteúdo consolidado enviado via e-mail para chagasnutri@gmail.com"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {
