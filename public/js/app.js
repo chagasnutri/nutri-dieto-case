@@ -7007,29 +7007,29 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           await firebaseSyncService.saveProntuario(appState.currentCaseId, data);
         } catch (fbErr) {
-          console.warn("⚠️ Aviso ao salvar prontuário no Firestore:", fbErr);
+          console.error("[DietoCase Frontend] Erro ao salvar prontuário no Firestore antes do envio de e-mail:", fbErr);
         }
       }
 
-      // Disparo Automático Assíncrono (Não-Bloqueante) do E-mail do Relatório Final consolidado para chagasnutri@gmail.com
-      // (Quando habilitarCorrecaoAutomaticaIA === true, evaluateCaseWithAI já disparou o e-mail consolidado com a Avaliação do Preceptor IA embutida)
-      if (appState.currentCase?.habilitarCorrecaoAutomaticaIA !== true) {
-        try {
-          const htmlReportStr = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
-            ? DietoterapiaDocxReport.buildHtmlReport(data, appState.currentCase)
-            : "";
-          prontuarioManager.dispatchFinalReportEmailAsync(data, appState.currentCase, {
-            studentName: data?.aluno?.nome || "Estudante de Nutrição",
-            caseTitle: appState.currentCase?.title || appState.currentCaseId || "Caso Clínico Supervisionado",
-            dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-            habilitarCorrecaoAutomaticaIA: Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA),
-            notaFinal: data?.notaIA || "",
-            avaliacaoIA: data?.avaliacaoIA || "",
-            relatorioFinalHtml: htmlReportStr
-          }).catch((err) => console.warn("⚠️ Aviso no envio assíncrono de e-mail:", err));
-        } catch (mailErr) {
-          console.warn("⚠️ Aviso ao disparar e-mail assíncrono do relatório final:", mailErr);
-        }
+      // Disparo Automático de E-mail do Relatório Final consolidado para chagasnutri@gmail.com (após salvar no Firestore)
+      // Realiza fetch POST para /api/send-email (/api/enviar-relatorio) passando nome do aluno, caso, notas e feedback da IA no body,
+      // com tratamento try/catch e console.error detalhado sem travar o aluno caso o envio falhe.
+      try {
+        const htmlReportStr = (typeof DietoterapiaDocxReport !== "undefined" && typeof DietoterapiaDocxReport.buildHtmlReport === "function")
+          ? DietoterapiaDocxReport.buildHtmlReport(data, appState.currentCase)
+          : "";
+        prontuarioManager.dispatchFinalReportEmailAsync(data, appState.currentCase, {
+          studentName: data?.aluno?.nome || "Estudante de Nutrição",
+          caseTitle: appState.currentCase?.title || appState.currentCaseId || "Caso Clínico Supervisionado",
+          dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+          habilitarCorrecaoAutomaticaIA: Boolean(appState.currentCase?.habilitarCorrecaoAutomaticaIA),
+          notaSugerida: data?.notaIA || data?.avaliacaoIA?.notaSugeridaFormatada || "",
+          notaFinal: data?.notaIA || data?.avaliacaoIA?.notaSugeridaFormatada || "",
+          avaliacaoIA: data?.avaliacaoIATexto || data?.avaliacaoIA?.feedback || data?.avaliacaoIA || "",
+          relatorioFinalHtml: htmlReportStr
+        }).catch((err) => console.error("[DietoCase Frontend] Erro no disparo assíncrono de e-mail para chagasnutri@gmail.com:", err));
+      } catch (mailErr) {
+        console.error("[DietoCase Frontend] Exceção ao acionar rota de envio de e-mail do relatório final:", mailErr);
       }
 
       // 1. Gera e baixa o documento Word (.docx) somente após a promise da IA resolver e o estado estar populado

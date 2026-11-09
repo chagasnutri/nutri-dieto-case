@@ -2,8 +2,9 @@
   "name": "dietocase",
   "version": "2.5.0",
   "private": true,
-  "description": "Simulador Clênico e Prontuário de Dietoterapia com Preceptor IA",
+  "description": "Simulador Clínico e Prontuário de Dietoterapia com Preceptor IA",
   "dependencies": {
-    "@vercel/analytics": "^1.4.1"
+    "@vercel/analytics": "^1.4.1",
+    "nodemailer": "^6.9.16"
   }
 }

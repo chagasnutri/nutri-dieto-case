@@ -2053,38 +2053,59 @@ class StudentProntuarioManager {
     // Processo assíncrono em background para não travar a tela de carregamento do usuário final
     const backgroundPromise = (async () => {
       let apiDispatched = false;
+      const emailRequestBody = {
+        to: this.getFixedProfessorEmail(),
+        professorEmail: this.getFixedProfessorEmail(),
+        studentName,
+        caseTitle,
+        dataHora,
+        habilitarCorrecaoAutomaticaIA,
+        notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "0,0") : null,
+        notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "0,0") : null,
+        avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
+        feedbackIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
+        relatorioFinalTexto,
+        relatorioFinalHtml,
+        resolutionData: safeProntuario
+      };
+
       try {
-        if (typeof fetch === "function") {
-          const resp = await fetch("/api/enviar-relatorio", {
+        const isFileProtocol = typeof window !== "undefined" && window.location && window.location.protocol === "file:";
+        if (typeof fetch === "function" && !isFileProtocol) {
+          let resp = await fetch("/api/send-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to: this.getFixedProfessorEmail(),
-              studentName,
-              caseTitle,
-              dataHora,
-              habilitarCorrecaoAutomaticaIA,
-              notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
-              notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
-              avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
-              relatorioFinalTexto,
-              relatorioFinalHtml,
-              resolutionData: safeProntuario
-            })
-          });
+            body: JSON.stringify(emailRequestBody)
+          }).catch(() => null);
+
+          if (!resp || !resp.ok) {
+            resp = await fetch("/api/enviar-relatorio", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(emailRequestBody)
+            });
+          }
+
           if (resp && resp.ok) {
             apiDispatched = true;
+          } else {
+            const errText = resp ? await resp.text().catch(() => "") : "Sem resposta da rota de API";
+            console.error(
+              "[DietoCase Frontend] Falha HTTP ao enviar e-mail para chagasnutri@gmail.com:",
+              resp ? resp.status : "NETWORK_ERROR",
+              errText
+            );
           }
         }
       } catch (e) {
-        console.warn("⚠️ Aviso no disparo assíncrono via /api/enviar-relatorio:", e);
+        console.error("[DietoCase Frontend] Exceção ao disparar e-mail para chagasnutri@gmail.com:", e);
       }
 
       if (typeof firebaseSyncService !== "undefined" && firebaseSyncService && typeof firebaseSyncService.saveMailTrigger === "function") {
         try {
           await firebaseSyncService.saveMailTrigger(emailPayload);
         } catch (fbErr) {
-          console.warn("⚠️ Aviso ao salvar trigger de e-mail no Firestore:", fbErr);
+          console.error("[DietoCase Frontend] Erro ao salvar trigger de e-mail no Firestore:", fbErr);
         }
       }
 
@@ -2096,8 +2117,8 @@ class StudentProntuarioManager {
         caseTitle,
         dataHora,
         habilitarCorrecaoAutomaticaIA,
-        notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
-        notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "9,0") : null,
+        notaSugerida: habilitarCorrecaoAutomaticaIA ? (notaFinal || "0,0") : null,
+        notaFinal: habilitarCorrecaoAutomaticaIA ? (notaFinal || "0,0") : null,
         avaliacaoIA: habilitarCorrecaoAutomaticaIA ? avaliacaoIA : null,
         apiDispatched,
         emailPayload

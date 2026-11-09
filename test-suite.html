@@ -4179,6 +4179,30 @@ REGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos,
         evalAversionResult.emailPayload.text.includes("Nota Sugerida (Sujeita à validação do Professor)"),
         "Seção 149.4 (Continuidade do Fluxo e Documento Consolidado no E-mail): O Relatório Final/PDF gerado com a seção 'Avaliação do Preceptor IA' embutida é o mesmo conteúdo consolidado enviado via e-mail para chagasnutri@gmail.com"
       );
+
+      // ==========================================
+      // 150. VERIFICAÇÃO DE DISPARO DE E-MAIL SERVERLESS (VERCEL), INTEGRAÇÃO FRONTEND E TRATAMENTO DE ERROS (TRY/CATCH)
+      // ==========================================
+      const emailResilienceResult = await pmRules.dispatchFinalReportEmailAsync(prontWithAversionError, casoRigorousTest, {
+        studentName: "Carlos Eduardo",
+        caseTitle: "Caso Insuficiência Renal Crônica e Hipertensão",
+        habilitarCorrecaoAutomaticaIA: true,
+        notaSugerida: evalAversionResult.notaSugeridaFormatada,
+        notaFinal: evalAversionResult.notaSugeridaFormatada,
+        avaliacaoIA: evalAversionResult.avaliacaoIA,
+        relatorioFinalHtml: htmlReportWithAI
+      });
+
+      assert(
+        emailResilienceResult &&
+        emailResilienceResult.success === true &&
+        emailResilienceResult.to === "chagasnutri@gmail.com" &&
+        emailResilienceResult.studentName === "Carlos Eduardo" &&
+        emailResilienceResult.caseTitle === "Caso Insuficiência Renal Crônica e Hipertensão" &&
+        emailResilienceResult.notaSugerida === evalAversionResult.notaSugeridaFormatada &&
+        emailResilienceResult.avaliacaoIA.includes("Erros Críticos"),
+        "Seção 150.1 (Integração Frontend e Resiliência Try/Catch): O disparo de e-mail para chagasnutri@gmail.com envia nome do aluno, caso, notas e feedback da IA com tratamento try/catch sem travar o aluno"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

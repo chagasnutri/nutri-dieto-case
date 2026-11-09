@@ -312,19 +312,21 @@ export async function POST(request) {
     `;
 
     let emailDisparado = false;
-    let emailTransportUsed = 'queue_fallback';
+    let emailTransportUsed = 'none';
+    const providerErrors = [];
 
-    // 1. Disparo via Resend API (se RESEND_API_KEY estiver configurada)
-    if (process.env.RESEND_API_KEY) {
+    // 1. Disparo via Resend API (se RESEND_API_KEY estiver configurada em process.env) — com await estrito para Vercel Serverless
+    const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+    if (resendApiKey) {
       try {
         const resendResp = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`
+            Authorization: `Bearer ${resendApiKey}`
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM || 'DietoCase Avaliador <onboarding@resend.dev>',
+            from: process.env.EMAIL_FROM || process.env.RESEND_FROM || 'DietoCase Avaliador <onboarding@resend.dev>',
             to: [to],
             subject,
             text: emailText,
@@ -332,30 +334,103 @@ export async function POST(request) {
           })
         });
         if (resendResp.ok) {
+          await resendResp.json().catch(() => ({}));
           emailDisparado = true;
           emailTransportUsed = 'resend';
+        } else {
+          const errBody = await resendResp.text().catch(() => '');
+          const msg = `Resend HTTP ${resendResp.status}: ${errBody}`;
+          providerErrors.push(msg);
+          console.error('[API E-mail][Resend] Falha ao enviar e-mail para chagasnutri@gmail.com:', msg);
         }
       } catch (e) {
-        console.warn('[API /api/enviar-relatorio] Aviso no envio via Resend:', e);
+        providerErrors.push(`Resend Exception: ${e?.message || String(e)}`);
+        console.error('[API E-mail][Resend] Exceção durante envio via Resend:', e);
       }
     }
 
-    // 2. Disparo via Nodemailer SMTP (se SMTP_HOST estiver configurado e Resend não tiver enviado)
-    if (!emailDisparado && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // 2. Disparo via SendGrid API (se SENDGRID_API_KEY estiver configurada em process.env) — com await estrito para Vercel Serverless
+    const sendgridApiKey = (process.env.SENDGRID_API_KEY || '').trim();
+    if (!emailDisparado && sendgridApiKey) {
       try {
-        const nodemailer = await import('nodemailer').catch(() => null);
-        if (nodemailer && nodemailer.default) {
-          const transporter = nodemailer.default.createTransport({
-            host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT || 587),
-            secure: Number(process.env.SMTP_PORT) === 465,
+        const sgResp = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sendgridApiKey}`
+          },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email: to }] }],
+            from: { email: process.env.EMAIL_FROM || process.env.SENDGRID_FROM || to, name: 'DietoCase Avaliador' },
+            subject,
+            content: [
+              { type: 'text/plain', value: emailText },
+              { type: 'text/html', value: emailHtml }
+            ]
+          })
+        });
+        if (sgResp.ok || sgResp.status === 202) {
+          emailDisparado = true;
+          emailTransportUsed = 'sendgrid';
+        } else {
+          const errBody = await sgResp.text().catch(() => '');
+          const msg = `SendGrid HTTP ${sgResp.status}: ${errBody}`;
+          providerErrors.push(msg);
+          console.error('[API E-mail][SendGrid] Falha ao enviar e-mail para chagasnutri@gmail.com:', msg);
+        }
+      } catch (e) {
+        providerErrors.push(`SendGrid Exception: ${e?.message || String(e)}`);
+        console.error('[API E-mail][SendGrid] Exceção durante envio via SendGrid:', e);
+      }
+    }
+
+    // 3. Disparo via Nodemailer SMTP / Gmail (com suporte a variáveis SMTP_* / EMAIL_* / GMAIL_* em process.env e await estrito)
+    const smtpUser = (
+      process.env.SMTP_USER ||
+      process.env.EMAIL_USER ||
+      process.env.GMAIL_USER ||
+      process.env.MAIL_USER ||
+      process.env.NODEMAILER_USER ||
+      ''
+    ).trim();
+    const smtpPass = (
+      process.env.SMTP_PASS ||
+      process.env.EMAIL_PASS ||
+      process.env.GMAIL_PASS ||
+      process.env.GMAIL_APP_PASSWORD ||
+      process.env.EMAIL_PASSWORD ||
+      process.env.MAIL_PASS ||
+      process.env.APP_PASSWORD ||
+      process.env.NODEMAILER_PASS ||
+      ''
+    ).trim();
+    const smtpHost = (
+      process.env.SMTP_HOST ||
+      process.env.EMAIL_HOST ||
+      process.env.MAIL_HOST ||
+      (smtpUser.includes('@gmail.com') ? 'smtp.gmail.com' : '')
+    ).trim();
+    const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
+
+    if (!emailDisparado && smtpHost && smtpUser && smtpPass) {
+      try {
+        const nodemailerModule = await import('nodemailer').catch((importErr) => {
+          console.error('[API E-mail][Nodemailer] Erro ao importar pacote nodemailer:', importErr);
+          return null;
+        });
+        const nodemailer = nodemailerModule?.default || nodemailerModule;
+        if (nodemailer && typeof nodemailer.createTransport === 'function') {
+          const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
             auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS
+              user: smtpUser,
+              pass: smtpPass
             }
           });
           await transporter.sendMail({
-            from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+            from: process.env.EMAIL_FROM || smtpUser,
             to,
             subject,
             text: emailText,
@@ -363,13 +438,22 @@ export async function POST(request) {
           });
           emailDisparado = true;
           emailTransportUsed = 'nodemailer';
+        } else {
+          const msg = 'Módulo nodemailer indisponível no runtime.';
+          providerErrors.push(msg);
+          console.error('[API E-mail][Nodemailer]', msg);
         }
       } catch (e) {
-        console.warn('[API /api/enviar-relatorio] Aviso no envio via Nodemailer:', e);
+        providerErrors.push(`Nodemailer Exception: ${e?.message || String(e)}`);
+        console.error('[API E-mail][Nodemailer] Erro detalhado ao enviar e-mail via SMTP para chagasnutri@gmail.com:', e);
       }
     }
 
     if (!emailDisparado) {
+      console.error(
+        '[API E-mail] Atenção: Nenhum provedor de e-mail ativo concluiu o envio direto na Vercel para chagasnutri@gmail.com. Verifique as variáveis de ambiente (RESEND_API_KEY, SENDGRID_API_KEY ou SMTP_HOST/SMTP_USER/SMTP_PASS / EMAIL_USER/EMAIL_PASS). Detalhes:',
+        providerErrors
+      );
       emailDisparado = true;
       emailTransportUsed = 'firebase_email_trigger_ready';
     }

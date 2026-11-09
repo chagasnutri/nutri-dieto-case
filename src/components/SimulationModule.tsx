@@ -958,28 +958,50 @@ export default function SimulationModule() {
         }
       }
 
-      // 2. Disparo Automático Assíncrono (não-bloqueante) do E-mail do Relatório Final para chagasnutri@gmail.com (após salvar no Firestore)
+      // 2. Disparo Automático do E-mail do Relatório Final para chagasnutri@gmail.com (após salvar no Firestore)
+      // Envia POST para /api/send-email (com fallback para /api/enviar-relatorio) contendo nome do aluno, caso, notas e feedback da IA
       Promise.resolve().then(async () => {
+        const emailBodyPayload = {
+          to: FIXED_PROFESSOR_EMAIL,
+          professorEmail: FIXED_PROFESSOR_EMAIL,
+          studentId,
+          studentName: safeResolutionPayload.studentName,
+          caseId: selectedCase,
+          caseTitle,
+          dataHora: dataHoraSubmissao,
+          habilitarCorrecaoAutomaticaIA: Boolean(habilitarCorrecaoAutomaticaIA),
+          notaSugerida: notaAtribuida || '',
+          notaFinal: notaAtribuida || '',
+          avaliacaoIA: avaliacaoTexto || '',
+          feedbackIA: avaliacaoTexto || '',
+          resolutionData: safeResolutionPayload
+        };
+
         try {
-          await fetch('/api/enviar-relatorio', {
+          let emailRes = await fetch('/api/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: FIXED_PROFESSOR_EMAIL,
-              professorEmail: FIXED_PROFESSOR_EMAIL,
-              studentId,
-              studentName: safeResolutionPayload.studentName,
-              caseId: selectedCase,
-              caseTitle,
-              dataHora: dataHoraSubmissao,
-              habilitarCorrecaoAutomaticaIA: Boolean(habilitarCorrecaoAutomaticaIA),
-              notaFinal: notaAtribuida || '',
-              avaliacaoIA: avaliacaoTexto || '',
-              resolutionData: safeResolutionPayload
-            })
-          });
+            body: JSON.stringify(emailBodyPayload)
+          }).catch(() => null);
+
+          if (!emailRes || !emailRes.ok) {
+            emailRes = await fetch('/api/enviar-relatorio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(emailBodyPayload)
+            });
+          }
+
+          if (!emailRes || !emailRes.ok) {
+            const errDetails = emailRes ? await emailRes.text().catch(() => '') : 'Sem resposta da API';
+            console.error(
+              '[DietoCase Frontend] Erro HTTP no disparo de e-mail para chagasnutri@gmail.com:',
+              emailRes ? emailRes.status : 'NETWORK_ERROR',
+              errDetails
+            );
+          }
         } catch (emailErr) {
-          console.warn('⚠️ Aviso no disparo assíncrono de /api/enviar-relatorio:', emailErr);
+          console.error('[DietoCase Frontend] Exceção ao disparar e-mail para chagasnutri@gmail.com:', emailErr);
         }
       });
 
