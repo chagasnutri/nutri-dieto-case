@@ -85,9 +85,22 @@ class StudentProntuarioManager {
     }));
 
     const rawConsumo = (raw?.consumoAlimentar && typeof raw.consumoAlimentar === "object") ? raw.consumoAlimentar : {};
+    const isConsumoQualitativo =
+      rawConsumo?.tipoAnaliseConsumo === "qualitativo" ||
+      raw?.tipoAnaliseConsumo === "qualitativo" ||
+      Boolean(rawConsumo?.habilitarConsumoQualitativo && rawConsumo?.habilitarConsumoQuantitativo === false);
+    const tipoAnaliseConsumo = isConsumoQualitativo ? "qualitativo" : "quantitativo";
+    const avaliacaoQualitativaConsumo = String(
+      rawConsumo?.avaliacaoQualitativaConsumo ??
+      raw?.avaliacaoQualitativaConsumo ??
+      ""
+    ).trim();
+
     const rawRefRec = Array.isArray(rawConsumo?.refeicoesRecordatorio)
       ? rawConsumo.refeicoesRecordatorio.filter(Boolean)
-      : null;
+      : (Array.isArray(raw?.consumoQualitativoBlocos) && isConsumoQualitativo
+          ? raw.consumoQualitativoBlocos.filter(Boolean)
+          : null);
 
     const safeRefRec = (Array.isArray(rawRefRec) && rawRefRec.length > 0 ? rawRefRec : (empty.consumoAlimentar?.refeicoesRecordatorio || [])).map((m, idx) => ({
       id: m?.id || `rec-${idx + 1}`,
@@ -95,7 +108,23 @@ class StudentProntuarioManager {
       horario: m?.horario || "08:00",
       preparacao: m?.preparacao ?? m?.tipoPreparacao ?? "",
       tipoPreparacao: m?.tipoPreparacao ?? m?.preparacao ?? "",
-      itens: Array.isArray(m?.itens) ? m.itens.filter(Boolean) : [],
+      tipoAnalise: m?.tipoAnalise || tipoAnaliseConsumo,
+      itens: Array.isArray(m?.itens)
+        ? m.itens.filter(Boolean).map((it, itIdx) => ({
+            ...it,
+            id: it?.id || `rec-it-${idx + 1}-${itIdx + 1}`,
+            alimento: it?.alimento ?? it?.alimentoNome ?? it?.nome ?? "",
+            alimentoNome: it?.alimentoNome ?? it?.alimento ?? it?.nome ?? "",
+            nome: it?.nome ?? it?.alimentoNome ?? it?.alimento ?? "",
+            medidaCaseira: it?.medidaCaseira ?? it?.medida ?? "",
+            medida: it?.medida ?? it?.medidaCaseira ?? "",
+            gramatura: it?.gramatura ?? it?.gramas ?? 0,
+            kcal: it?.kcal ?? 0,
+            cho: it?.cho ?? 0,
+            ptn: it?.ptn ?? 0,
+            lip: it?.lip ?? 0
+          }))
+        : [],
       substituicoes: m?.substituicoes || "",
       subtotal: (m?.subtotal && typeof m.subtotal === "object") ? m.subtotal : { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 }
     }));
@@ -124,9 +153,13 @@ class StudentProntuarioManager {
         orgaosSistemas: { ...(empty.exameFisico?.orgaosSistemas || {}), ...(raw?.exameFisico?.orgaosSistemas || {}) },
         compartimentos: { ...(empty.exameFisico?.compartimentos || {}), ...(raw?.exameFisico?.compartimentos || {}) }
       },
+      tipoAnaliseConsumo,
+      avaliacaoQualitativaConsumo,
       consumoAlimentar: {
         ...(empty.consumoAlimentar || {}),
         ...rawConsumo,
+        tipoAnaliseConsumo,
+        avaliacaoQualitativaConsumo,
         refeicoesRecordatorio: safeRefRec,
         totaisRecordatorio: { ...(empty.consumoAlimentar?.totaisRecordatorio || {}), ...(rawConsumo?.totaisRecordatorio || {}) }
       },
@@ -178,6 +211,90 @@ class StudentProntuarioManager {
         ? meal.itens.filter(Boolean).map((it, itIdx) => ({
             ...it,
             id: it?.id || `it-${idx + 1}-${itIdx + 1}`,
+            alimento: it?.alimento ?? it?.alimentoNome ?? it?.nome ?? "",
+            alimentoNome: it?.alimentoNome ?? it?.alimento ?? it?.nome ?? "",
+            nome: it?.nome ?? it?.alimentoNome ?? it?.alimento ?? "",
+            medidaCaseira: it?.medidaCaseira ?? it?.medida ?? "",
+            medida: it?.medida ?? it?.medidaCaseira ?? "",
+            gramatura: isQualitativo ? 0 : (it?.gramatura ?? it?.gramas ?? 0),
+            kcal: isQualitativo ? 0 : (it?.kcal ?? 0),
+            cho: isQualitativo ? 0 : (it?.cho ?? 0),
+            ptn: isQualitativo ? 0 : (it?.ptn ?? 0),
+            lip: isQualitativo ? 0 : (it?.lip ?? 0)
+          }))
+        : []
+    }));
+    return safe;
+  }
+
+  // Retorna os modos de Consumo Alimentar liberados pelo professor nas configurações do caso clínico
+  getAllowedConsumoModes(clinicalCase = {}) {
+    const c = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
+    const hasExplicitQual = typeof c.habilitarConsumoQualitativo === "boolean";
+    const hasExplicitQuant = typeof c.habilitarConsumoQuantitativo === "boolean";
+
+    let habilitarConsumoQualitativo = hasExplicitQual ? c.habilitarConsumoQualitativo : true;
+    let habilitarConsumoQuantitativo = hasExplicitQuant ? c.habilitarConsumoQuantitativo : true;
+
+    // Se por acaso ambos foram salvos como false, garante ao menos o quantitativo para não bloquear a aba
+    if (!habilitarConsumoQualitativo && !habilitarConsumoQuantitativo) {
+      habilitarConsumoQuantitativo = true;
+    }
+
+    return {
+      habilitarConsumoQualitativo,
+      habilitarConsumoQuantitativo,
+      bothEnabled: Boolean(habilitarConsumoQualitativo && habilitarConsumoQuantitativo)
+    };
+  }
+
+  // Resolve o modo ativo de Consumo Alimentar ('qualitativo' ou 'quantitativo') respeitando o controle do professor e a escolha do aluno
+  resolveActiveConsumoMode(prontuario = {}, clinicalCase = {}) {
+    const allowed = this.getAllowedConsumoModes(clinicalCase);
+    if (allowed.habilitarConsumoQualitativo && !allowed.habilitarConsumoQuantitativo) {
+      return "qualitativo";
+    }
+    if (!allowed.habilitarConsumoQualitativo && allowed.habilitarConsumoQuantitativo) {
+      return "quantitativo";
+    }
+    const studentChoice =
+      prontuario?.consumoAlimentar?.tipoAnaliseConsumo ||
+      prontuario?.tipoAnaliseConsumo ||
+      "quantitativo";
+    return studentChoice === "qualitativo" ? "qualitativo" : "quantitativo";
+  }
+
+  // Alterna com segurança entre 'Análise Qualitativa' ('qualitativo') e 'Análise Quantitativa' ('quantitativo') no Consumo Alimentar
+  switchConsumoAnalysisMode(prontuario, mode = "quantitativo", clinicalCase = {}) {
+    const allowed = this.getAllowedConsumoModes(clinicalCase);
+    let cleanMode = mode === "qualitativo" ? "qualitativo" : "quantitativo";
+    if (cleanMode === "qualitativo" && !allowed.habilitarConsumoQualitativo) {
+      cleanMode = "quantitativo";
+    } else if (cleanMode === "quantitativo" && !allowed.habilitarConsumoQuantitativo) {
+      cleanMode = "qualitativo";
+    }
+    const isQualitativo = cleanMode === "qualitativo";
+    const safe = this.sanitizeProntuarioPayload(prontuario, prontuario?.caseId || clinicalCase?.id);
+    safe.tipoAnaliseConsumo = cleanMode;
+    if (!safe.consumoAlimentar || typeof safe.consumoAlimentar !== "object") {
+      safe.consumoAlimentar = {};
+    }
+    safe.consumoAlimentar.tipoAnaliseConsumo = cleanMode;
+    safe.consumoAlimentar.avaliacaoQualitativaConsumo = String(
+      safe.consumoAlimentar.avaliacaoQualitativaConsumo ?? safe.avaliacaoQualitativaConsumo ?? ""
+    );
+    safe.consumoAlimentar.refeicoesRecordatorio = (safe.consumoAlimentar.refeicoesRecordatorio || []).map((meal, idx) => ({
+      ...meal,
+      id: meal?.id || `rec-${idx + 1}`,
+      refeicao: meal?.refeicao || "Desjejum",
+      horario: meal?.horario || "07:00",
+      preparacao: meal?.preparacao ?? meal?.tipoPreparacao ?? "",
+      tipoPreparacao: meal?.tipoPreparacao ?? meal?.preparacao ?? "",
+      tipoAnalise: cleanMode,
+      itens: Array.isArray(meal?.itens)
+        ? meal.itens.filter(Boolean).map((it, itIdx) => ({
+            ...it,
+            id: it?.id || `rec-it-${idx + 1}-${itIdx + 1}`,
             alimento: it?.alimento ?? it?.alimentoNome ?? it?.nome ?? "",
             alimentoNome: it?.alimentoNome ?? it?.alimento ?? it?.nome ?? "",
             nome: it?.nome ?? it?.alimentoNome ?? it?.alimento ?? "",
@@ -427,6 +544,8 @@ class StudentProntuarioManager {
         justificativaFisiopatologica: ""
       },
       consumoAlimentar: {
+        tipoAnaliseConsumo: "quantitativo",
+        avaliacaoQualitativaConsumo: "",
         vetRecordatorio: "",
         neeCaso: "",
         adequacaoVetPct: "",
@@ -435,8 +554,8 @@ class StudentProntuarioManager {
         inqueritoResumo: "",
         aguaPreferenciasAversoes: "",
         refeicoesRecordatorio: [
-          { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-          { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-1", refeicao: "Desjejum", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+          { id: "rec-2", refeicao: "Colação", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
           { id: "rec-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
           { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
           { id: "rec-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
@@ -1805,13 +1924,25 @@ class StudentProntuarioManager {
           : (Array.isArray(p?.cardapioItems) ? p.cardapioItems : []));
     const plano = (rawPlano || []).filter(Boolean);
 
+    const isConsumoQual = this.resolveActiveConsumoMode(p, safeCase) === "qualitativo";
+    const avaliacaoQualConsumoText = String(
+      ca?.avaliacaoQualitativaConsumo ||
+      p?.avaliacaoQualitativaConsumo ||
+      ca?.inqueritoResumo ||
+      ""
+    ).trim();
+
     const recLines = refRec
       .filter((r) => r && ((r?.preparacao || r?.tipoPreparacao) || (Array.isArray(r?.itens) && r.itens.length > 0) || r?.nome || r?.alimentos))
       .map((r) => {
         const prep = r?.preparacao || r?.tipoPreparacao || p?.recordatorioPreparacao || "Não informada";
         const itensStr = Array.isArray(r?.itens) && r.itens.length > 0
-          ? r.itens.filter(Boolean).map((it) => `${it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g)`).join(", ")
-          : (r?.alimentos || (r?.nome ? `${r.nome} (${r?.qtd || 1} ${r?.medida || "porção"} / ${r?.gramas || 0}g)` : ""));
+          ? r.itens.filter(Boolean).map((it) =>
+              isConsumoQual
+                ? `${it?.alimento || it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"})`
+                : `${it?.alimento || it?.alimentoNome || it?.nome || "Alimento"} (${it?.medidaCaseira || it?.medida || "1 porção"} / ${it?.gramatura ?? it?.gramas ?? 0}g)`
+            ).join(", ")
+          : (r?.alimentos || (r?.nome ? (isConsumoQual ? `${r.nome} (${r?.medida || "1 porção"})` : `${r.nome} (${r?.qtd || 1} ${r?.medida || "porção"} / ${r?.gramas || 0}g)`) : ""));
         return `  • ${r?.refeicao || r?.nome || "Refeição"} (${r?.horario || "--:--"}) | Preparação: ${prep} | Ingredientes: ${itensStr}`;
       })
       .join("\n") || "  • Nenhuma refeição detalhada.";
@@ -1841,8 +1972,9 @@ class StudentProntuarioManager {
       `- Preferências / Aversões / Alergias: ${ca?.aguaPreferenciasAversoes || anamnese?.aversoesIntolerancias || "---"}`,
       `- Peso / Estatura / IMC: ${antro?.pesoAtual || p?.peso || "--"} kg | ${antro?.estatura || p?.estatura || "--"} m | IMC: ${antro?.imc || "--"} kg/m² (${antro?.diagnosticoNutricionalExtenso || "--"})`,
       ``,
-      `2. RECORDATÓRIO DE 24H (CONSUMO HABITUAL E PREPARAÇÕES):`,
+      `2. RECORDATÓRIO DE 24H (${isConsumoQual ? "ANÁLISE QUALITATIVA DO CONSUMO" : "ANÁLISE QUANTITATIVA DO CONSUMO"}):`,
       recLines,
+      avaliacaoQualConsumoText ? `- Avaliação Qualitativa do Consumo: ${avaliacaoQualConsumoText}` : null,
       ``,
       `3. DIAGNÓSTICO EM NUTRIÇÃO (PES) E OBJETIVOS:`,
       `- Diagnóstico PES: ${pes?.textoCompletoPES || p?.diagnosticoPESTexto || "---"}`,
@@ -1881,7 +2013,7 @@ class StudentProntuarioManager {
             ]
           : []
       )
-    ].join("\n");
+    ].filter((line) => line !== null).join("\n");
   }
 
   // Constrói o payload formatado de e-mail para o professor vinculado ao caso (Destinatário Fixo Obrigatório: chagasnutri@gmail.com)

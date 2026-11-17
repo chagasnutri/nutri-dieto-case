@@ -38,8 +38,21 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
   const presc = res?.prescricaoDietoterapica && typeof res.prescricaoDietoterapica === 'object' ? res.prescricaoDietoterapica : {};
   const totaisCardapio = res?.totaisCardapio && typeof res.totaisCardapio === 'object' ? res.totaisCardapio : {};
 
+  const isConsumoQualitativo = Boolean(
+    ca?.tipoAnaliseConsumo === 'qualitativo' ||
+    res?.tipoAnaliseConsumo === 'qualitativo' ||
+    (res?.habilitarConsumoQualitativo === true && res?.habilitarConsumoQuantitativo === false)
+  );
+  const avaliacaoQualitativaConsumo = String(
+    ca?.avaliacaoQualitativaConsumo ||
+    res?.avaliacaoQualitativaConsumo ||
+    ca?.inqueritoResumo ||
+    ''
+  ).trim();
+
   const rawRecordatorio =
     (Array.isArray(ca?.refeicoesRecordatorio) ? ca.refeicoesRecordatorio : null) ||
+    (isConsumoQualitativo && Array.isArray(res?.consumoQualitativoBlocos) ? res.consumoQualitativoBlocos : null) ||
     (Array.isArray(res?.recordatorioItems) ? res.recordatorioItems : null) ||
     [];
 
@@ -61,9 +74,16 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
           if (Array.isArray(r?.itens) && r.itens.length > 0) {
             const sub = r.itens
               .filter(Boolean)
-              .map((it) => `${it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'} / ${it?.gramatura ?? it?.gramas ?? 0}g)`)
+              .map((it) =>
+                isConsumoQualitativo
+                  ? `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'})`
+                  : `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'} / ${it?.gramatura ?? it?.gramas ?? 0}g)`
+              )
               .join(', ');
             return `  • ${r?.refeicao || r?.nome || `Refeição ${idx + 1}`} (${r?.horario || '--:--'}) | Preparação: ${prep} | Itens: ${sub}`;
+          }
+          if (isConsumoQualitativo) {
+            return `  • ${r?.refeicao || `Item ${idx + 1}`} | Preparação: ${prep} | Alimento: ${r?.nome || r?.alimentoNome || r?.alimentos || 'Não informado'} (${r?.medida || r?.medidaCaseira || '1 porção'})`;
           }
           return `  • ${r?.refeicao || `Item ${idx + 1}`} | Preparação: ${prep} | Alimento: ${r?.nome || r?.alimentoNome || r?.alimentos || 'Não informado'} (${r?.qtd || 1} ${r?.medida || r?.medidaCaseira || 'porção'} - ${r?.gramas ?? r?.gramatura ?? 0}g)`;
         })
@@ -139,8 +159,9 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
     `3. EXAME FÍSICO E SEMIOLOGIA NUTRICIONAL:`,
     `- Sinais Clínicos / Achados: ${ef?.sinaisClinicos || ef?.massaMuscularAdiposa || '---'}`,
     ``,
-    `4. CONSUMO ALIMENTAR E RECORDATÓRIO DE 24H (COM PREPARAÇÕES):`,
+    `4. CONSUMO ALIMENTAR E RECORDATÓRIO DE 24H (${isConsumoQualitativo ? 'ANÁLISE QUALITATIVA' : 'ANÁLISE QUANTITATIVA'}):`,
     recLines,
+    avaliacaoQualitativaConsumo ? `- Avaliação Qualitativa do Consumo: ${avaliacaoQualitativaConsumo}` : null,
     ``,
     `5. DIAGNÓSTICO EM NUTRIÇÃO (METODOLOGIA PES) E OBJETIVOS:`,
     `- Diagnóstico PES: ${pes?.textoCompletoPES || res?.diagnosticoPESTexto || `P: ${pes?.problema || res?.diagnosticoProblema || '--'} | E: ${pes?.etiologia || res?.diagnosticoEtiologia || '--'} | S: ${pes?.sinaisSintomas || res?.diagnosticoSinais || '--'}`}`,

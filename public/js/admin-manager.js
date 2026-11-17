@@ -188,6 +188,8 @@ class AdminManager {
     reviewedCase.isLocked = reviewedCase.isLocked === true;
     reviewedCase.visivel = reviewedCase.visivel !== false;
     reviewedCase.habilitarQuestoesAvaliativas = reviewedCase.habilitarQuestoesAvaliativas !== false;
+    reviewedCase.habilitarConsumoQualitativo = reviewedCase.habilitarConsumoQualitativo !== undefined ? Boolean(reviewedCase.habilitarConsumoQualitativo) : true;
+    reviewedCase.habilitarConsumoQuantitativo = reviewedCase.habilitarConsumoQuantitativo !== undefined ? Boolean(reviewedCase.habilitarConsumoQuantitativo) : true;
     reviewedCase.habilitarPlanejamentoQualitativo = reviewedCase.habilitarPlanejamentoQualitativo === true;
     reviewedCase.habilitarCorrecaoAutomaticaIA = reviewedCase.habilitarCorrecaoAutomaticaIA === true;
     reviewedCase.professorEmail = String(reviewedCase.professorEmail || "professor@dietocase.edu.br").trim();
@@ -234,6 +236,8 @@ class AdminManager {
     copy.isLocked = true; // Por padrão, novas cópias nascem travadas
     copy.visivel = original.visivel !== false;
     copy.habilitarQuestoesAvaliativas = original.habilitarQuestoesAvaliativas !== false;
+    copy.habilitarConsumoQualitativo = original.habilitarConsumoQualitativo !== undefined ? Boolean(original.habilitarConsumoQualitativo) : true;
+    copy.habilitarConsumoQuantitativo = original.habilitarConsumoQuantitativo !== undefined ? Boolean(original.habilitarConsumoQuantitativo) : true;
     copy.habilitarPlanejamentoQualitativo = original.habilitarPlanejamentoQualitativo === true;
     copy.habilitarCorrecaoAutomaticaIA = original.habilitarCorrecaoAutomaticaIA === true;
     copy.professorEmail = original.professorEmail || "professor@dietocase.edu.br";
@@ -433,6 +437,8 @@ class AdminManager {
       isLocked: false,
       visivel: true,
       habilitarQuestoesAvaliativas: true,
+      habilitarConsumoQualitativo: true,
+      habilitarConsumoQuantitativo: true,
       habilitarPlanejamentoQualitativo: false,
       habilitarCorrecaoAutomaticaIA: false,
       professorEmail: "professor@dietocase.edu.br",

@@ -332,7 +332,7 @@ export function ExameFisicoSection({ data, clinicalCase }: { data: any; clinical
   );
 }
 
-// 1.8: Consumo Alimentar & R24h
+// 1.8: Consumo Alimentar & R24h (Suporta Análise Qualitativa e Análise Quantitativa sem erros de null)
 export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase: any }) {
   const safeData = (data && typeof data === 'object') ? data : {};
   const safeCase = (clinicalCase && typeof clinicalCase === 'object') ? clinicalCase : {};
@@ -340,15 +340,40 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
     return null;
   }
 
-  const ca = safeData?.consumoAlimentar || {};
-  const recItems = ca?.refeicoesRecordatorio || safeData?.recordatorioItems || [];
+  const ca = (safeData?.consumoAlimentar && typeof safeData.consumoAlimentar === 'object') ? safeData.consumoAlimentar : {};
+  const isConsumoQualitativo =
+    ca?.tipoAnaliseConsumo === 'qualitativo' ||
+    safeData?.tipoAnaliseConsumo === 'qualitativo' ||
+    (safeCase?.habilitarConsumoQualitativo === true && safeCase?.habilitarConsumoQuantitativo === false);
+
+  const avaliacaoQualitativaTexto = String(
+    ca?.avaliacaoQualitativaConsumo ||
+    safeData?.avaliacaoQualitativaConsumo ||
+    ca?.inqueritoResumo ||
+    ''
+  ).trim();
+
+  const recItems = Array.isArray(ca?.refeicoesRecordatorio)
+    ? ca.refeicoesRecordatorio
+    : (Array.isArray(safeData?.consumoQualitativoBlocos) && isConsumoQualitativo
+        ? safeData.consumoQualitativoBlocos
+        : (Array.isArray(safeData?.recordatorioItems) ? safeData.recordatorioItems : []));
   const prepRecordatorioGlobal = safeData?.recordatorioPreparacao || ca?.preparacao || "";
 
   return (
     <div className="space-y-4 mb-6">
-      <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1">1.8. Consumo Alimentar e Inquérito Nutricional</h3>
-      <p className="text-xs text-slate-700"><strong>Resumo do Padrão Dietético:</strong> {ca.inqueritoResumo || "Não preenchido / ---"}</p>
-      <p className="text-xs text-slate-700"><strong>Ingestão Hídrica:</strong> {ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+      <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1">
+        {isConsumoQualitativo
+          ? "1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)"
+          : "1.8. Consumo Alimentar e Inquérito Nutricional"}
+      </h3>
+      {avaliacaoQualitativaTexto && (
+        <div className="bg-amber-50 border-l-4 border-amber-600 p-3 rounded text-xs text-amber-950 font-medium">
+          <strong>Avaliação Qualitativa do Consumo:</strong> {avaliacaoQualitativaTexto}
+        </div>
+      )}
+      <p className="text-xs text-slate-700"><strong>Resumo do Padrão Dietético:</strong> {ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}</p>
+      <p className="text-xs text-slate-700"><strong>Ingestão Hídrica, Preferências e Aversões:</strong> {ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
       {prepRecordatorioGlobal && (
         <p className="text-xs text-slate-700"><strong>Preparação (Recordatório 24h):</strong> {prepRecordatorioGlobal}</p>
       )}
@@ -356,18 +381,24 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
       <h4 className="text-xs font-bold text-slate-700 mt-3">1.8.1. Refeições e Alimentos no Recordatório de 24h</h4>
       <div className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-3">
         {Array.isArray(recItems) && recItems.length > 0 ? (
-          recItems.map((r: any, idx: number) => {
-            const prep = r.preparacao || r.tipoPreparacao || prepRecordatorioGlobal || "";
+          recItems.filter(Boolean).map((r: any, idx: number) => {
+            const prep = r?.preparacao || r?.tipoPreparacao || prepRecordatorioGlobal || "";
             const descAlimentos =
-              r.alimentos ||
-              (Array.isArray(r.itens)
-                ? r.itens.map((it: any) => `${it.alimentoNome || it.nome} (${it.gramatura || it.gramas || 0}g)`).join(", ")
-                : r.nome
-                ? `${r.nome} — ${r.qtd || 1} ${r.medida || "porção"} (${r.gramas || 0}g)`
+              r?.alimentos ||
+              (Array.isArray(r?.itens)
+                ? r.itens.filter(Boolean).map((it: any) =>
+                    isConsumoQualitativo
+                      ? `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || '1 porção'})`
+                      : `${it?.alimento || it?.alimentoNome || it?.nome || 'Alimento'} (${it?.medidaCaseira || it?.medida || ''} ${it?.gramatura || it?.gramas || 0}g)`
+                  ).join(", ")
+                : r?.nome
+                ? (isConsumoQualitativo
+                    ? `${r.nome} — ${r.medida || r.medidaCaseira || "1 porção"}`
+                    : `${r.nome} — ${r.qtd || 1} ${r.medida || "porção"} (${r.gramas || 0}g)`)
                 : "Não detalhado");
             return (
               <div key={idx} className="mb-2">
-                <strong>{r.refeicao || r.nome || "Refeição"} ({r.horario || '--:--'}):</strong>{" "}
+                <strong>{r?.refeicao || r?.nome || "Refeição"} ({r?.horario || '--:--'}):</strong>{" "}
                 {prep ? <span className="font-semibold text-emerald-800">[Preparação: {prep}] </span> : null}
                 {descAlimentos}
               </div>

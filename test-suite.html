@@ -4203,6 +4203,117 @@ REGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos,
         emailResilienceResult.avaliacaoIA.includes("Erros Críticos"),
         "Seção 150.1 (Integração Frontend e Resiliência Try/Catch): O disparo de e-mail para chagasnutri@gmail.com envia nome do aluno, caso, notas e feedback da IA com tratamento try/catch sem travar o aluno"
       );
+
+      // ==========================================
+      // 151. REFATORAÇÃO DO 'CONSUMO ALIMENTAR' (RECORDATÓRIO 24H): ANÁLISE QUALITATIVA E/OU QUANTITATIVA COM CONTROLE DO PROFESSOR
+      // ==========================================
+      // 151.1 Painel do Professor (Configurações do Caso): Habilitar Consumo Qualitativo e Habilitar Consumo Quantitativo
+      const allowedBoth = pmRules.getAllowedConsumoModes({ habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true });
+      const allowedOnlyQual = pmRules.getAllowedConsumoModes({ habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: false });
+      const allowedOnlyQuant = pmRules.getAllowedConsumoModes({ habilitarConsumoQualitativo: false, habilitarConsumoQuantitativo: true });
+
+      assert(
+        allowedBoth.habilitarConsumoQualitativo === true &&
+        allowedBoth.habilitarConsumoQuantitativo === true &&
+        allowedBoth.bothEnabled === true &&
+        allowedOnlyQual.habilitarConsumoQualitativo === true &&
+        allowedOnlyQual.habilitarConsumoQuantitativo === false &&
+        allowedOnlyQual.bothEnabled === false &&
+        allowedOnlyQuant.habilitarConsumoQualitativo === false &&
+        allowedOnlyQuant.habilitarConsumoQuantitativo === true &&
+        allowedOnlyQuant.bothEnabled === false,
+        "Seção 151.1 (Painel do Professor - Toggles de Consumo): O professor pode ativar 'Habilitar Consumo Qualitativo', 'Habilitar Consumo Quantitativo' ou ambos simultaneamente"
+      );
+
+      // 151.2 Interface do Aluno (Seletor de Análise Qualitativa vs Análise Quantitativa e controle pelo professor)
+      const prontConsumoTest = pmRules.getEmptyProntuario("caso-consumo-duplo");
+      const modeWhenOnlyQual = pmRules.resolveActiveConsumoMode(prontConsumoTest, { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: false });
+      const modeWhenOnlyQuant = pmRules.resolveActiveConsumoMode(
+        { consumoAlimentar: { tipoAnaliseConsumo: "qualitativo" } },
+        { habilitarConsumoQualitativo: false, habilitarConsumoQuantitativo: true }
+      );
+      const consumoSwitchedToQual = pmRules.switchConsumoAnalysisMode(prontConsumoTest, "qualitativo", { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true });
+      const consumoSwitchedToQuant = pmRules.switchConsumoAnalysisMode(consumoSwitchedToQual, "quantitativo", { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true });
+
+      assert(
+        modeWhenOnlyQual === "qualitativo" &&
+        modeWhenOnlyQuant === "quantitativo" &&
+        consumoSwitchedToQual.consumoAlimentar.tipoAnaliseConsumo === "qualitativo" &&
+        consumoSwitchedToQuant.consumoAlimentar.tipoAnaliseConsumo === "quantitativo",
+        "Seção 151.2 (Interface do Aluno - Seletor de Consumo): O aluno alterna entre 'Análise Qualitativa' e 'Análise Quantitativa' quando ambos estão liberados e segue o modo imposto quando apenas um está ativo"
+      );
+
+      // 151.3 Comportamento do Modo 'Qualitativo' (Consumo): Campos limpos (Refeição, Horário, Preparação, Alimento, Medida Caseira) + 'Avaliação Qualitativa do Consumo'
+      const prontQualConsumo = pmRules.getEmptyProntuario("caso-consumo-qual");
+      prontQualConsumo.consumoAlimentar.tipoAnaliseConsumo = "qualitativo";
+      prontQualConsumo.consumoAlimentar.avaliacaoQualitativaConsumo = "Paciente realiza poucas refeições ao dia, com longos períodos de jejum, baixo consumo de fibras e preferência por carboidratos refinados à noite.";
+      prontQualConsumo.consumoAlimentar.refeicoesRecordatorio = [
+        {
+          id: "rec-q-1",
+          refeicao: "Desjejum",
+          horario: "07:30",
+          preparacao: "Vitamina de banana com aveia",
+          itens: [
+            { id: "it-q-1", alimento: "Banana prata", medidaCaseira: "1 unidade média" },
+            { id: "it-q-2", alimento: "Leite integral", medidaCaseira: "1 copo cheio" }
+          ]
+        }
+      ];
+
+      const sanitizedQualConsumo = pmRules.switchConsumoAnalysisMode(prontQualConsumo, "qualitativo", { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true });
+      assert(
+        sanitizedQualConsumo.consumoAlimentar.tipoAnaliseConsumo === "qualitativo" &&
+        sanitizedQualConsumo.consumoAlimentar.avaliacaoQualitativaConsumo.includes("longos períodos de jejum") &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].refeicao === "Desjejum" &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].horario === "07:30" &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].preparacao === "Vitamina de banana com aveia" &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].itens.length === 2 &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].itens[0].alimento === "Banana prata" &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].itens[0].medidaCaseira === "1 unidade média" &&
+        sanitizedQualConsumo.consumoAlimentar.refeicoesRecordatorio[0].itens[0].gramatura === 0,
+        "Seção 151.3 (Comportamento do Modo 'Qualitativo' no Consumo): Preserva Refeição, Horário, Preparação, múltiplos Alimentos, Medida Caseira e 'Avaliação Qualitativa do Consumo' sem exigir gramaturas/cálculos"
+      );
+
+      // 151.4 & 151.5 Persistência e Relatório Final (PDF/HTML) na dualidade Qualitativo vs Quantitativo sem erros de null
+      const htmlReportConsumoQual = DietoterapiaDocxReport.buildHtmlReport(sanitizedQualConsumo, {
+        id: "caso-consumo-qual",
+        title: "Caso Consumo Qualitativo",
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: false
+      });
+
+      const prontQuantConsumo = pmRules.getEmptyProntuario("caso-consumo-quant");
+      prontQuantConsumo.consumoAlimentar.tipoAnaliseConsumo = "quantitativo";
+      prontQuantConsumo.consumoAlimentar.refeicoesRecordatorio = [
+        {
+          id: "rec-qt-1",
+          refeicao: "Almoço",
+          horario: "12:30",
+          preparacao: "Prato tradicional brasileiro",
+          itens: [
+            { id: "it-qt-1", alimentoNome: "Arroz integral cozido", medidaCaseira: "4 colheres de sopa", gramatura: 100, kcal: 124 }
+          ]
+        }
+      ];
+      prontQuantConsumo.consumoAlimentar.totaisRecordatorio = { vetTotalKcal: 1850, carboidratosG: 230, proteinasG: 85, lipidiosG: 60 };
+      const htmlReportConsumoQuant = DietoterapiaDocxReport.buildHtmlReport(prontQuantConsumo, {
+        id: "caso-consumo-quant",
+        title: "Caso Consumo Quantitativo",
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: true
+      });
+
+      assert(
+        htmlReportConsumoQual.includes("1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)") &&
+        htmlReportConsumoQual.includes("AVALIAÇÃO QUALITATIVA DO CONSUMO") &&
+        htmlReportConsumoQual.includes("longos períodos de jejum") &&
+        htmlReportConsumoQual.includes("Vitamina de banana com aveia") &&
+        htmlReportConsumoQual.includes("1 copo cheio") &&
+        !htmlReportConsumoQual.includes("1.8.2. Avaliação Quantitativa Consolidada do Recordatório de 24h") &&
+        htmlReportConsumoQuant.includes("1.8.2. Avaliação Quantitativa Consolidada do Recordatório de 24h (Macros e Micros)") &&
+        htmlReportConsumoQuant.includes("1850 kcal/dia"),
+        "Seção 151.4 e 151.5 (Persistência e Relatório Final PDF Qualitativo vs Quantitativo): Renderiza perfeitamente tanto a Análise Qualitativa (ocultando a tabela 1.8.2 de macros/micros) quanto a Análise Quantitativa no Relatório Final sem erros de null"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

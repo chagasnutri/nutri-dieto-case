@@ -444,6 +444,104 @@ export default function SimulationModule() {
       : 'quantitativo';
   const habilitarPlanejamentoQualitativo = tipoPlanejamentoCardapio === 'qualitativo';
   const habilitarCorrecaoAutomaticaIA = Boolean(draftData?.habilitarCorrecaoAutomaticaIA);
+
+  // Controle do Professor para o Consumo Alimentar (Recordatório 24h): Qualitativo e/ou Quantitativo
+  const habilitarConsumoQualitativo = draftData?.habilitarConsumoQualitativo !== false;
+  const habilitarConsumoQuantitativo = draftData?.habilitarConsumoQuantitativo !== false;
+  const ambosModosConsumoLiberados = habilitarConsumoQualitativo && habilitarConsumoQuantitativo;
+  const activeConsumoMode: 'qualitativo' | 'quantitativo' =
+    habilitarConsumoQualitativo && !habilitarConsumoQuantitativo
+      ? 'qualitativo'
+      : !habilitarConsumoQualitativo && habilitarConsumoQuantitativo
+      ? 'quantitativo'
+      : draftData?.tipoAnaliseConsumo === 'qualitativo'
+      ? 'qualitativo'
+      : 'quantitativo';
+  const isConsumoQualitativoAtivo = activeConsumoMode === 'qualitativo';
+
+  const consumoQualitativoBlocos: QualitativeMealBlock[] =
+    Array.isArray(draftData?.consumoQualitativoBlocos) && draftData.consumoQualitativoBlocos.length > 0
+      ? draftData.consumoQualitativoBlocos
+      : DEFAULT_QUALITATIVE_MEAL_BLOCKS;
+
+  const handleSelectTipoAnaliseConsumo = (novoModo: 'qualitativo' | 'quantitativo') => {
+    if (novoModo === 'qualitativo' && !habilitarConsumoQualitativo) return;
+    if (novoModo === 'quantitativo' && !habilitarConsumoQuantitativo) return;
+    updateField('tipoAnaliseConsumo', novoModo);
+  };
+
+  const handleUpdateConsumoQualitativoBlocoField = (
+    mealIdx: number,
+    field: 'refeicao' | 'horario' | 'preparacao',
+    value: string
+  ) => {
+    const updated = consumoQualitativoBlocos.map((bloco, idx) =>
+      idx !== mealIdx ? bloco : { ...bloco, [field]: value, ...(field === 'preparacao' ? { tipoPreparacao: value } : {}) }
+    );
+    updateField('consumoQualitativoBlocos', updated);
+  };
+
+  const handleAddConsumoQualitativoBloco = () => {
+    const novo: QualitativeMealBlock = {
+      id: `cons-qual-ref-${Date.now()}`,
+      refeicao: 'Lanche da Tarde',
+      horario: '16:00',
+      preparacao: '',
+      tipoPreparacao: '',
+      itens: [{ id: `cons-qual-it-${Date.now()}-1`, alimento: '', alimentoNome: '', nome: '', medidaCaseira: '', medida: '' }]
+    };
+    updateField('consumoQualitativoBlocos', [...consumoQualitativoBlocos, novo]);
+  };
+
+  const handleRemoveConsumoQualitativoBloco = (mealIdx: number) => {
+    if (consumoQualitativoBlocos.length <= 1) return;
+    updateField('consumoQualitativoBlocos', consumoQualitativoBlocos.filter((_, idx) => idx !== mealIdx));
+  };
+
+  const handleAddConsumoQualitativoAlimentoInMeal = (mealIdx: number) => {
+    const updated = consumoQualitativoBlocos.map((bloco, idx) =>
+      idx !== mealIdx
+        ? bloco
+        : {
+            ...bloco,
+            itens: [
+              ...(bloco?.itens || []),
+              { id: `cons-qual-it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, alimento: '', alimentoNome: '', nome: '', medidaCaseira: '', medida: '' }
+            ]
+          }
+    );
+    updateField('consumoQualitativoBlocos', updated);
+  };
+
+  const handleRemoveConsumoQualitativoAlimentoInMeal = (mealIdx: number, itemIdx: number) => {
+    const updated = consumoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      const currentItens = Array.isArray(bloco?.itens) ? bloco.itens : [];
+      if (currentItens.length <= 1) return bloco;
+      return { ...bloco, itens: currentItens.filter((_, i) => i !== itemIdx) };
+    });
+    updateField('consumoQualitativoBlocos', updated);
+  };
+
+  const handleUpdateConsumoQualitativoAlimentoField = (
+    mealIdx: number,
+    itemIdx: number,
+    field: 'alimento' | 'medidaCaseira',
+    value: string
+  ) => {
+    const updated = consumoQualitativoBlocos.map((bloco, idx) => {
+      if (idx !== mealIdx) return bloco;
+      return {
+        ...bloco,
+        itens: (bloco?.itens || []).map((it, i) => {
+          if (i !== itemIdx) return it;
+          if (field === 'alimento') return { ...it, alimento: value, alimentoNome: value, nome: value };
+          return { ...it, medidaCaseira: value, medida: value };
+        })
+      };
+    });
+    updateField('consumoQualitativoBlocos', updated);
+  };
   const planejamentoQualitativoBlocos: QualitativeMealBlock[] =
     Array.isArray(draftData?.planejamentoQualitativoBlocos) && draftData.planejamentoQualitativoBlocos.length > 0
       ? draftData.planejamentoQualitativoBlocos
@@ -1155,6 +1253,28 @@ export default function SimulationModule() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:border-amber-500/60 transition">
+              <input
+                type="checkbox"
+                id="toggleConsumoQualitativoSim"
+                checked={habilitarConsumoQualitativo}
+                onChange={(e) => updateField('habilitarConsumoQualitativo', e.target.checked)}
+                className="accent-amber-500 w-4 h-4 cursor-pointer"
+              />
+              <span className="font-semibold text-slate-200">Habilitar Consumo Qualitativo</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:border-indigo-500/60 transition">
+              <input
+                type="checkbox"
+                id="toggleConsumoQuantitativoSim"
+                checked={habilitarConsumoQuantitativo}
+                onChange={(e) => updateField('habilitarConsumoQuantitativo', e.target.checked)}
+                className="accent-indigo-500 w-4 h-4 cursor-pointer"
+              />
+              <span className="font-semibold text-slate-200">Habilitar Consumo Quantitativo</span>
+            </label>
+
             <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:border-emerald-500/60 transition">
               <input
                 type="checkbox"
@@ -1409,6 +1529,233 @@ export default function SimulationModule() {
                 </div>
               </div>
 
+              {/* Seletor de Modo de Consumo Alimentar (Recordatório 24h): Análise Qualitativa vs Análise Quantitativa */}
+              <div
+                id="seletorTipoAnaliseConsumoSim"
+                className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-emerald-400 block">
+                    🍎 Consumo Alimentar (Recordatório 24h) • Modo de Análise:
+                  </span>
+                  <span className="text-[11px] font-bold bg-slate-950 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">
+                    {ambosModosConsumoLiberados
+                      ? 'Ambos liberados pelo Professor: escolha Análise Qualitativa ou Análise Quantitativa'
+                      : isConsumoQualitativoAtivo
+                      ? 'Modo liberado pelo Professor: Análise Qualitativa'
+                      : 'Modo liberado pelo Professor: Análise Quantitativa'}
+                  </span>
+                </div>
+
+                {ambosModosConsumoLiberados && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Modo de Análise do Consumo Alimentar">
+                    <label
+                      id="btnModoConsumoQualitativoSim"
+                      onClick={() => handleSelectTipoAnaliseConsumo('qualitativo')}
+                      className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                        isConsumoQualitativoAtivo
+                          ? 'border-amber-500 bg-amber-950/30 text-white shadow'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        id="radioModoConsumoQualitativoSim"
+                        name="tipoAnaliseConsumoSim"
+                        value="qualitativo"
+                        checked={isConsumoQualitativoAtivo}
+                        onChange={() => handleSelectTipoAnaliseConsumo('qualitativo')}
+                        className="mt-1 accent-amber-500 cursor-pointer"
+                      />
+                      <div>
+                        <div className="text-xs font-bold flex items-center gap-1.5">
+                          <span>🥗</span>
+                          <span>Análise Qualitativa</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Foco no comportamento alimentar: Refeição, Horário, Preparação, Alimento, Medida Caseira e Avaliação Qualitativa do Consumo (sem tabelas de macros, micros, VET ou DRIs).
+                        </p>
+                      </div>
+                    </label>
+
+                    <label
+                      id="btnModoConsumoQuantitativoSim"
+                      onClick={() => handleSelectTipoAnaliseConsumo('quantitativo')}
+                      className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+                        !isConsumoQualitativoAtivo
+                          ? 'border-indigo-500 bg-indigo-950/30 text-white shadow'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        id="radioModoConsumoQuantitativoSim"
+                        name="tipoAnaliseConsumoSim"
+                        value="quantitativo"
+                        checked={!isConsumoQualitativoAtivo}
+                        onChange={() => handleSelectTipoAnaliseConsumo('quantitativo')}
+                        className="mt-1 accent-indigo-500 cursor-pointer"
+                      />
+                      <div>
+                        <div className="text-xs font-bold flex items-center gap-1.5">
+                          <span>📊</span>
+                          <span>Análise Quantitativa</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Tabela completa de composição nutricional, com cálculos de gramatura, adequação do VET (%) e análise de micronutrientes (DRIs).
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {isConsumoQualitativoAtivo ? (
+                /* Comportamento do Modo 'Qualitativo' (Consumo): Oculta tabelas de macros, micros, VET e DRIs; exibe Refeição, Horário, Preparação, Alimento, Medida Caseira e Avaliação Qualitativa do Consumo */
+                <div id="painelConsumoQualitativoSim" className="space-y-4 text-xs">
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-white text-sm">
+                        Recordatório de 24h • Análise Qualitativa do Consumo Alimentar
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Registre as refeições relatadas pelo paciente (Refeição, Horário, Preparação, Alimento e Medida Caseira) e descreva a Avaliação Qualitativa do Consumo.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id="btnAddRefeicaoConsumoQualitativoSim"
+                      onClick={handleAddConsumoQualitativoBloco}
+                      className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>➕</span>
+                      <span>Adicionar Refeição (R24h)</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(consumoQualitativoBlocos || []).map((bloco, mealIdx) => (
+                      <div
+                        key={bloco?.id || `cons-qual-${mealIdx}`}
+                        className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow"
+                      >
+                        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-800 pb-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 w-full">
+                            <div>
+                              <label className="block text-[11px] font-bold text-amber-400 mb-1">🍽️ Refeição:</label>
+                              <select
+                                value={bloco?.refeicao || 'Desjejum'}
+                                onChange={(e) => handleUpdateConsumoQualitativoBlocoField(mealIdx, 'refeicao', e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:border-amber-500 outline-none"
+                              >
+                                {REFEICOES_QUALITATIVAS_OPCOES.map((opt) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-amber-400 mb-1">⏰ Horário:</label>
+                              <input
+                                type="time"
+                                value={bloco?.horario || '07:30'}
+                                onChange={(e) => handleUpdateConsumoQualitativoBlocoField(mealIdx, 'horario', e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:border-amber-500 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-amber-400 mb-1">🍲 Preparação:</label>
+                              <input
+                                type="text"
+                                value={bloco?.preparacao ?? ''}
+                                onChange={(e) => handleUpdateConsumoQualitativoBlocoField(mealIdx, 'preparacao', e.target.value)}
+                                placeholder="Ex: Vitamina de banana, Café com leite..."
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-medium focus:border-amber-500 outline-none"
+                              />
+                            </div>
+                          </div>
+                          {consumoQualitativoBlocos.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveConsumoQualitativoBloco(mealIdx)}
+                              className="text-rose-400 hover:text-rose-300 bg-rose-950/30 border border-rose-800/40 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer"
+                            >
+                              🗑️ Excluir Refeição
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase text-slate-400 px-1">
+                            <div className="col-span-6">Alimento</div>
+                            <div className="col-span-5">Medida Caseira</div>
+                            <div className="col-span-1 text-center">Ação</div>
+                          </div>
+                          {(bloco?.itens || []).map((it, itemIdx) => (
+                            <div key={it?.id || `cons-it-${mealIdx}-${itemIdx}`} className="grid grid-cols-12 gap-2 items-center">
+                              <div className="col-span-6">
+                                <input
+                                  type="text"
+                                  value={it?.alimento ?? it?.alimentoNome ?? it?.nome ?? ''}
+                                  onChange={(e) => handleUpdateConsumoQualitativoAlimentoField(mealIdx, itemIdx, 'alimento', e.target.value)}
+                                  placeholder="Ex: Pão francês, Leite integral..."
+                                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-amber-500 outline-none"
+                                />
+                              </div>
+                              <div className="col-span-5">
+                                <input
+                                  type="text"
+                                  value={it?.medidaCaseira ?? it?.medida ?? ''}
+                                  onChange={(e) => handleUpdateConsumoQualitativoAlimentoField(mealIdx, itemIdx, 'medidaCaseira', e.target.value)}
+                                  placeholder="Ex: 1 copo cheio, 2 unidades..."
+                                  className="w-full bg-slate-950 border border-amber-500/60 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-semibold focus:border-amber-400 outline-none"
+                                />
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <button
+                                  type="button"
+                                  disabled={(bloco?.itens || []).length <= 1}
+                                  onClick={() => handleRemoveConsumoQualitativoAlimentoInMeal(mealIdx, itemIdx)}
+                                  className="text-rose-400 hover:text-rose-300 disabled:opacity-30 font-bold px-1.5 py-1 rounded cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-1 flex items-center justify-between border-t border-slate-800/80">
+                          <button
+                            type="button"
+                            onClick={() => handleAddConsumoQualitativoAlimentoInMeal(mealIdx)}
+                            className="bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-700/60 text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>➕</span>
+                            <span>Adicionar Alimento nesta Refeição</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Campo de texto livre para 'Avaliação Qualitativa do Consumo' */}
+                  <div className="bg-slate-900 border-2 border-amber-500/50 rounded-xl p-4 space-y-2">
+                    <label htmlFor="textareaAvaliacaoQualitativaConsumoSim" className="text-xs font-bold text-amber-400 flex items-center justify-between">
+                      <span>📝 Avaliação Qualitativa do Consumo:</span>
+                      <span className="text-[10px] text-slate-400">Comportamento, padrões, horários e qualidade da dieta relatada</span>
+                    </label>
+                    <textarea
+                      id="textareaAvaliacaoQualitativaConsumoSim"
+                      rows={4}
+                      value={draftData.avaliacaoQualitativaConsumo || ''}
+                      onChange={(e) => updateField('avaliacaoQualitativaConsumo', e.target.value)}
+                      placeholder="Descreva os padrões comportamentais, horários das refeições, qualidade nutricional da dieta relatada, monotonia alimentar e consumo de ultraprocessados..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 focus:border-amber-500 outline-none resize-y"
+                    />
+                  </div>
+                </div>
+              ) : (
+              <>
               {/* Tabela Interativa de Alimentos do Recordatório 24h com Cálculo Dinâmico via Regra de 3 */}
               <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 text-xs space-y-3">
                 <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
@@ -1535,6 +1882,8 @@ export default function SimulationModule() {
                 patientSex={activePatientInfo.sexo}
                 intakes={recordatorioMicroTotals}
               />
+              </>
+              )}
             </div>
           )}
 

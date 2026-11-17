@@ -397,18 +397,52 @@ class DietoterapiaDocxReport {
 
     // 1.8. CONSUMO ALIMENTAR
     if (isLiberada("consumo")) {
-      doc.addHeading("1.8. Consumo Alimentar e Inquérito Nutricional", 2);
-      doc.addParagraph(`Resumo do Recordatório Alimentar / Padrão Dietético: ${ca.inqueritoResumo || "Não preenchido / ---"}`);
+      const isConsumoQualitativo =
+        ca?.tipoAnaliseConsumo === "qualitativo" ||
+        studentData?.tipoAnaliseConsumo === "qualitativo" ||
+        (clinicalCase?.habilitarConsumoQualitativo === true && clinicalCase?.habilitarConsumoQuantitativo === false);
+      const avaliacaoQualitativaTexto = String(
+        ca?.avaliacaoQualitativaConsumo ||
+        studentData?.avaliacaoQualitativaConsumo ||
+        ca?.inqueritoResumo ||
+        ""
+      ).trim();
+
+      doc.addHeading(
+        isConsumoQualitativo
+          ? "1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)"
+          : "1.8. Consumo Alimentar e Inquérito Nutricional",
+        2
+      );
+      if (avaliacaoQualitativaTexto) {
+        doc.addCallout(
+          "AVALIAÇÃO QUALITATIVA DO CONSUMO (COMPORTAMENTO, PADRÕES E QUALIDADE DA DIETA):",
+          avaliacaoQualitativaTexto,
+          "d97706",
+          "fffbeb"
+        );
+      }
+      doc.addParagraph(`Resumo do Recordatório Alimentar / Padrão Dietético: ${ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}`);
       doc.addParagraph(`Ingestão Hídrica, Preferências e Aversões: ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}`);
 
       doc.addHeading("1.8.1. Refeições e Alimentos no Recordatório de 24h", 3);
       const r24Rows = [];
-      if (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))) {
-        ca.refeicoesRecordatorio.filter(r => (r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0)).forEach(r => {
+      const rawRecList = Array.isArray(ca?.refeicoesRecordatorio)
+        ? ca.refeicoesRecordatorio.filter(Boolean)
+        : (Array.isArray(studentData?.consumoQualitativoBlocos) ? studentData.consumoQualitativoBlocos.filter(Boolean) : []);
+
+      if (rawRecList.some(r => r && ((r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0)))) {
+        rawRecList.filter(r => r && ((r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0))).forEach(r => {
           const prep = r.preparacao || r.tipoPreparacao || "";
-          const itemsStr = (r.itens || []).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
+          const itemsStr = (r.itens || []).filter(Boolean).map(it => {
+            const foodName = it.alimento || it.alimentoNome || it.nome || "Alimento";
+            const medida = it.medidaCaseira || it.medida || "1 porção";
+            return isConsumoQualitativo
+              ? `• ${foodName} (${medida})`
+              : `• ${foodName} (${medida} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`;
+          }).join("\n");
           r24Rows.push([
-            `${r.refeicao} (${r.horario || '--:--'})`,
+            `${r.refeicao || 'Refeição'} (${r.horario || '--:--'})`,
             (prep ? `Preparação: ${prep}\n` : "") + itemsStr
           ]);
         });
@@ -417,40 +451,47 @@ class DietoterapiaDocxReport {
         r24Rows.push(["---", "Nenhuma refeição detalhada no recordatório alimentar / Não preenchido"]);
       }
       doc.addTable(
-        ["Refeição e Horário", "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
+        [
+          "Refeição e Horário",
+          isConsumoQualitativo
+            ? "Preparação, Alimentos e Medidas Caseiras (Análise Qualitativa)"
+            : "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"
+        ],
         r24Rows,
         [3000, 6000]
       );
 
-      doc.addHeading("1.8.2. Avaliação Quantitativa Consolidada do Recordatório de 24h (Macros e Micros)", 3);
-      const satStr = (ca.totaisRecordatorio?.gorduraSaturadaG || ca.totaisRecordatorio?.gorduraSaturadaPct)
-        ? `${ca.totaisRecordatorio?.gorduraSaturadaG ? ca.totaisRecordatorio.gorduraSaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraSaturadaG && ca.totaisRecordatorio?.gorduraSaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraSaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraSaturadaPct ? ca.totaisRecordatorio.gorduraSaturadaPct + ' %' : '')}`
-        : "Não preenchido / ---";
-      const monoStr = (ca.totaisRecordatorio?.gorduraMonoinsaturadaG || ca.totaisRecordatorio?.gorduraMonoinsaturadaPct)
-        ? `${ca.totaisRecordatorio?.gorduraMonoinsaturadaG ? ca.totaisRecordatorio.gorduraMonoinsaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraMonoinsaturadaG && ca.totaisRecordatorio?.gorduraMonoinsaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraMonoinsaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraMonoinsaturadaPct ? ca.totaisRecordatorio.gorduraMonoinsaturadaPct + ' %' : '')}`
-        : "Não preenchido / ---";
-      const poliStr = (ca.totaisRecordatorio?.gorduraPoliinsaturadaG || ca.totaisRecordatorio?.gorduraPoliinsaturadaPct)
-        ? `${ca.totaisRecordatorio?.gorduraPoliinsaturadaG ? ca.totaisRecordatorio.gorduraPoliinsaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraPoliinsaturadaG && ca.totaisRecordatorio?.gorduraPoliinsaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraPoliinsaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraPoliinsaturadaPct ? ca.totaisRecordatorio.gorduraPoliinsaturadaPct + ' %' : '')}`
-        : "Não preenchido / ---";
+      if (!isConsumoQualitativo) {
+        doc.addHeading("1.8.2. Avaliação Quantitativa Consolidada do Recordatório de 24h (Macros e Micros)", 3);
+        const satStr = (ca.totaisRecordatorio?.gorduraSaturadaG || ca.totaisRecordatorio?.gorduraSaturadaPct)
+          ? `${ca.totaisRecordatorio?.gorduraSaturadaG ? ca.totaisRecordatorio.gorduraSaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraSaturadaG && ca.totaisRecordatorio?.gorduraSaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraSaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraSaturadaPct ? ca.totaisRecordatorio.gorduraSaturadaPct + ' %' : '')}`
+          : "Não preenchido / ---";
+        const monoStr = (ca.totaisRecordatorio?.gorduraMonoinsaturadaG || ca.totaisRecordatorio?.gorduraMonoinsaturadaPct)
+          ? `${ca.totaisRecordatorio?.gorduraMonoinsaturadaG ? ca.totaisRecordatorio.gorduraMonoinsaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraMonoinsaturadaG && ca.totaisRecordatorio?.gorduraMonoinsaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraMonoinsaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraMonoinsaturadaPct ? ca.totaisRecordatorio.gorduraMonoinsaturadaPct + ' %' : '')}`
+          : "Não preenchido / ---";
+        const poliStr = (ca.totaisRecordatorio?.gorduraPoliinsaturadaG || ca.totaisRecordatorio?.gorduraPoliinsaturadaPct)
+          ? `${ca.totaisRecordatorio?.gorduraPoliinsaturadaG ? ca.totaisRecordatorio.gorduraPoliinsaturadaG + ' g' : ''}${ca.totaisRecordatorio?.gorduraPoliinsaturadaG && ca.totaisRecordatorio?.gorduraPoliinsaturadaPct ? ' (' + ca.totaisRecordatorio.gorduraPoliinsaturadaPct + '% do VET)' : (ca.totaisRecordatorio?.gorduraPoliinsaturadaPct ? ca.totaisRecordatorio.gorduraPoliinsaturadaPct + ' %' : '')}`
+          : "Não preenchido / ---";
 
-      doc.addTable(
-        ["Parâmetro Nutricional Consumido", "Total Ingerido no R24h", "Régua da Prescrição / Observação Oficial"],
-        [
-          ["VET Consumido no Recordatório", ca.totaisRecordatorio?.vetTotalKcal ? `${ca.totaisRecordatorio.vetTotalKcal} kcal/dia` : (ca.vetRecordatorio ? `${ca.vetRecordatorio} kcal/dia` : "Não preenchido / ---"), `NEE do Caso: ${ca.neeCaso ? ca.neeCaso + ' kcal/dia' : '---'} (${ca.adequacaoVetPct || ca.totaisRecordatorio?.adequacaoVetPct || '---'}% da meta)`],
-          ["Carboidratos Consumidos", ca.totaisRecordatorio?.carboidratosG !== undefined ? `${ca.totaisRecordatorio.carboidratosG} g (${ca.totaisRecordatorio.carboidratosPct || 0}% do VET)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.cho ? `Status: ${ca.totaisRecordatorio.statusMacros.cho.label}` : "---"],
-          ["Proteínas Consumidas", ca.totaisRecordatorio?.proteinasG !== undefined ? `${ca.totaisRecordatorio.proteinasG} g (${ca.totaisRecordatorio.proteinasGKg ? ca.totaisRecordatorio.proteinasGKg + ' g/kg' : '--'}, ${ca.totaisRecordatorio.proteinasPct || 0}%)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.ptn ? `Status: ${ca.totaisRecordatorio.statusMacros.ptn.label}` : "---"],
-          ["Lipídios Consumidos", ca.totaisRecordatorio?.lipidiosG !== undefined ? `${ca.totaisRecordatorio.lipidiosG} g (${ca.totaisRecordatorio.lipidiosPct || 0}% do VET)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.lip ? `Status: ${ca.totaisRecordatorio.statusMacros.lip.label}` : "---"],
-          ["  • Gordura Saturada (%) [SAT]", satStr, `Meta: < 10% do VET [${ca.totaisRecordatorio?.statusLipidios?.sat?.label || (parseFloat(ca.totaisRecordatorio?.gorduraSaturadaPct) < 10 ? 'Adequado' : 'Inadequado')}]`],
-          ["  • Gordura Monoinsaturada (%) [MONO]", monoStr, `Meta: Até 20% do VET [${ca.totaisRecordatorio?.statusLipidios?.mono?.label || (parseFloat(ca.totaisRecordatorio?.gorduraMonoinsaturadaPct) <= 20 ? 'Adequado' : 'Inadequado')}]`],
-          ["  • Gordura Poli-insaturada (%) [POLI]", poliStr, `Meta: Em média 10% do VET [${ca.totaisRecordatorio?.statusLipidios?.poli?.label || (parseFloat(ca.totaisRecordatorio?.gorduraPoliinsaturadaPct) <= 10.5 ? 'Adequado' : 'Inadequado')}]`],
-          ["Fibras Alimentares Totais", ca.totaisRecordatorio?.fibrasG !== undefined ? `${ca.totaisRecordatorio.fibrasG} g/dia` : "Não preenchido / ---", "Tabela TACO (UNICAMP, 4ª edição)"],
-          ["Cálcio (Ca) Consumido", ca.totaisRecordatorio?.calcioMg !== undefined ? `${ca.totaisRecordatorio.calcioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
-          ["Ferro (Fe) Consumido", ca.totaisRecordatorio?.ferroMg !== undefined ? `${ca.totaisRecordatorio.ferroMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
-          ["Sódio (Na) Consumido", ca.totaisRecordatorio?.sodioMg !== undefined ? `${ca.totaisRecordatorio.sodioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
-          ["Potássio (K) Consumido", ca.totaisRecordatorio?.potassioMg !== undefined ? `${ca.totaisRecordatorio.potassioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"]
-        ],
-        [3400, 2800, 2800]
-      );
+        doc.addTable(
+          ["Parâmetro Nutricional Consumido", "Total Ingerido no R24h", "Régua da Prescrição / Observação Oficial"],
+          [
+            ["VET Consumido no Recordatório", ca.totaisRecordatorio?.vetTotalKcal ? `${ca.totaisRecordatorio.vetTotalKcal} kcal/dia` : (ca.vetRecordatorio ? `${ca.vetRecordatorio} kcal/dia` : "Não preenchido / ---"), `NEE do Caso: ${ca.neeCaso ? ca.neeCaso + ' kcal/dia' : '---'} (${ca.adequacaoVetPct || ca.totaisRecordatorio?.adequacaoVetPct || '---'}% da meta)`],
+            ["Carboidratos Consumidos", ca.totaisRecordatorio?.carboidratosG !== undefined ? `${ca.totaisRecordatorio.carboidratosG} g (${ca.totaisRecordatorio.carboidratosPct || 0}% do VET)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.cho ? `Status: ${ca.totaisRecordatorio.statusMacros.cho.label}` : "---"],
+            ["Proteínas Consumidas", ca.totaisRecordatorio?.proteinasG !== undefined ? `${ca.totaisRecordatorio.proteinasG} g (${ca.totaisRecordatorio.proteinasGKg ? ca.totaisRecordatorio.proteinasGKg + ' g/kg' : '--'}, ${ca.totaisRecordatorio.proteinasPct || 0}%)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.ptn ? `Status: ${ca.totaisRecordatorio.statusMacros.ptn.label}` : "---"],
+            ["Lipídios Consumidos", ca.totaisRecordatorio?.lipidiosG !== undefined ? `${ca.totaisRecordatorio.lipidiosG} g (${ca.totaisRecordatorio.lipidiosPct || 0}% do VET)` : "Não preenchido / ---", ca.totaisRecordatorio?.statusMacros?.lip ? `Status: ${ca.totaisRecordatorio.statusMacros.lip.label}` : "---"],
+            ["  • Gordura Saturada (%) [SAT]", satStr, `Meta: < 10% do VET [${ca.totaisRecordatorio?.statusLipidios?.sat?.label || (parseFloat(ca.totaisRecordatorio?.gorduraSaturadaPct) < 10 ? 'Adequado' : 'Inadequado')}]`],
+            ["  • Gordura Monoinsaturada (%) [MONO]", monoStr, `Meta: Até 20% do VET [${ca.totaisRecordatorio?.statusLipidios?.mono?.label || (parseFloat(ca.totaisRecordatorio?.gorduraMonoinsaturadaPct) <= 20 ? 'Adequado' : 'Inadequado')}]`],
+            ["  • Gordura Poli-insaturada (%) [POLI]", poliStr, `Meta: Em média 10% do VET [${ca.totaisRecordatorio?.statusLipidios?.poli?.label || (parseFloat(ca.totaisRecordatorio?.gorduraPoliinsaturadaPct) <= 10.5 ? 'Adequado' : 'Inadequado')}]`],
+            ["Fibras Alimentares Totais", ca.totaisRecordatorio?.fibrasG !== undefined ? `${ca.totaisRecordatorio.fibrasG} g/dia` : "Não preenchido / ---", "Tabela TACO (UNICAMP, 4ª edição)"],
+            ["Cálcio (Ca) Consumido", ca.totaisRecordatorio?.calcioMg !== undefined ? `${ca.totaisRecordatorio.calcioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
+            ["Ferro (Fe) Consumido", ca.totaisRecordatorio?.ferroMg !== undefined ? `${ca.totaisRecordatorio.ferroMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
+            ["Sódio (Na) Consumido", ca.totaisRecordatorio?.sodioMg !== undefined ? `${ca.totaisRecordatorio.sodioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"],
+            ["Potássio (K) Consumido", ca.totaisRecordatorio?.potassioMg !== undefined ? `${ca.totaisRecordatorio.potassioMg} mg/dia` : "Não preenchido / ---", "Micronutriente oficial TACO"]
+          ],
+          [3400, 2800, 2800]
+        );
+      }
     }
 
     // 4. SEÇÃO II: RESOLUÇÃO DIETOTERÁPICA E CONDUTA NUTRICIONAL
@@ -1026,27 +1067,79 @@ class DietoterapiaDocxReport {
     `;
   }
 
-  // 1.8: Seção Consumo Alimentar & R24h
+  // 1.8: Seção Consumo Alimentar & R24h (Suporta Análise Qualitativa e Análise Quantitativa sem erros de null)
   static renderConsumoSectionHtml(studentData = {}, clinicalCase = {}) {
     studentData = (studentData && typeof studentData === "object") ? studentData : {};
     clinicalCase = (clinicalCase && typeof clinicalCase === "object") ? clinicalCase : {};
     if (!this.isSectionLiberada("consumo", clinicalCase)) return null;
 
-    const ca = studentData?.consumoAlimentar || {};
+    const ca = (studentData?.consumoAlimentar && typeof studentData.consumoAlimentar === "object") ? studentData.consumoAlimentar : {};
+    const isConsumoQualitativo =
+      ca?.tipoAnaliseConsumo === "qualitativo" ||
+      studentData?.tipoAnaliseConsumo === "qualitativo" ||
+      (clinicalCase?.habilitarConsumoQualitativo === true && clinicalCase?.habilitarConsumoQuantitativo === false);
+
+    const avaliacaoQualitativaTexto = String(
+      ca?.avaliacaoQualitativaConsumo ||
+      studentData?.avaliacaoQualitativaConsumo ||
+      ca?.inqueritoResumo ||
+      ""
+    ).trim();
+
+    const rawRecList = Array.isArray(ca?.refeicoesRecordatorio)
+      ? ca.refeicoesRecordatorio.filter(Boolean)
+      : (Array.isArray(studentData?.consumoQualitativoBlocos) ? studentData.consumoQualitativoBlocos.filter(Boolean) : []);
+
+    const validRecList = rawRecList.filter(r => r && ((r.preparacao || r.tipoPreparacao) || (Array.isArray(r.itens) && r.itens.length > 0)));
+
+    if (isConsumoQualitativo) {
+      return `
+        <h3 class="subsec-heading">1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)</h3>
+        ${this.renderCalloutHtml(
+          "AVALIAÇÃO QUALITATIVA DO CONSUMO (COMPORTAMENTO, PADRÕES, HORÁRIOS E QUALIDADE DA DIETA):",
+          avaliacaoQualitativaTexto || "Não preenchido / ---",
+          "#d97706",
+          "#fffbeb"
+        )}
+        <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+
+        <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h (Análise Qualitativa)</h3>
+        ${this.renderTableHtml(
+          ["Refeição e Horário", "Preparação", "Alimentos e Medidas Caseiras"],
+          validRecList.length > 0
+            ? validRecList.map(r => {
+                const prep = r.preparacao || r.tipoPreparacao || "Não informada";
+                const itensStr = (r.itens || []).filter(Boolean).map(it => {
+                  const foodName = it.alimento || it.alimentoNome || it.nome || "Alimento";
+                  const medida = it.medidaCaseira || it.medida || "1 porção";
+                  return `• ${foodName} (${medida})`;
+                }).join("\n");
+                return [
+                  `${r.refeicao || 'Refeição'} (${r.horario || '--:--'})`,
+                  prep,
+                  itensStr || "---"
+                ];
+              })
+            : [["---", "---", "Nenhuma refeição detalhada no recordatório alimentar / Não preenchido"]]
+        )}
+      `;
+    }
+
     return `
       <h3 class="subsec-heading">1.8. Consumo Alimentar e Inquérito Nutricional</h3>
-      <p><strong>Resumo do Recordatório Alimentar / Padrão Dietético:</strong> ${ca.inqueritoResumo || "Não preenchido / ---"}</p>
+      ${avaliacaoQualitativaTexto ? `<p><strong>Avaliação Qualitativa do Consumo:</strong> ${avaliacaoQualitativaTexto}</p>` : ""}
+      <p><strong>Resumo do Recordatório Alimentar / Padrão Dietético:</strong> ${ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}</p>
       <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
       
       <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h</h3>
       ${this.renderTableHtml(
         ["Refeição e Horário", "Preparação, Alimentos, Medidas Caseiras e Gramaturas (TACO)"],
-        (Array.isArray(ca.refeicoesRecordatorio) && ca.refeicoesRecordatorio.some(r => r && ((r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))))
-          ? ca.refeicoesRecordatorio.filter(r => r && ((r.preparacao || r.tipoPreparacao) || (r.itens && r.itens.length > 0))).map(r => {
+        validRecList.length > 0
+          ? validRecList.map(r => {
               const prep = r.preparacao || r.tipoPreparacao || "";
-              const itensStr = (r.itens || []).filter(Boolean).map(it => `• ${it.alimentoNome || 'Alimento'} (${it.medidaCaseira || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
+              const itensStr = (r.itens || []).filter(Boolean).map(it => `• ${it.alimento || it.alimentoNome || it.nome || 'Alimento'} (${it.medidaCaseira || it.medida || ''} - ${it.gramatura || 0}g) [${it.kcal || 0} kcal]`).join("\n");
               return [
-                `${r.refeicao} (${r.horario || '--:--'})`,
+                `${r.refeicao || 'Refeição'} (${r.horario || '--:--'})`,
                 (prep ? `Preparação: ${prep}\n` : "") + itensStr
               ];
             })

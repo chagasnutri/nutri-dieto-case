@@ -112,10 +112,15 @@ export interface CaseDraftData {
   lastUpdated: string;
   activeTab?: string;
 
-  // 1. Anamnese & Evolução
+  // 1. Anamnese, Evolução & Consumo Alimentar (Recordatório 24h Qualitativo / Quantitativo)
   evolucaoTexto: string;
   peso: string;
   estatura: string;
+  habilitarConsumoQualitativo?: boolean;
+  habilitarConsumoQuantitativo?: boolean;
+  tipoAnaliseConsumo?: 'qualitativo' | 'quantitativo';
+  avaliacaoQualitativaConsumo?: string;
+  consumoQualitativoBlocos?: QualitativeMealBlock[];
   recordatorioPreparacao?: string;
   recordatorioItems: RecordatorioDraftItem[];
 

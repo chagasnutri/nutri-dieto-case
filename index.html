@@ -1216,16 +1216,52 @@
 
             <!-- ABA 5: CONSUMO ALIMENTAR -->
             <div id="tab-content-consumo" class="student-tab-content hidden space-y-3.5">
+              <!-- SELETOR DE MODO DE CONSUMO ALIMENTAR (ANÁLISE QUALITATIVA VS ANÁLISE QUANTITATIVA - CONTROLADO PELO PROFESSOR) -->
+              <div id="seletorTipoAnaliseConsumoContainer" class="bg-gradient-to-r from-amber-50/50 via-white to-indigo-50/50 border border-slate-200 rounded-xl p-3.5 shadow-2xs space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <label class="block font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                    <span class="text-base">🎛️</span>
+                    <span>Modo de Análise do Consumo Alimentar (Recordatório 24h):</span>
+                  </label>
+                  <span id="consumoProfessorModeNotice" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200">
+                    Modos liberados pelo Professor: Qualitativo e Quantitativo
+                  </span>
+                </div>
+                <div id="consumoRadioGroupWrapper" class="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Modo de Análise do Consumo Alimentar">
+                  <!-- Opção 1: Análise Qualitativa -->
+                  <label id="labelModoConsumoQualitativo" class="relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-slate-200 bg-white hover:border-amber-400">
+                    <input type="radio" name="prontTipoAnaliseConsumo" id="radioModoConsumoQualitativo" value="qualitativo" class="mt-0.5 mr-3 accent-amber-600 cursor-pointer">
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 flex items-center space-x-1">
+                        <span>🥗</span> <span>Análise Qualitativa</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Foco no comportamento alimentar: Refeição, Horário, Preparação, Alimento, Medida Caseira e Avaliação Qualitativa do Consumo (sem tabelas de macros, micros, VET ou DRIs).</p>
+                    </div>
+                  </label>
+
+                  <!-- Opção 2: Análise Quantitativa -->
+                  <label id="labelModoConsumoQuantitativo" class="relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none border-indigo-500 bg-indigo-50/60 shadow-xs">
+                    <input type="radio" name="prontTipoAnaliseConsumo" id="radioModoConsumoQuantitativo" value="quantitativo" class="mt-0.5 mr-3 accent-indigo-600 cursor-pointer" checked>
+                    <div>
+                      <div class="font-bold text-xs text-slate-800 flex items-center space-x-1">
+                        <span>📊</span> <span>Análise Quantitativa</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 mt-0.5">Tabela completa de composição nutricional (TACO / Decisão / Colaborativa), com cálculos de gramatura, adequação do VET (%) e análise de micronutrientes (DRIs).</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-1">
                 <div>
-                  <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                  <h4 id="consumoHeaderMainTitle" class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
                     <span>🍎</span>
                     <span>Consumo Alimentar e Recordatório de 24h</span>
                   </h4>
-                  <p class="text-[11px] text-slate-500">Cadastre os alimentos do recordatório de 24h pela base TACO com regra de três proporcional e medida caseira.</p>
+                  <p id="consumoHeaderSubtitle" class="text-[11px] text-slate-500">Cadastre os alimentos do recordatório de 24h pela base TACO com regra de três proporcional e medida caseira.</p>
                 </div>
                 <div class="flex items-center space-x-2">
-                  <span class="text-[11px] text-emerald-800 font-semibold hidden sm:flex items-center">
+                  <span id="consumoHeaderTacoBadge" class="text-[11px] text-emerald-800 font-semibold hidden sm:flex items-center">
                     <span class="mr-1">🥦</span> Base TACO Integrada
                   </span>
                   <button type="button" id="addRecordatorioMealBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition flex items-center space-x-1 cursor-pointer">
@@ -1236,7 +1272,7 @@
               </div>
 
               <!-- CARD INFORMATIVO TACO DO RECORDATÓRIO -->
-              <div class="bg-indigo-50/80 border border-indigo-200 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
+              <div id="recordatorioTacoInfoBanner" class="bg-indigo-50/80 border border-indigo-200 rounded-xl p-3 text-xs space-y-1.5 shadow-2xs">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-2">
                     <span class="text-base">🥦</span>
@@ -1461,7 +1497,7 @@
               </div>
 
               <!-- SEÇÃO DE AVALIAÇÃO QUANTITATIVA DO CONSUMO (RECORDATÓRIO 24H E NEE) -->
-              <div class="bg-indigo-50/40 border border-indigo-200 rounded-xl p-3.5 space-y-3 shadow-xs">
+              <div id="recordatorioQuantitativeVetSection" class="bg-indigo-50/40 border border-indigo-200 rounded-xl p-3.5 space-y-3 shadow-xs">
                 <div class="flex items-center justify-between border-b border-indigo-100 pb-2">
                   <div>
                     <h5 class="font-bold text-indigo-950 text-xs flex items-center">
@@ -1572,7 +1608,21 @@
                 </div>
               </div>
 
-              <!-- SEÇÃO QUALITATIVA DO CONSUMO -->
+              <!-- SEÇÃO QUALITATIVA DO CONSUMO: AVALIAÇÃO QUALITATIVA DO CONSUMO (COMPORTAMENTO, PADRÕES, HORÁRIOS E QUALIDADE DA DIETA RELATADA) -->
+              <div id="consumoQualitativeAssessmentContainer" class="bg-amber-50/60 border-2 border-amber-300 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <label for="prontAvaliacaoQualitativaConsumo" class="block font-bold text-amber-950 text-xs flex items-center space-x-1.5">
+                    <span>📝</span>
+                    <span>Avaliação Qualitativa do Consumo:</span>
+                  </label>
+                  <span class="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                    Comportamento Alimentar, Padrões, Horários e Qualidade da Dieta
+                  </span>
+                </div>
+                <textarea id="prontAvaliacaoQualitativaConsumo" class="w-full border border-amber-300 rounded-lg p-2.5 text-xs bg-white text-slate-800 focus:border-amber-600 focus:ring-1 focus:ring-amber-600" rows="4" placeholder="Descreva a avaliação qualitativa do consumo alimentar relatado: padrões e comportamento alimentar, regularidade dos horários, monotonia ou variedade, presença de ultraprocessados, consumo de frutas/verduras e qualidade global da dieta..."></textarea>
+              </div>
+
+              <!-- RESUMO DO RECORDATÓRIO E PREFERÊNCIAS/AVERSÕES -->
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">Resumo do Recordatório Alimentar / Padrão Habitual:</label>
                 <textarea id="prontInqueritoResumo" class="w-full border border-slate-300 rounded p-2 text-xs" rows="4" placeholder="Descreva os horários, refeições habituais, grupos alimentares mais consumidos e erros identificados..."></textarea>
@@ -3420,6 +3470,43 @@ Recordatório: Café da manhã: Pão com manteiga e café doce..."></textarea>
                 <input type="checkbox" id="admCaseEnableQuestions" class="sr-only peer" checked>
                 <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                 <span id="admCaseEnableQuestionsLabel" class="ml-2.5 text-xs font-bold text-amber-800 whitespace-nowrap">Habilitada</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- CONTROLES DO PROFESSOR PARA CONSUMO ALIMENTAR (RECORDATÓRIO 24H): QUALITATIVO E/OU QUANTITATIVO -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+            <div class="bg-white p-2.5 rounded-lg border border-amber-200 flex items-center justify-between">
+              <div>
+                <div class="font-bold text-amber-900 text-xs flex items-center space-x-1">
+                  <span>🍎</span>
+                  <span>Habilitar Consumo Qualitativo</span>
+                </div>
+                <p class="text-[11px] text-amber-800 leading-tight mt-0.5">
+                  Libera a Análise Qualitativa do Consumo Alimentar (Refeição, Horário, Preparação, Alimento, Medida Caseira e Avaliação Qualitativa do Consumo, ocultando tabelas quantitativas).
+                </p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer ml-2">
+                <input type="checkbox" id="admCaseEnableConsumoQualitativo" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                <span id="admCaseEnableConsumoQualitativoLabel" class="ml-2.5 text-xs font-bold text-amber-800 whitespace-nowrap">Habilitado</span>
+              </label>
+            </div>
+
+            <div class="bg-white p-2.5 rounded-lg border border-indigo-200 flex items-center justify-between">
+              <div>
+                <div class="font-bold text-indigo-900 text-xs flex items-center space-x-1">
+                  <span>📊</span>
+                  <span>Habilitar Consumo Quantitativo</span>
+                </div>
+                <p class="text-[11px] text-indigo-800 leading-tight mt-0.5">
+                  Libera a Análise Quantitativa do Consumo Alimentar (tabela completa TACO/Decisão, gramaturas, adequação do VET % e análise de micronutrientes DRIs).
+                </p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer ml-2">
+                <input type="checkbox" id="admCaseEnableConsumoQuantitativo" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <span id="admCaseEnableConsumoQuantitativoLabel" class="ml-2.5 text-xs font-bold text-indigo-800 whitespace-nowrap">Habilitado</span>
               </label>
             </div>
           </div>

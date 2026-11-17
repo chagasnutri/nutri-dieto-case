@@ -1056,7 +1056,16 @@ class FirebaseSyncService {
       planejamentoAlimentar: Array.isArray(safeProntuario?.planejamentoAlimentar)
         ? safeProntuario.planejamentoAlimentar
         : (Array.isArray(safeProntuario?.cardapioItems) ? safeProntuario.cardapioItems : []),
-      consumoAlimentar: safeProntuario?.consumoAlimentar || {},
+      tipoAnaliseConsumo: safeProntuario?.consumoAlimentar?.tipoAnaliseConsumo || safeProntuario?.tipoAnaliseConsumo || "quantitativo",
+      avaliacaoQualitativaConsumo: safeProntuario?.consumoAlimentar?.avaliacaoQualitativaConsumo || safeProntuario?.avaliacaoQualitativaConsumo || "",
+      consumoAlimentar: {
+        ...(safeProntuario?.consumoAlimentar && typeof safeProntuario.consumoAlimentar === "object" ? safeProntuario.consumoAlimentar : {}),
+        tipoAnaliseConsumo: safeProntuario?.consumoAlimentar?.tipoAnaliseConsumo || safeProntuario?.tipoAnaliseConsumo || "quantitativo",
+        avaliacaoQualitativaConsumo: safeProntuario?.consumoAlimentar?.avaliacaoQualitativaConsumo || safeProntuario?.avaliacaoQualitativaConsumo || "",
+        refeicoesRecordatorio: Array.isArray(safeProntuario?.consumoAlimentar?.refeicoesRecordatorio)
+          ? safeProntuario.consumoAlimentar.refeicoesRecordatorio
+          : (Array.isArray(safeProntuario?.recordatorioItems) ? safeProntuario.recordatorioItems : [])
+      },
       anamnese: safeProntuario?.anamnese || {},
       antropometria: safeProntuario?.antropometria || {},
       bioquimica: safeProntuario?.bioquimica || {},

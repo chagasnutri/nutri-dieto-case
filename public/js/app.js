@@ -2505,8 +2505,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontRecGorduraPoliPct")) {
       document.getElementById("prontRecGorduraPoliPct").value = recTotLoad.gorduraPoliinsaturadaPct || "";
     }
+    if (document.getElementById("prontAvaliacaoQualitativaConsumo")) {
+      document.getElementById("prontAvaliacaoQualitativaConsumo").value = p.consumoAlimentar.avaliacaoQualitativaConsumo || p.avaliacaoQualitativaConsumo || "";
+    }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
+    applyConsumoModeForCase(appState.currentCase);
     renderRecordatorioMeals();
     updateVetAdequacyCalculations();
 
@@ -2932,6 +2936,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Consumo Alimentar (Recordatório de 24h)
     if (!p.consumoAlimentar) p.consumoAlimentar = {};
+    const activeConsumoMode = isQualitativeConsumoEnabled() ? "qualitativo" : "quantitativo";
+    p.tipoAnaliseConsumo = activeConsumoMode;
+    p.consumoAlimentar.tipoAnaliseConsumo = activeConsumoMode;
+    p.consumoAlimentar.avaliacaoQualitativaConsumo = document.getElementById("prontAvaliacaoQualitativaConsumo")?.value?.trim() || "";
+    p.avaliacaoQualitativaConsumo = p.consumoAlimentar.avaliacaoQualitativaConsumo;
     p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio")?.value?.trim() || "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo")?.value?.trim() || "";
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias")?.value?.trim() || "";
@@ -3714,10 +3723,176 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCardapioTotalsDisplay();
   }
 
-  // Renderiza as refeições do Recordatório de 24h com mecânica idêntica à do Cardápio
+  // Verifica se o Consumo Alimentar Qualitativo está ativo (respeitando os toggles do professor e a escolha do aluno quando ambos liberados)
+  function isQualitativeConsumoEnabled(caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
+    const allowed = isReal
+      ? { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true, bothEnabled: true }
+      : prontuarioManager.getAllowedConsumoModes(activeCase);
+
+    if (allowed.habilitarConsumoQualitativo && !allowed.habilitarConsumoQuantitativo) {
+      return true;
+    }
+    if (!allowed.habilitarConsumoQualitativo && allowed.habilitarConsumoQuantitativo) {
+      return false;
+    }
+
+    // Ambos liberados pelo professor: respeita o estado ou os radio buttons do aluno
+    if (appState.currentProntuario?.consumoAlimentar?.tipoAnaliseConsumo === "qualitativo" || appState.currentProntuario?.tipoAnaliseConsumo === "qualitativo") {
+      return true;
+    }
+    if (appState.currentProntuario?.consumoAlimentar?.tipoAnaliseConsumo === "quantitativo" || appState.currentProntuario?.tipoAnaliseConsumo === "quantitativo") {
+      return false;
+    }
+    const radioQual = document.getElementById("radioModoConsumoQualitativo");
+    const radioQuant = document.getElementById("radioModoConsumoQuantitativo");
+    if (radioQual && radioQual.checked) return true;
+    if (radioQuant && radioQuant.checked) return false;
+    return false;
+  }
+  window.isQualitativeConsumoEnabled = isQualitativeConsumoEnabled;
+
+  // Sincroniza o seletor de Consumo Alimentar (Radio buttons) e os painéis visíveis de acordo com os modos liberados pelo professor
+  function syncConsumoSelectorUI(isQualitativo, caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
+    const allowed = isReal
+      ? { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true, bothEnabled: true }
+      : prontuarioManager.getAllowedConsumoModes(activeCase);
+
+    const radioQual = document.getElementById("radioModoConsumoQualitativo");
+    const radioQuant = document.getElementById("radioModoConsumoQuantitativo");
+    const labelQual = document.getElementById("labelModoConsumoQualitativo");
+    const labelQuant = document.getElementById("labelModoConsumoQuantitativo");
+    const noticeBadge = document.getElementById("consumoProfessorModeNotice");
+    const headerTitle = document.getElementById("consumoHeaderMainTitle");
+    const headerSub = document.getElementById("consumoHeaderSubtitle");
+    const headerBadge = document.getElementById("consumoHeaderTacoBadge");
+
+    if (radioQual) {
+      radioQual.checked = Boolean(isQualitativo);
+      radioQual.disabled = !allowed.habilitarConsumoQualitativo;
+    }
+    if (radioQuant) {
+      radioQuant.checked = !isQualitativo;
+      radioQuant.disabled = !allowed.habilitarConsumoQuantitativo;
+    }
+
+    if (labelQual) {
+      labelQual.classList.toggle("hidden", !allowed.habilitarConsumoQualitativo);
+      labelQual.className = `${!allowed.habilitarConsumoQualitativo ? "hidden " : ""}relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+        isQualitativo
+          ? "border-amber-500 bg-amber-50/70 shadow-xs"
+          : "border-slate-200 bg-white hover:border-amber-400"
+      }`;
+    }
+
+    if (labelQuant) {
+      labelQuant.classList.toggle("hidden", !allowed.habilitarConsumoQuantitativo);
+      labelQuant.className = `${!allowed.habilitarConsumoQuantitativo ? "hidden " : ""}relative flex items-start p-3 rounded-xl border-2 cursor-pointer transition select-none ${
+        !isQualitativo
+          ? "border-indigo-500 bg-indigo-50/60 shadow-xs"
+          : "border-slate-200 bg-white hover:border-indigo-400"
+      }`;
+    }
+
+    if (noticeBadge) {
+      if (allowed.bothEnabled) {
+        noticeBadge.textContent = "Modos liberados pelo Professor: Análise Qualitativa e Análise Quantitativa";
+        noticeBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200";
+      } else if (allowed.habilitarConsumoQualitativo) {
+        noticeBadge.textContent = "Modo definido pelo Professor: Análise Qualitativa";
+        noticeBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300";
+      } else {
+        noticeBadge.textContent = "Modo definido pelo Professor: Análise Quantitativa";
+        noticeBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200";
+      }
+    }
+
+    if (headerTitle) {
+      headerTitle.innerHTML = isQualitativo
+        ? `<span>🍎</span><span>Consumo Alimentar • Análise Qualitativa (Recordatório 24h)</span>`
+        : `<span>🍎</span><span>Consumo Alimentar • Análise Quantitativa (Recordatório 24h)</span>`;
+    }
+    if (headerSub) {
+      headerSub.textContent = isQualitativo
+        ? "Modo Qualitativo Ativo: registre Refeição, Horário, Preparação, Alimento, Medida Caseira e a Avaliação Qualitativa do Consumo (sem tabelas de macros, micros, VET ou DRIs)."
+        : "Cadastre os alimentos do recordatório de 24h pela base TACO com regra de três proporcional e medida caseira.";
+    }
+    if (headerBadge) {
+      headerBadge.classList.toggle("hidden", isQualitativo);
+    }
+
+    // Oculta/Exibe todas as seções quantitativas (macros, micros, VET, NEE, DRIs e buscador TACO)
+    const totalsPanel = document.getElementById("recordatorioTotalsPanel");
+    const quantVetSection = document.getElementById("recordatorioQuantitativeVetSection");
+    const tacoBanner = document.getElementById("recordatorioTacoInfoBanner");
+    if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
+    if (quantVetSection) quantVetSection.classList.toggle("hidden", isQualitativo);
+    if (tacoBanner) tacoBanner.classList.toggle("hidden", isQualitativo);
+  }
+
+  // Permite ao aluno alternar entre 'Análise Qualitativa' ('qualitativo') e 'Análise Quantitativa' ('quantitativo') quando liberado
+  function setConsumoAnalysisMode(mode, caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isReal = Boolean(activeCase?.isRealCase || appState.workflowMode === "real" || appState.currentProntuario?.isRealPatient);
+    const allowed = isReal
+      ? { habilitarConsumoQualitativo: true, habilitarConsumoQuantitativo: true, bothEnabled: true }
+      : prontuarioManager.getAllowedConsumoModes(activeCase);
+
+    let cleanMode = mode === "qualitativo" ? "qualitativo" : "quantitativo";
+    if (cleanMode === "qualitativo" && !allowed.habilitarConsumoQualitativo) {
+      cleanMode = "quantitativo";
+    } else if (cleanMode === "quantitativo" && !allowed.habilitarConsumoQuantitativo) {
+      cleanMode = "qualitativo";
+    }
+    const isQualitativo = cleanMode === "qualitativo";
+
+    if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
+      appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
+    }
+
+    if (document.getElementById("recordatorioMealsContainer")?.querySelectorAll(".recordatorio-meal-card").length > 0) {
+      readRecordatorioFromDOM();
+    }
+
+    if (!appState.currentProntuario.consumoAlimentar || typeof appState.currentProntuario.consumoAlimentar !== "object") {
+      appState.currentProntuario.consumoAlimentar = {};
+    }
+    appState.currentProntuario.tipoAnaliseConsumo = cleanMode;
+    appState.currentProntuario.consumoAlimentar.tipoAnaliseConsumo = cleanMode;
+
+    syncConsumoSelectorUI(isQualitativo, activeCase);
+    renderRecordatorioMeals();
+    return isQualitativo;
+  }
+  window.setConsumoAnalysisMode = setConsumoAnalysisMode;
+
+  function applyConsumoModeForCase(caseOverride = null) {
+    const activeCase = caseOverride || appState.currentCase;
+    const isQualitativo = isQualitativeConsumoEnabled(activeCase);
+    const cleanMode = isQualitativo ? "qualitativo" : "quantitativo";
+    if (appState.currentProntuario) {
+      appState.currentProntuario.tipoAnaliseConsumo = cleanMode;
+      if (!appState.currentProntuario.consumoAlimentar) {
+        appState.currentProntuario.consumoAlimentar = {};
+      }
+      appState.currentProntuario.consumoAlimentar.tipoAnaliseConsumo = cleanMode;
+    }
+    syncConsumoSelectorUI(isQualitativo, activeCase);
+    renderRecordatorioMeals();
+    return isQualitativo;
+  }
+  window.applyConsumoModeForCase = applyConsumoModeForCase;
+
+  // Renderiza as refeições do Recordatório de 24h com suporte aos modos Análise Qualitativa e Análise Quantitativa
   function renderRecordatorioMeals() {
     const container = document.getElementById("recordatorioMealsContainer");
     if (!container) return;
+
+    const isQualitativo = isQualitativeConsumoEnabled();
+    syncConsumoSelectorUI(isQualitativo);
 
     if (!appState.currentProntuario || typeof appState.currentProntuario !== "object") {
       appState.currentProntuario = prontuarioManager.getEmptyProntuario(appState.currentCaseId || "caso-padrao");
@@ -3728,8 +3903,8 @@ document.addEventListener("DOMContentLoaded", () => {
         appState.currentProntuario.consumoAlimentar = {};
       }
       appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio = [
-        { id: "rec-1", refeicao: "Desjejum / Café da Manhã", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
-        { id: "rec-2", refeicao: "Colação / Lanche da Manhã", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-1", refeicao: "Desjejum", horario: "07:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
+        { id: "rec-2", refeicao: "Colação", horario: "09:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "rec-3", refeicao: "Almoço", horario: "12:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "rec-4", refeicao: "Lanche da Tarde", horario: "16:00", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
         { id: "rec-5", refeicao: "Jantar", horario: "19:30", preparacao: "", tipoPreparacao: "", itens: [], substituicoes: "", subtotal: { kcal: 0, cho: 0, ptn: 0, lip: 0, fibra: 0, calcio: 0, ferro: 0, sodio: 0, potassio: 0 } },
@@ -3737,6 +3912,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ];
     }
 
+    const refeicaoOptionsList = ["Desjejum", "Colação", "Almoço", "Lanche da Tarde", "Jantar", "Ceia", "Lanche Noturno"];
     const list = appState.currentProntuario.consumoAlimentar.refeicoesRecordatorio;
     container.innerHTML = "";
 
@@ -3750,16 +3926,26 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.mealId = meal.id || `rec-${mealIdx + 1}`;
       card.dataset.mealIdx = mealIdx;
 
-      // Cabeçalho da refeição
+      const currentRefName = meal.refeicao || `Refeição ${mealIdx + 1}`;
+      let refSelectOptionsHtml = refeicaoOptionsList
+        .map(opt => `<option value="${escapeHtml(opt)}" ${currentRefName === opt ? "selected" : ""}>${escapeHtml(opt)}</option>`)
+        .join("");
+      if (!refeicaoOptionsList.includes(currentRefName)) {
+        refSelectOptionsHtml += `<option value="${escapeHtml(currentRefName)}" selected>${escapeHtml(currentRefName)}</option>`;
+      }
+
+      // Cabeçalho da refeição: Refeição (Seletor/Dropdown), Horário e Preparação
       let headerHtml = `
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2">
           <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
             <span class="text-base">🍎</span>
-            <input type="text" class="rec-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-transparent hover:border-slate-300 focus:border-indigo-600 rounded px-1.5 py-0.5 bg-transparent flex-1" value="${escapeHtml(meal.refeicao || `Refeição ${mealIdx + 1}`)}">
-            <input type="time" class="rec-ref-time text-xs border border-slate-300 rounded px-2 py-0.5 w-24 bg-white" value="${escapeHtml(meal.horario || '08:00')}">
+            <select class="rec-ref-name font-bold text-slate-800 text-xs sm:text-sm border border-slate-300 focus:border-indigo-600 rounded px-2 py-1 bg-white flex-1" title="Selecione a Refeição">
+              ${refSelectOptionsHtml}
+            </select>
+            <input type="time" class="rec-ref-time text-xs border border-slate-300 rounded px-2 py-1 w-28 bg-white font-semibold" value="${escapeHtml(meal.horario || '08:00')}">
           </div>
           <div class="flex items-center space-x-2">
-            <span class="rec-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 shadow-2xs">
+            <span class="rec-subtotal-badge text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 shadow-2xs ${isQualitativo ? 'hidden' : ''}">
               ${subtotal.kcal} kcal | CHO: ${subtotal.cho}g | PTN: ${subtotal.ptn}g | LIP: ${subtotal.lip}g
             </span>
             <button type="button" class="remove-rec-meal-btn text-slate-400 hover:text-rose-600 p-1 text-sm rounded transition cursor-pointer" data-meal-idx="${mealIdx}" title="Excluir esta refeição do R24h">
@@ -3776,20 +3962,20 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      // Tabela de itens do Recordatório
+      // Tabela de itens do Recordatório (Qualitativo vs Quantitativo)
       let itemsTableHtml = `
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead class="bg-slate-50 text-slate-600 text-[10px] uppercase font-bold border-b border-slate-200">
               <tr>
-                <th class="py-1.5 px-2 min-w-[200px]">Alimento Oficial (TACO / Decisão)</th>
+                <th class="py-1.5 px-2 min-w-[200px]">${isQualitativo ? 'Alimento' : 'Alimento Oficial (TACO / Decisão)'}</th>
                 <th class="py-1.5 px-2 min-w-[140px]">Medida Caseira</th>
-                <th class="py-1.5 px-2 text-center w-16 text-indigo-900 font-bold" title="Quantidade de medidas caseiras">Qtd</th>
-                <th class="py-1.5 px-2 text-right w-24">Gramatura (g)</th>
-                <th class="py-1.5 px-2 text-right w-16 text-indigo-900 font-bold">Kcal</th>
-                <th class="py-1.5 px-2 text-right w-16 text-amber-800">CHO</th>
-                <th class="py-1.5 px-2 text-right w-16 text-sky-800">PTN</th>
-                <th class="py-1.5 px-2 text-right w-16 text-rose-800">LIP</th>
+                <th class="py-1.5 px-2 text-center w-16 text-indigo-900 font-bold ${isQualitativo ? 'hidden' : ''}" title="Quantidade de medidas caseiras">Qtd</th>
+                <th class="py-1.5 px-2 text-right w-24 ${isQualitativo ? 'hidden' : ''}">Gramatura (g)</th>
+                <th class="py-1.5 px-2 text-right w-16 text-indigo-900 font-bold ${isQualitativo ? 'hidden' : ''}">Kcal</th>
+                <th class="py-1.5 px-2 text-right w-16 text-amber-800 ${isQualitativo ? 'hidden' : ''}">CHO</th>
+                <th class="py-1.5 px-2 text-right w-16 text-sky-800 ${isQualitativo ? 'hidden' : ''}">PTN</th>
+                <th class="py-1.5 px-2 text-right w-16 text-rose-800 ${isQualitativo ? 'hidden' : ''}">LIP</th>
                 <th class="py-1.5 px-1 text-center w-8">Ação</th>
               </tr>
             </thead>
@@ -3799,33 +3985,38 @@ document.addEventListener("DOMContentLoaded", () => {
       if (meal.itens.length === 0) {
         itemsTableHtml += `
           <tr class="empty-rec-items-row">
-            <td colspan="9" class="text-center py-2.5 text-slate-400 italic text-[11px]">
-              Nenhum alimento referido nesta refeição. Clique no botão abaixo para adicionar itens da TACO.
+            <td colspan="${isQualitativo ? 3 : 9}" class="text-center py-2.5 text-slate-400 italic text-[11px]">
+              Nenhum alimento referido nesta refeição. Clique no botão abaixo para adicionar alimentos nesta refeição.
             </td>
           </tr>
         `;
       } else {
         meal.itens.forEach((it, itIdx) => {
+          const foodTextVal = it.alimento || it.alimentoNome || it.nome || "";
+          const medidaTextVal = it.medidaCaseira || it.medida || "";
           itemsTableHtml += `
-            <tr class="rec-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `rec-it-${itIdx}`}" data-item-idx="${itIdx}">
+            <tr class="rec-item-row hover:bg-slate-50/80 transition" data-item-id="${it.id || `rec-it-${itIdx}`}" data-item-idx="${itIdx}" data-taco-id="${escapeHtml(it.tacoId || '')}" data-alimento-nome="${escapeHtml(foodTextVal)}">
               <td class="py-1.5 px-2">
-                <select class="rec-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
-                  ${buildTacoSelectOptions(it.tacoId)}
-                </select>
+                ${isQualitativo
+                  ? `<input type="text" class="rec-item-alimento-livre w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white text-slate-800 placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: Pão francês, Leite integral, Banana prata..." value="${escapeHtml(foodTextVal)}" title="Nome do Alimento">`
+                  : `<select class="rec-item-food w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600">
+                      ${buildTacoSelectOptions(it.tacoId)}
+                    </select>`
+                }
               </td>
               <td class="py-1.5 px-2">
-                <input type="text" class="rec-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: unidade, colher..." value="${escapeHtml(it.medidaCaseira || '')}" title="Medida Caseira de referência">
+                <input type="text" class="rec-item-medida w-full border border-slate-300 rounded px-2 py-1 text-xs placeholder:text-slate-400 focus:border-indigo-600" placeholder="Ex: 1 copo cheio, 2 colheres de sopa..." value="${escapeHtml(medidaTextVal)}" title="Medida Caseira de referência">
               </td>
-              <td class="py-1.5 px-2 text-center">
+              <td class="py-1.5 px-2 text-center ${isQualitativo ? 'hidden' : ''}">
                 <input type="number" min="0.1" step="0.5" class="rec-item-qtd w-16 border border-indigo-300 bg-indigo-50/50 rounded px-1.5 py-1 text-xs text-center font-bold text-indigo-950 focus:border-indigo-600 focus:bg-white focus:ring-1 focus:ring-indigo-600 shadow-2xs" placeholder="1" value="${it.quantidadeMedida !== undefined && it.quantidadeMedida !== null && it.quantidadeMedida !== '' ? it.quantidadeMedida : (it.qtd !== undefined ? it.qtd : 1)}" title="Quantidade da medida caseira: altere para recalcular gramas e nutrientes instantaneamente">
               </td>
-              <td class="py-1.5 px-2 text-right">
+              <td class="py-1.5 px-2 text-right ${isQualitativo ? 'hidden' : ''}">
                 <input type="number" min="0" step="1" class="rec-item-gramas w-20 border border-slate-300 rounded px-1.5 py-1 text-xs text-right font-bold text-slate-800 focus:border-indigo-600" placeholder="g" value="${it.gramatura || ''}">
               </td>
-              <td class="py-1.5 px-2 text-right font-bold text-indigo-900 rec-item-kcal">${it.kcal !== undefined ? it.kcal : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-cho">${it.cho !== undefined ? it.cho : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-ptn">${it.ptn !== undefined ? it.ptn : 0}</td>
-              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-lip">${it.lip !== undefined ? it.lip : 0}</td>
+              <td class="py-1.5 px-2 text-right font-bold text-indigo-900 rec-item-kcal ${isQualitativo ? 'hidden' : ''}">${it.kcal !== undefined ? it.kcal : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-cho ${isQualitativo ? 'hidden' : ''}">${it.cho !== undefined ? it.cho : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-ptn ${isQualitativo ? 'hidden' : ''}">${it.ptn !== undefined ? it.ptn : 0}</td>
+              <td class="py-1.5 px-2 text-right font-semibold text-slate-700 rec-item-lip ${isQualitativo ? 'hidden' : ''}">${it.lip !== undefined ? it.lip : 0}</td>
               <td class="py-1.5 px-1 text-center">
                 <button type="button" class="remove-rec-item-btn text-rose-400 hover:text-rose-700 font-bold px-1 text-xs cursor-pointer" data-meal-idx="${mealIdx}" data-item-idx="${itIdx}" title="Remover alimento">
                   ✕
@@ -3847,9 +4038,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-indigo-50">
           <button type="button" class="add-rec-food-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer transition" data-meal-idx="${mealIdx}">
             <span>➕</span>
-            <span>Adicionar Alimento (TACO / Decisão)</span>
+            <span>${isQualitativo ? 'Adicionar Alimento nesta Refeição' : 'Adicionar Alimento (TACO / Decisão)'}</span>
           </button>
-          <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold flex items-center space-x-1 cursor-pointer">
+          <button type="button" class="btn-cadastrar-alimento-trigger text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold flex items-center space-x-1 cursor-pointer ${isQualitativo ? 'hidden' : ''}">
             <span>➕</span>
             <span class="underline">Cadastrar Alimento</span>
           </button>
@@ -3947,8 +4138,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // 4. Medida Caseira Livre
-    container.querySelectorAll(".rec-item-medida").forEach(input => {
+    // 4. Medida Caseira Livre e Alimento Livre (Modo Qualitativo)
+    container.querySelectorAll(".rec-item-medida, .rec-item-alimento-livre").forEach(input => {
       input.addEventListener("input", (e) => {
         delete e.target.dataset.autoFilled;
         readRecordatorioFromDOM();
@@ -3958,6 +4149,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 5. Edição de nomes, horários, tipo preparação
     container.querySelectorAll(".rec-ref-name, .rec-ref-time, .rec-ref-tipo-prep").forEach(input => {
       input.addEventListener("input", () => {
+        readRecordatorioFromDOM();
+      });
+      input.addEventListener("change", () => {
         readRecordatorioFromDOM();
       });
     });
@@ -4033,9 +4227,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const itens = [];
         card.querySelectorAll(".rec-item-row").forEach(row => {
           const tacoSelect = row.querySelector(".rec-item-food");
-          const tacoId = tacoSelect ? tacoSelect.value : "";
-          const food = (typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId);
-          const alimentoNome = food ? food.nome : "";
+          const alimentoLivreInput = row.querySelector(".rec-item-alimento-livre");
+          const tacoId = tacoSelect ? tacoSelect.value : (row.dataset.tacoId || "");
+          const food = tacoId
+            ? ((typeof getTacoFoodById === "function") ? getTacoFoodById(tacoId) : getTacoFoodsList().find(f => f.id === tacoId))
+            : null;
+          const alimentoNome = alimentoLivreInput
+            ? alimentoLivreInput.value.trim()
+            : (food ? food.nome : (row.dataset.alimentoNome || ""));
 
           const medidaInput = row.querySelector(".rec-item-medida");
           const medidaCaseira = medidaInput ? medidaInput.value.trim() : "";
@@ -4051,10 +4250,13 @@ document.addEventListener("DOMContentLoaded", () => {
           itens.push({
             id: row.dataset.itemId || `rec-it-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             tacoId: tacoId,
+            alimento: alimentoNome,
             alimentoNome: alimentoNome,
+            nome: alimentoNome,
             quantidadeMedida: quantidadeMedida,
             qtd: quantidadeMedida,
             medidaCaseira: medidaCaseira,
+            medida: medidaCaseira,
             gramatura: gramatura,
             kcal: nutri.kcal,
             cho: nutri.cho,
@@ -5203,6 +5405,15 @@ document.addEventListener("DOMContentLoaded", () => {
     radio.addEventListener("change", (e) => {
       if (e.target.checked) {
         setCardapioPlanningMode(e.target.value);
+      }
+    });
+  });
+
+  // Listeners do Seletor de Modo de Análise do Consumo Alimentar (Análise Qualitativa vs Análise Quantitativa)
+  document.querySelectorAll('input[name="prontTipoAnaliseConsumo"]').forEach(radio => {
+    radio.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        setConsumoAnalysisMode(e.target.value);
       }
     });
   });
@@ -8234,6 +8445,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!caseData) return;
+    applyConsumoModeForCase(caseData);
     applyQualitativePlanningMode(caseData);
     applyAiCorrectionButtonState(caseData);
     const blockedTabs = Array.isArray(caseData.blockedTabs) ? caseData.blockedTabs : [];
@@ -8792,6 +9004,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const isQuestionsEnabled = c.habilitarQuestoesAvaliativas !== false;
     updateCaseQuestionsLabel(isQuestionsEnabled);
 
+    // Status de Consumo Alimentar Qualitativo e Quantitativo (Painel do Professor)
+    const isConsumoQualEnabled = c.habilitarConsumoQualitativo !== false;
+    const isConsumoQuantEnabled = c.habilitarConsumoQuantitativo !== false;
+    const consQualCb = document.getElementById("admCaseEnableConsumoQualitativo");
+    const consQualLabel = document.getElementById("admCaseEnableConsumoQualitativoLabel");
+    if (consQualCb) {
+      consQualCb.checked = isConsumoQualEnabled;
+      consQualCb.onchange = () => {
+        if (consQualLabel) {
+          consQualLabel.textContent = consQualCb.checked ? "Habilitado" : "Desabilitado";
+          consQualLabel.className = consQualCb.checked ? "ml-2.5 text-xs font-bold text-amber-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+        }
+      };
+    }
+    if (consQualLabel) {
+      consQualLabel.textContent = isConsumoQualEnabled ? "Habilitado" : "Desabilitado";
+      consQualLabel.className = isConsumoQualEnabled ? "ml-2.5 text-xs font-bold text-amber-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+    }
+
+    const consQuantCb = document.getElementById("admCaseEnableConsumoQuantitativo");
+    const consQuantLabel = document.getElementById("admCaseEnableConsumoQuantitativoLabel");
+    if (consQuantCb) {
+      consQuantCb.checked = isConsumoQuantEnabled;
+      consQuantCb.onchange = () => {
+        if (consQuantLabel) {
+          consQuantLabel.textContent = consQuantCb.checked ? "Habilitado" : "Desabilitado";
+          consQuantLabel.className = consQuantCb.checked ? "ml-2.5 text-xs font-bold text-indigo-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+        }
+      };
+    }
+    if (consQuantLabel) {
+      consQuantLabel.textContent = isConsumoQuantEnabled ? "Habilitado" : "Desabilitado";
+      consQuantLabel.className = isConsumoQuantEnabled ? "ml-2.5 text-xs font-bold text-indigo-800 whitespace-nowrap" : "ml-2.5 text-xs font-bold text-slate-600 whitespace-nowrap";
+    }
+
     // Status de Planejamento Qualitativo (Habilitar / Desabilitar)
     const isQualitativeEnabled = c.habilitarPlanejamentoQualitativo === true;
     const qualCb = document.getElementById("admCaseEnableQualitativePlan");
@@ -9161,6 +9408,8 @@ document.addEventListener("DOMContentLoaded", () => {
       isLocked: !(document.getElementById("admCaseIsUnlocked")?.checked),
       visivel: document.getElementById("admCaseIsVisible") ? document.getElementById("admCaseIsVisible").checked : true,
       habilitarQuestoesAvaliativas: document.getElementById("admCaseEnableQuestions") ? document.getElementById("admCaseEnableQuestions").checked : true,
+      habilitarConsumoQualitativo: document.getElementById("admCaseEnableConsumoQualitativo") ? document.getElementById("admCaseEnableConsumoQualitativo").checked : true,
+      habilitarConsumoQuantitativo: document.getElementById("admCaseEnableConsumoQuantitativo") ? document.getElementById("admCaseEnableConsumoQuantitativo").checked : true,
       habilitarPlanejamentoQualitativo: document.getElementById("admCaseEnableQualitativePlan") ? document.getElementById("admCaseEnableQualitativePlan").checked : false,
       habilitarCorrecaoAutomaticaIA: document.getElementById("admCaseEnableAiCorrection") ? document.getElementById("admCaseEnableAiCorrection").checked : false,
       professorEmail: document.getElementById("admCaseProfessorEmail") ? document.getElementById("admCaseProfessorEmail").value.trim() : "professor@dietocase.edu.br",
