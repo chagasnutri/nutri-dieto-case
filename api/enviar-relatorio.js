@@ -49,6 +49,12 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
     ca?.inqueritoResumo ||
     ''
   ).trim();
+  const ingestaoHidricaDiaria = String(
+    ca?.ingestaoHidrica ||
+    res?.ingestaoHidrica ||
+    ca?.aguaPreferenciasAversoes ||
+    ''
+  ).trim();
 
   const rawRecordatorio =
     (Array.isArray(ca?.refeicoesRecordatorio) ? ca.refeicoesRecordatorio : null) ||
@@ -160,6 +166,7 @@ export function buildSafeFinalReportText(rawResolution, rawCaseTitle = 'Caso Cl�
     `- Sinais Clínicos / Achados: ${ef?.sinaisClinicos || ef?.massaMuscularAdiposa || '---'}`,
     ``,
     `4. CONSUMO ALIMENTAR E RECORDATÓRIO DE 24H (${isConsumoQualitativo ? 'ANÁLISE QUALITATIVA' : 'ANÁLISE QUANTITATIVA'}):`,
+    `- Ingestão Hídrica Diária: ${ingestaoHidricaDiaria || '---'}`,
     recLines,
     avaliacaoQualitativaConsumo ? `- Avaliação Qualitativa do Consumo: ${avaliacaoQualitativaConsumo}` : null,
     ``,

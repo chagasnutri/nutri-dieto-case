@@ -1058,10 +1058,12 @@ class FirebaseSyncService {
         : (Array.isArray(safeProntuario?.cardapioItems) ? safeProntuario.cardapioItems : []),
       tipoAnaliseConsumo: safeProntuario?.consumoAlimentar?.tipoAnaliseConsumo || safeProntuario?.tipoAnaliseConsumo || "quantitativo",
       avaliacaoQualitativaConsumo: safeProntuario?.consumoAlimentar?.avaliacaoQualitativaConsumo || safeProntuario?.avaliacaoQualitativaConsumo || "",
+      ingestaoHidrica: safeProntuario?.consumoAlimentar?.ingestaoHidrica || safeProntuario?.ingestaoHidrica || "",
       consumoAlimentar: {
         ...(safeProntuario?.consumoAlimentar && typeof safeProntuario.consumoAlimentar === "object" ? safeProntuario.consumoAlimentar : {}),
         tipoAnaliseConsumo: safeProntuario?.consumoAlimentar?.tipoAnaliseConsumo || safeProntuario?.tipoAnaliseConsumo || "quantitativo",
         avaliacaoQualitativaConsumo: safeProntuario?.consumoAlimentar?.avaliacaoQualitativaConsumo || safeProntuario?.avaliacaoQualitativaConsumo || "",
+        ingestaoHidrica: safeProntuario?.consumoAlimentar?.ingestaoHidrica || safeProntuario?.ingestaoHidrica || "",
         refeicoesRecordatorio: Array.isArray(safeProntuario?.consumoAlimentar?.refeicoesRecordatorio)
           ? safeProntuario.consumoAlimentar.refeicoesRecordatorio
           : (Array.isArray(safeProntuario?.recordatorioItems) ? safeProntuario.recordatorioItems : [])

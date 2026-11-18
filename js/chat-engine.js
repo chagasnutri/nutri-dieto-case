@@ -6,6 +6,15 @@ class ClinicalChatEngine {
     this.apiEndpoint = "/api/chat";
     this.apiKey = ""; // Por segurança, chaves de API não são armazenadas nem expostas no frontend
     this.activeRole = "paciente"; // 'paciente', 'acompanhante', 'medico', 'enfermagem', 'fono', 'psicologia'
+    this.temperature = 0.6; // Temperatura equilibrada (0.5 a 0.7) para fluidez e naturalidade sem alucinar fatos fora do JSON
+  }
+
+  getSemanticSystemPromptDirective() {
+    return 'Você tem acesso aos dados do prontuário do paciente. NUNCA exija que o aluno use as palavras exatas do seu banco de dados. Faça o cruzamento semântico pelo contexto da conversa. Se o aluno perguntar "você vai muito ao banheiro?", entenda que ele busca avaliar "hábito intestinal" ou "diurese". Se perguntar "como é sua alimentação de manhã?", busque os dados de "desjejum". Interprete gírias, sinônimos e abordagens indiretas. Responda de forma fluida e dinâmica, agindo 100% como um humano natural, nunca como um buscador de termos.';
+  }
+
+  getChatTemperature() {
+    return this.temperature;
   }
 
   setApiKey(key) {
@@ -568,7 +577,23 @@ class ClinicalChatEngine {
       }
     }
 
-    // REQUISITO 2: TERMOS TÉCNICOS VS. POPULARES (HÁBITO INTESTINAL <-> FAZER COCÔ / IR AOS PÉS)
+    // REQUISITO 2: TERMOS TÉCNICOS VS. POPULARES E CRUZAMENTO SEMÂNTICO ("você vai muito ao banheiro?" -> hábito intestinal + diurese)
+    const isPergBanheiroGeral =
+      (q.includes("banheiro") || q.includes("sanitario") || q.includes("vaso")) &&
+      !q.includes("urina") && !q.includes("xixi") && !q.includes("diurese") &&
+      !q.includes("coco") && !q.includes("fezes") && !q.includes("evacua");
+
+    if (isPergBanheiroGeral) {
+      const infoIntestinoDiurese = h.funcaoIntestinalDiurese || h.habitoIntestinal || h.intestino || ef.tgi || "Hábito intestinal e diurese (urina) normais ao longo do dia.";
+      if (role === "paciente") {
+        return `Olha doutor(a), sobre as minhas idas ao banheiro (tanto do hábito intestinal/ir aos pés quanto da diurese/urina): ${this.cleanFirstPerson(infoIntestinoDiurese)}`;
+      }
+      if (role === "acompanhante") {
+        return `Sobre as idas dele(a) ao banheiro (hábito intestinal e diurese/urina), doutor(a): ${this.cleanThirdPerson(infoIntestinoDiurese)}`;
+      }
+      return `Avaliação integrada de hábito intestinal e diurese (idas ao banheiro): ${infoIntestinoDiurese}`;
+    }
+
     const isPergIntestino =
       q.includes("habito intestinal") || q.includes("ritmo intestinal") || q.includes("funcao intestinal") ||
       q.includes("ir aos pes") || q.includes("vai aos pes") || q.includes("vou aos pes") ||
@@ -577,7 +602,7 @@ class ClinicalChatEngine {
       q.includes("diarreia") || q.includes("fezes") || q.includes("prisao de ventre") ||
       q.includes("constipac") || q.includes("obstipac") || q.includes("intestino preso") ||
       q.includes("intestino solto") || (q.includes("intestino") && !q.includes("delgado") && !q.includes("grosso")) ||
-      (q.includes("banheiro") && !q.includes("urina") && !q.includes("xixi") && !q.includes("diurese"));
+      (q.includes("banheiro") && (q.includes("coco") || q.includes("fezes") || q.includes("evacua")));
 
     if (isPergIntestino) {
       const infoIntestino = h.funcaoIntestinalDiurese || h.habitoIntestinal || h.intestino || ef.tgi || "Hábito intestinal normal, evacuações diárias sem dificuldades.";
@@ -590,9 +615,9 @@ class ClinicalChatEngine {
       return `Histórico e avaliação clínica do hábito intestinal e eliminações fecais: ${infoIntestino}`;
     }
 
-    if (q.includes("urina") || q.includes("urinar") || q.includes("xixi") || q.includes("noite") || q.includes("nocturia") || q.includes("diurese")) {
-      if (role === "paciente") return `Sobre a urina, doutor(a): ${this.cleanFirstPerson(h.funcaoIntestinalDiurese || "Urina normal ao longo do dia.")}`;
-      if (role === "acompanhante") return `Sobre a urina dele(a), doutor(a): ${this.cleanThirdPerson(h.funcaoIntestinalDiurese || "Não notamos alterações na urina.")}`;
+    if (q.includes("urina") || q.includes("urinar") || q.includes("xixi") || q.includes("mijo") || q.includes("mijar") || q.includes("numero 1") || (q.includes("noite") && q.includes("acorda")) || q.includes("nocturia") || q.includes("diurese")) {
+      if (role === "paciente") return `Sobre a urina (diurese), doutor(a): ${this.cleanFirstPerson(h.funcaoIntestinalDiurese || "Urina normal ao longo do dia.")}`;
+      if (role === "acompanhante") return `Sobre a urina (diurese) dele(a), doutor(a): ${this.cleanThirdPerson(h.funcaoIntestinalDiurese || "Não notamos alterações na urina.")}`;
       return `Parâmetros de diurese documentados no prontuário: ${h.funcaoIntestinalDiurese || "Sem alterações de volume ou coloração registradas."}`;
     }
 
@@ -947,33 +972,26 @@ class ClinicalChatEngine {
       return `Ao exame físico dirigido: ${ef.sinaisEspecificos || ''} ${ef.estadoGeral || ''}`;
     }
 
-    // 11. CONSUMO ALIMENTAR / RECORDATÓRIO DE 24 HORAS
-    if (q.includes("o que come") || q.includes("alimentacao") || q.includes("costuma comer") || q.includes("recordatorio") || q.includes("dieta") || q.includes("rotina alimentar") || q.includes("dia a dia") || q.includes("comeu ontem")) {
-      const recList = (ca.recordatorio24h || []).map(r => `• ${r.refeicao}: ${r.alimentos}`).join("\n");
-      if (role === "paciente") {
-        return `Vou te contar como é o meu dia a dia de comida, doutor(a):\n\n${recList}\n\nNo geral: ${this.cleanFirstPerson(ca.padraoDiario || '')}`;
-      }
-      if (role === "acompanhante") {
-        return `Doutor(a), a rotina de alimentação dele(a) no dia a dia é mais ou menos assim:\n\n${recList}\n\n${ca.padraoDiario || ''}`;
-      }
-      return `Inquérito alimentar e recordatório alimentar habitual do paciente:\n\n${recList}\n\nPadrão clínico: ${ca.padraoDiario || ''}`;
+    // 11. CONSUMO ALIMENTAR / RECORDATÓRIO DE 24 HORAS (CRUZAMENTO SEMÂNTICO POR PERÍODO / REFEIÇÃO PRIMEIRO)
+    if (q.includes("cafe da manha") || q.includes("desjejum") || q.includes("manha") || q.includes("cedo") || q.includes("acorda")) {
+      const item = (ca.recordatorio24h || []).find(r =>
+        this.normalizeText(r.refeicao).includes("cafe") ||
+        this.normalizeText(r.refeicao).includes("manha") ||
+        this.normalizeText(r.refeicao).includes("desjejum")
+      );
+      if (role === "paciente") return item ? `De manhã, no meu desjejum (café da manhã), eu costumo comer: ${item.alimentos}.` : "Não costumo tomar café da manhã (desjejum), doutor(a).";
+      if (role === "acompanhante") return item ? `De manhã, no desjejum (café da manhã) dele(a), ele(a) costuma comer: ${item.alimentos}.` : "Ele(a) geralmente pula o café da manhã.";
+      return item ? `Desjejum / Café da manhã relatado: ${item.alimentos}.` : "Sem relato de desjejum / café da manhã habitual.";
     }
 
-    if (q.includes("cafe da manha") || q.includes("desjejum") || q.includes("manha")) {
-      const item = (ca.recordatorio24h || []).find(r => this.normalizeText(r.refeicao).includes("cafe") || this.normalizeText(r.refeicao).includes("manha") || this.normalizeText(r.refeicao).includes("desjejum"));
-      if (role === "paciente") return item ? `No meu café da manhã, eu costumo comer: ${item.alimentos}.` : "Não costumo tomar café da manhã, doutor(a).";
-      if (role === "acompanhante") return item ? `No café da manhã dele(a), ele(a) costuma comer: ${item.alimentos}.` : "Ele(a) geralmente pula o café da manhã.";
-      return item ? `Café da manhã relatado: ${item.alimentos}.` : "Sem relato de café da manhã habitual.";
-    }
-
-    if (q.includes("almoco") || q.includes("almocar")) {
+    if (q.includes("almoco") || q.includes("almocar") || q.includes("meio dia") || q.includes("meio-dia")) {
       const item = (ca.recordatorio24h || []).find(r => this.normalizeText(r.refeicao).includes("almoco"));
       if (role === "paciente") return item ? `No meu almoço, eu costumo comer: ${item.alimentos}.` : "Não tenho um almoço fixo no dia a dia, doutor(a).";
       if (role === "acompanhante") return item ? `No almoço, ele(a) costuma comer: ${item.alimentos}.` : "Não há almoço específico registrado.";
       return item ? `Almoço habitual registrado: ${item.alimentos}.` : "Sem relato formal de almoço.";
     }
 
-    if (q.includes("lanche") || q.includes("tarde") || q.includes("colacao")) {
+    if (q.includes("lanche") || q.includes("tarde") || q.includes("colacao") || q.includes("belisca")) {
       const items = (ca.recordatorio24h || []).filter(r => this.normalizeText(r.refeicao).includes("lanche") || this.normalizeText(r.refeicao).includes("colacao"));
       if (role === "paciente") return items.length > 0 ? `Nos meus lanches durante o dia:\n` + items.map(i => `• ${i.refeicao}: ${i.alimentos}`).join("\n") : "Geralmente eu não costumo lanchar entre as refeições não, doutor(a).";
       if (role === "acompanhante") return items.length > 0 ? `Nos lanches dele(a):\n` + items.map(i => `• ${i.refeicao}: ${i.alimentos}`).join("\n") : "Ele(a) não costuma fazer lanches.";
@@ -985,6 +1003,17 @@ class ClinicalChatEngine {
       if (role === "paciente") return items.length > 0 ? `À noite, no jantar e ceia:\n` + items.map(i => `• ${i.refeicao}: ${i.alimentos}`).join("\n") : "Geralmente eu não costumo jantar comida pesada à noite não, doutor(a).";
       if (role === "acompanhante") return items.length > 0 ? `No jantar dele(a):\n` + items.map(i => `• ${i.refeicao}: ${i.alimentos}`).join("\n") : "Ele(a) não costuma jantar.";
       return items.length > 0 ? items.map(i => `${i.refeicao}: ${i.alimentos}`).join("; ") : "Sem registros de refeição noturna.";
+    }
+
+    if (q.includes("o que come") || q.includes("alimentacao") || q.includes("costuma comer") || q.includes("recordatorio") || q.includes("dieta") || q.includes("rotina alimentar") || q.includes("dia a dia") || q.includes("comeu ontem")) {
+      const recList = (ca.recordatorio24h || []).map(r => `• ${r.refeicao}: ${r.alimentos}`).join("\n");
+      if (role === "paciente") {
+        return `Vou te contar como é o meu dia a dia de comida, doutor(a):\n\n${recList}\n\nNo geral: ${this.cleanFirstPerson(ca.padraoDiario || '')}`;
+      }
+      if (role === "acompanhante") {
+        return `Doutor(a), a rotina de alimentação dele(a) no dia a dia é mais ou menos assim:\n\n${recList}\n\n${ca.padraoDiario || ''}`;
+      }
+      return `Inquérito alimentar e recordatório alimentar habitual do paciente:\n\n${recList}\n\nPadrão clínico: ${ca.padraoDiario || ''}`;
     }
 
     if (q.includes("agua") || q.includes("liquido") || q.includes("hidrata") || q.includes("bebe agua") || q.includes("refrigerante") || q.includes("suco")) {
@@ -1064,7 +1093,7 @@ DIRETRIZES DE COMUNICAÇÃO HUMANIZADA (SEM TOM ROBÓTICO):
       - Entregue os dados um por um, apenas sob demanda.
 
 3. REGRAS DE MAPEAMENTO DE VOCABULÁRIO E INTERPRETAÇÃO SEMÂNTICA:
-   Você possui alta capacidade de interpretação semântica. Ao ler os dados do prontuário do paciente (JSON/Banco de dados) para responder ao aluno, você JAMAIS deve exigir que o aluno use as palavras exatas que estão no sistema. Siga estas regras:
+   ${this.getSemanticSystemPromptDirective()}
    a) SINÔNIMOS E INTERPRETAÇÃO DE INTENÇÃO: Compreenda perguntas formuladas de diferentes maneiras. Se o aluno perguntar "Onde o senhor mora?", "De onde você é?" ou "Qual sua cidade?", cruze essa informação com os campos de "Naturalidade", "Procedência", "residence" ou "Endereço" do banco de dados e responda a informação correta.
    b) TERMOS TÉCNICOS VS. POPULARES: Seja a ponte entre o linguajar médico e o linguajar do paciente. Se o aluno usar termos técnicos (ex: "Como está seu hábito intestinal?", "Tem hipertensão?", "Apresenta dispneia?"), reconheça e conecte com dados populares do sistema (ex: "Fazer cocô / ir aos pés", "Pressão alta", "Falta de ar"). Faça o mesmo no sentido inverso: se o aluno perguntar usando termos leigos/populares, entregue os dados correspondentes da ficha clínica.
    c) ADAPTAÇÃO DE CONTEXTO: Analise o sentido da frase inteira, não apenas palavras isoladas. O objetivo é que a conversa flua de forma natural e que o paciente virtual entenda a intenção por trás da pergunta do nutricionista, mesmo que o vocabulário divirja do que está escrito no roteiro estruturado.
@@ -1081,6 +1110,7 @@ DIRETRIZES DE COMUNICAÇÃO HUMANIZADA (SEM TOM ROBÓTICO):
         body: JSON.stringify({
           message: question,
           systemPrompt: systemPrompt,
+          temperature: this.temperature,
           clinicalContext: {
             modalidade: "Simulação de Interlocutor Clínico",
             paciente: {

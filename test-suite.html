@@ -4314,6 +4314,79 @@ REGRA 4 (Estrutura): Forneça um feedback estruturado contendo: Erros Críticos,
         htmlReportConsumoQuant.includes("1850 kcal/dia"),
         "Seção 151.4 e 151.5 (Persistência e Relatório Final PDF Qualitativo vs Quantitativo): Renderiza perfeitamente tanto a Análise Qualitativa (ocultando a tabela 1.8.2 de macros/micros) quanto a Análise Quantitativa no Relatório Final sem erros de null"
       );
+
+      // =========================================================================
+      // SEÇÃO 152: APRIMORAMENTO SEMÂNTICO DA IA (CHAT) & INGESTÃO HÍDRICA DIÁRIA NO CONSUMO ALIMENTAR
+      // =========================================================================
+
+      // 152.1 Aprimoramento Semântico da IA (Diretriz obrigatória no System Prompt, Temperatura 0.5 a 0.7 e Cruzamento Semântico por Contexto/Intenção)
+      const chatSemEngine = new ClinicalChatEngine();
+      const semanticDirective = chatSemEngine.getSemanticSystemPromptDirective();
+      const expectedSemanticPrompt = 'Você tem acesso aos dados do prontuário do paciente. NUNCA exija que o aluno use as palavras exatas do seu banco de dados. Faça o cruzamento semântico pelo contexto da conversa. Se o aluno perguntar "você vai muito ao banheiro?", entenda que ele busca avaliar "hábito intestinal" ou "diurese". Se perguntar "como é sua alimentação de manhã?", busque os dados de "desjejum". Interprete gírias, sinônimos e abordagens indiretas. Responda de forma fluida e dinâmica, agindo 100% como um humano natural, nunca como um buscador de termos.';
+      const chatTemp = chatSemEngine.getChatTemperature();
+
+      const casoSemTest = getCases()[0];
+      const respBanheiroSem = chatSemEngine.evaluateStrictLocal("você vai muito ao banheiro?", casoSemTest, "paciente");
+      const respManhaSem = chatSemEngine.evaluateStrictLocal("como é sua alimentação de manhã?", casoSemTest, "paciente");
+
+      assert(
+        semanticDirective === expectedSemanticPrompt &&
+        chatTemp >= 0.5 &&
+        chatTemp <= 0.7 &&
+        respBanheiroSem.toLowerCase().includes("banheiro") &&
+        (respBanheiroSem.toLowerCase().includes("intestin") || respBanheiroSem.toLowerCase().includes("diurese") || respBanheiroSem.toLowerCase().includes("urina")) &&
+        (respManhaSem.toLowerCase().includes("desjejum") || respManhaSem.toLowerCase().includes("café da manhã")),
+        "Seção 152.1 (Aprimoramento Semântico da IA no Chat): System Prompt contém a diretriz obrigatória de cruzamento semântico, temperatura ajustada entre 0.5 e 0.7 (0.6) e interpreta 'você vai muito ao banheiro?' (hábito intestinal/diurese) e 'como é sua alimentação de manhã?' (desjejum)"
+      );
+
+      // 152.2 Inclusão de 'Ingestão Hídrica Diária' (ingestaoHidrica) no estado, sanitização e alternância entre Análise Qualitativa e Quantitativa
+      const prontHidricaTest = pmRules.getEmptyProntuario("caso-hidrica-test");
+      prontHidricaTest.ingestaoHidrica = "2 litros (2000 ml/dia)";
+      prontHidricaTest.consumoAlimentar.ingestaoHidrica = "2 litros (2000 ml/dia)";
+
+      const hidricaSwitchedQual = pmRules.switchConsumoAnalysisMode(prontHidricaTest, "qualitativo", {
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: true
+      });
+      const hidricaSwitchedQuant = pmRules.switchConsumoAnalysisMode(hidricaSwitchedQual, "quantitativo", {
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: true
+      });
+
+      assert(
+        hidricaSwitchedQual.ingestaoHidrica === "2 litros (2000 ml/dia)" &&
+        hidricaSwitchedQual.consumoAlimentar.ingestaoHidrica === "2 litros (2000 ml/dia)" &&
+        hidricaSwitchedQuant.ingestaoHidrica === "2 litros (2000 ml/dia)" &&
+        hidricaSwitchedQuant.consumoAlimentar.ingestaoHidrica === "2 litros (2000 ml/dia)",
+        "Seção 152.2 (Estado 'ingestaoHidrica' em Ambos os Modos): A chave 'ingestaoHidrica' é preservada e sincronizada tanto no modo 'Análise Qualitativa' quanto no modo 'Análise Quantitativa'"
+      );
+
+      // 152.3 Renderização de 'Ingestão Hídrica Diária' no Relatório Final (PDF/HTML) e texto compilado para o professor em ambos os modos
+      const htmlReportHidricaQual = DietoterapiaDocxReport.buildHtmlReport(hidricaSwitchedQual, {
+        id: "caso-hidrica-qual",
+        title: "Caso Ingestão Hídrica Qualitativo",
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: false
+      });
+      const htmlReportHidricaQuant = DietoterapiaDocxReport.buildHtmlReport(hidricaSwitchedQuant, {
+        id: "caso-hidrica-quant",
+        title: "Caso Ingestão Hídrica Quantitativo",
+        habilitarConsumoQualitativo: true,
+        habilitarConsumoQuantitativo: true
+      });
+      const compiledResolutionHidrica = pmRules.compileStudentResolutionForAI(hidricaSwitchedQual, {
+        id: "caso-hidrica-qual",
+        title: "Caso Ingestão Hídrica Qualitativo"
+      });
+
+      assert(
+        htmlReportHidricaQual.includes("Ingestão Hídrica Diária") &&
+        htmlReportHidricaQual.includes("2 litros (2000 ml/dia)") &&
+        htmlReportHidricaQuant.includes("Ingestão Hídrica Diária") &&
+        htmlReportHidricaQuant.includes("2 litros (2000 ml/dia)") &&
+        compiledResolutionHidrica.includes("Ingestão Hídrica Diária: 2 litros (2000 ml/dia)"),
+        "Seção 152.3 (Relatório Final PDF e Payload Docente): 'Ingestão Hídrica Diária' ('ingestaoHidrica') é impressa em destaque no Relatório Final em PDF/Tela tanto na Análise Qualitativa quanto na Quantitativa"
+      );
       } catch (err) {
         assert(false, `EXCEÇÃO DURANTE OS TESTES: ${err.message} em ${err.stack || ''}`);
       } finally {

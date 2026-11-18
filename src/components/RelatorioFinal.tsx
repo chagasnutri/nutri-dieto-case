@@ -353,6 +353,13 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
     ''
   ).trim();
 
+  const ingestaoHidricaDiariaTexto = String(
+    ca?.ingestaoHidrica ||
+    safeData?.ingestaoHidrica ||
+    ca?.aguaPreferenciasAversoes ||
+    ''
+  ).trim();
+
   const recItems = Array.isArray(ca?.refeicoesRecordatorio)
     ? ca.refeicoesRecordatorio
     : (Array.isArray(safeData?.consumoQualitativoBlocos) && isConsumoQualitativo
@@ -367,13 +374,16 @@ export function ConsumoSection({ data, clinicalCase }: { data: any; clinicalCase
           ? "1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)"
           : "1.8. Consumo Alimentar e Inquérito Nutricional"}
       </h3>
+      <div className="bg-sky-50 border-l-4 border-sky-600 p-3 rounded text-xs text-sky-950 font-semibold">
+        <strong>Ingestão Hídrica Diária:</strong> {ingestaoHidricaDiariaTexto || "Não preenchido / ---"}
+      </div>
       {avaliacaoQualitativaTexto && (
         <div className="bg-amber-50 border-l-4 border-amber-600 p-3 rounded text-xs text-amber-950 font-medium">
           <strong>Avaliação Qualitativa do Consumo:</strong> {avaliacaoQualitativaTexto}
         </div>
       )}
       <p className="text-xs text-slate-700"><strong>Resumo do Padrão Dietético:</strong> {ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}</p>
-      <p className="text-xs text-slate-700"><strong>Ingestão Hídrica, Preferências e Aversões:</strong> {ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+      <p className="text-xs text-slate-700"><strong>Ingestão Hídrica, Preferências e Aversões:</strong> {ca.aguaPreferenciasAversoes || ingestaoHidricaDiariaTexto || "Não preenchido / ---"}</p>
       {prepRecordatorioGlobal && (
         <p className="text-xs text-slate-700"><strong>Preparação (Recordatório 24h):</strong> {prepRecordatorioGlobal}</p>
       )}

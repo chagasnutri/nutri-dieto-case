@@ -120,6 +120,7 @@ export interface CaseDraftData {
   habilitarConsumoQuantitativo?: boolean;
   tipoAnaliseConsumo?: 'qualitativo' | 'quantitativo';
   avaliacaoQualitativaConsumo?: string;
+  ingestaoHidrica?: string;
   consumoQualitativoBlocos?: QualitativeMealBlock[];
   recordatorioPreparacao?: string;
   recordatorioItems: RecordatorioDraftItem[];

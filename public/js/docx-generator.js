@@ -407,12 +407,24 @@ class DietoterapiaDocxReport {
         ca?.inqueritoResumo ||
         ""
       ).trim();
+      const ingestaoHidricaDiariaTexto = String(
+        ca?.ingestaoHidrica ||
+        studentData?.ingestaoHidrica ||
+        ca?.aguaPreferenciasAversoes ||
+        ""
+      ).trim();
 
       doc.addHeading(
         isConsumoQualitativo
           ? "1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)"
           : "1.8. Consumo Alimentar e Inquérito Nutricional",
         2
+      );
+      doc.addCallout(
+        "INGESTÃO HÍDRICA DIÁRIA:",
+        ingestaoHidricaDiariaTexto || "Não preenchido / ---",
+        "0284c7",
+        "f0f9ff"
       );
       if (avaliacaoQualitativaTexto) {
         doc.addCallout(
@@ -422,8 +434,9 @@ class DietoterapiaDocxReport {
           "fffbeb"
         );
       }
+      doc.addParagraph(`Ingestão Hídrica Diária: ${ingestaoHidricaDiariaTexto || "Não preenchido / ---"}`);
       doc.addParagraph(`Resumo do Recordatório Alimentar / Padrão Dietético: ${ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}`);
-      doc.addParagraph(`Ingestão Hídrica, Preferências e Aversões: ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}`);
+      doc.addParagraph(`Ingestão Hídrica, Preferências e Aversões: ${ca.aguaPreferenciasAversoes || ingestaoHidricaDiariaTexto || "Não preenchido / ---"}`);
 
       doc.addHeading("1.8.1. Refeições e Alimentos no Recordatório de 24h", 3);
       const r24Rows = [];
@@ -1086,6 +1099,13 @@ class DietoterapiaDocxReport {
       ""
     ).trim();
 
+    const ingestaoHidricaDiariaTexto = String(
+      ca?.ingestaoHidrica ||
+      studentData?.ingestaoHidrica ||
+      ca?.aguaPreferenciasAversoes ||
+      ""
+    ).trim();
+
     const rawRecList = Array.isArray(ca?.refeicoesRecordatorio)
       ? ca.refeicoesRecordatorio.filter(Boolean)
       : (Array.isArray(studentData?.consumoQualitativoBlocos) ? studentData.consumoQualitativoBlocos.filter(Boolean) : []);
@@ -1096,12 +1116,19 @@ class DietoterapiaDocxReport {
       return `
         <h3 class="subsec-heading">1.8. Consumo Alimentar e Inquérito Nutricional (Análise Qualitativa)</h3>
         ${this.renderCalloutHtml(
+          "INGESTÃO HÍDRICA DIÁRIA:",
+          ingestaoHidricaDiariaTexto || "Não preenchido / ---",
+          "#0284c7",
+          "#f0f9ff"
+        )}
+        <p><strong>Ingestão Hídrica Diária:</strong> ${ingestaoHidricaDiariaTexto || "Não preenchido / ---"}</p>
+        ${this.renderCalloutHtml(
           "AVALIAÇÃO QUALITATIVA DO CONSUMO (COMPORTAMENTO, PADRÕES, HORÁRIOS E QUALIDADE DA DIETA):",
           avaliacaoQualitativaTexto || "Não preenchido / ---",
           "#d97706",
           "#fffbeb"
         )}
-        <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+        <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || ingestaoHidricaDiariaTexto || "Não preenchido / ---"}</p>
 
         <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h (Análise Qualitativa)</h3>
         ${this.renderTableHtml(
@@ -1127,9 +1154,16 @@ class DietoterapiaDocxReport {
 
     return `
       <h3 class="subsec-heading">1.8. Consumo Alimentar e Inquérito Nutricional</h3>
+      ${this.renderCalloutHtml(
+        "INGESTÃO HÍDRICA DIÁRIA:",
+        ingestaoHidricaDiariaTexto || "Não preenchido / ---",
+        "#0284c7",
+        "#f0f9ff"
+      )}
+      <p><strong>Ingestão Hídrica Diária:</strong> ${ingestaoHidricaDiariaTexto || "Não preenchido / ---"}</p>
       ${avaliacaoQualitativaTexto ? `<p><strong>Avaliação Qualitativa do Consumo:</strong> ${avaliacaoQualitativaTexto}</p>` : ""}
       <p><strong>Resumo do Recordatório Alimentar / Padrão Dietético:</strong> ${ca.inqueritoResumo || avaliacaoQualitativaTexto || "Não preenchido / ---"}</p>
-      <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || "Não preenchido / ---"}</p>
+      <p><strong>Ingestão Hídrica, Preferências e Aversões:</strong> ${ca.aguaPreferenciasAversoes || ingestaoHidricaDiariaTexto || "Não preenchido / ---"}</p>
       
       <h3 class="subsec-heading">1.8.1. Refeições e Alimentos no Recordatório de 24h</h3>
       ${this.renderTableHtml(

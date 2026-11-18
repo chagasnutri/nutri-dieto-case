@@ -1,10 +1,17 @@
 /**
- * Rota de API Next.js Pages Router (/pages/api/chat.js) do Preceptor IA
+ * Rota de API Next.js Pages Router (/pages/api/chat.js) do Preceptor IA & Paciente Virtual
  * Executada exclusivamente pelo lado do servidor.
- * Aplica rigorosamente o Método Socrático e consome a variável segura AI_API_KEY (sem prefixo NEXT_PUBLIC_).
+ * Aplica rigorosamente o Método Socrático ou o Cruzamento Semântico do Paciente Virtual e consome a variável segura AI_API_KEY (sem prefixo NEXT_PUBLIC_).
  */
+export const SEMANTIC_PATIENT_SYSTEM_DIRECTIVE = 'Você tem acesso aos dados do prontuário do paciente. NUNCA exija que o aluno use as palavras exatas do seu banco de dados. Faça o cruzamento semântico pelo contexto da conversa. Se o aluno perguntar "você vai muito ao banheiro?", entenda que ele busca avaliar "hábito intestinal" ou "diurese". Se perguntar "como é sua alimentação de manhã?", busque os dados de "desjejum". Interprete gírias, sinônimos e abordagens indiretas. Responda de forma fluida e dinâmica, agindo 100% como um humano natural, nunca como um buscador de termos.';
+
+export const DEFAULT_CHAT_TEMPERATURE = 0.6;
+
 const PRECEPTOR_SYSTEM_PROMPT = `Você é o Preceptor Virtual do DietoCase, um preceptor clínico docente de nutrição clínica de excelência (padrão USP/Unifesp/HC-FMUSP).
 Sua missão pedagógica é guiar estagiários e estudantes de nutrição através do MÉTODO SOCRÁTICO ESTRITO.
+
+DIRETRIZES DE INTERPRETAÇÃO SEMÂNTICA E CONTEXTO:
+${SEMANTIC_PATIENT_SYSTEM_DIRECTIVE}
 
 DIRETRIZES PEDAGÓGICAS INEGOCIÁVEIS:
 1. NUNCA FORNEÇA CONDUTAS PRONTAS, CÁLCULOS FINAIS, PRESCRIÇÕES DIETÉTICAS OU RESPOSTAS DIRETAS. O aprendizado deve ser ativo.
@@ -25,7 +32,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, clinicalContext, history = [], systemPrompt: customSystemPrompt } = req.body || {};
+    const { message, clinicalContext, history = [], systemPrompt: customSystemPrompt, temperature: reqTemperature } = req.body || {};
 
     if (!message) {
       return res.status(400).json({ error: "Campo 'message' é obrigatório." });
@@ -38,7 +45,15 @@ export default async function handler(req, res) {
       ""
     ).trim();
 
-    const activeSystemPrompt = customSystemPrompt || PRECEPTOR_SYSTEM_PROMPT;
+    const basePrompt = customSystemPrompt || PRECEPTOR_SYSTEM_PROMPT;
+    const activeSystemPrompt = basePrompt.includes(SEMANTIC_PATIENT_SYSTEM_DIRECTIVE)
+      ? basePrompt
+      : `${basePrompt}\n\nDIRETRIZ OBRIGATÓRIA DE INTERPRETAÇÃO SEMÂNTICA:\n${SEMANTIC_PATIENT_SYSTEM_DIRECTIVE}`;
+
+    const parsedTemp = typeof reqTemperature === 'number' ? reqTemperature : parseFloat(reqTemperature);
+    const activeTemperature = (!isNaN(parsedTemp) && parsedTemp >= 0.5 && parsedTemp <= 0.7)
+      ? parsedTemp
+      : DEFAULT_CHAT_TEMPERATURE;
 
     const ctxString = clinicalContext ? `
 [CENÁRIO CLÍNICO DO PACIENTE EM TEMPO REAL]
@@ -74,7 +89,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: activeSystemPrompt }] },
           contents: contents,
-          generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+          generationConfig: { temperature: activeTemperature, maxOutputTokens: 600 }
         })
       });
 
@@ -82,7 +97,7 @@ export default async function handler(req, res) {
         const data = await geminiResponse.json();
         const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (replyText) {
-          return res.status(200).json({ reply: replyText, apiKeyConfigured: true });
+          return res.status(200).json({ reply: replyText, apiKeyConfigured: true, temperature: activeTemperature });
         }
       }
     }

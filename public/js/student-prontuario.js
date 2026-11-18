@@ -95,6 +95,11 @@ class StudentProntuarioManager {
       raw?.avaliacaoQualitativaConsumo ??
       ""
     ).trim();
+    const ingestaoHidrica = String(
+      rawConsumo?.ingestaoHidrica ??
+      raw?.ingestaoHidrica ??
+      ""
+    ).trim();
 
     const rawRefRec = Array.isArray(rawConsumo?.refeicoesRecordatorio)
       ? rawConsumo.refeicoesRecordatorio.filter(Boolean)
@@ -155,11 +160,13 @@ class StudentProntuarioManager {
       },
       tipoAnaliseConsumo,
       avaliacaoQualitativaConsumo,
+      ingestaoHidrica,
       consumoAlimentar: {
         ...(empty.consumoAlimentar || {}),
         ...rawConsumo,
         tipoAnaliseConsumo,
         avaliacaoQualitativaConsumo,
+        ingestaoHidrica,
         refeicoesRecordatorio: safeRefRec,
         totaisRecordatorio: { ...(empty.consumoAlimentar?.totaisRecordatorio || {}), ...(rawConsumo?.totaisRecordatorio || {}) }
       },
@@ -283,6 +290,10 @@ class StudentProntuarioManager {
     safe.consumoAlimentar.avaliacaoQualitativaConsumo = String(
       safe.consumoAlimentar.avaliacaoQualitativaConsumo ?? safe.avaliacaoQualitativaConsumo ?? ""
     );
+    safe.consumoAlimentar.ingestaoHidrica = String(
+      safe.consumoAlimentar.ingestaoHidrica ?? safe.ingestaoHidrica ?? ""
+    );
+    safe.ingestaoHidrica = safe.consumoAlimentar.ingestaoHidrica;
     safe.consumoAlimentar.refeicoesRecordatorio = (safe.consumoAlimentar.refeicoesRecordatorio || []).map((meal, idx) => ({
       ...meal,
       id: meal?.id || `rec-${idx + 1}`,
@@ -543,9 +554,11 @@ class StudentProntuarioManager {
         fibrasMicronutrientes: "",
         justificativaFisiopatologica: ""
       },
+      ingestaoHidrica: "",
       consumoAlimentar: {
         tipoAnaliseConsumo: "quantitativo",
         avaliacaoQualitativaConsumo: "",
+        ingestaoHidrica: "",
         vetRecordatorio: "",
         neeCaso: "",
         adequacaoVetPct: "",
@@ -1931,6 +1944,12 @@ class StudentProntuarioManager {
       ca?.inqueritoResumo ||
       ""
     ).trim();
+    const ingestaoHidricaText = String(
+      ca?.ingestaoHidrica ||
+      p?.ingestaoHidrica ||
+      ca?.aguaPreferenciasAversoes ||
+      ""
+    ).trim();
 
     const recLines = refRec
       .filter((r) => r && ((r?.preparacao || r?.tipoPreparacao) || (Array.isArray(r?.itens) && r.itens.length > 0) || r?.nome || r?.alimentos))
@@ -1973,6 +1992,7 @@ class StudentProntuarioManager {
       `- Peso / Estatura / IMC: ${antro?.pesoAtual || p?.peso || "--"} kg | ${antro?.estatura || p?.estatura || "--"} m | IMC: ${antro?.imc || "--"} kg/m² (${antro?.diagnosticoNutricionalExtenso || "--"})`,
       ``,
       `2. RECORDATÓRIO DE 24H (${isConsumoQual ? "ANÁLISE QUALITATIVA DO CONSUMO" : "ANÁLISE QUANTITATIVA DO CONSUMO"}):`,
+      `- Ingestão Hídrica Diária: ${ingestaoHidricaText || "---"}`,
       recLines,
       avaliacaoQualConsumoText ? `- Avaliação Qualitativa do Consumo: ${avaliacaoQualConsumoText}` : null,
       ``,

@@ -2508,6 +2508,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("prontAvaliacaoQualitativaConsumo")) {
       document.getElementById("prontAvaliacaoQualitativaConsumo").value = p.consumoAlimentar.avaliacaoQualitativaConsumo || p.avaliacaoQualitativaConsumo || "";
     }
+    if (document.getElementById("prontIngestaoHidrica")) {
+      document.getElementById("prontIngestaoHidrica").value = p.consumoAlimentar.ingestaoHidrica || p.ingestaoHidrica || "";
+    }
     document.getElementById("prontInqueritoResumo").value = p.consumoAlimentar.inqueritoResumo || "";
     document.getElementById("prontAguaPreferencias").value = p.consumoAlimentar.aguaPreferenciasAversoes || "";
     applyConsumoModeForCase(appState.currentCase);
@@ -2941,6 +2944,8 @@ document.addEventListener("DOMContentLoaded", () => {
     p.consumoAlimentar.tipoAnaliseConsumo = activeConsumoMode;
     p.consumoAlimentar.avaliacaoQualitativaConsumo = document.getElementById("prontAvaliacaoQualitativaConsumo")?.value?.trim() || "";
     p.avaliacaoQualitativaConsumo = p.consumoAlimentar.avaliacaoQualitativaConsumo;
+    p.consumoAlimentar.ingestaoHidrica = document.getElementById("prontIngestaoHidrica")?.value?.trim() || "";
+    p.ingestaoHidrica = p.consumoAlimentar.ingestaoHidrica;
     p.consumoAlimentar.vetRecordatorio = document.getElementById("prontVetRecordatorio")?.value?.trim() || "";
     p.consumoAlimentar.inqueritoResumo = document.getElementById("prontInqueritoResumo")?.value?.trim() || "";
     p.consumoAlimentar.aguaPreferenciasAversoes = document.getElementById("prontAguaPreferencias")?.value?.trim() || "";
@@ -3828,9 +3833,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalsPanel = document.getElementById("recordatorioTotalsPanel");
     const quantVetSection = document.getElementById("recordatorioQuantitativeVetSection");
     const tacoBanner = document.getElementById("recordatorioTacoInfoBanner");
+    const ingestaoHidricaCard = document.getElementById("consumoIngestaoHidricaHighlightCard");
     if (totalsPanel) totalsPanel.classList.toggle("hidden", isQualitativo);
     if (quantVetSection) quantVetSection.classList.toggle("hidden", isQualitativo);
     if (tacoBanner) tacoBanner.classList.toggle("hidden", isQualitativo);
+    if (ingestaoHidricaCard) ingestaoHidricaCard.classList.remove("hidden"); // Visível em ambos os modos (Qualitativo e Quantitativo)
   }
 
   // Permite ao aluno alternar entre 'Análise Qualitativa' ('qualitativo') e 'Análise Quantitativa' ('quantitativo') quando liberado

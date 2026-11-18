@@ -244,6 +244,7 @@ const buildInitialDraft = (caseId: string, studentId: string): CaseDraftData => 
   evolucaoTexto: 'Paciente refere poliúria, polidipsia e perda ponderal não intencional de 4 kg nos últimos dois meses. Queixa de astenia e cefaleia ocasional. Em uso irregular de medicação para diabetes e hipertensão.',
   peso: '88.5',
   estatura: '1.72',
+  ingestaoHidrica: '2 litros (2000 ml/dia)',
   recordatorioPreparacao: 'Vitamina de banana com pão e café com leite',
   recordatorioItems: DEFAULT_RECORDATORIO_ITEMS,
   exams: DEFAULT_EXAMS,
@@ -940,6 +941,13 @@ export default function SimulationModule() {
         interactions: safeInteractions || [],
         formulasCalculadas: safeFormulas || [],
         respostasQuestoes: safeRespostas || {},
+        ingestaoHidrica: draftData?.ingestaoHidrica || '',
+        consumoAlimentar: {
+          tipoAnaliseConsumo: isConsumoQualitativoAtivo ? 'qualitativo' : 'quantitativo',
+          avaliacaoQualitativaConsumo: draftData?.avaliacaoQualitativaConsumo || '',
+          ingestaoHidrica: draftData?.ingestaoHidrica || '',
+          refeicoesRecordatorio: isConsumoQualitativoAtivo ? (consumoQualitativoBlocos || []) : (safeRecordatorio || [])
+        },
         recordatorioPreparacao: draftData?.recordatorioPreparacao || 'Vitamina de banana com pão e café com leite',
         cardapioPreparacao: draftData?.cardapioPreparacao || 'Mingau de aveia com mamão e pão integral',
         orientacoesNutricionais: draftData?.orientacoesNutricionais || '',
@@ -1608,6 +1616,30 @@ export default function SimulationModule() {
                     </label>
                   </div>
                 )}
+              </div>
+
+              {/* Campo em destaque fixo no topo da aba de Consumo Alimentar (visível em AMBOS os modos: Análise Qualitativa e Análise Quantitativa): Ingestão Hídrica Diária */}
+              <div
+                id="cardIngestaoHidricaDestaqueSim"
+                className="bg-sky-950/30 border-2 border-sky-500/60 rounded-xl p-4 space-y-2 shadow"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="inputIngestaoHidricaSim" className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
+                    <span>💧</span>
+                    <span>Ingestão Hídrica Diária:</span>
+                  </label>
+                  <span className="text-[10px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/40 px-2.5 py-0.5 rounded-full">
+                    Destaque • Visível na Análise Qualitativa e Quantitativa
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  id="inputIngestaoHidricaSim"
+                  value={draftData.ingestaoHidrica ?? ''}
+                  onChange={(e) => updateField('ingestaoHidrica', e.target.value)}
+                  placeholder="Informe a ingestão hídrica diária relatada pelo paciente (ex: 2 litros ou 2000 ml)"
+                  className="w-full bg-slate-950 border-2 border-sky-500/50 focus:border-sky-400 rounded-lg px-3 py-2 text-xs font-bold text-white placeholder:font-normal placeholder:text-slate-500 outline-none"
+                />
               </div>
 
               {isConsumoQualitativoAtivo ? (
